@@ -1,0 +1,400 @@
+openapi: 3.0.0
+info:
+  title: Cytomine Python Image Managament Server PIMS
+  description: Cytomine Python Image Managament Server PIMS
+  version: 1.0.0
+servers:
+  - url: 'https'
+tags:
+  - name: 'Tiles'
+    description: |
+      Tiles are rectangular regions extracted from an image at given resolution.
+      Tile size is always 256x256, except on borders.
+  - name: 'Windows'
+    description: ''
+  - name: 'Thumbnails'
+    description: ''
+  - name: 'Rescaled'
+    description: ''
+  - name: 'Metadata'
+    description: ''
+  - name: 'Export'
+    description: ''
+  - name: 'Import'
+    description: ''
+  - name: Server
+  - name: Housekeeping
+paths:
+  /file/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
+    get:
+      tags:
+        - Tiles
+      description: |
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
+        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/zoom'
+        - $ref: '#/components/parameters/tile_index'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: The tile
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/png:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/webp:
+              schema:
+                $ref: '#/components/schemas/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/tile/level/{level}/ti/{tile_index}:
+    get:
+      tags:
+        - Tiles
+      description: |
+        Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
+        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/level'
+        - $ref: '#/components/parameters/tile_index'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: The tile
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/png:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/webp:
+              schema:
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad request
+  /file/{filepath}/tile/zoom/{zoom}/tx/{tile_x}/ty/{tile_y}:
+    get:
+      tags:
+        - Tiles
+      description: |
+        Get a 8-bit tile at a given zoom level and tile coordinates, optimized for visualisation, with all image channels.
+        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/zoom'
+        - $ref: '#/components/parameters/tile_x'
+        - $ref: '#/components/parameters/tile_y'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: The tile
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/png:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/webp:
+              schema:
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad request
+  /file/{filepath}/tile/level/{level}/tx/{tile_x}/ty/{tile_y}:
+    get:
+      tags:
+        - Tiles
+      description: |
+        Get a 8-bit tile at given tier level and tile coordinates, optimized for visualisation, with all image channels.
+        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/level'
+        - $ref: '#/components/parameters/tile_x'
+        - $ref: '#/components/parameters/tile_y'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: The tile
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/png:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/webp:
+              schema:
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad request
+  /slice/tile:
+    get:
+      description: Get a tile using IMS V2.x specification.
+      deprecated: true
+      tags:
+        - Tiles
+      parameters:
+        - name: 'mimeType'
+          in: query
+          description: 'Image mime type'
+          required: true
+          schema:
+            type: string
+        - name: 'fif'
+          in: query
+          description: |
+            Full file path.
+            Must be used together with `z`.
+          schema:
+            type: string
+        - name: 'z'
+          in: query
+          description: Zoom level.
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: 'zoomify'
+          in: query
+          description: |
+            Full file path if Zoomify protocol is used.
+            Must be used together with `z`, `x`, `y` and `tileGroup`.
+          schema:
+            type: string
+        - name: tileGroup
+          in: query
+          description: |
+            Tile Group used in Zoomify protocol.
+            Must be used together with `z`, `x`, `y` and `zoomify`.
+          schema:
+            type: string
+        - name: x
+          in: query
+          description: |
+            X parameter in Zoomify protocol.
+            Must be used together with `z`, `y`, `tileGroup` and `zoomify`.
+          schema:
+            type: integer
+            format: int64
+        - name: y
+          in: query
+          description: |
+            Y parameter in Zoomify protocol.
+            Must be used together with `z`, `x`, `tileGroup` and `zoomify`.
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: The tile
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad request
+  /image/tile.jpg:
+    get:
+      description: Get a tile using IMS V1.x specification.
+      deprecated: true
+      tags:
+        - Tiles
+      parameters:
+        - name: 'mimeType'
+          in: query
+          description: 'Image mime type'
+          required: true
+          schema:
+            type: string
+        - name: 'z'
+          in: query
+          description: Zoom level.
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: 'zoomify'
+          in: query
+          description: |
+            Full file path if Zoomify protocol is used.
+          required: true
+          schema:
+            type: string
+        - name: tileGroup
+          in: query
+          description: |
+            Tile Group used in Zoomify protocol.
+          schema:
+            type: string
+          required: true
+        - name: x
+          in: query
+          description: |
+            X parameter in Zoomify protocol.
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: y
+          in: query
+          description: |
+            Y parameter in Zoomify protocol.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: The tile
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad
+components:
+  parameters:
+    etag:
+      name: ETag
+      in: header
+      description: |
+        The RFC 7232 ETag header field in a response provides the entity-tag of
+        a selected resource. The entity-tag is an opaque identifier for versions
+        and representations of the same resource over time, regardless whether
+        multiple versions are valid at the same time. An entity-tag consists of
+        an opaque quoted string, possibly prefixed by a weakness indicator (see
+        [RFC 7232 Section 2.3](https://tools.ietf.org/html/rfc7232#section-2.3)).
+      required: false
+      schema:
+        type: string
+    filepath:
+      name: 'filepath'
+      in: path
+      description: 'The file path, relative to server base path.'
+      required: true
+      schema:
+        type: string
+      example: '123/my-file.ext'
+    zoom:
+      name: zoom
+      in: path
+      description: |
+        The zoom level.
+        Zoom 0 has the worst resolution (smallest image, top of the image pyramid).
+        Maximum admissible zoom level depends on image.
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+      example: 0
+    tile_index:
+      name: tile_index
+      in: path
+      description: |
+        The tile index is the position of the tile in the given image pyramid tier.
+        It is computed as `n * n_x_tiles + m` where
+        * `n_x_tiles` is the number of tiles along the horizontal axis at given tier.
+        * `m` is the tile position along the horizontal axis at given tier (0 is left).
+        * `n` is the tile position along the vertical axis at given tier (0 is top).
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    tile_x:
+      name: tile_x
+      in: path
+      description: |
+        The tile position along the horizontal axis at given tier (0 is left).
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    tile_y:
+      name: tile_y
+      in: path
+      description: |
+        The tile position along the vertical axis at given tier (0 is top).
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    level:
+      name: level
+      in: path
+      description: |
+        The tier level.
+        Level 0 has the best resolution (largest image, basis of the image pyramid).
+        Maximum admissible tier level depends on image.
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+      example: 0
+  schemas:
+    tile:
+      type: string
+      format: binary
+  headers:
+    If-None-Match:
+      description: |
+        The RFC7232 If-None-Match header field in a request requires the server
+        to only operate on the resource if it does not match any of the provided
+        entity-tags. If the provided entity-tag is `*`, it is required that the
+        resource does not exist at all (see [RFC 7232 Section
+        3.2](https://tools.ietf.org/html/rfc7232#section-3.2)).
+      required: false
+      schema:
+        type: string
+    Content-Disposition:
+      description: |
+        This header indicate that the representation is supposed to be saved as
+        a file, and the proposed file name.
+
+        The value must be `attachment; filename="{suggested_filename}"`
+      required: true
+      schema:
+        type: string
+  responses:
+    not-found-fp:
+      description: File path not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
+    bad-request-fp:
+      description: Bad Request. Input payload fails business logic validation.
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
+    not-modified:
+      description: Not modified.
