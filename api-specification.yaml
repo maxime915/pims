@@ -59,6 +59,52 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/zoom/{zoom}/ti/{tile_index}:
+    get:
+      tags:
+        - Tiles
+      description: |
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal planes and timepoints.
+        If multiple channels are given (slice or selection), they are merged.
+        If multiple focal planes or timepoints are given (slice or selection), a reduction function must be provided.
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/zoom'
+        - $ref: '#/components/parameters/tile_index'
+        - $ref: '#/components/parameters/channels'
+        - $ref: '#/components/parameters/z_slices'
+        - $ref: '#/components/parameters/timepoints'
+        - $ref: '#/components/parameters/c_reduction'
+        - $ref: '#/components/parameters/z_reduction'
+        - $ref: '#/components/parameters/t_reduction'
+        - $ref: '#/components/parameters/min_intensity'
+        - $ref: '#/components/parameters/max_intensity'
+        - $ref: '#/components/parameters/colormap'
+        - $ref: '#/components/parameters/gamma'
+        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: The tile
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/png:
+              schema:
+                $ref: '#/components/schemas/tile'
+            image/webp:
+              schema:
+                $ref: '#/components/schemas/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/tile/level/{level}/ti/{tile_index}:
     get:
       tags:
@@ -321,6 +367,71 @@ paths:
                     remarks:
                       type: string
                       description: Readable end-user remarks about the format
+  /colormaps:
+    get:
+      description: List of pre-defined colormaps in PIMS
+      tags:
+        - Server
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: Colormaps
+                type: array
+                items:
+                  $ref: '#/components/schemas/colormap'
+  /colormaps/{colormap}/representation:
+    get:
+      description: Get a graphic representation of a colormap
+      tags:
+        - Server
+      parameters:
+        - name: colormap
+          in: path
+          required: true
+          description: Colormap name
+          schema:
+            type: format
+            format: colormap
+        - name: width
+          in: query
+          required: false
+          description: Width of the graphic representation, in pixels.
+          schema:
+            type: integer
+            format: int32
+            default: 100
+        - name: height
+          in: query
+          required: false
+          description: Height of the graphic representation, in pixels.
+          schema:
+            type: integer
+            format: int32
+            default: 32
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/generic-image'
+            image/png:
+              schema:
+                $ref: '#/components/schemas/generic-image'
+            image/webp:
+              schema:
+                $ref: '#/components/schemas/generic-image'
+        304:
+          $ref: '#/components/responses/not-modified'
+        404:
+          $ref: '#/components/responses/not-found'
   /file/{filepath}/info:
     get:
       description: Get all information about a file.
@@ -690,10 +801,270 @@ components:
       required: true
       schema:
         type: string
+    channels:
+      name: channels
+      in: path
+      description: |
+        Image channels used to render the response. **The reduction operation to merge the channels
+        can be set in `c_reduction` parameter.**
+        
+        Supported representations are:
+        * single channel index: `0`
+        * range of channel indexes, separated by semi-colon: `2:6`
+        * selection of channel indexes, separated by comma: `3,5,7`
+      required: true
+      schema:
+        oneOf:
+          - type: integer
+            format: int32
+            description: A single channel index
+            minimum: 0
+          - type: string
+            format: range
+            description: A range of channel indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+            example: '2:6'
+          - type: string
+            format: selection
+            description: A selection of channel indexes, separated by comma.
+            example: '3,5,7'
+    z_slices:
+      name: z_slices
+      in: path
+      description: |
+        Image focal planes used to create the response. **The reduction operation to merge the focal planes
+        can be set in `z_reduction` parameter.**
+
+        Supported representations are:
+        * single focal plane index: `0`
+        * range of focal planes indexes, separated by semi-colon: `2:6`
+        * selection of focal planes indexes, separated by comma: `3,5,7`
+      required: true
+      schema:
+        oneOf:
+          - type: integer
+            format: int32
+            description: A single focal planes index
+            minimum: 0
+          - type: string
+            format: range
+            description: A range of focal planes indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+            example: '2:6'
+          - type: string
+            format: selection
+            description: A selection of focal planes indexes, separated by comma.
+            example: '3,5,7'
+    timepoints:
+      name: timepoints
+      in: path
+      description: |
+        Image timepoints used to create the response. **The reduction operation to merge the timepoints
+        can be set in `t_reduction` parameter.**
+
+        Supported representations are:
+        * single timepoint index: `0`
+        * range of timepoints indexes, separated by semi-colon: `2:6`
+        * selection of timepoints indexes, separated by comma: `3,5,7`
+      required: true
+      schema:
+        oneOf:
+          - type: integer
+            format: int32
+            description: A single timepoints index
+            minimum: 0
+          - type: string
+            format: range
+            description: A range of timepoints indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+            example: '2:6'
+          - type: string
+            format: selection
+            description: A selection of timepoints indexes, separated by comma.
+            example: '3,5,7'
+    c_reduction:
+      name: c_reduction
+      in: query
+      description: |
+        Reduction function used to merge selected channels.
+      required: false
+      schema:
+        type: string
+        enum:
+          - ADD
+          - MIN
+          - AVG
+          - MAX
+        default: ADD
+    z_reduction:
+      name: z_reduction
+      in: query
+      description: |
+        Reduction function used to combinate selected focal planes.
+        **Must be provided if `z_slices` is not a single focal plane index.**
+      required: false
+      schema:
+        type: string
+        enum:
+          - MIN
+          - AVG
+          - MAX
+    t_reduction:
+      name: t_reduction
+      in: query
+      description: |
+        Reduction function used to combinate selected timepoints.
+        **Must be provided if `timepoints` is not a single timepoint index.**
+      required: false
+      schema:
+        type: string
+        enum:
+          - MIN
+          - AVG
+          - MAX
+    min_intensity:
+      name: min_intensity
+      in: query
+      description: |
+        Intensity in the original image used as minimum intensity (black) to create the response.
+        As a consequence, original image intensities lower than this value will be black in the response.
+
+        Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.
+
+        Minimum intensity is closely related to the concepts of brightness and contrast.
+        Brightness is the visual perception of reflected light while contrast is the separation
+        of the lightest and darkest parts of an image. A minimum intensity increase leads to:
+        * a brightness decrease, which refers to an image's decreased luminance.
+        * a contrast increase, which darken shadows and lighten highlights.
+
+        Expected format is an array of size:
+        * 1 to apply the minimum intensity to all channels
+        * equals to the number of channels used to render the response in order to apply a minimum intensity per channel
+
+        Enumeration supported values:
+        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_SLICE`.
+        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
+        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        minItems: 1
+        items:
+          oneOf:
+            - type: string
+              enum:
+                - AUTO_IMAGE
+                - AUTO_SLICE
+                - STRETCH_IMAGE
+                - STRETCH_SLICE
+            - type: integer
+              format: int64
+    max_intensity:
+      name: max_intensity
+      in: query
+      description: |
+        Intensity in the original image used as maximum intensity (white) to create the response.
+        As a consequence, original image intensities greater than this value will be white in the response.
+
+        Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.
+
+        Maximum intensity is closely related to the concepts of brightness and contrast.
+        Brightness is the visual perception of reflected light while contrast is the separation
+        of the lightest and darkest parts of an image. A maximum intensity increase leads to:
+        * a brightness decrease, which refers to an image's decreased luminance.
+        * a contrast decrease, which darken highlights and lighten shadows.
+
+        Expected format is an array of size:
+        * 1 to apply the maximum intensity to all channels
+        * equals to the number of channels used to render the response in order to apply a maximum intensity per channel
+
+        Enumeration supported values:
+        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_SLICE`.
+        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
+        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        minItems: 1
+        items:
+          oneOf:
+            - type: string
+              enum:
+                - AUTO_IMAGE
+                - AUTO_SLICE
+                - STRETCH_IMAGE
+                - STRETCH_SLICE
+            - type: integer
+              format: int64
+    colormap:
+      name: colormap
+      in: query
+      description: |
+        A colormap is a function that maps the colors of the original image (source) to the colors of the response
+        image. The usage of colormap produces a false-color representation of the original image and helps at
+        understanding the image.
+
+        Valid colormap names can be found with the endpoint `/colormaps`. The colormap can be reversed by prepending the
+        colormap name with `!`.
+
+        Expected format is an array of size:
+        * 1 to apply the same colormap to all channels
+        * equals to the number of channels used to render the response, in order to apply a colormap per channel.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          format: colormap
+    gamma:
+      name: gamma
+      in: query
+      description: |
+        Gamma performs a non-linear histogram adjustment. Pixel intensities in the original image are raised
+        to the power of the gamma value.
+
+        If `gamma < 1`, faint objects become more intense while bright objects do not.
+
+        If `gamma > 1`, medium-intensity objects become fainter while bright objects do not.
+
+        Expected format is an array of size:
+        * 1 to apply the gamma correction to all channels
+        * equals to the number of channels used to render the response in order to applay the gamma correction per channel.
+      required: false
+      style: form
+      explode: false
+      schema:
+        type: array
+        minItems: 1
+        items:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 10
+    log:
+      name: log
+      in: query
+      description: |
+        Apply a logarithmic scale on image data to ease observation of high dynamic range images such as 16-bit images.
+      required: false
+      schema:
+        type: boolean
+        default: false
   schemas:
     tile:
       type: string
       format: binary
+      example: (binary)
+    generic-image:
+      type: string
+      format: binary
+      example: (binary)
     file-info:
       description: |
         Information about a file
@@ -859,6 +1230,32 @@ components:
           type: string
           description: The metadata value type
           default: string
+    colormap:
+      type: object
+      description: |
+        A colormap is a function that maps colors of an input image to the colors of a target image.
+      properties:
+        name:
+          type: string
+          description: |
+            A unique identifier to a pre-defined colormap.
+        type:
+          type: string
+          description: |
+            * `SEQUENTIAL` - change in lightness and often saturation of color incrementally, often using a single hue;
+            should be used for representing information that has ordering.
+            * `DIVERGING` - change in lightness and possibly saturation of two different colors that meet in the middle
+            at an unsaturated color; should be used when the image has a critical middle value.
+            * `QUALITATIVE` - often are miscellaneous colors; should be used to represent information which does
+            not have ordering or relationships
+          enum:
+            - SEQUENTIAL
+            - DIVERGING
+            - QUALITATIVE
+        n_colors:
+          type: integer
+          format: int32
+          description: The number of defined colors in the colormap.
   headers:
     If-None-Match:
       description: |
@@ -882,6 +1279,12 @@ components:
   responses:
     not-found-fp:
       description: File path not found
+      content:
+        application/problem+json:
+          schema:
+            $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
+    not-found:
+      description: Resource not found
       content:
         application/problem+json:
           schema:
