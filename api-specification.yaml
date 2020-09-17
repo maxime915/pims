@@ -474,6 +474,47 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /directory/{directorypath}/usage:
+    get:
+      description: Directory usage on disk
+      tags:
+        - Housekeeping
+      parameters:
+        - name: directorypath
+          in: path
+          schema:
+            type: string
+          description: The path of the directory
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  n_children:
+                    type: integer
+                    format: int32
+                    description: Number of file children in the directory (recursively)
+                  used_size:
+                    type: integer
+                    format: int64
+                    description: Size of the directory, in bytes.
+                  available_size:
+                    type: integer
+                    format: int64
+                    description: Available size on disk for the directory, in bytes.
+                  total_size:
+                    type: integer
+                    format: int64
+                    description: Directory's disk size, in bytes.
+                  used_size_percentage:
+                    type: number
+                    format: double
+                    description: Percentage of used space regarding total size
+                    minimum: 0
+                    maximum: 100
 components:
   parameters:
     etag:
