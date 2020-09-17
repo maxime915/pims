@@ -321,6 +321,159 @@ paths:
                     remarks:
                       type: string
                       description: Readable end-user remarks about the format
+  /file/{filepath}/info:
+    get:
+      description: Get all information about a file.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  file:
+                    $ref: '#/components/schemas/file-info'
+                  image:
+                    $ref: '#/components/schemas/image-info'
+                  channels:
+                    $ref: '#/components/schemas/channels-info'
+                  instrument:
+                    $ref: '#/components/schemas/instrument-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/file:
+    get:
+      description: Get information about a file.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/file-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/image:
+    get:
+      description: Get information about an image.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/image-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/channels:
+    get:
+      description: Get information about channels in an image.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/channels-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/instrument:
+    get:
+      description: Get information about instrument in an image.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/instrument-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/metadata:
+    get:
+      description: Get readable raw metadata from an image file.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/metadata'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
 components:
   parameters:
     etag:
@@ -408,6 +561,171 @@ components:
     tile:
       type: string
       format: binary
+    file-info:
+      description: |
+        Information about a file
+      type: object
+      properties:
+        stem:
+          type: string
+          description: The file stem (filename without extension)
+        extension:
+          type: string
+          description: The file extension
+        created_at:
+          type: string
+          format: date
+          description: The file creation date
+        size:
+          type: integer
+          format: int64
+          description: The file size, in bytes.
+    image-info:
+      description: |
+        Information about an image
+      type: object
+      properties:
+        width:
+          type: integer
+          format: int64
+          description: The (multidimensional) image width. It is the number of pixels along X axis.
+          minimum: 1
+        height:
+          type: integer
+          format: int64
+          description: The (multidimensional) image height. It is the number of pixels along Y axis.
+          minimum: 1
+        depth:
+          type: integer
+          format: int64
+          description: The multidimensional image depth. It is the number of focal planes.
+          minimum: 1
+        duration:
+          type: integer
+          format: int64
+          description: The multidimensional image duration. It is the number of frames.
+          minimum: 1
+        physical_size_x:
+          type: number
+          format: double
+          description: |
+            The physical size of a pixel along the X axis, expressed in nanometers (nm).
+          nullable: true
+        physical_size_y:
+          type: number
+          format: double
+          description: |
+            The physical size of a pixel along the Y axis, expressed in nanometers (nm).
+          nullable: true
+        physical_size_z:
+          type: number
+          format: double
+          description: |
+            The physical size of a pixel (voxel) along the Z axis, expressed in nanometers (nm).
+          nullable: true
+        frame_rate:
+          type: number
+          format: double
+          description: |
+            The frequency at which consecutive timepoints are taken (T axis), expressed in Hz.
+          nullable: true
+        n_channels:
+          type: integer
+          format: int64
+          description: |
+            The number of channels in the image.
+            Grayscale images have 1 channel. RGB images have 3 channels.
+          minimum: 1
+        aquisition_date:
+          type: string
+          format: date
+          description: |
+            The acquisition date of the image.
+          nullable: true
+        description:
+          type: string
+          description: The image description.
+          nullable: true
+        pixel_type:
+          description: The type used to store each pixel in the image.
+          type: string
+          enum:
+            - int8
+            - int16
+            - int32
+            - uint8
+            - uint16
+            - uint32
+        significant_bits:
+          description: The number of bits within the type storing each pixel that are significants.
+          type: integer
+          minimum: 1
+    instrument-info:
+      type: object
+      description: |
+        Information about an instrument in an image file.
+      properties:
+        microscope:
+          type: object
+          properties:
+            model:
+              type: string
+              description: The microscope model.
+              nullable: true
+        objective:
+          type: object
+          properties:
+            nominal_magnification:
+              type: number
+              format: double
+              description: Magnification of the lens specified by the manufacturer.
+              nullable: true
+            calibrated_magnification:
+              type: number
+              format: double
+              description: Magnification of the lens measured by a calibration process.
+              nullable: true
+    channels-info:
+      type: array
+      description: |
+        Information about channels in an image file.
+      items:
+        type: object
+        properties:
+          samples_per_pixel:
+            type: integer
+            format: int64
+            description: Number of samples taken by detector to form the pixel value.
+            minimum: 1
+            maximum: 3
+          suggested_name:
+            type: string
+            description: Suggested name for the channel infered from other properties.
+          emission_wavelength:
+            type: number
+            format: double
+            description: Wavelength of emission for a particular channel.
+            nullable: true
+          excitation_wavelength:
+            type: number
+            format: double
+            description: Wavelength of excitation for a particular channel.
+            nullable: true
+    metadata:
+      type: object
+      description: |
+        A metadata is a key-value pair stored in an image file.
+      properties:
+        key:
+          type: string
+          description: The metadata key
+        value:
+          type: string
+          description: The metadata value
+        type:
+          type: string
+          description: The metadata value type
+          default: string
   headers:
     If-None-Match:
       description: |
