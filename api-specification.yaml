@@ -515,6 +515,35 @@ paths:
                     description: Percentage of used space regarding total size
                     minimum: 0
                     maximum: 100
+  /storage/size.json:
+    get:
+      tags:
+        - Housekeeping
+      deprecated: true
+      description: Get used and free space of the image storage in IMS v1.x and v2.x
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  used:
+                    type: integer
+                    format: int64
+                  available:
+                    type: integer
+                    format: int64
+                  usedP:
+                    type: number
+                    format: double
+                  hostname:
+                    type: string
+                  mount:
+                    type: string
+                  ip:
+                    type: string
 components:
   parameters:
     etag:
