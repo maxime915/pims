@@ -276,6 +276,51 @@ paths:
                 $ref: '#/components/schemas/tile'
         400:
           description: Bad
+  /info:
+    get:
+      description: Status of PIMS
+      tags:
+        - Server
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    description: PIMS version
+                  api_version:
+                    type: string
+                    description: PIMS API specification version
+  /formats:
+    get:
+      description: List of supported formats by PIMS
+      tags:
+        - Server
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: Formats
+                type: array
+                items:
+                  type: object
+                  title: Format
+                  properties:
+                    id:
+                      type: string
+                      description: Unique format identifier
+                    name:
+                      type: string
+                      description: Readable format name
+                    remarks:
+                      type: string
+                      description: Readable end-user remarks about the format
 components:
   parameters:
     etag:
