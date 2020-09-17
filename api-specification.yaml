@@ -432,6 +432,21 @@ paths:
           $ref: '#/components/responses/not-modified'
         404:
           $ref: '#/components/responses/not-found'
+  /filters:
+    get:
+      description: List of pre-defined image filters in PIMS
+      tags:
+        - Server
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: Filters
+                type: array
+                items:
+                  $ref: '#/components/schemas/filter'
   /file/{filepath}/info:
     get:
       description: Get all information about a file.
@@ -1256,6 +1271,25 @@ components:
           type: integer
           format: int32
           description: The number of defined colors in the colormap.
+
+    filter:
+      type: object
+      description: |
+        An image filter is used to alter the representation of an input image and helps at understanding the
+        input image.
+      properties:
+        name:
+          type: string
+          description: |
+            A unique identifier to an image filter.
+        type:
+          type: string
+          description: |
+            * `LOCAL` - The image filter uses the neighborhood of every pixels.
+            * `GLOBAL` - The image filter uses histogram-derived techniques.
+          enum:
+            - LOCAL
+            - GLOBAL
   headers:
     If-None-Match:
       description: |
