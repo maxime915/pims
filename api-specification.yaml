@@ -544,6 +544,61 @@ paths:
                     type: string
                   ip:
                     type: string
+  /file/{filepath}/export/{format}:
+    get:
+      description: Export a file in a specified format.
+      tags:
+        - Export
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/export-format'
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Disposition:
+              $ref: '#/components/headers/Content-Disposition'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}:
+    get:
+      description: Download a file.
+      tags:
+        - Export
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Disposition:
+              $ref: '#/components/headers/Content-Disposition'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    delete:
+      description: Delete a file and its children
+      tags:
+        - Housekeeping
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+      responses:
+        204:
+          description: OK - No content
+        404:
+          $ref: '#/components/responses/not-found-fp'
+
 components:
   parameters:
     etag:
@@ -627,6 +682,14 @@ components:
         format: int64
         minimum: 0
       example: 0
+    export-format:
+      name: format
+      in: path
+      description: |
+        The format identifier in which the image is exported. Only a subset of formats are accepted.
+      required: true
+      schema:
+        type: string
   schemas:
     tile:
       type: string
