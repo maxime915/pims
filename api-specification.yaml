@@ -434,6 +434,37 @@ paths:
                 $ref: '#/components/schemas/tile'
         400:
           description: Bad request
+  /file/{filepath}/thumbnail:
+    get:
+      summary: Get thumbnail for reference plane
+      description: |
+        Get a 8-bit thumbnail optimized for visualisation, with all image channels. For multidimensional images, the
+        thumbnail is extracted from the median focal plane at first timepoint.
+      tags:
+        - Thumbnails
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/thumb-size'
+        - $ref: '#/components/parameters/thumb-width'
+        - $ref: '#/components/parameters/thumb-height'
+        - $ref: '#/components/parameters/thumb-zoom'
+        - $ref: '#/components/parameters/thumb-level'
+        - $ref: '#/components/parameters/min_intensities'
+        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/colormaps'
+        - $ref: '#/components/parameters/filters'
+        - $ref: '#/components/parameters/gammas'
+        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          $ref: '#/components/responses/thumbnail'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /image/tile.jpg:
     get:
       description: Get a tile using IMS V1.x specification.
@@ -1213,8 +1244,72 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/log'
+    thumb-size:
+      name: size
+      in: query
+      description: |
+        Size of the largest side of the thumbnail. The other dimension is adjusted to preserve the aspect ratio.
+
+        **Takes precedence over `zoom`, `level`, `width` and `height`.**
+      required: false
+      schema:
+        $ref: '#/components/schemas/size-default-256'
+    thumb-width:
+      name: width
+      in: query
+      description: |
+        Width of the thumbnail. Height is adjusted to preserve the aspect ratio.
+
+        **Ignored if `size` is present. Takes precedence over `height`, `zoom` and `level`.**
+      required: false
+      schema:
+        $ref: '#/components/schemas/size'
+    thumb-height:
+      name: height
+      in: query
+      description: |
+        Height of the thumbnail. Width is adjusted to preserve the aspect ratio.
+
+        **Ignored if `size` or `width` is present. Takes precedence over `zoom` and `level`.**
+      required: false
+      schema:
+        $ref: '#/components/schemas/size'
+    thumb-zoom:
+      name: zoom
+      in: query
+      description: |
+        The zoom level to consider as thumbnail.
+        Zoom 0 has the worst resolution (smallest image, top of the image pyramid).
+        Maximum admissible zoom level depends on image.
+
+        **Ignored if `size` or `width` or `height` is present. Takes precedence over `level`.**
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        example: 0
+    thumb-level:
+      name: level
+      in: query
+      description: |
+        The tier level.
+        Level 0 has the best resolution (largest image, basis of the image pyramid).
+        Maximum admissible tier level depends on image.
+
+        **Ignored if `size` or `width` or `height` or `zoom` is present.**
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+        example: 0
   schemas:
     tile:
+      type: string
+      format: binary
+      example: (binary)
+    thumbnail:
       type: string
       format: binary
       example: (binary)
@@ -1288,6 +1383,24 @@ components:
     log:
       type: boolean
       default: false
+    size:
+      example: 256
+      oneOf:
+        - type: integer
+          format: int64
+          description: A size in pixels.
+          minimum: 0
+          example: 256
+        - type: number
+          format: double
+          description: A size expressed in percentage relatively to the real image size.
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.5
+    size-default-256:
+      default: 256
+      allOf:
+        - $ref: '#/components/schemas/size'
     file-info:
       description: |
         Information about a file
@@ -1557,3 +1670,18 @@ components:
         image/webp:
           schema:
             $ref: '#/components/schemas/tile'
+    thumbnail:
+      description: Thumbnail
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+      content:
+        image/jpeg:
+          schema:
+            $ref: '#/components/schemas/thumbnail'
+        image/png:
+          schema:
+            $ref: '#/components/schemas/thumbnail'
+        image/webp:
+          schema:
+            $ref: '#/components/schemas/thumbnail'
