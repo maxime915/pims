@@ -394,7 +394,7 @@ paths:
           required: true
           description: Colormap name
           schema:
-            type: format
+            type: string
             format: colormap
         - name: width
           in: query
@@ -608,6 +608,7 @@ paths:
         - Housekeeping
       parameters:
         - name: directorypath
+          required: true
           in: path
           schema:
             type: string
