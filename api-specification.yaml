@@ -60,46 +60,75 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/zoom/{zoom}/ti/{tile_index}:
+    parameters:
+      - $ref: '#/components/parameters/filepath'
+      - $ref: '#/components/parameters/zoom'
+      - $ref: '#/components/parameters/tile_index'
+      - $ref: '#/components/parameters/channels'
+      - $ref: '#/components/parameters/z_slices'
+      - $ref: '#/components/parameters/timepoints'
+      - $ref: '#/components/parameters/etag'
     get:
+      description: |
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
       tags:
         - Tiles
-      description: |
-        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal planes and timepoints.
-        If multiple channels are given (slice or selection), they are merged.
-        If multiple focal planes or timepoints are given (slice or selection), a reduction function must be provided.
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/zoom'
-        - $ref: '#/components/parameters/tile_index'
-        - $ref: '#/components/parameters/channels'
-        - $ref: '#/components/parameters/z_slices'
-        - $ref: '#/components/parameters/timepoints'
         - $ref: '#/components/parameters/c_reduction'
         - $ref: '#/components/parameters/z_reduction'
         - $ref: '#/components/parameters/t_reduction'
-        - $ref: '#/components/parameters/min_intensity'
-        - $ref: '#/components/parameters/max_intensity'
-        - $ref: '#/components/parameters/colormap'
-        - $ref: '#/components/parameters/filter'
-        - $ref: '#/components/parameters/gamma'
+        - $ref: '#/components/parameters/min_intensities'
+        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/colormaps'
+        - $ref: '#/components/parameters/filters'
+        - $ref: '#/components/parameters/gammas'
         - $ref: '#/components/parameters/log'
-        - $ref: '#/components/parameters/etag'
       responses:
         200:
-          description: The tile
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/png:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/webp:
-              schema:
-                $ref: '#/components/schemas/tile'
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    post:
+      description: |
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+      tags:
+        - Tiles
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                c_reduction:
+                  $ref: '#/components/schemas/c-reduction'
+                z_reduction:
+                  $ref: '#/components/schemas/reduction'
+                t_reduction:
+                  $ref: '#/components/schemas/reduction'
+                min_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                max_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                colormaps:
+                  $ref: '#/components/schemas/colormap-name-list'
+                filters:
+                  $ref: '#/components/schemas/filter-name-list'
+                gammas:
+                  $ref: '#/components/schemas/gamma-list'
+                log:
+                  $ref: '#/components/schemas/log'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -903,13 +932,7 @@ components:
         Reduction function used to merge selected channels.
       required: false
       schema:
-        type: string
-        enum:
-          - ADD
-          - MIN
-          - AVG
-          - MAX
-        default: ADD
+        $ref: '#/components/schemas/c-reduction'
     z_reduction:
       name: z_reduction
       in: query
@@ -918,11 +941,7 @@ components:
         **Must be provided if `z_slices` is not a single focal plane index.**
       required: false
       schema:
-        type: string
-        enum:
-          - MIN
-          - AVG
-          - MAX
+        $ref: '#/components/schemas/reduction'
     t_reduction:
       name: t_reduction
       in: query
@@ -931,13 +950,9 @@ components:
         **Must be provided if `timepoints` is not a single timepoint index.**
       required: false
       schema:
-        type: string
-        enum:
-          - MIN
-          - AVG
-          - MAX
-    min_intensity:
-      name: min_intensity
+        $ref: '#/components/schemas/reduction'
+    min_intensities:
+      name: min_intensities
       in: query
       description: |
         Intensity in the original image used as minimum intensity (black) to create the response.
@@ -964,20 +979,9 @@ components:
       style: form
       explode: false
       schema:
-        type: array
-        minItems: 1
-        items:
-          oneOf:
-            - type: string
-              enum:
-                - AUTO_IMAGE
-                - AUTO_SLICE
-                - STRETCH_IMAGE
-                - STRETCH_SLICE
-            - type: integer
-              format: int64
-    max_intensity:
-      name: max_intensity
+        $ref: '#/components/schemas/intensity-selection'
+    max_intensities:
+      name: max_intensities
       in: query
       description: |
         Intensity in the original image used as maximum intensity (white) to create the response.
@@ -1004,20 +1008,9 @@ components:
       style: form
       explode: false
       schema:
-        type: array
-        minItems: 1
-        items:
-          oneOf:
-            - type: string
-              enum:
-                - AUTO_IMAGE
-                - AUTO_SLICE
-                - STRETCH_IMAGE
-                - STRETCH_SLICE
-            - type: integer
-              format: int64
-    colormap:
-      name: colormap
+        $ref: '#/components/schemas/intensity-selection'
+    colormaps:
+      name: colormaps
       in: query
       description: |
         A colormap is a function that maps the colors of the original image (source) to the colors of the response
@@ -1034,13 +1027,9 @@ components:
       style: form
       explode: true
       schema:
-        type: array
-        minItems: 1
-        items:
-          type: string
-          format: colormap
-    filter:
-      name: filter
+        $ref: '#/components/schemas/colormap-name-list'
+    filters:
+      name: filters
       in: query
       description: |
         An image filter is used to change the appareance of an image and helps at understanding the
@@ -1055,13 +1044,9 @@ components:
       style: form
       explode: true
       schema:
-        type: array
-        minItems: 1
-        items:
-          type: string
-          format: filter
-    gamma:
-      name: gamma
+        $ref: '#/components/schemas/filter-name-list'
+    gammas:
+      name: gammas
       in: query
       description: |
         Gamma performs a non-linear histogram adjustment. Pixel intensities in the original image are raised
@@ -1078,13 +1063,7 @@ components:
       style: form
       explode: false
       schema:
-        type: array
-        minItems: 1
-        items:
-          type: number
-          format: double
-          minimum: 0
-          maximum: 10
+        $ref: '#/components/schemas/gamma-list'
     log:
       name: log
       in: query
@@ -1092,8 +1071,7 @@ components:
         Apply a logarithmic scale on image data to ease observation of high dynamic range images such as 16-bit images.
       required: false
       schema:
-        type: boolean
-        default: false
+        $ref: '#/components/schemas/log'
   schemas:
     tile:
       type: string
@@ -1103,6 +1081,56 @@ components:
       type: string
       format: binary
       example: (binary)
+    c-reduction:
+      type: string
+      enum:
+        - ADD
+        - MIN
+        - AVG
+        - MAX
+      default: ADD
+    reduction:
+      type: string
+      enum:
+        - MIN
+        - AVG
+        - MAX
+    intensity-selection:
+      type: array
+      minItems: 1
+      items:
+        oneOf:
+          - type: string
+            enum:
+              - AUTO_IMAGE
+              - AUTO_SLICE
+              - STRETCH_IMAGE
+              - STRETCH_SLICE
+          - type: integer
+            format: int64
+    colormap-name-list:
+      type: array
+      minItems: 1
+      items:
+        type: string
+        format: colormap
+    filter-name-list:
+      type: array
+      minItems: 1
+      items:
+        type: string
+        format: filter
+    gamma-list:
+      type: array
+      minItems: 1
+      items:
+        type: number
+        format: double
+        minimum: 0
+        maximum: 10
+    log:
+      type: boolean
+      default: false
     file-info:
       description: |
         Information about a file
@@ -1357,3 +1385,18 @@ components:
             $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
     not-modified:
       description: Not modified.
+    tile:
+      description: The tile
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+      content:
+        image/jpeg:
+          schema:
+            $ref: '#/components/schemas/tile'
+        image/png:
+          schema:
+            $ref: '#/components/schemas/tile'
+        image/webp:
+          schema:
+            $ref: '#/components/schemas/tile'
