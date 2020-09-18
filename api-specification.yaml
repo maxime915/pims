@@ -80,6 +80,7 @@ paths:
         - $ref: '#/components/parameters/min_intensity'
         - $ref: '#/components/parameters/max_intensity'
         - $ref: '#/components/parameters/colormap'
+        - $ref: '#/components/parameters/filter'
         - $ref: '#/components/parameters/gamma'
         - $ref: '#/components/parameters/log'
         - $ref: '#/components/parameters/etag'
@@ -1037,6 +1038,27 @@ components:
         items:
           type: string
           format: colormap
+    filter:
+      name: filter
+      in: query
+      description: |
+        An image filter is used to change the appareance of an image and helps at understanding the
+        source image.
+
+        Valid filter names can be found with the endpoint `/filters`.
+
+        Expected format is an array of size:
+        * 1 to apply the same filter to all channels
+        * equals to the number of channels used to render the response, in order to apply a filter per channel.
+      required: false
+      style: form
+      explode: true
+      schema:
+        type: array
+        minItems: 1
+        items:
+          type: string
+          format: filter
     gamma:
       name: gamma
       in: query
@@ -1275,8 +1297,8 @@ components:
     filter:
       type: object
       description: |
-        An image filter is used to alter the representation of an input image and helps at understanding the
-        input image.
+        An image filter is used to change the appareance of an image and helps at understanding the
+        source image.
       properties:
         name:
           type: string
@@ -1290,6 +1312,9 @@ components:
           enum:
             - LOCAL
             - GLOBAL
+        description:
+          type: string
+          description: Filter description, explaining how it works, in Markdown.
   headers:
     If-None-Match:
       description: |
