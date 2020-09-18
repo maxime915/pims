@@ -73,9 +73,9 @@ paths:
               type: object
               properties:
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -155,9 +155,9 @@ paths:
                 t_reduction:
                   $ref: '#/components/schemas/reduction'
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -222,9 +222,9 @@ paths:
               type: object
               properties:
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -304,9 +304,9 @@ paths:
                 t_reduction:
                   $ref: '#/components/schemas/reduction'
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection'
+                  $ref: '#/components/schemas/intensity-selection-list'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -1120,7 +1120,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/intensity-selection'
+        $ref: '#/components/schemas/intensity-selection-list'
     max_intensities:
       name: max_intensities
       in: query
@@ -1149,7 +1149,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/intensity-selection'
+        $ref: '#/components/schemas/intensity-selection-list'
     colormaps:
       name: colormaps
       in: query
@@ -1237,38 +1237,54 @@ components:
         - AVG
         - MAX
     intensity-selection:
-      type: array
-      minItems: 1
-      items:
-        oneOf:
-          - type: string
-            enum:
-              - AUTO_IMAGE
-              - AUTO_SLICE
-              - STRETCH_IMAGE
-              - STRETCH_SLICE
-          - type: integer
-            format: int64
+      oneOf:
+        - type: string
+          enum:
+            - AUTO_IMAGE
+            - AUTO_SLICE
+            - STRETCH_IMAGE
+            - STRETCH_SLICE
+        - type: integer
+          format: int64
+    intensity-selection-list:
+      oneOf:
+        - $ref: '#/components/schemas/intensity-selection'
+        - type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/intensity-selection'
+    colormap-name:
+      type: string
+      format: colormap-name
     colormap-name-list:
-      type: array
-      minItems: 1
-      items:
-        type: string
-        format: colormap-name
+      oneOf:
+        - $ref: '#/components/schemas/colormap-name'
+        - type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/colormap-name'
+    filter-name:
+      type: string
+      format: filter-name
     filter-name-list:
-      type: array
-      minItems: 1
-      items:
-        type: string
-        format: filter-name
+      oneOf:
+        - $ref: '#/components/schemas/filter-name'
+        - type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/filter-name'
+    gamma:
+      type: number
+      format: double
+      minimum: 0
+      maximum: 10
     gamma-list:
-      type: array
-      minItems: 1
-      items:
-        type: number
-        format: double
-        minimum: 0
-        maximum: 10
+      oneOf:
+        - $ref: '#/components/schemas/gamma'
+        - type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/gamma'
     log:
       type: boolean
       default: false
