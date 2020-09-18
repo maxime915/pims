@@ -26,33 +26,67 @@ tags:
   - name: Housekeeping
 paths:
   /file/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
+    parameters:
+      - $ref: '#/components/parameters/filepath'
+      - $ref: '#/components/parameters/zoom'
+      - $ref: '#/components/parameters/tile_index'
+      - $ref: '#/components/parameters/etag'
     get:
+      summary: Get a tile from reference plane by zoom
       tags:
         - Tiles
       description: |
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/zoom'
-        - $ref: '#/components/parameters/tile_index'
-        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/min_intensities'
+        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/colormaps'
+        - $ref: '#/components/parameters/filters'
+        - $ref: '#/components/parameters/gammas'
+        - $ref: '#/components/parameters/log'
       responses:
         200:
-          description: The tile
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/png:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/webp:
-              schema:
-                $ref: '#/components/schemas/tile'
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    post:
+      summary: Get a tile from reference plane by zoom
+      tags:
+        - Tiles
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
+        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                min_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                max_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                colormaps:
+                  $ref: '#/components/schemas/colormap-name-list'
+                filters:
+                  $ref: '#/components/schemas/filter-name-list'
+                gammas:
+                  $ref: '#/components/schemas/gamma-list'
+                log:
+                  $ref: '#/components/schemas/log'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -69,6 +103,7 @@ paths:
       - $ref: '#/components/parameters/timepoints'
       - $ref: '#/components/parameters/etag'
     get:
+      summary: Get a tile from a plane by zoom
       description: |
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
         planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
@@ -95,7 +130,12 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
     post:
+      summary: Get a tile from a plane by zoom
       description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
         planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
         planes or timepoints are given (slice or selection), a reduction function must be provided.
@@ -136,97 +176,198 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/tile/level/{level}/ti/{tile_index}:
+    parameters:
+      - $ref: '#/components/parameters/filepath'
+      - $ref: '#/components/parameters/level'
+      - $ref: '#/components/parameters/tile_index'
+      - $ref: '#/components/parameters/etag'
     get:
       tags:
         - Tiles
+      summary: Get a tile from reference plane by level
       description: |
         Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/level'
-        - $ref: '#/components/parameters/tile_index'
-        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/min_intensities'
+        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/colormaps'
+        - $ref: '#/components/parameters/filters'
+        - $ref: '#/components/parameters/gammas'
+        - $ref: '#/components/parameters/log'
       responses:
         200:
-          description: The tile
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/png:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/webp:
-              schema:
-                $ref: '#/components/schemas/tile'
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
         400:
-          description: Bad request
-  /file/{filepath}/tile/zoom/{zoom}/tx/{tile_x}/ty/{tile_y}:
-    get:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    post:
       tags:
         - Tiles
+      summary: Get a tile from reference plane by level
       description: |
-        Get a 8-bit tile at a given zoom level and tile coordinates, optimized for visualisation, with all image channels.
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/zoom'
-        - $ref: '#/components/parameters/tile_x'
-        - $ref: '#/components/parameters/tile_y'
-        - $ref: '#/components/parameters/etag'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                min_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                max_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                colormaps:
+                  $ref: '#/components/schemas/colormap-name-list'
+                filters:
+                  $ref: '#/components/schemas/filter-name-list'
+                gammas:
+                  $ref: '#/components/schemas/gamma-list'
+                log:
+                  $ref: '#/components/schemas/log'
       responses:
         200:
-          description: The tile
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/png:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/webp:
-              schema:
-                $ref: '#/components/schemas/tile'
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
         400:
-          description: Bad request
-  /file/{filepath}/tile/level/{level}/tx/{tile_x}/ty/{tile_y}:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/level/{level}/ti/{tile_index}:
+    parameters:
+      - $ref: '#/components/parameters/filepath'
+      - $ref: '#/components/parameters/level'
+      - $ref: '#/components/parameters/tile_index'
+      - $ref: '#/components/parameters/channels'
+      - $ref: '#/components/parameters/z_slices'
+      - $ref: '#/components/parameters/timepoints'
+      - $ref: '#/components/parameters/etag'
     get:
+      summary: Get a tile from a plane by level
+      description: |
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
       tags:
         - Tiles
-      description: |
-        Get a 8-bit tile at given tier level and tile coordinates, optimized for visualisation, with all image channels.
-        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/level'
-        - $ref: '#/components/parameters/tile_x'
-        - $ref: '#/components/parameters/tile_y'
-        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/c_reduction'
+        - $ref: '#/components/parameters/z_reduction'
+        - $ref: '#/components/parameters/t_reduction'
+        - $ref: '#/components/parameters/min_intensities'
+        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/colormaps'
+        - $ref: '#/components/parameters/filters'
+        - $ref: '#/components/parameters/gammas'
+        - $ref: '#/components/parameters/log'
       responses:
         200:
-          description: The tile
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/png:
-              schema:
-                $ref: '#/components/schemas/tile'
-            image/webp:
-              schema:
-                $ref: '#/components/schemas/tile'
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
         400:
-          description: Bad request
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    post:
+      summary: Get a tile from a plane by level
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+
+        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+      tags:
+        - Tiles
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                c_reduction:
+                  $ref: '#/components/schemas/c-reduction'
+                z_reduction:
+                  $ref: '#/components/schemas/reduction'
+                t_reduction:
+                  $ref: '#/components/schemas/reduction'
+                min_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                max_intensities:
+                  $ref: '#/components/schemas/intensity-selection'
+                colormaps:
+                  $ref: '#/components/schemas/colormap-name-list'
+                filters:
+                  $ref: '#/components/schemas/filter-name-list'
+                gammas:
+                  $ref: '#/components/schemas/gamma-list'
+                log:
+                  $ref: '#/components/schemas/log'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+#  /file/{filepath}/tile/zoom/{zoom}/tx/{tile_x}/ty/{tile_y}:
+#    get:
+#      tags:
+#        - Tiles
+#      description: |
+#        Get a 8-bit tile at a given zoom level and tile coordinates, optimized for visualisation, with all image channels.
+#        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+#      parameters:
+#        - $ref: '#/components/parameters/filepath'
+#        - $ref: '#/components/parameters/zoom'
+#        - $ref: '#/components/parameters/tile_x'
+#        - $ref: '#/components/parameters/tile_y'
+#        - $ref: '#/components/parameters/etag'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/tile'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        400:
+#          $ref: '#/components/responses/bad-request-fp'
+#        404:
+#          $ref: '#/components/responses/not-found-fp'
+#  /file/{filepath}/tile/level/{level}/tx/{tile_x}/ty/{tile_y}:
+#    get:
+#      tags:
+#        - Tiles
+#      description: |
+#        Get a 8-bit tile at given tier level and tile coordinates, optimized for visualisation, with all image channels.
+#        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
+#      parameters:
+#        - $ref: '#/components/parameters/filepath'
+#        - $ref: '#/components/parameters/level'
+#        - $ref: '#/components/parameters/tile_x'
+#        - $ref: '#/components/parameters/tile_y'
+#        - $ref: '#/components/parameters/etag'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/tile'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        400:
+#          $ref: '#/components/responses/bad-request-fp'
+#        404:
+#          $ref: '#/components/responses/not-found-fp'
   /slice/tile:
     get:
       description: Get a tile using IMS V2.x specification.
@@ -424,7 +565,7 @@ paths:
           description: Colormap name
           schema:
             type: string
-            format: colormap
+            format: colormap-name
         - name: width
           in: query
           required: false
@@ -1113,13 +1254,13 @@ components:
       minItems: 1
       items:
         type: string
-        format: colormap
+        format: colormap-name
     filter-name-list:
       type: array
       minItems: 1
       items:
         type: string
-        format: filter
+        format: filter-name
     gamma-list:
       type: array
       minItems: 1
