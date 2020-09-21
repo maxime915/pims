@@ -434,7 +434,7 @@ paths:
                 $ref: '#/components/schemas/tile'
         400:
           description: Bad request
-  /file/{filepath}/thumbnail:
+  /file/{filepath}/thumb:
     get:
       summary: Get thumbnail for reference plane
       description: |
@@ -465,7 +465,7 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/c/{channels}/z/{z_slices}/t/{timepoints}/thumbnail:
+  /file/{filepath}/c/{channels}/z/{z_slices}/t/{timepoints}/thumb:
     get:
       summary: Get thumbnail for a plane
       description: |
