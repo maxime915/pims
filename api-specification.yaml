@@ -599,14 +599,16 @@ paths:
                   title: Format
                   properties:
                     id:
-                      type: string
-                      description: Unique format identifier
+                      $ref: '#/components/schemas/format-id'
                     name:
                       type: string
                       description: Readable format name
+                      example: 'Hamamatsu VMS'
                     remarks:
                       type: string
                       description: Readable end-user remarks about the format
+                      example: 'This format is composed of multiple files. Before upload, they have to be grouped in
+                      an archive.'
   /colormaps:
     get:
       description: List of pre-defined colormaps in PIMS
@@ -1659,6 +1661,11 @@ components:
         description:
           type: string
           description: Filter description, explaining how it works, in Markdown.
+    format-id:
+      type: string
+      format: format-id
+      example: VMS
+      description: Unique format identifier
   headers:
     If-None-Match:
       description: |
