@@ -39,8 +39,8 @@ paths:
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/min_intensities'
-        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/vis-min-intensities'
+        - $ref: '#/components/parameters/vis-max-intensities'
         - $ref: '#/components/parameters/colormaps'
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
@@ -73,9 +73,9 @@ paths:
               type: object
               properties:
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -114,8 +114,8 @@ paths:
         - $ref: '#/components/parameters/c_reduction'
         - $ref: '#/components/parameters/z_reduction'
         - $ref: '#/components/parameters/t_reduction'
-        - $ref: '#/components/parameters/min_intensities'
-        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/vis-min-intensities'
+        - $ref: '#/components/parameters/vis-max-intensities'
         - $ref: '#/components/parameters/colormaps'
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
@@ -155,9 +155,9 @@ paths:
                 t_reduction:
                   $ref: '#/components/schemas/reduction'
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -189,8 +189,8 @@ paths:
         Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/min_intensities'
-        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/vis-min-intensities'
+        - $ref: '#/components/parameters/vis-max-intensities'
         - $ref: '#/components/parameters/colormaps'
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
@@ -222,9 +222,9 @@ paths:
               type: object
               properties:
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -263,8 +263,8 @@ paths:
         - $ref: '#/components/parameters/c_reduction'
         - $ref: '#/components/parameters/z_reduction'
         - $ref: '#/components/parameters/t_reduction'
-        - $ref: '#/components/parameters/min_intensities'
-        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/vis-min-intensities'
+        - $ref: '#/components/parameters/vis-max-intensities'
         - $ref: '#/components/parameters/colormaps'
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
@@ -304,9 +304,9 @@ paths:
                 t_reduction:
                   $ref: '#/components/schemas/reduction'
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list'
+                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-name-list'
                 filters:
@@ -449,8 +449,8 @@ paths:
         - $ref: '#/components/parameters/thumb-height'
         - $ref: '#/components/parameters/thumb-zoom'
         - $ref: '#/components/parameters/thumb-level'
-        - $ref: '#/components/parameters/min_intensities'
-        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/vis-min-intensities'
+        - $ref: '#/components/parameters/vis-max-intensities'
         - $ref: '#/components/parameters/colormaps'
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
@@ -487,8 +487,8 @@ paths:
         - $ref: '#/components/parameters/thumb-height'
         - $ref: '#/components/parameters/thumb-zoom'
         - $ref: '#/components/parameters/thumb-level'
-        - $ref: '#/components/parameters/min_intensities'
-        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/vis-min-intensities'
+        - $ref: '#/components/parameters/vis-max-intensities'
         - $ref: '#/components/parameters/colormaps'
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
@@ -1161,7 +1161,7 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/reduction'
-    min_intensities:
+    vis-min-intensities:
       name: min_intensities
       in: query
       description: |
@@ -1189,8 +1189,8 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/intensity-selection-list'
-    max_intensities:
+        $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+    vis-max-intensities:
       name: max_intensities
       in: query
       description: |
@@ -1210,15 +1210,17 @@ components:
         * equals to the number of channels used to render the response in order to apply a maximum intensity per channel
 
         Enumeration supported values:
-        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
-        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_PLANE`.
-        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
-        * `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
+        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `max_intensity=255`. Otherwise, the behavior is
+        `STRETCH_IMAGE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `max_intensity=255`. Otherwise, the behavior is
+        `STRETCH_PLANE`.
+        * `STRETCH_IMAGE` - Set `max_intensity` to greatest intensity in the original image, for each channel.
+        * `STRETCH_PLANE` - Set `max_intensity` to greatest intensity in the set of planes, for each channel.
       required: false
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/intensity-selection-list'
+        $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
     colormaps:
       name: colormaps
       in: query
@@ -1386,6 +1388,10 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/intensity-selection'
+    intensity-selection-list-default-auto-image:
+      default: AUTO_IMAGE
+      allOf:
+        - $ref: '#/components/schemas/intensity-selection-list'
     colormap-name:
       type: string
       format: colormap-name
