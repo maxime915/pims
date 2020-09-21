@@ -1418,6 +1418,7 @@ components:
       minimum: 0
       maximum: 10
     gamma-list:
+      default: 1
       oneOf:
         - $ref: '#/components/schemas/gamma'
         - type: array
