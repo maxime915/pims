@@ -1290,7 +1290,7 @@ components:
       description: |
         Size of the largest side of the thumbnail. The other dimension is adjusted to preserve the aspect ratio.
 
-        **Takes precedence over `zoom`, `level`, `width` and `height`.**
+        **Ignored if other size-related parameter such as `width` or `height` is present.**
       required: false
       schema:
         $ref: '#/components/schemas/size-default-256'
@@ -1300,7 +1300,7 @@ components:
       description: |
         Width of the thumbnail. Height is adjusted to preserve the aspect ratio.
 
-        **Ignored if `size` is present. Takes precedence over `height`, `zoom` and `level`.**
+        **Takes precedence over `size`.**
       required: false
       schema:
         $ref: '#/components/schemas/size'
@@ -1310,7 +1310,7 @@ components:
       description: |
         Height of the thumbnail. Width is adjusted to preserve the aspect ratio.
 
-        **Ignored if `size` or `width` is present. Takes precedence over `zoom` and `level`.**
+        **Takes precedence over `width` and `size`.**
       required: false
       schema:
         $ref: '#/components/schemas/size'
@@ -1322,7 +1322,7 @@ components:
         Zoom 0 has the worst resolution (smallest image, top of the image pyramid).
         Maximum admissible zoom level depends on image.
 
-        **Ignored if `size` or `width` or `height` is present. Takes precedence over `level`.**
+        **Takes precedence over `height`, `width` and `size`.**
       required: false
       schema:
         type: integer
@@ -1337,7 +1337,7 @@ components:
         Level 0 has the best resolution (largest image, basis of the image pyramid).
         Maximum admissible tier level depends on image.
 
-        **Ignored if `size` or `width` or `height` or `zoom` is present.**
+        **Takes precedence over `zoom`, `height`, `width` and `size`.**
       required: false
       schema:
         type: integer
