@@ -465,6 +465,44 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/c/{channels}/z/{z_slices}/t/{timepoints}/thumbnail:
+    get:
+      summary: Get thumbnail for a plane
+      description: |
+        Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
+        multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
+        given (slice or selection), a reduction function must be provided.
+      tags:
+        - Thumbnails
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/channels'
+        - $ref: '#/components/parameters/z_slices'
+        - $ref: '#/components/parameters/timepoints'
+        - $ref: '#/components/parameters/c_reduction'
+        - $ref: '#/components/parameters/z_reduction'
+        - $ref: '#/components/parameters/t_reduction'
+        - $ref: '#/components/parameters/thumb-size'
+        - $ref: '#/components/parameters/thumb-width'
+        - $ref: '#/components/parameters/thumb-height'
+        - $ref: '#/components/parameters/thumb-zoom'
+        - $ref: '#/components/parameters/thumb-level'
+        - $ref: '#/components/parameters/min_intensities'
+        - $ref: '#/components/parameters/max_intensities'
+        - $ref: '#/components/parameters/colormaps'
+        - $ref: '#/components/parameters/filters'
+        - $ref: '#/components/parameters/gammas'
+        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          $ref: '#/components/responses/thumbnail'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /image/tile.jpg:
     get:
       description: Get a tile using IMS V1.x specification.
