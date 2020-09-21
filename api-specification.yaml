@@ -1182,9 +1182,9 @@ components:
 
         Enumeration supported values:
         * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
-        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_SLICE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_PLANE`.
         * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
-        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
+        * `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
       required: false
       style: form
       explode: false
@@ -1211,9 +1211,9 @@ components:
 
         Enumeration supported values:
         * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
-        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_SLICE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_PLANE`.
         * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
-        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
+        * `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
       required: false
       style: form
       explode: false
@@ -1374,9 +1374,9 @@ components:
         - type: string
           enum:
             - AUTO_IMAGE
-            - AUTO_SLICE
+            - AUTO_PLANE
             - STRETCH_IMAGE
-            - STRETCH_SLICE
+            - STRETCH_PLANE
         - type: integer
           format: int64
     intensity-selection-list:
