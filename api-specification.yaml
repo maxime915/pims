@@ -19,6 +19,8 @@ tags:
   - name: Metadata
     description: Metadata are data that provides information about other data, especially about files and images
       managed by PIMS.
+  - name: Associated
+    description: Associated images are related images stored in an image file.
   - name: 'Export'
     description: ''
   - name: 'Import'
@@ -464,6 +466,7 @@ paths:
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
         - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/thumb-use-precomputed'
         - $ref: '#/components/parameters/etag'
       responses:
         200:
@@ -502,6 +505,7 @@ paths:
         - $ref: '#/components/parameters/filters'
         - $ref: '#/components/parameters/gammas'
         - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/thumb-use-precomputed'
         - $ref: '#/components/parameters/etag'
       responses:
         200:
@@ -692,20 +696,7 @@ paths:
         - $ref: '#/components/parameters/etag'
       responses:
         200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/generic-image'
-            image/png:
-              schema:
-                $ref: '#/components/schemas/generic-image'
-            image/webp:
-              schema:
-                $ref: '#/components/schemas/generic-image'
+          $ref: '#/components/responses/generic-image'
         304:
           $ref: '#/components/responses/not-modified'
         404:
@@ -864,6 +855,31 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/associated:
+    get:
+      description: Get information about associated files in an image
+      tags:
+        - Metadata
+        - Associated
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/associated-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/metadata:
     get:
       description: Get readable raw metadata from an image file
@@ -884,6 +900,39 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/metadata'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/associated/{associated_key}:
+    get:
+      summary: Get an associated image
+      description: Get the associated image specified by the key, if it exists.
+      tags:
+        - Associated
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - name: associated_key
+          in: path
+          required: true
+          schema:
+            type: string
+            description: |
+              The type of associated file.
+              * `thumb` - The pre-computed thumbnail stored in image file.
+              * `label` - The image label stored in image file.
+              * `macro` - The image macro stored in image file.
+            enum:
+              - thumb
+              - label
+              - macro
+        - $ref: '#/components/parameters/thumb-size'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          $ref: '#/components/responses/generic-image'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -1394,6 +1443,13 @@ components:
         format: int64
         minimum: 0
         example: 0
+    thumb-use-precomputed:
+      name: use_precomputed
+      in: query
+      description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
+      schema:
+        type: boolean
+        default: true
   schemas:
     tile:
       type: string
@@ -1664,6 +1720,24 @@ components:
             format: double
             description: Wavelength of excitation for a particular channel.
             nullable: true
+    associated-info:
+      type: object
+      description: |
+        Associated images are metadata image stored in the original image file.
+      properties:
+        has_thumbnail:
+          type: boolean
+          description: Whether the image file has a pre-computed thumbnail or not.
+          default: false
+        has_label:
+          type: boolean
+          description: Whether the image file has a label image (generally a barcode) or not.
+          default: false
+        has_macro:
+          type: boolean
+          description: Whether the image file has a macro image (generally, in slide scanners, a low resolution picture
+            of the entire slide) or not.
+          default: false
     metadata:
       type: object
       description: |
@@ -1699,6 +1773,8 @@ components:
               $ref: '#/components/schemas/channels-info'
             instrument:
               $ref: '#/components/schemas/instrument-info'
+            associated:
+              $ref: '#/components/schemas/associated-info'
     collection-file-type-info:
       allOf:
         - $ref: '#/components/schemas/file-info'
@@ -1909,3 +1985,18 @@ components:
         image/webp:
           schema:
             $ref: '#/components/schemas/thumbnail'
+    generic-image:
+      description: Image
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+      content:
+        image/jpeg:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+        image/png:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+        image/webp:
+          schema:
+            $ref: '#/components/schemas/generic-image'
