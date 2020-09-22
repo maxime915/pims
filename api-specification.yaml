@@ -24,6 +24,7 @@ tags:
     description: ''
   - name: Server
   - name: Housekeeping
+  - name: Formats
 paths:
   /file/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
     parameters:
@@ -585,7 +586,7 @@ paths:
     get:
       description: List of supported formats by PIMS
       tags:
-        - Server
+        - Formats
       responses:
         200:
           description: OK
@@ -595,20 +596,27 @@ paths:
                 title: Formats
                 type: array
                 items:
-                  type: object
-                  title: Format
-                  properties:
-                    id:
-                      $ref: '#/components/schemas/format-id'
-                    name:
-                      type: string
-                      description: Readable format name
-                      example: 'Hamamatsu VMS'
-                    remarks:
-                      type: string
-                      description: Readable end-user remarks about the format
-                      example: 'This format is composed of multiple files. Before upload, they have to be grouped in
-                      an archive.'
+                  $ref: '#/components/schemas/format'
+  /formats/{format_id}:
+    get:
+      description: Get a supported format by PIMS
+      tags:
+        - Formats
+      parameters:
+        - name: format_id
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/format-id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/format'
+        404:
+          $ref: '#/components/responses/not-found'
   /colormaps:
     get:
       description: List of pre-defined colormaps in PIMS
@@ -913,7 +921,7 @@ paths:
                     type: string
                   ip:
                     type: string
-  /file/{filepath}/export/{format}:
+  /file/{filepath}/export/{format_id}:
     get:
       description: Export a file in a specified format.
       tags:
@@ -1052,13 +1060,13 @@ components:
         minimum: 0
       example: 0
     export-format:
-      name: format
+      name: format_id
       in: path
       description: |
         The format identifier in which the image is exported. Only a subset of formats are accepted.
       required: true
       schema:
-        type: string
+        $ref: '#/components/schemas/format-id'
     channels:
       name: channels
       in: path
@@ -1666,6 +1674,32 @@ components:
       format: format-id
       example: VMS
       description: Unique format identifier
+    format:
+      type: object
+      title: Format
+      properties:
+        id:
+          $ref: '#/components/schemas/format-id'
+        name:
+          type: string
+          description: Readable format name
+          example: 'Hamamatsu VMS'
+        remarks:
+          type: string
+          description: Readable end-user remarks about the format
+          example: This format is composed of multiple files. Before upload, they have to be grouped in
+            an archive.
+        convertible:
+          type: boolean
+          description: Whether the format can be converted into another one or not.
+        readable:
+          type: boolean
+          description: Whether the format is natively readable by PIMS or not. Non readable formats
+            should be convertible.
+        writable:
+          type: boolean
+          description: Whether PIMS can write a file in this format or not.
+          default: false
   headers:
     If-None-Match:
       description: |
