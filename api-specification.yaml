@@ -16,8 +16,9 @@ tags:
     description: ''
   - name: 'Rescaled'
     description: ''
-  - name: 'Metadata'
-    description: ''
+  - name: Metadata
+    description: Metadata are data that provides information about other data, especially about files and images
+      managed by PIMS.
   - name: 'Export'
     description: ''
   - name: 'Import'
@@ -747,7 +748,7 @@ paths:
           $ref: '#/components/responses/not-found'
   /file/{filepath}/info:
     get:
-      description: Get all information about a file.
+      description: Get all information about a file
       tags:
         - Metadata
       parameters:
@@ -762,16 +763,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  file:
-                    $ref: '#/components/schemas/file-info'
-                  image:
-                    $ref: '#/components/schemas/image-info'
-                  channels:
-                    $ref: '#/components/schemas/channels-info'
-                  instrument:
-                    $ref: '#/components/schemas/instrument-info'
+                $ref: '#/components/schemas/info'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -780,7 +772,7 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/info/file:
     get:
-      description: Get information about a file.
+      description: Get information about a file
       tags:
         - Metadata
       parameters:
@@ -826,7 +818,7 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/info/channels:
     get:
-      description: Get information about channels in an image.
+      description: Get information about channels in an image
       tags:
         - Metadata
       parameters:
@@ -850,7 +842,7 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/info/instrument:
     get:
-      description: Get information about instrument in an image.
+      description: Get information about instrument in an image
       tags:
         - Metadata
       parameters:
@@ -874,7 +866,7 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/metadata:
     get:
-      description: Get readable raw metadata from an image file.
+      description: Get readable raw metadata from an image file
       tags:
         - Metadata
       parameters:
@@ -1513,20 +1505,34 @@ components:
         Information about a file
       type: object
       properties:
+        file_type:
+          $ref: '#/components/schemas/file-type'
+        filepath:
+          type: string
+          description: The file path (filename with path, relative to the server root)
+          example: /a/b/c/thefile.png
         stem:
           type: string
           description: The file stem (filename without extension)
+          example: thefile
         extension:
           type: string
           description: The file extension
+          example: .png
         created_at:
           type: string
-          format: date
+          format: date-time
           description: The file creation date
         size:
           type: integer
           format: int64
           description: The file size, in bytes.
+        is_symbolic:
+          type: boolean
+          description: Whether the file is a symbolic link or not
+          default: false
+        roles:
+          $ref: '#/components/schemas/file-roles'
     image-info:
       description: |
         Information about an image
@@ -1583,9 +1589,9 @@ components:
             The number of channels in the image.
             Grayscale images have 1 channel. RGB images have 3 channels.
           minimum: 1
-        aquisition_date:
+        acquired_at:
           type: string
-          format: date
+          format: date-time
           description: |
             The acquisition date of the image.
           nullable: true
@@ -1673,6 +1679,64 @@ components:
           type: string
           description: The metadata value type
           default: string
+    file-type:
+      type: string
+      description: |
+        The type of the file.
+        * `SINGLE` - The file only has one image.
+        * `COLLECTION` - The file is a container and contains multiple images that need further processing.
+      enum:
+        - SINGLE
+        - COLLECTION
+    single-file-type-info:
+      allOf:
+        - $ref: '#/components/schemas/file-info'
+        - type: object
+          properties:
+            image:
+              $ref: '#/components/schemas/image-info'
+            channels:
+              $ref: '#/components/schemas/channels-info'
+            instrument:
+              $ref: '#/components/schemas/instrument-info'
+    collection-file-type-info:
+      allOf:
+        - $ref: '#/components/schemas/file-info'
+        - type: object
+          properties:
+            children:
+              description: Information about children files
+              type: array
+              items:
+                $ref: '#/components/schemas/file-info'
+    info:
+      oneOf:
+        - $ref: '#/components/schemas/single-file-type-info'
+        - $ref: '#/components/schemas/collection-file-type-info'
+      discriminator:
+        propertyName: file_type
+        mapping:
+          SINGLE: '#/components/schemas/single-file-type-info'
+          COLLECTION: '#/components/schemas/collection-file-type-info'
+    file-roles:
+      type: array
+      description: |
+        The roles of a file. The same image data can be represented in different ways, in different files, each of them
+        serving differnt purposes.
+
+        * `ORIGINAL` - This file is an original file such as received by PIMS.
+        * `METADATA` - This file contains (part of) metadata.
+        * `SPATIAL` - This file is used to retrieve regular 2D spatial regions from the image.
+        * `SPECTRAL` - This file is used to retrieve spectral data from the image.
+        * `NONE` - This file has no defined role for PIMS.
+      items:
+        type: string
+        enum:
+          - METADATA
+          - ORIGINAL
+          - SPATIAL
+          - SPECTRAL
+          - NONE
     colormap:
       type: object
       description: |
