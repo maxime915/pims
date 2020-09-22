@@ -22,9 +22,16 @@ tags:
     description: ''
   - name: 'Import'
     description: ''
+  - name: Formats
+    description: PIMS formats are image-related file formats and their methods to identify them, read and extract
+      information from the underlying files.
+  - name: Colormaps
+    description: Colormaps are functions that maps colors of an input image to the colors of a target image.
+  - name: Filters
+    description: Image filters are used to change the appareance of an image and helps at understanding the
+      source image.
   - name: Server
   - name: Housekeeping
-  - name: Formats
 paths:
   /file/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
     parameters:
@@ -78,9 +85,9 @@ paths:
                 max_intensities:
                   $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
-                  $ref: '#/components/schemas/colormap-name-list'
+                  $ref: '#/components/schemas/colormap-id-list'
                 filters:
-                  $ref: '#/components/schemas/filter-name-list'
+                  $ref: '#/components/schemas/filter-id-list'
                 gammas:
                   $ref: '#/components/schemas/gamma-list'
                 log:
@@ -160,9 +167,9 @@ paths:
                 max_intensities:
                   $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
-                  $ref: '#/components/schemas/colormap-name-list'
+                  $ref: '#/components/schemas/colormap-id-list'
                 filters:
-                  $ref: '#/components/schemas/filter-name-list'
+                  $ref: '#/components/schemas/filter-id-list'
                 gammas:
                   $ref: '#/components/schemas/gamma-list'
                 log:
@@ -227,9 +234,9 @@ paths:
                 max_intensities:
                   $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
-                  $ref: '#/components/schemas/colormap-name-list'
+                  $ref: '#/components/schemas/colormap-id-list'
                 filters:
-                  $ref: '#/components/schemas/filter-name-list'
+                  $ref: '#/components/schemas/filter-id-list'
                 gammas:
                   $ref: '#/components/schemas/gamma-list'
                 log:
@@ -309,9 +316,9 @@ paths:
                 max_intensities:
                   $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 colormaps:
-                  $ref: '#/components/schemas/colormap-name-list'
+                  $ref: '#/components/schemas/colormap-id-list'
                 filters:
-                  $ref: '#/components/schemas/filter-name-list'
+                  $ref: '#/components/schemas/filter-id-list'
                 gammas:
                   $ref: '#/components/schemas/gamma-list'
                 log:
@@ -621,7 +628,7 @@ paths:
     get:
       description: List of pre-defined colormaps in PIMS
       tags:
-        - Server
+        - Colormaps
       responses:
         200:
           description: OK
@@ -632,19 +639,39 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/colormap'
-  /colormaps/{colormap}/representation:
+  /colormaps/{colormap_id}:
+    get:
+      description: Get a pre-defined colormap in PIMS
+      tags:
+        - Colormaps
+      parameters:
+        - name: colormap_id
+          in: path
+          required: true
+          description: Colormap unique identifier
+          schema:
+            $ref: '#/components/schemas/colormap-id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/colormap'
+        404:
+          $ref: '#/components/responses/not-found'
+  /colormaps/{colormap_id}/representation:
     get:
       description: Get a graphic representation of a colormap
       tags:
-        - Server
+        - Colormaps
       parameters:
-        - name: colormap
+        - name: colormap_id
           in: path
           required: true
-          description: Colormap name
+          description: Colormap unique identifier
           schema:
-            type: string
-            format: colormap-name
+            $ref: '#/components/schemas/colormap-id'
         - name: width
           in: query
           required: false
@@ -684,9 +711,9 @@ paths:
           $ref: '#/components/responses/not-found'
   /filters:
     get:
-      description: List of pre-defined image filters in PIMS
+      description: List of available image filters in PIMS
       tags:
-        - Server
+        - Filters
       responses:
         200:
           description: OK
@@ -697,6 +724,27 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/filter'
+  /filters/{filter_id}:
+    get:
+      description: Get an image filter in PIMS
+      tags:
+        - Filters
+      parameters:
+        - name: filter_id
+          in: path
+          required: true
+          description: Filter unique identifier
+          schema:
+            $ref: '#/components/schemas/filter-id'
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/filter'
+        404:
+          $ref: '#/components/responses/not-found'
   /file/{filepath}/info:
     get:
       description: Get all information about a file.
@@ -1249,7 +1297,7 @@ components:
       style: form
       explode: true
       schema:
-        $ref: '#/components/schemas/colormap-name-list'
+        $ref: '#/components/schemas/colormap-id-list'
     filters:
       name: filters
       in: query
@@ -1266,7 +1314,7 @@ components:
       style: form
       explode: true
       schema:
-        $ref: '#/components/schemas/filter-name-list'
+        $ref: '#/components/schemas/filter-id-list'
     gammas:
       name: gammas
       in: query
@@ -1402,26 +1450,30 @@ components:
       default: AUTO_IMAGE
       allOf:
         - $ref: '#/components/schemas/intensity-selection-list'
-    colormap-name:
+    colormap-id:
       type: string
-      format: colormap-name
-    colormap-name-list:
+      format: colormap-id
+      description: A unique identifier for an image filter
+      example: JET
+    colormap-id-list:
       oneOf:
-        - $ref: '#/components/schemas/colormap-name'
+        - $ref: '#/components/schemas/colormap-id'
         - type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/colormap-name'
-    filter-name:
+            $ref: '#/components/schemas/colormap-id'
+    filter-id:
       type: string
-      format: filter-name
-    filter-name-list:
+      format: filter-id
+      description: A unique identifier for an image filter
+      example: 'OTSU'
+    filter-id-list:
       oneOf:
-        - $ref: '#/components/schemas/filter-name'
+        - $ref: '#/components/schemas/filter-id'
         - type: array
           minItems: 1
           items:
-            $ref: '#/components/schemas/filter-name'
+            $ref: '#/components/schemas/filter-id'
     gamma:
       type: number
       format: double
@@ -1626,10 +1678,12 @@ components:
       description: |
         A colormap is a function that maps colors of an input image to the colors of a target image.
       properties:
+        id:
+          $ref: '#/components/schemas/colormap-id'
         name:
           type: string
           description: |
-            A unique identifier to a pre-defined colormap.
+            A human readable name for the colormap.
         type:
           type: string
           description: |
@@ -1654,10 +1708,12 @@ components:
         An image filter is used to change the appareance of an image and helps at understanding the
         source image.
       properties:
+        id:
+          $ref: '#/components/schemas/filter-id'
         name:
           type: string
           description: |
-            A unique identifier to an image filter.
+            A human readable name for the image filter.
         type:
           type: string
           description: |
