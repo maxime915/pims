@@ -1155,7 +1155,7 @@ paths:
                     type: string
   /file/{filepath}/export/{format_id}:
     get:
-      description: Export a file in a specified format.
+      description: Export a file in anotjer format
       tags:
         - Export
       parameters:
@@ -1178,7 +1178,7 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}:
     get:
-      description: Download a file.
+      description: Download a file
       tags:
         - Export
       parameters:
