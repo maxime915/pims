@@ -21,6 +21,9 @@ tags:
       managed by PIMS.
   - name: Associated
     description: Associated images are related images stored in an image file.
+  - name: Histograms
+    description: Histograms are a representation of the tonal distribution in an image. It plots the number of pixels
+      for each intensity value.
   - name: 'Export'
     description: ''
   - name: 'Import'
@@ -939,6 +942,146 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms:
+    get:
+      tags:
+        - Histograms
+      description: Get possible histograms
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/simple-histogram'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms/full:
+    get:
+      tags:
+        - Histograms
+      summary: Get full image histogram
+      description: Get histogram for full image where all planes (C,Z,T) are merged
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/histogram-type'
+        - $ref: '#/components/parameters/histogram-bins'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/detailed-histogram'
+                  - type: object
+                    properties:
+                      hist:
+                        $ref: '#/components/schemas/histogram-values'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms/c/{channels}:
+    get:
+      tags:
+        - Histograms
+      summary: Get per-channel image histogram
+      description: Get histograms per channel where all planes (Z,T) are merged
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/histogram-type'
+        - $ref: '#/components/parameters/histogram-bins'
+        - $ref: '#/components/parameters/channels'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/detailed-histogram'
+                  - type: object
+                    properties:
+                      values:
+                        type: object
+                        properties:
+                          c:
+                            $ref: '#/components/schemas/single-channel-index'
+                          hist:
+                            $ref: '#/components/schemas/histogram-values'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
+    get:
+      tags:
+        - Histograms
+      summary: Get per-plane image histogram
+      description: Get histograms per plane
+      parameters:
+        - $ref: '#/components/parameters/filepath'
+        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/histogram-type'
+        - $ref: '#/components/parameters/histogram-bins'
+        - $ref: '#/components/parameters/channels'
+        - $ref: '#/components/parameters/z_slices'
+        - $ref: '#/components/parameters/timepoints'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/detailed-histogram'
+                  - type: object
+                    properties:
+                      values:
+                        type: object
+                        properties:
+                          c:
+                            $ref: '#/components/schemas/single-channel-index'
+                          z:
+                            $ref: '#/components/schemas/single-z-slice-index'
+                          t:
+                            $ref: '#/components/schemas/single-timepoint-index'
+                          hist:
+                            $ref: '#/components/schemas/histogram-values'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /directory/{directorypath}/usage:
     get:
       description: Directory usage on disk
@@ -1169,19 +1312,7 @@ components:
         * selection of channel indexes, separated by comma: `3,5,7`
       required: true
       schema:
-        oneOf:
-          - type: integer
-            format: int32
-            description: A single channel index
-            minimum: 0
-          - type: string
-            format: range
-            description: A range of channel indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
-            example: '2:6'
-          - type: string
-            format: selection
-            description: A selection of channel indexes, separated by comma.
-            example: '3,5,7'
+        $ref: '#/components/schemas/multiple-channel-index'
     z_slices:
       name: z_slices
       in: path
@@ -1195,19 +1326,7 @@ components:
         * selection of focal planes indexes, separated by comma: `3,5,7`
       required: true
       schema:
-        oneOf:
-          - type: integer
-            format: int32
-            description: A single focal planes index
-            minimum: 0
-          - type: string
-            format: range
-            description: A range of focal planes indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
-            example: '2:6'
-          - type: string
-            format: selection
-            description: A selection of focal planes indexes, separated by comma.
-            example: '3,5,7'
+        $ref: '#/components/schemas/multiple-z-slice-index'
     timepoints:
       name: timepoints
       in: path
@@ -1221,19 +1340,7 @@ components:
         * selection of timepoints indexes, separated by comma: `3,5,7`
       required: true
       schema:
-        oneOf:
-          - type: integer
-            format: int32
-            description: A single timepoints index
-            minimum: 0
-          - type: string
-            format: range
-            description: A range of timepoints indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
-            example: '2:6'
-          - type: string
-            format: selection
-            description: A selection of timepoints indexes, separated by comma.
-            example: '3,5,7'
+        $ref: '#/components/schemas/multiple-timepoint-index'
     c_reduction:
       name: c_reduction
       in: query
@@ -1450,7 +1557,65 @@ components:
       schema:
         type: boolean
         default: true
+    histogram-type:
+      name: type
+      in: query
+      schema:
+        $ref: '#/components/schemas/histogram-type'
+    histogram-bins:
+      name: n_bins
+      in: query
+      schema:
+        $ref: '#/components/schemas/histogram-bins'
   schemas:
+    single-channel-index:
+      type: integer
+      format: int32
+      description: A single channel index
+      minimum: 0
+    multiple-channel-index:
+      oneOf:
+        - $ref: '#/components/schemas/single-channel-index'
+        - type: string
+          format: range
+          description: A range of channel indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+          example: '2:6'
+        - type: string
+          format: selection
+          description: A selection of channel indexes, separated by comma.
+          example: '3,5,7'
+    single-z-slice-index:
+      type: integer
+      format: int32
+      description: A single focal plane index
+      minimum: 0
+    multiple-z-slice-index:
+      oneOf:
+        - $ref: '#/components/schemas/single-z-slice-index'
+        - type: string
+          format: range
+          description: A range of focal planes indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+          example: '2:6'
+        - type: string
+          format: selection
+          description: A selection of focal planes indexes, separated by comma.
+          example: '3,5,7'
+    single-timepoint-index:
+      type: integer
+      format: int32
+      description: A single timepoint index
+      minimum: 0
+    multiple-timepoint-index:
+      oneOf:
+        - $ref: '#/components/schemas/single-timepoint-index'
+        - type: string
+          format: range
+          description: A range of timepoints indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+          example: '2:6'
+        - type: string
+          format: selection
+          description: A selection of timepoints indexes, separated by comma.
+          example: '3,5,7'
     tile:
       type: string
       format: binary
@@ -1896,6 +2061,71 @@ components:
           type: boolean
           description: Whether PIMS can write a file in this format or not.
           default: false
+    histogram-type:
+      description: |
+        The type of histogram.
+
+        * `FAST` - A fastly computed histogram on a resized image with a maximum size of 1024 pixels.
+        * `COMPLETE` - A complete and accurate histogram of the true size image.
+      type: string
+      default: FAST
+      enum:
+      - FAST
+      - COMPLETE
+    histogram-bins:
+      description: The number of bins used to compute histogram.
+      type: integer
+      format: int32
+      default: 256
+      minimum: 1
+    simple-histogram:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/histogram-type'
+        pool:
+          description: |
+            The kind of pool (group) used by the histogram.
+
+            * `PER_PLANE` - 1 histogram per plane (C,Z,T)
+            * `PER_CHANNEL` - 1 histogram per channel C, all planes (Z,T) merged
+            * `PER_IMAGE` - 1 histogram per image, all planes (C,Z,T) merged
+          type: string
+          enum:
+            - PER_PLANE
+            - PER_CHANNEL
+            - PER_IMAGE
+        availability:
+          description: |
+            Whether the histogram is available or not.
+
+            * `AVAILABLE` - The histogram is directly available without any further computation.
+            * `ON_THE_FLY`- The histogram does not exist on disk but can be derived from an available one.
+            * `NO` - The histogram is not available and must be computed from scratch.
+          type: string
+          enum:
+            - AVAILABLE
+            - ON_THE_FLY
+            - NO
+    detailed-histogram:
+      allOf:
+        - $ref: '#/components/schemas/simple-histogram'
+        - type: object
+          properties:
+            n_bins:
+              $ref: '#/components/schemas/histogram-bins'
+            bin_centers:
+              type: array
+              description: The values at the center of the bins.
+              items:
+                type: number
+                format: double
+    histogram-values:
+      type: array
+      description: The values of the histogram.
+      items:
+        type: integer
+        format: int64
   headers:
     If-None-Match:
       description: |
