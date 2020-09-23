@@ -16,6 +16,8 @@ tags:
     description: ''
   - name: 'Rescaled'
     description: ''
+  - name: Annotations
+    description: Annotations are geometries that can be reprsented on an image crop in various ways.
   - name: Metadata
     description: Metadata are data that provides information about other data, especially about files and images
       managed by PIMS.
@@ -41,10 +43,10 @@ tags:
 paths:
   /file/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
     parameters:
-      - $ref: '#/components/parameters/filepath'
-      - $ref: '#/components/parameters/zoom'
-      - $ref: '#/components/parameters/tile_index'
-      - $ref: '#/components/parameters/etag'
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/path-zoom'
+      - $ref: '#/components/parameters/path-tile-index'
+      - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a tile from reference plane by zoom
       tags:
@@ -53,12 +55,12 @@ paths:
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/vis-min-intensities'
-        - $ref: '#/components/parameters/vis-max-intensities'
-        - $ref: '#/components/parameters/colormaps'
-        - $ref: '#/components/parameters/filters'
-        - $ref: '#/components/parameters/gammas'
-        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
       responses:
         200:
           $ref: '#/components/responses/tile'
@@ -109,13 +111,13 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/zoom/{zoom}/ti/{tile_index}:
     parameters:
-      - $ref: '#/components/parameters/filepath'
-      - $ref: '#/components/parameters/zoom'
-      - $ref: '#/components/parameters/tile_index'
-      - $ref: '#/components/parameters/channels'
-      - $ref: '#/components/parameters/z_slices'
-      - $ref: '#/components/parameters/timepoints'
-      - $ref: '#/components/parameters/etag'
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/path-zoom'
+      - $ref: '#/components/parameters/path-tile-index'
+      - $ref: '#/components/parameters/path-channel-selection'
+      - $ref: '#/components/parameters/path-z-slice-selection'
+      - $ref: '#/components/parameters/path-timepoint-selection'
+      - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a tile from a plane by zoom
       description: |
@@ -125,15 +127,15 @@ paths:
       tags:
         - Tiles
       parameters:
-        - $ref: '#/components/parameters/c_reduction'
-        - $ref: '#/components/parameters/z_reduction'
-        - $ref: '#/components/parameters/t_reduction'
-        - $ref: '#/components/parameters/vis-min-intensities'
-        - $ref: '#/components/parameters/vis-max-intensities'
-        - $ref: '#/components/parameters/colormaps'
-        - $ref: '#/components/parameters/filters'
-        - $ref: '#/components/parameters/gammas'
-        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/query-c-reduction'
+        - $ref: '#/components/parameters/query-z-reduction'
+        - $ref: '#/components/parameters/query-t-reduction'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
       responses:
         200:
           $ref: '#/components/responses/tile'
@@ -163,11 +165,11 @@ paths:
               type: object
               properties:
                 c_reduction:
-                  $ref: '#/components/schemas/c-reduction'
+                  $ref: '#/components/schemas/channel-reduction'
                 z_reduction:
-                  $ref: '#/components/schemas/reduction'
+                  $ref: '#/components/schemas/generic-reduction'
                 t_reduction:
-                  $ref: '#/components/schemas/reduction'
+                  $ref: '#/components/schemas/generic-reduction'
                 min_intensities:
                   $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 max_intensities:
@@ -191,10 +193,10 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/tile/level/{level}/ti/{tile_index}:
     parameters:
-      - $ref: '#/components/parameters/filepath'
-      - $ref: '#/components/parameters/level'
-      - $ref: '#/components/parameters/tile_index'
-      - $ref: '#/components/parameters/etag'
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/path-level'
+      - $ref: '#/components/parameters/path-tile-index'
+      - $ref: '#/components/parameters/header-etag'
     get:
       tags:
         - Tiles
@@ -203,12 +205,12 @@ paths:
         Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
         For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
       parameters:
-        - $ref: '#/components/parameters/vis-min-intensities'
-        - $ref: '#/components/parameters/vis-max-intensities'
-        - $ref: '#/components/parameters/colormaps'
-        - $ref: '#/components/parameters/filters'
-        - $ref: '#/components/parameters/gammas'
-        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
       responses:
         200:
           $ref: '#/components/responses/tile'
@@ -258,13 +260,13 @@ paths:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/level/{level}/ti/{tile_index}:
     parameters:
-      - $ref: '#/components/parameters/filepath'
-      - $ref: '#/components/parameters/level'
-      - $ref: '#/components/parameters/tile_index'
-      - $ref: '#/components/parameters/channels'
-      - $ref: '#/components/parameters/z_slices'
-      - $ref: '#/components/parameters/timepoints'
-      - $ref: '#/components/parameters/etag'
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/path-level'
+      - $ref: '#/components/parameters/path-tile-index'
+      - $ref: '#/components/parameters/path-channel-selection'
+      - $ref: '#/components/parameters/path-z-slice-selection'
+      - $ref: '#/components/parameters/path-timepoint-selection'
+      - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a tile from a plane by level
       description: |
@@ -274,15 +276,15 @@ paths:
       tags:
         - Tiles
       parameters:
-        - $ref: '#/components/parameters/c_reduction'
-        - $ref: '#/components/parameters/z_reduction'
-        - $ref: '#/components/parameters/t_reduction'
-        - $ref: '#/components/parameters/vis-min-intensities'
-        - $ref: '#/components/parameters/vis-max-intensities'
-        - $ref: '#/components/parameters/colormaps'
-        - $ref: '#/components/parameters/filters'
-        - $ref: '#/components/parameters/gammas'
-        - $ref: '#/components/parameters/log'
+        - $ref: '#/components/parameters/query-c-reduction'
+        - $ref: '#/components/parameters/query-z-reduction'
+        - $ref: '#/components/parameters/query-t-reduction'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
       responses:
         200:
           $ref: '#/components/responses/tile'
@@ -312,11 +314,11 @@ paths:
               type: object
               properties:
                 c_reduction:
-                  $ref: '#/components/schemas/c-reduction'
+                  $ref: '#/components/schemas/channel-reduction'
                 z_reduction:
-                  $ref: '#/components/schemas/reduction'
+                  $ref: '#/components/schemas/generic-reduction'
                 t_reduction:
-                  $ref: '#/components/schemas/reduction'
+                  $ref: '#/components/schemas/generic-reduction'
                 min_intensities:
                   $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
                 max_intensities:
@@ -382,72 +384,7 @@ paths:
 #          $ref: '#/components/responses/bad-request-fp'
 #        404:
 #          $ref: '#/components/responses/not-found-fp'
-  /slice/tile:
-    get:
-      description: Get a tile using IMS V2.x specification.
-      deprecated: true
-      tags:
-        - Tiles
-      parameters:
-        - name: 'mimeType'
-          in: query
-          description: 'Image mime type'
-          required: true
-          schema:
-            type: string
-        - name: 'fif'
-          in: query
-          description: |
-            Full file path.
-            Must be used together with `z`.
-          schema:
-            type: string
-        - name: 'z'
-          in: query
-          description: Zoom level.
-          schema:
-            type: integer
-            format: int64
-          required: true
-        - name: 'zoomify'
-          in: query
-          description: |
-            Full file path if Zoomify protocol is used.
-            Must be used together with `z`, `x`, `y` and `tileGroup`.
-          schema:
-            type: string
-        - name: tileGroup
-          in: query
-          description: |
-            Tile Group used in Zoomify protocol.
-            Must be used together with `z`, `x`, `y` and `zoomify`.
-          schema:
-            type: string
-        - name: x
-          in: query
-          description: |
-            X parameter in Zoomify protocol.
-            Must be used together with `z`, `y`, `tileGroup` and `zoomify`.
-          schema:
-            type: integer
-            format: int64
-        - name: y
-          in: query
-          description: |
-            Y parameter in Zoomify protocol.
-            Must be used together with `z`, `x`, `tileGroup` and `zoomify`.
-          schema:
-            type: integer
-            format: int64
-      responses:
-        200:
-          description: The tile
-          content:
-            image/jpeg:
-              schema:
-                $ref: '#/components/schemas/tile'
-        400:
-          description: Bad request
+
   /file/{filepath}/thumb:
     get:
       summary: Get thumbnail for reference plane
@@ -457,20 +394,20 @@ paths:
       tags:
         - Thumbnails
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/thumb-size'
-        - $ref: '#/components/parameters/thumb-width'
-        - $ref: '#/components/parameters/thumb-height'
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/query-thumb-width'
+        - $ref: '#/components/parameters/query-thumb-height'
 #        - $ref: '#/components/parameters/thumb-zoom'
 #        - $ref: '#/components/parameters/thumb-level'
-        - $ref: '#/components/parameters/vis-min-intensities'
-        - $ref: '#/components/parameters/vis-max-intensities'
-        - $ref: '#/components/parameters/colormaps'
-        - $ref: '#/components/parameters/filters'
-        - $ref: '#/components/parameters/gammas'
-        - $ref: '#/components/parameters/log'
-        - $ref: '#/components/parameters/thumb-use-precomputed'
-        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
+        - $ref: '#/components/parameters/query-thumb-use-precomputed'
+        - $ref: '#/components/parameters/header-etag'
       responses:
         200:
           $ref: '#/components/responses/thumbnail'
@@ -480,7 +417,7 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/c/{channels}/z/{z_slices}/t/{timepoints}/thumb:
+  /file/{filepath}/thumb/c/{channels}/z/{z_slices}/t/{timepoints}:
     get:
       summary: Get thumbnail for a plane
       description: |
@@ -490,26 +427,26 @@ paths:
       tags:
         - Thumbnails
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/channels'
-        - $ref: '#/components/parameters/z_slices'
-        - $ref: '#/components/parameters/timepoints'
-        - $ref: '#/components/parameters/c_reduction'
-        - $ref: '#/components/parameters/z_reduction'
-        - $ref: '#/components/parameters/t_reduction'
-        - $ref: '#/components/parameters/thumb-size'
-        - $ref: '#/components/parameters/thumb-width'
-        - $ref: '#/components/parameters/thumb-height'
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/path-channel-selection'
+        - $ref: '#/components/parameters/path-z-slice-selection'
+        - $ref: '#/components/parameters/path-timepoint-selection'
+        - $ref: '#/components/parameters/query-c-reduction'
+        - $ref: '#/components/parameters/query-z-reduction'
+        - $ref: '#/components/parameters/query-t-reduction'
+        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/query-thumb-width'
+        - $ref: '#/components/parameters/query-thumb-height'
 #        - $ref: '#/components/parameters/thumb-zoom'
 #        - $ref: '#/components/parameters/thumb-level'
-        - $ref: '#/components/parameters/vis-min-intensities'
-        - $ref: '#/components/parameters/vis-max-intensities'
-        - $ref: '#/components/parameters/colormaps'
-        - $ref: '#/components/parameters/filters'
-        - $ref: '#/components/parameters/gammas'
-        - $ref: '#/components/parameters/log'
-        - $ref: '#/components/parameters/thumb-use-precomputed'
-        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
+        - $ref: '#/components/parameters/query-thumb-use-precomputed'
+        - $ref: '#/components/parameters/header-etag'
       responses:
         200:
           $ref: '#/components/responses/thumbnail'
@@ -519,65 +456,405 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
-  /image/tile.jpg:
+
+
+
+  /file/{filepath}/info:
     get:
-      description: Get a tile using IMS V1.x specification.
-      deprecated: true
+      description: Get all information about a file
       tags:
-        - Tiles
+        - Metadata
       parameters:
-        - name: 'mimeType'
-          in: query
-          description: 'Image mime type'
-          required: true
-          schema:
-            type: string
-        - name: 'z'
-          in: query
-          description: Zoom level.
-          schema:
-            type: integer
-            format: int64
-          required: true
-        - name: 'zoomify'
-          in: query
-          description: |
-            Full file path if Zoomify protocol is used.
-          required: true
-          schema:
-            type: string
-        - name: tileGroup
-          in: query
-          description: |
-            Tile Group used in Zoomify protocol.
-          schema:
-            type: string
-          required: true
-        - name: x
-          in: query
-          description: |
-            X parameter in Zoomify protocol.
-          schema:
-            type: integer
-            format: int64
-          required: true
-        - name: y
-          in: query
-          description: |
-            Y parameter in Zoomify protocol.
-          required: true
-          schema:
-            type: integer
-            format: int64
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
       responses:
         200:
-          description: The tile
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
           content:
-            image/jpeg:
+            application/json:
               schema:
-                $ref: '#/components/schemas/tile'
+                $ref: '#/components/schemas/info'
+        304:
+          $ref: '#/components/responses/not-modified'
         400:
-          description: Bad
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/file:
+    get:
+      description: Get information about a file
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/file-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/image:
+    get:
+      description: Get information about an image.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/image-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/channels:
+    get:
+      description: Get information about channels in an image
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/channels-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/instrument:
+    get:
+      description: Get information about instrument in an image
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/instrument-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/info/associated:
+    get:
+      description: Get information about associated files in an image
+      tags:
+        - Metadata
+        - Associated
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/associated-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/metadata:
+    get:
+      description: Get readable raw metadata from an image file
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/metadata'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/associated/{associated_key}:
+    get:
+      summary: Get an associated image
+      description: Get the associated image specified by the key, if it exists.
+      tags:
+        - Associated
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - name: associated_key
+          in: path
+          required: true
+          schema:
+            type: string
+            description: |
+              The type of associated file.
+              * `thumb` - The pre-computed thumbnail stored in image file.
+              * `label` - The image label stored in image file.
+              * `macro` - The image macro stored in image file.
+            enum:
+              - thumb
+              - label
+              - macro
+        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          $ref: '#/components/responses/generic-image'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms:
+    get:
+      tags:
+        - Histograms
+      description: Get possible histograms
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/simple-histogram'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms/full:
+    get:
+      tags:
+        - Histograms
+      summary: Get full image histogram
+      description: Get histogram for full image where all planes (C,Z,T) are merged
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/query-histogram-type'
+        - $ref: '#/components/parameters/query-histogram-bins'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/detailed-histogram'
+                  - type: object
+                    properties:
+                      hist:
+                        $ref: '#/components/schemas/histogram-values'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms/c/{channels}:
+    get:
+      tags:
+        - Histograms
+      summary: Get per-channel image histogram
+      description: Get histograms per channel where all planes (Z,T) are merged
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/query-histogram-type'
+        - $ref: '#/components/parameters/query-histogram-bins'
+        - $ref: '#/components/parameters/path-channel-selection'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/detailed-histogram'
+                  - type: object
+                    properties:
+                      values:
+                        type: object
+                        properties:
+                          c:
+                            $ref: '#/components/schemas/single-channel-index'
+                          hist:
+                            $ref: '#/components/schemas/histogram-values'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
+    get:
+      tags:
+        - Histograms
+      summary: Get per-plane image histogram
+      description: Get histograms per plane
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/query-histogram-type'
+        - $ref: '#/components/parameters/query-histogram-bins'
+        - $ref: '#/components/parameters/path-channel-selection'
+        - $ref: '#/components/parameters/path-z-slice-selection'
+        - $ref: '#/components/parameters/path-timepoint-selection'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/detailed-histogram'
+                  - type: object
+                    properties:
+                      values:
+                        type: object
+                        properties:
+                          c:
+                            $ref: '#/components/schemas/single-channel-index'
+                          z:
+                            $ref: '#/components/schemas/single-z-slice-index'
+                          t:
+                            $ref: '#/components/schemas/single-timepoint-index'
+                          hist:
+                            $ref: '#/components/schemas/histogram-values'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/export/{format_id}:
+    get:
+      description: Export a file in another format
+      tags:
+        - Export
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/query-export-format'
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Disposition:
+              $ref: '#/components/headers/Content-Disposition'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}:
+    get:
+      description: Download a file
+      tags:
+        - Export
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+      responses:
+        200:
+          description: OK
+          headers:
+            Content-Disposition:
+              $ref: '#/components/headers/Content-Disposition'
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    delete:
+      description: Delete a file and its children
+      tags:
+        - Housekeeping
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+      responses:
+        204:
+          description: OK - No content
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /info:
     get:
       description: Status of PIMS
@@ -597,6 +874,48 @@ paths:
                   api_version:
                     type: string
                     description: PIMS API specification version
+  /directory/{directorypath}/usage:
+    get:
+      description: Directory usage on disk
+      tags:
+        - Housekeeping
+      parameters:
+        - name: directorypath
+          required: true
+          in: path
+          schema:
+            type: string
+          description: The path of the directory
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  n_children:
+                    type: integer
+                    format: int32
+                    description: Number of file children in the directory (recursively)
+                  used_size:
+                    type: integer
+                    format: int64
+                    description: Size of the directory, in bytes.
+                  available_size:
+                    type: integer
+                    format: int64
+                    description: Available size on disk for the directory, in bytes.
+                  total_size:
+                    type: integer
+                    format: int64
+                    description: Directory's disk size, in bytes.
+                  used_size_percentage:
+                    type: number
+                    format: double
+                    description: Percentage of used space regarding total size
+                    minimum: 0
+                    maximum: 100
   /formats:
     get:
       description: List of supported formats by PIMS
@@ -696,7 +1015,7 @@ paths:
             type: integer
             format: int32
             default: 32
-        - $ref: '#/components/parameters/etag'
+        - $ref: '#/components/parameters/header-etag'
       responses:
         200:
           $ref: '#/components/responses/generic-image'
@@ -740,390 +1059,131 @@ paths:
                 $ref: '#/components/schemas/filter'
         404:
           $ref: '#/components/responses/not-found'
-  /file/{filepath}/info:
+  /slice/tile:
     get:
-      description: Get all information about a file
+      description: Get a tile using IMS V2.x specification.
+      deprecated: true
       tags:
-        - Metadata
+        - Tiles
       parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/info/file:
-    get:
-      description: Get information about a file
-      tags:
-        - Metadata
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/file-info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/info/image:
-    get:
-      description: Get information about an image.
-      tags:
-        - Metadata
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/image-info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/info/channels:
-    get:
-      description: Get information about channels in an image
-      tags:
-        - Metadata
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/channels-info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/info/instrument:
-    get:
-      description: Get information about instrument in an image
-      tags:
-        - Metadata
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/instrument-info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/info/associated:
-    get:
-      description: Get information about associated files in an image
-      tags:
-        - Metadata
-        - Associated
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/associated-info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/metadata:
-    get:
-      description: Get readable raw metadata from an image file
-      tags:
-        - Metadata
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/metadata'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/associated/{associated_key}:
-    get:
-      summary: Get an associated image
-      description: Get the associated image specified by the key, if it exists.
-      tags:
-        - Associated
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - name: associated_key
-          in: path
+        - name: 'mimeType'
+          in: query
+          description: 'Image mime type'
           required: true
           schema:
             type: string
-            description: |
-              The type of associated file.
-              * `thumb` - The pre-computed thumbnail stored in image file.
-              * `label` - The image label stored in image file.
-              * `macro` - The image macro stored in image file.
-            enum:
-              - thumb
-              - label
-              - macro
-        - $ref: '#/components/parameters/thumb-size'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          $ref: '#/components/responses/generic-image'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/histograms:
-    get:
-      tags:
-        - Histograms
-      description: Get possible histograms
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/simple-histogram'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/histograms/full:
-    get:
-      tags:
-        - Histograms
-      summary: Get full image histogram
-      description: Get histogram for full image where all planes (C,Z,T) are merged
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-        - $ref: '#/components/parameters/histogram-type'
-        - $ref: '#/components/parameters/histogram-bins'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/detailed-histogram'
-                  - type: object
-                    properties:
-                      hist:
-                        $ref: '#/components/schemas/histogram-values'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/histograms/c/{channels}:
-    get:
-      tags:
-        - Histograms
-      summary: Get per-channel image histogram
-      description: Get histograms per channel where all planes (Z,T) are merged
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-        - $ref: '#/components/parameters/histogram-type'
-        - $ref: '#/components/parameters/histogram-bins'
-        - $ref: '#/components/parameters/channels'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/detailed-histogram'
-                  - type: object
-                    properties:
-                      values:
-                        type: object
-                        properties:
-                          c:
-                            $ref: '#/components/schemas/single-channel-index'
-                          hist:
-                            $ref: '#/components/schemas/histogram-values'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
-    get:
-      tags:
-        - Histograms
-      summary: Get per-plane image histogram
-      description: Get histograms per plane
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/etag'
-        - $ref: '#/components/parameters/histogram-type'
-        - $ref: '#/components/parameters/histogram-bins'
-        - $ref: '#/components/parameters/channels'
-        - $ref: '#/components/parameters/z_slices'
-        - $ref: '#/components/parameters/timepoints'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/detailed-histogram'
-                  - type: object
-                    properties:
-                      values:
-                        type: object
-                        properties:
-                          c:
-                            $ref: '#/components/schemas/single-channel-index'
-                          z:
-                            $ref: '#/components/schemas/single-z-slice-index'
-                          t:
-                            $ref: '#/components/schemas/single-timepoint-index'
-                          hist:
-                            $ref: '#/components/schemas/histogram-values'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /directory/{directorypath}/usage:
-    get:
-      description: Directory usage on disk
-      tags:
-        - Housekeeping
-      parameters:
-        - name: directorypath
-          required: true
-          in: path
+        - name: 'fif'
+          in: query
+          description: |
+            Full file path.
+            Must be used together with `z`.
           schema:
             type: string
-          description: The path of the directory
+        - name: 'z'
+          in: query
+          description: Zoom level.
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: 'zoomify'
+          in: query
+          description: |
+            Full file path if Zoomify protocol is used.
+            Must be used together with `z`, `x`, `y` and `tileGroup`.
+          schema:
+            type: string
+        - name: tileGroup
+          in: query
+          description: |
+            Tile Group used in Zoomify protocol.
+            Must be used together with `z`, `x`, `y` and `zoomify`.
+          schema:
+            type: string
+        - name: x
+          in: query
+          description: |
+            X parameter in Zoomify protocol.
+            Must be used together with `z`, `y`, `tileGroup` and `zoomify`.
+          schema:
+            type: integer
+            format: int64
+        - name: y
+          in: query
+          description: |
+            Y parameter in Zoomify protocol.
+            Must be used together with `z`, `x`, `tileGroup` and `zoomify`.
+          schema:
+            type: integer
+            format: int64
       responses:
         200:
-          description: OK
+          description: The tile
           content:
-            application/json:
+            image/jpeg:
               schema:
-                type: object
-                properties:
-                  n_children:
-                    type: integer
-                    format: int32
-                    description: Number of file children in the directory (recursively)
-                  used_size:
-                    type: integer
-                    format: int64
-                    description: Size of the directory, in bytes.
-                  available_size:
-                    type: integer
-                    format: int64
-                    description: Available size on disk for the directory, in bytes.
-                  total_size:
-                    type: integer
-                    format: int64
-                    description: Directory's disk size, in bytes.
-                  used_size_percentage:
-                    type: number
-                    format: double
-                    description: Percentage of used space regarding total size
-                    minimum: 0
-                    maximum: 100
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad request
+  /image/tile.jpg:
+    get:
+      description: Get a tile using IMS V1.x specification.
+      deprecated: true
+      tags:
+        - Tiles
+      parameters:
+        - name: 'mimeType'
+          in: query
+          description: 'Image mime type'
+          required: true
+          schema:
+            type: string
+        - name: 'z'
+          in: query
+          description: Zoom level.
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: 'zoomify'
+          in: query
+          description: |
+            Full file path if Zoomify protocol is used.
+          required: true
+          schema:
+            type: string
+        - name: tileGroup
+          in: query
+          description: |
+            Tile Group used in Zoomify protocol.
+          schema:
+            type: string
+          required: true
+        - name: x
+          in: query
+          description: |
+            X parameter in Zoomify protocol.
+          schema:
+            type: integer
+            format: int64
+          required: true
+        - name: y
+          in: query
+          description: |
+            Y parameter in Zoomify protocol.
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        200:
+          description: The tile
+          content:
+            image/jpeg:
+              schema:
+                $ref: '#/components/schemas/tile'
+        400:
+          description: Bad request
   /storage/size.json:
     get:
       tags:
@@ -1153,64 +1213,9 @@ paths:
                     type: string
                   ip:
                     type: string
-  /file/{filepath}/export/{format_id}:
-    get:
-      description: Export a file in anotjer format
-      tags:
-        - Export
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-        - $ref: '#/components/parameters/export-format'
-      responses:
-        200:
-          description: OK
-          headers:
-            Content-Disposition:
-              $ref: '#/components/headers/Content-Disposition'
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}:
-    get:
-      description: Download a file
-      tags:
-        - Export
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-      responses:
-        200:
-          description: OK
-          headers:
-            Content-Disposition:
-              $ref: '#/components/headers/Content-Disposition'
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-        404:
-          $ref: '#/components/responses/not-found-fp'
-    delete:
-      description: Delete a file and its children
-      tags:
-        - Housekeeping
-      parameters:
-        - $ref: '#/components/parameters/filepath'
-      responses:
-        204:
-          description: OK - No content
-        404:
-          $ref: '#/components/responses/not-found-fp'
-
 components:
   parameters:
-    etag:
+    header-etag:
       name: ETag
       in: header
       description: |
@@ -1223,15 +1228,15 @@ components:
       required: false
       schema:
         type: string
-    filepath:
-      name: 'filepath'
+    path-filepath:
+      name: filepath
       in: path
-      description: 'The file path, relative to server base path.'
+      description: The file path, relative to server base path.
       required: true
       schema:
         type: string
       example: '123/my-file.ext'
-    zoom:
+    path-zoom:
       name: zoom
       in: path
       description: |
@@ -1240,11 +1245,18 @@ components:
         Maximum admissible zoom level depends on image.
       required: true
       schema:
-        type: integer
-        format: int64
-        minimum: 0
-      example: 0
-    tile_index:
+        $ref: '#/components/schemas/zoom-like'
+    path-level:
+      name: level
+      in: path
+      description: |
+        The tier level.
+        Level 0 has the best resolution (largest image, basis of the image pyramid).
+        Maximum admissible tier level depends on image.
+      required: true
+      schema:
+        $ref: '#/components/schemas/zoom-like'
+    path-tile-index:
       name: tile_index
       in: path
       description: |
@@ -1258,7 +1270,7 @@ components:
         type: integer
         format: int64
         minimum: 0
-    tile_x:
+    path-tile-x:
       name: tile_x
       in: path
       description: |
@@ -1268,7 +1280,7 @@ components:
         type: integer
         format: int64
         minimum: 0
-    tile_y:
+    path-tile-y:
       name: tile_y
       in: path
       description: |
@@ -1278,28 +1290,7 @@ components:
         type: integer
         format: int64
         minimum: 0
-    level:
-      name: level
-      in: path
-      description: |
-        The tier level.
-        Level 0 has the best resolution (largest image, basis of the image pyramid).
-        Maximum admissible tier level depends on image.
-      required: true
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-      example: 0
-    export-format:
-      name: format_id
-      in: path
-      description: |
-        The format identifier in which the image is exported. Only a subset of formats are accepted.
-      required: true
-      schema:
-        $ref: '#/components/schemas/format-id'
-    channels:
+    path-channel-selection:
       name: channels
       in: path
       description: |
@@ -1313,7 +1304,7 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/multiple-channel-index'
-    z_slices:
+    path-z-slice-selection:
       name: z_slices
       in: path
       description: |
@@ -1327,7 +1318,7 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/multiple-z-slice-index'
-    timepoints:
+    path-timepoint-selection:
       name: timepoints
       in: path
       description: |
@@ -1341,15 +1332,15 @@ components:
       required: true
       schema:
         $ref: '#/components/schemas/multiple-timepoint-index'
-    c_reduction:
+    query-c-reduction:
       name: c_reduction
       in: query
       description: |
         Reduction function used to merge selected channels.
       required: false
       schema:
-        $ref: '#/components/schemas/c-reduction'
-    z_reduction:
+        $ref: '#/components/schemas/channel-reduction'
+    query-z-reduction:
       name: z_reduction
       in: query
       description: |
@@ -1357,8 +1348,8 @@ components:
         **Must be provided if `z_slices` is not a single focal plane index.**
       required: false
       schema:
-        $ref: '#/components/schemas/reduction'
-    t_reduction:
+        $ref: '#/components/schemas/generic-reduction'
+    query-t-reduction:
       name: t_reduction
       in: query
       description: |
@@ -1366,8 +1357,8 @@ components:
         **Must be provided if `timepoints` is not a single timepoint index.**
       required: false
       schema:
-        $ref: '#/components/schemas/reduction'
-    vis-min-intensities:
+        $ref: '#/components/schemas/generic-reduction'
+    query-min-intensities-visualisation:
       name: min_intensities
       in: query
       description: |
@@ -1396,7 +1387,7 @@ components:
       explode: false
       schema:
         $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
-    vis-max-intensities:
+    query-max-intensities-visualisation:
       name: max_intensities
       in: query
       description: |
@@ -1427,7 +1418,7 @@ components:
       explode: false
       schema:
         $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
-    colormaps:
+    query-colormaps:
       name: colormaps
       in: query
       description: |
@@ -1446,7 +1437,7 @@ components:
       explode: true
       schema:
         $ref: '#/components/schemas/colormap-id-list'
-    filters:
+    query-filters:
       name: filters
       in: query
       description: |
@@ -1463,7 +1454,7 @@ components:
       explode: true
       schema:
         $ref: '#/components/schemas/filter-id-list'
-    gammas:
+    query-gammas:
       name: gammas
       in: query
       description: |
@@ -1482,7 +1473,7 @@ components:
       explode: false
       schema:
         $ref: '#/components/schemas/gamma-list'
-    log:
+    query-log:
       name: log
       in: query
       description: |
@@ -1490,7 +1481,7 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/log'
-    thumb-size:
+    query-thumb-size:
       name: size
       in: query
       description: |
@@ -1500,7 +1491,7 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/size-default-256'
-    thumb-width:
+    query-thumb-width:
       name: width
       in: query
       description: |
@@ -1510,7 +1501,7 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/size'
-    thumb-height:
+    query-thumb-height:
       name: height
       in: query
       description: |
@@ -1520,7 +1511,7 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/size'
-    thumb-zoom:
+    query-thumb-zoom:
       name: zoom
       in: query
       description: |
@@ -1531,11 +1522,8 @@ components:
         **Takes precedence over `height`, `width` and `size`.**
       required: false
       schema:
-        type: integer
-        format: int64
-        minimum: 0
-        example: 0
-    thumb-level:
+        $ref: '#/components/schemas/zoom-like'
+    query-thumb-level:
       name: level
       in: query
       description: |
@@ -1546,28 +1534,34 @@ components:
         **Takes precedence over `zoom`, `height`, `width` and `size`.**
       required: false
       schema:
-        type: integer
-        format: int64
-        minimum: 0
-        example: 0
-    thumb-use-precomputed:
+        $ref: '#/components/schemas/zoom-like'
+    query-thumb-use-precomputed:
       name: use_precomputed
       in: query
       description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
       schema:
         type: boolean
         default: true
-    histogram-type:
+    query-histogram-type:
       name: type
       in: query
       schema:
         $ref: '#/components/schemas/histogram-type'
-    histogram-bins:
+    query-histogram-bins:
       name: n_bins
       in: query
       schema:
         $ref: '#/components/schemas/histogram-bins'
+    query-export-format:
+      name: format_id
+      in: path
+      description: |
+        The format identifier in which the image is exported. Only a subset of formats are accepted.
+      required: true
+      schema:
+        $ref: '#/components/schemas/format-id'
   schemas:
+    # Indexes
     single-channel-index:
       type: integer
       format: int32
@@ -1616,19 +1610,9 @@ components:
           format: selection
           description: A selection of timepoints indexes, separated by comma.
           example: '3,5,7'
-    tile:
-      type: string
-      format: binary
-      example: (binary)
-    thumbnail:
-      type: string
-      format: binary
-      example: (binary)
-    generic-image:
-      type: string
-      format: binary
-      example: (binary)
-    c-reduction:
+
+    # Dimensionality reduction
+    channel-reduction:
       type: string
       enum:
         - ADD
@@ -1636,12 +1620,14 @@ components:
         - AVG
         - MAX
       default: ADD
-    reduction:
+    generic-reduction:
       type: string
       enum:
         - MIN
         - AVG
         - MAX
+
+    # Intensities
     intensity-selection:
       oneOf:
         - type: string
@@ -1663,6 +1649,8 @@ components:
       default: AUTO_IMAGE
       allOf:
         - $ref: '#/components/schemas/intensity-selection-list'
+
+    # Colormap
     colormap-id:
       type: string
       format: colormap-id
@@ -1675,6 +1663,36 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/colormap-id'
+    colormap:
+      type: object
+      description: |
+        A colormap is a function that maps colors of an input image to the colors of a target image.
+      properties:
+        id:
+          $ref: '#/components/schemas/colormap-id'
+        name:
+          type: string
+          description: |
+            A human readable name for the colormap.
+        type:
+          type: string
+          description: |
+            * `SEQUENTIAL` - change in lightness and often saturation of color incrementally, often using a single hue;
+            should be used for representing information that has ordering.
+            * `DIVERGING` - change in lightness and possibly saturation of two different colors that meet in the middle
+            at an unsaturated color; should be used when the image has a critical middle value.
+            * `QUALITATIVE` - often are miscellaneous colors; should be used to represent information which does
+            not have ordering or relationships
+          enum:
+            - SEQUENTIAL
+            - DIVERGING
+            - QUALITATIVE
+        n_colors:
+          type: integer
+          format: int32
+          description: The number of defined colors in the colormap.
+
+    # Filters
     filter-id:
       type: string
       format: filter-id
@@ -1687,6 +1705,31 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/filter-id'
+    filter:
+      type: object
+      description: |
+        An image filter is used to change the appareance of an image and helps at understanding the
+        source image.
+      properties:
+        id:
+          $ref: '#/components/schemas/filter-id'
+        name:
+          type: string
+          description: |
+            A human readable name for the image filter.
+        type:
+          type: string
+          description: |
+            * `LOCAL` - The image filter uses the neighborhood of every pixels.
+            * `GLOBAL` - The image filter uses histogram-derived techniques.
+          enum:
+            - LOCAL
+            - GLOBAL
+        description:
+          type: string
+          description: Filter description, explaining how it works, in Markdown.
+
+    # Gamma
     gamma:
       type: number
       format: double
@@ -1703,6 +1746,55 @@ components:
     log:
       type: boolean
       default: false
+
+    # Formats
+    format-id:
+      type: string
+      format: format-id
+      example: VMS
+      description: Unique format identifier
+    format:
+      type: object
+      title: Format
+      properties:
+        id:
+          $ref: '#/components/schemas/format-id'
+        name:
+          type: string
+          description: Readable format name
+          example: 'Hamamatsu VMS'
+        remarks:
+          type: string
+          description: Readable end-user remarks about the format
+          example: This format is composed of multiple files. Before upload, they have to be grouped in
+            an archive.
+        convertible:
+          type: boolean
+          description: Whether the format can be converted into another one or not.
+        readable:
+          type: boolean
+          description: Whether the format is natively readable by PIMS or not. Non readable formats
+            should be convertible.
+        writable:
+          type: boolean
+          description: Whether PIMS can write a file in this format or not.
+          default: false
+
+    # Outputs
+    tile:
+      type: string
+      format: binary
+      example: (binary)
+    thumbnail:
+      type: string
+      format: binary
+      example: (binary)
+    generic-image:
+      type: string
+      format: binary
+      example: (binary)
+
+    # Output sizes
     size:
       example: 256
       oneOf:
@@ -1721,6 +1813,41 @@ components:
       default: 256
       allOf:
         - $ref: '#/components/schemas/size'
+    zoom-like:
+      type: integer
+      format: int64
+      minimum: 0
+      example: 0
+
+    # Files, metadata
+    file-roles:
+      type: array
+      description: |
+        The roles of a file. The same image data can be represented in different ways, in different files, each of them
+        serving differnt purposes.
+
+        * `ORIGINAL` - This file is an original file such as received by PIMS.
+        * `METADATA` - This file contains (part of) metadata.
+        * `SPATIAL` - This file is used to retrieve regular 2D spatial regions from the image.
+        * `SPECTRAL` - This file is used to retrieve spectral data from the image.
+        * `NONE` - This file has no defined role for PIMS.
+      items:
+        type: string
+        enum:
+          - METADATA
+          - ORIGINAL
+          - SPATIAL
+          - SPECTRAL
+          - NONE
+    file-type:
+      type: string
+      description: |
+        The type of the file.
+        * `SINGLE` - The file only has one image.
+        * `COLLECTION` - The file is a container and contains multiple images that need further processing.
+      enum:
+        - SINGLE
+        - COLLECTION
     file-info:
       description: |
         Information about a file
@@ -1903,30 +2030,6 @@ components:
           description: Whether the image file has a macro image (generally, in slide scanners, a low resolution picture
             of the entire slide) or not.
           default: false
-    metadata:
-      type: object
-      description: |
-        A metadata is a key-value pair stored in an image file.
-      properties:
-        key:
-          type: string
-          description: The metadata key
-        value:
-          type: string
-          description: The metadata value
-        type:
-          type: string
-          description: The metadata value type
-          default: string
-    file-type:
-      type: string
-      description: |
-        The type of the file.
-        * `SINGLE` - The file only has one image.
-        * `COLLECTION` - The file is a container and contains multiple images that need further processing.
-      enum:
-        - SINGLE
-        - COLLECTION
     single-file-type-info:
       allOf:
         - $ref: '#/components/schemas/file-info'
@@ -1959,108 +2062,23 @@ components:
         mapping:
           SINGLE: '#/components/schemas/single-file-type-info'
           COLLECTION: '#/components/schemas/collection-file-type-info'
-    file-roles:
-      type: array
-      description: |
-        The roles of a file. The same image data can be represented in different ways, in different files, each of them
-        serving differnt purposes.
-
-        * `ORIGINAL` - This file is an original file such as received by PIMS.
-        * `METADATA` - This file contains (part of) metadata.
-        * `SPATIAL` - This file is used to retrieve regular 2D spatial regions from the image.
-        * `SPECTRAL` - This file is used to retrieve spectral data from the image.
-        * `NONE` - This file has no defined role for PIMS.
-      items:
-        type: string
-        enum:
-          - METADATA
-          - ORIGINAL
-          - SPATIAL
-          - SPECTRAL
-          - NONE
-    colormap:
+    metadata:
       type: object
       description: |
-        A colormap is a function that maps colors of an input image to the colors of a target image.
+        A metadata is a key-value pair stored in an image file.
       properties:
-        id:
-          $ref: '#/components/schemas/colormap-id'
-        name:
+        key:
           type: string
-          description: |
-            A human readable name for the colormap.
+          description: The metadata key
+        value:
+          type: string
+          description: The metadata value
         type:
           type: string
-          description: |
-            * `SEQUENTIAL` - change in lightness and often saturation of color incrementally, often using a single hue;
-            should be used for representing information that has ordering.
-            * `DIVERGING` - change in lightness and possibly saturation of two different colors that meet in the middle
-            at an unsaturated color; should be used when the image has a critical middle value.
-            * `QUALITATIVE` - often are miscellaneous colors; should be used to represent information which does
-            not have ordering or relationships
-          enum:
-            - SEQUENTIAL
-            - DIVERGING
-            - QUALITATIVE
-        n_colors:
-          type: integer
-          format: int32
-          description: The number of defined colors in the colormap.
+          description: The metadata value type
+          default: string
 
-    filter:
-      type: object
-      description: |
-        An image filter is used to change the appareance of an image and helps at understanding the
-        source image.
-      properties:
-        id:
-          $ref: '#/components/schemas/filter-id'
-        name:
-          type: string
-          description: |
-            A human readable name for the image filter.
-        type:
-          type: string
-          description: |
-            * `LOCAL` - The image filter uses the neighborhood of every pixels.
-            * `GLOBAL` - The image filter uses histogram-derived techniques.
-          enum:
-            - LOCAL
-            - GLOBAL
-        description:
-          type: string
-          description: Filter description, explaining how it works, in Markdown.
-    format-id:
-      type: string
-      format: format-id
-      example: VMS
-      description: Unique format identifier
-    format:
-      type: object
-      title: Format
-      properties:
-        id:
-          $ref: '#/components/schemas/format-id'
-        name:
-          type: string
-          description: Readable format name
-          example: 'Hamamatsu VMS'
-        remarks:
-          type: string
-          description: Readable end-user remarks about the format
-          example: This format is composed of multiple files. Before upload, they have to be grouped in
-            an archive.
-        convertible:
-          type: boolean
-          description: Whether the format can be converted into another one or not.
-        readable:
-          type: boolean
-          description: Whether the format is natively readable by PIMS or not. Non readable formats
-            should be convertible.
-        writable:
-          type: boolean
-          description: Whether PIMS can write a file in this format or not.
-          default: false
+    # Histograms
     histogram-type:
       description: |
         The type of histogram.
@@ -2078,6 +2096,12 @@ components:
       format: int32
       default: 256
       minimum: 1
+    histogram-values:
+      type: array
+      description: The values of the histogram.
+      items:
+        type: integer
+        format: int64
     simple-histogram:
       type: object
       properties:
@@ -2120,12 +2144,6 @@ components:
               items:
                 type: number
                 format: double
-    histogram-values:
-      type: array
-      description: The values of the histogram.
-      items:
-        type: integer
-        format: int64
   headers:
     If-None-Match:
       description: |
