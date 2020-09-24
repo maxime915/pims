@@ -539,6 +539,40 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/annotation/drawing:
+    post:
+      tags:
+        - Annotations
+      summary: Get an annotation drawing
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get an annotation crop (with apparent background) where annotations are drawn according to their respective
+        `fill_color`, `stroke_width` and `stroke_color`.
+        The crop is similar to an image window but where the transparency of the background can be adjusted.
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/drawing-by-size'
+                - $ref: '#/components/schemas/drawing-by-width'
+                - $ref: '#/components/schemas/drawing-by-height'
+                - $ref: '#/components/schemas/drawing-by-zoom'
+                - $ref: '#/components/schemas/drawing-by-level'
+      responses:
+        200:
+          $ref: '#/components/responses/annotation-crop'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/info:
     get:
       description: Get all information about a file
@@ -2089,7 +2123,57 @@ components:
       allOf:
         - $ref: '#/components/schemas/mask-by-level'
         - $ref: '#/components/schemas/annotation-crop-basis'
-
+    annotation-drawing-basis:
+      allOf:
+        - type: object
+          properties:
+            try_square:
+              type: boolean
+              default: false
+              description: Try to adapt other parameters (such as input spatial region, context factor, target size)
+                to return a square image.
+            point_envelope_size:
+              type: integer
+              default: 100
+              description: |
+                Point geometries have no area. An envelope must be specified to extract some image data.
+                This envelope is a square of size given by this parameter, whose the center is the given point.
+                This parameter has no effect on non-point geometries.
+            point_cross:
+              type: string
+              enum:
+                - CROSS
+                - CROSSHAIR
+                - CIRCLE
+              default: CROSS
+              description: |
+                Point geometries have no area. Possible representation as a drawing are:
+                * `CROSS` - A regular cross, hiding point location
+                * `CROSSHAIR` - A cross but whose intersection is removed to show the point locatio
+                * `CIRCLE` - A circle around the point location
+                This parameter has no effect on non-point geometries.
+        - $ref: '#/components/schemas/image-manipulation'
+    drawing-by-size:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-size'
+        - $ref: '#/components/schemas/annotation-drawing-basis'
+    drawing-by-width:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-width'
+        - $ref: '#/components/schemas/annotation-drawing-basis'
+    drawing-by-height:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-height'
+        - $ref: '#/components/schemas/annotation-drawing-basis'
+    drawing-by-zoom:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-zoom'
+        - $ref: '#/components/schemas/annotation-drawing-basis'
+    drawing-by-level:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-level'
+        - $ref: '#/components/schemas/annotation-drawing-basis'
+          
     # Files, metadata
     file-roles:
       type: array
