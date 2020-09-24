@@ -114,9 +114,9 @@ paths:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/path-zoom'
       - $ref: '#/components/parameters/path-tile-index'
-      - $ref: '#/components/parameters/path-channel-selection'
-      - $ref: '#/components/parameters/path-z-slice-selection'
-      - $ref: '#/components/parameters/path-timepoint-selection'
+      - $ref: '#/components/parameters/query-channel-selection'
+      - $ref: '#/components/parameters/query-z-slice-selection'
+      - $ref: '#/components/parameters/query-timepoint-selection'
       - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a tile from a plane by zoom
@@ -263,9 +263,9 @@ paths:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/path-level'
       - $ref: '#/components/parameters/path-tile-index'
-      - $ref: '#/components/parameters/path-channel-selection'
-      - $ref: '#/components/parameters/path-z-slice-selection'
-      - $ref: '#/components/parameters/path-timepoint-selection'
+      - $ref: '#/components/parameters/query-channel-selection'
+      - $ref: '#/components/parameters/query-z-slice-selection'
+      - $ref: '#/components/parameters/query-timepoint-selection'
       - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a tile from a plane by level
@@ -387,58 +387,27 @@ paths:
 
   /file/{filepath}/thumb:
     get:
-      summary: Get thumbnail for reference plane
+      summary: Get a thumbnail
       description: |
-        Get a 8-bit thumbnail optimized for visualisation, with all image channels. For multidimensional images, the
+        Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
+        multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
+        given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
         thumbnail is extracted from the median focal plane at first timepoint.
       tags:
         - Thumbnails
       parameters:
         - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/query-thumb-size'
-        - $ref: '#/components/parameters/query-thumb-width'
-        - $ref: '#/components/parameters/query-thumb-height'
-#        - $ref: '#/components/parameters/thumb-zoom'
-#        - $ref: '#/components/parameters/thumb-level'
-        - $ref: '#/components/parameters/query-min-intensities-visualisation'
-        - $ref: '#/components/parameters/query-max-intensities-visualisation'
-        - $ref: '#/components/parameters/query-colormaps'
-        - $ref: '#/components/parameters/query-filters'
-        - $ref: '#/components/parameters/query-gammas'
-        - $ref: '#/components/parameters/query-log'
-        - $ref: '#/components/parameters/query-thumb-use-precomputed'
-        - $ref: '#/components/parameters/header-etag'
-      responses:
-        200:
-          $ref: '#/components/responses/thumbnail'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/thumb/c/{channels}/z/{z_slices}/t/{timepoints}:
-    get:
-      summary: Get thumbnail for a plane
-      description: |
-        Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
-        multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
-        given (slice or selection), a reduction function must be provided.
-      tags:
-        - Thumbnails
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/path-channel-selection'
-        - $ref: '#/components/parameters/path-z-slice-selection'
-        - $ref: '#/components/parameters/path-timepoint-selection'
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
         - $ref: '#/components/parameters/query-c-reduction'
         - $ref: '#/components/parameters/query-z-reduction'
         - $ref: '#/components/parameters/query-t-reduction'
         - $ref: '#/components/parameters/query-thumb-size'
         - $ref: '#/components/parameters/query-thumb-width'
         - $ref: '#/components/parameters/query-thumb-height'
-#        - $ref: '#/components/parameters/thumb-zoom'
-#        - $ref: '#/components/parameters/thumb-level'
         - $ref: '#/components/parameters/query-min-intensities-visualisation'
         - $ref: '#/components/parameters/query-max-intensities-visualisation'
         - $ref: '#/components/parameters/query-colormaps'
@@ -847,7 +816,7 @@ paths:
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/query-histogram-type'
         - $ref: '#/components/parameters/query-histogram-bins'
-        - $ref: '#/components/parameters/path-channel-selection'
+        - $ref: '#/components/parameters/query-channel-selection'
       responses:
         200:
           description: OK
@@ -885,9 +854,9 @@ paths:
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/query-histogram-type'
         - $ref: '#/components/parameters/query-histogram-bins'
-        - $ref: '#/components/parameters/path-channel-selection'
-        - $ref: '#/components/parameters/path-z-slice-selection'
-        - $ref: '#/components/parameters/path-timepoint-selection'
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
       responses:
         200:
           description: OK
@@ -1407,43 +1376,28 @@ components:
         type: integer
         format: int64
         minimum: 0
-    path-channel-selection:
+    query-channel-selection:
       name: channels
-      in: path
-      description: |
-        Image channels used to render the response. **The reduction operation to merge the channels
-        can be set in `c_reduction` parameter.**
-        
-        This parameter is interpreted as a set such that duplicates are ignored.
-      required: true
+      in: query
+      required: false
+      style: form
+      explode: false
       schema:
         $ref: '#/components/schemas/multiple-channel-indexes'
-    path-z-slice-selection:
+    query-z-slice-selection:
       name: z_slices
-      in: path
-      description: |
-        Image focal planes used to create the response. **The reduction operation to merge the focal planes
-        can be set in `z_reduction` parameter.**
-
-        Supported representations are:
-        * single focal plane index: `0`
-        * range of focal planes indexes, separated by semi-colon: `2:6`
-        * selection of focal planes indexes, separated by comma: `3,5,7`
-      required: true
+      in: query
+      required: false
+      style: form
+      explode: false
       schema:
         $ref: '#/components/schemas/multiple-z-slice-indexes'
-    path-timepoint-selection:
+    query-timepoint-selection:
       name: timepoints
-      in: path
-      description: |
-        Image timepoints used to create the response. **The reduction operation to merge the timepoints
-        can be set in `t_reduction` parameter.**
-
-        Supported representations are:
-        * single timepoint index: `0`
-        * range of timepoints indexes, separated by semi-colon: `2:6`
-        * selection of timepoints indexes, separated by comma: `3,5,7`
-      required: true
+      in: query
+      required: false
+      style: form
+      explode: false
       schema:
         $ref: '#/components/schemas/multiple-timepoint-indexes'
     query-c-reduction:
@@ -1485,7 +1439,7 @@ components:
       in: query
       required: false
       style: form
-      explode: true
+      explode: false
       schema:
         $ref: '#/components/schemas/colormap-id-list'
     query-filters:
@@ -1493,7 +1447,7 @@ components:
       in: query
       required: false
       style: form
-      explode: true
+      explode: false
       schema:
         $ref: '#/components/schemas/filter-id-list'
     query-gammas:
@@ -1603,7 +1557,10 @@ components:
       example: '2:6'
     multiple-channel-indexes:
       description: |
-        A set of channel indexes. As a set, duplicates are ignored.
+        Image channels used to render the response. The reduction operation to merge the channels
+        can be set in `c_reduction` parameter.
+        This parameter is interpreted as a set such that duplicates are ignored.
+
         **By default**, all channels are considered.
       oneOf:
         - $ref: '#/components/schemas/single-channel-index'
@@ -1625,7 +1582,10 @@ components:
       example: '2:6'
     multiple-z-slice-indexes:
       description: |
-        A set of focal plane indexes. As a set, duplicates are ignored.
+        Image focal planes used to render the response. The reduction operation to merge the focal planes
+        can be set in `z_reduction` parameter.
+        This parameter is interpreted as a set such that duplicates are ignored.
+
         **By default**, the median focal plane is considered.
       oneOf:
         - $ref: '#/components/schemas/single-z-slice-index'
@@ -1647,7 +1607,10 @@ components:
       example: '2:6'
     multiple-timepoint-indexes:
       description: |
-        A set of timepoint indexes. As a set, duplicates are ignored.
+        Image timepoints used to render the response. The reduction operation to merge the timepoints
+        can be set in `t_reduction` parameter.
+        This parameter is interpreted as a set such that duplicates are ignored.
+
         **By default**, the first timepoint considered.
       oneOf:
         - $ref: '#/components/schemas/single-timepoint-index'
@@ -1693,12 +1656,14 @@ components:
     z-slice-reduction:
       description: |
         Reduction function used to combinate selected focal planes.
+
         **This parameter is required if `z_slices` is not a single focal plane index.**
       allOf:
         - $ref: '#/components/schemas/generic-reduction'
     timepoint-reduction:
       description: |
         Reduction function used to combinate selected timepoints.
+
         **This parameter is required if `timepoints` is not a single timepoint index.**
       allOf:
         - $ref: '#/components/schemas/generic-reduction'
@@ -2566,7 +2531,7 @@ components:
         limit can be set by the server or by the format itself.
       required: false
       style: simple
-      explode: false
+      explode: true
       schema:
         type: object
         properties:
