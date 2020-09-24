@@ -89,9 +89,9 @@ paths:
               type: object
               properties:
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-id-list'
                 filters:
@@ -171,9 +171,9 @@ paths:
                 t_reduction:
                   $ref: '#/components/schemas/generic-reduction'
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-id-list'
                 filters:
@@ -238,9 +238,9 @@ paths:
               type: object
               properties:
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-id-list'
                 filters:
@@ -320,9 +320,9 @@ paths:
                 t_reduction:
                   $ref: '#/components/schemas/generic-reduction'
                 min_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
                 max_intensities:
-                  $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
                 colormaps:
                   $ref: '#/components/schemas/colormap-id-list'
                 filters:
@@ -456,9 +456,89 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/annotation/mask:
+    post:
+      tags:
+        - Annotations
+      summary: Get an annotation mask
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
 
+        The mask is a generated image where geometries are filled by their respective `fill_color`. The background is
+        black.
 
+        The input spatial region is given by the rectangular envelope of all geometries multiplied by an optional
+        context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
+        `level`).
 
+        By default, a binary mask with white foreground is returned as the default fill color is white for every
+        annotation.
+
+        Annotation `stroke_width` and `stroke_color` are ignored.
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/mask-by-size'
+                - $ref: '#/components/schemas/mask-by-width'
+                - $ref: '#/components/schemas/mask-by-height'
+                - $ref: '#/components/schemas/mask-by-zoom'
+                - $ref: '#/components/schemas/mask-by-level'
+      responses:
+        200:
+          $ref: '#/components/responses/annotation-crop'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/annotation/crop:
+    post:
+      tags:
+        - Annotations
+      summary: Get an annotation crop
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        The crop is similar to an image window but where the transparency of the background can be adjusted.
+
+        The input spatial region is given by the rectangular envelope of all geometries multiplied by an optional
+        context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
+        `level`).
+
+        By default, the background transparency is set to 100 which is also known as *alpha mask*. When the
+        background transparency is set to 0, foreground and background cannot be distinguished.
+
+        Annotation `fill_color`, `stroke_width` and `stroke_color` are ignored.
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/crop-by-size'
+                - $ref: '#/components/schemas/crop-by-width'
+                - $ref: '#/components/schemas/crop-by-height'
+                - $ref: '#/components/schemas/crop-by-zoom'
+                - $ref: '#/components/schemas/crop-by-level'
+      responses:
+        200:
+          $ref: '#/components/responses/annotation-crop'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/info:
     get:
       description: Get all information about a file
@@ -1361,77 +1441,22 @@ components:
     query-min-intensities-visualisation:
       name: min_intensities
       in: query
-      description: |
-        Intensity in the original image used as minimum intensity (black) to create the response.
-        As a consequence, original image intensities lower than this value will be black in the response.
-
-        Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.
-
-        Minimum intensity is closely related to the concepts of brightness and contrast.
-        Brightness is the visual perception of reflected light while contrast is the separation
-        of the lightest and darkest parts of an image. A minimum intensity increase leads to:
-        * a brightness decrease, which refers to an image's decreased luminance.
-        * a contrast increase, which darken shadows and lighten highlights.
-
-        Expected format is an array of size:
-        * 1 to apply the minimum intensity to all channels
-        * equals to the number of channels used to render the response in order to apply a minimum intensity per channel
-
-        Enumeration supported values:
-        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
-        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_PLANE`.
-        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
-        * `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
       required: false
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+        $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
     query-max-intensities-visualisation:
       name: max_intensities
       in: query
-      description: |
-        Intensity in the original image used as maximum intensity (white) to create the response.
-        As a consequence, original image intensities greater than this value will be white in the response.
-
-        Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.
-
-        Maximum intensity is closely related to the concepts of brightness and contrast.
-        Brightness is the visual perception of reflected light while contrast is the separation
-        of the lightest and darkest parts of an image. A maximum intensity increase leads to:
-        * a brightness decrease, which refers to an image's decreased luminance.
-        * a contrast decrease, which darken highlights and lighten shadows.
-
-        Expected format is an array of size:
-        * 1 to apply the maximum intensity to all channels
-        * equals to the number of channels used to render the response in order to apply a maximum intensity per channel
-
-        Enumeration supported values:
-        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `max_intensity=255`. Otherwise, the behavior is
-        `STRETCH_IMAGE`.
-        * `AUTO_PLANE` - If image pixel type uses 8 bits, `max_intensity=255`. Otherwise, the behavior is
-        `STRETCH_PLANE`.
-        * `STRETCH_IMAGE` - Set `max_intensity` to greatest intensity in the original image, for each channel.
-        * `STRETCH_PLANE` - Set `max_intensity` to greatest intensity in the set of planes, for each channel.
       required: false
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/intensity-selection-list-default-auto-image'
+        $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
     query-colormaps:
       name: colormaps
       in: query
-      description: |
-        A colormap is a function that maps the colors of the original image (source) to the colors of the response
-        image. The usage of colormap produces a false-color representation of the original image and helps at
-        understanding the image.
-
-        Valid colormap names can be found with the endpoint `/colormaps`. The colormap can be reversed by prepending the
-        colormap name with `!`.
-
-        Expected format is an array of size:
-        * 1 to apply the same colormap to all channels
-        * equals to the number of channels used to render the response, in order to apply a colormap per channel.
       required: false
       style: form
       explode: true
@@ -1440,15 +1465,6 @@ components:
     query-filters:
       name: filters
       in: query
-      description: |
-        An image filter is used to change the appareance of an image and helps at understanding the
-        source image.
-
-        Valid filter names can be found with the endpoint `/filters`.
-
-        Expected format is an array of size:
-        * 1 to apply the same filter to all channels
-        * equals to the number of channels used to render the response, in order to apply a filter per channel.
       required: false
       style: form
       explode: true
@@ -1457,17 +1473,6 @@ components:
     query-gammas:
       name: gammas
       in: query
-      description: |
-        Gamma performs a non-linear histogram adjustment. Pixel intensities in the original image are raised
-        to the power of the gamma value.
-
-        If `gamma < 1`, faint objects become more intense while bright objects do not.
-
-        If `gamma > 1`, medium-intensity objects become fainter while bright objects do not.
-
-        Expected format is an array of size:
-        * 1 to apply the gamma correction to all channels
-        * equals to the number of channels used to render the response in order to applay the gamma correction per channel.
       required: false
       style: form
       explode: false
@@ -1476,8 +1481,6 @@ components:
     query-log:
       name: log
       in: query
-      description: |
-        Apply a logarithmic scale on image data to ease observation of high dynamic range images such as 16-bit images.
       required: false
       schema:
         $ref: '#/components/schemas/log'
@@ -1490,7 +1493,7 @@ components:
         **Ignored if other size-related parameter such as `width` or `height` is present.**
       required: false
       schema:
-        $ref: '#/components/schemas/size-default-256'
+        $ref: '#/components/schemas/scale-at-size-default-256'
     query-thumb-width:
       name: width
       in: query
@@ -1500,7 +1503,7 @@ components:
         **Takes precedence over `size`.**
       required: false
       schema:
-        $ref: '#/components/schemas/size'
+        $ref: '#/components/schemas/scale-at-size'
     query-thumb-height:
       name: height
       in: query
@@ -1510,7 +1513,7 @@ components:
         **Takes precedence over `width` and `size`.**
       required: false
       schema:
-        $ref: '#/components/schemas/size'
+        $ref: '#/components/schemas/scale-at-size'
     query-thumb-zoom:
       name: zoom
       in: query
@@ -1638,17 +1641,72 @@ components:
             - STRETCH_PLANE
         - type: integer
           format: int64
-    intensity-selection-list:
+    min-intensity-selection-list:
+      description: |
+        Intensity in the original image used as minimum intensity (black) to create the response.
+        As a consequence, original image intensities lower than this value will be black in the response.
+
+        Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.
+
+        Minimum intensity is closely related to the concepts of brightness and contrast.
+        Brightness is the visual perception of reflected light while contrast is the separation
+        of the lightest and darkest parts of an image. A minimum intensity increase leads to:
+        * a brightness decrease, which refers to an image's decreased luminance.
+        * a contrast increase, which darken shadows and lighten highlights.
+
+        Enumeration supported values:
+        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_IMAGE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. Otherwise, the behavior is `STRETCH_PLANE`.
+        * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
+        * `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
       oneOf:
         - $ref: '#/components/schemas/intensity-selection'
         - type: array
+          description: |
+            Expected format is an array of size:
+            * 1 to apply the minimum intensity to all channels
+            * equals to the number of channels used to render the response in order to apply a minimum intensity per channel
           minItems: 1
           items:
             $ref: '#/components/schemas/intensity-selection'
-    intensity-selection-list-default-auto-image:
+    min-intensity-selection-list-default-auto-image:
       default: AUTO_IMAGE
       allOf:
-        - $ref: '#/components/schemas/intensity-selection-list'
+        - $ref: '#/components/schemas/min-intensity-selection-list'
+    max-intensity-selection-list:
+      description: |
+        Intensity in the original image used as maximum intensity (white) to create the response.
+        As a consequence, original image intensities greater than this value will be white in the response.
+
+        Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.
+
+        Maximum intensity is closely related to the concepts of brightness and contrast.
+        Brightness is the visual perception of reflected light while contrast is the separation
+        of the lightest and darkest parts of an image. A maximum intensity increase leads to:
+        * a brightness decrease, which refers to an image's decreased luminance.
+        * a contrast decrease, which darken highlights and lighten shadows.
+
+        Enumeration supported values:
+        * `AUTO_IMAGE` - If image pixel type uses 8 bits, `max_intensity=255`. Otherwise, the behavior is
+        `STRETCH_IMAGE`.
+        * `AUTO_PLANE` - If image pixel type uses 8 bits, `max_intensity=255`. Otherwise, the behavior is
+        `STRETCH_PLANE`.
+        * `STRETCH_IMAGE` - Set `max_intensity` to greatest intensity in the original image, for each channel.
+        * `STRETCH_PLANE` - Set `max_intensity` to greatest intensity in the set of planes, for each channel.
+      oneOf:
+        - $ref: '#/components/schemas/intensity-selection'
+        - type: array
+          description: |
+            Expected format is an array of size:
+            * 1 to apply the maximum intensity to all channels
+            * equals to the number of channels used to render the response in order to apply a maximum intensity per channel
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/intensity-selection'
+    max-intensity-selection-list-default-auto-image:
+      default: AUTO_IMAGE
+      allOf:
+        - $ref: '#/components/schemas/max-intensity-selection-list'
 
     # Colormap
     colormap-id:
@@ -1657,9 +1715,20 @@ components:
       description: A unique identifier for an image filter
       example: JET
     colormap-id-list:
+      description: |
+        A colormap is a function that maps the colors of the original image (source) to the colors of the response
+        image. The usage of colormap produces a false-color representation of the original image and helps at
+        understanding the image.
+
+        Valid colormap names can be found with the endpoint `/colormaps`. The colormap can be reversed by prepending the
+        colormap name with `!`.
       oneOf:
         - $ref: '#/components/schemas/colormap-id'
         - type: array
+          description: |
+            Expected format is an array of size:
+            * 1 to apply the same colormap to all channels
+            * equals to the number of channels used to render the response, in order to apply a colormap per channel.
           minItems: 1
           items:
             $ref: '#/components/schemas/colormap-id'
@@ -1699,9 +1768,18 @@ components:
       description: A unique identifier for an image filter
       example: 'OTSU'
     filter-id-list:
+      description: |
+        An image filter is used to change the appareance of an image and helps at understanding the
+        source image.
+
+        Valid filter names can be found with the endpoint `/filters`.
       oneOf:
         - $ref: '#/components/schemas/filter-id'
         - type: array
+          description: |
+            Expected format is an array of size:
+            * 1 to apply the same filter to all channels
+            * equals to the number of channels used to render the response, in order to apply a filter per channel.
           minItems: 1
           items:
             $ref: '#/components/schemas/filter-id'
@@ -1736,16 +1814,47 @@ components:
       minimum: 0
       maximum: 10
     gamma-list:
+      description: |
+        Gamma performs a non-linear histogram adjustment. Pixel intensities in the original image are raised
+        to the power of the gamma value.
+
+        If `gamma < 1`, faint objects become more intense while bright objects do not.
+
+        If `gamma > 1`, medium-intensity objects become fainter while bright objects do not.
       default: 1
       oneOf:
         - $ref: '#/components/schemas/gamma'
         - type: array
+          description: |
+            Expected format is an array of size:
+            * 1 to apply the gamma correction to all channels
+            * equals to the number of channels used to render the response in order to apply the gamma correction
+            per channel.
           minItems: 1
           items:
             $ref: '#/components/schemas/gamma'
     log:
       type: boolean
       default: false
+      description: |
+        Apply a logarithmic scale on image data to ease observation of high dynamic range images such as 16-bit images.
+
+    # Image manipulation object
+    image-manipulation:
+      type: object
+      properties:
+        min_intensities:
+          $ref: '#/components/schemas/min-intensity-selection-list'
+        max_intensities:
+          $ref: '#/components/schemas/max-intensity-selection-list'
+        colormaps:
+          $ref: '#/components/schemas/colormap-id-list'
+        filters:
+          $ref: '#/components/schemas/filter-id-list'
+        gammas:
+          $ref: '#/components/schemas/gamma-list'
+        log:
+          $ref: '#/components/schemas/log'
 
     # Formats
     format-id:
@@ -1795,7 +1904,8 @@ components:
       example: (binary)
 
     # Output sizes
-    size:
+    scale-at-size:
+      description: Size of the largest side of the target. The other dimension is adjusted to preserve the aspect ratio.
       example: 256
       oneOf:
         - type: integer
@@ -1809,15 +1919,176 @@ components:
           minimum: 0.0
           maximum: 1.0
           example: 0.5
-    size-default-256:
+    scale-at-size-default-256:
       default: 256
       allOf:
-        - $ref: '#/components/schemas/size'
+        - $ref: '#/components/schemas/scale-at-size'
+    scale-at-width:
+      description: Width of the target. Height is adjusted to preserve the aspect ratio.
+      allOf:
+        - $ref: '#/components/schemas/scale-at-size'
+    scale-at-height:
+      description: Height of the target. Width is adjusted to preserve the aspect ratio.
+      allOf:
+        - $ref: '#/components/schemas/scale-at-size'
+    scale-at-zoom:
+      description: |
+        The zoom level to consider for the target.
+        Zoom 0 has the worst resolution (smallest image, top of the image pyramid).
+        Maximum admissible zoom level depends on image.
+      allOf:
+        - $ref: '#/components/schemas/zoom-like'
+    scale-at-level:
+      description: |
+        The tier level to consider for the target.
+        Level 0 has the best resolution (largest image, basis of the image pyramid).
+        Maximum admissible tier level depends on image.     
+      allOf:
+        - $ref: '#/components/schemas/zoom-like'
     zoom-like:
       type: integer
       format: int64
       minimum: 0
       example: 0
+
+    # Annotation crops
+    context-factor:
+      type: number
+      format: double
+      default: 1
+      description: |
+        The context factor is the number by which the spatial region is given by the rectangular envelope of all
+        geometries is multiplied.
+    geometry:
+      type: string
+      format: wkt
+      description: A geometry described in Well-known text (WKT)
+      example: 'POINT(10 10)'
+    geometries:
+      type: array
+      items:
+        $ref: '#/components/schemas/geometry'
+    annotation:
+      required:
+        - geometry
+      properties:
+        geometry:
+          $ref: '#/components/schemas/geometry'
+        fill_color:
+          $ref: '#/components/schemas/fill-color'
+        stroke_color:
+          $ref: '#/components/schemas/stroke-color'
+        stroke_width:
+          $ref: '#/components/schemas/stroke-width'
+    fill-color:
+      type: string
+      format: color
+      description: A color to fill the annotation
+      example: '#FF00FF'
+      default: '#FFFFFF'
+    stroke-color:
+      type: string
+      format: color
+      description: A color for the annotation stroke
+    stroke-width:
+      type: integer
+      format: int32
+      minimum: 0
+      maximum: 10
+      description: A width for the annotation stroke
+      default: 0
+    annotation-mask-basis:
+      type: object
+      required:
+        - annotations
+      properties:
+        annotations:
+          oneOf:
+            - $ref: '#/components/schemas/annotation'
+            - type: array
+              items:
+                $ref: '#/components/schemas/annotation'
+        context_factor:
+          $ref: '#/components/schemas/context-factor'
+    mask-by-size:
+      allOf:
+        - $ref: '#/components/schemas/annotation-mask-basis'
+        - type: object
+          required:
+            - size
+          properties:
+            size:
+              $ref: '#/components/schemas/scale-at-size'
+    mask-by-width:
+      allOf:
+        - $ref: '#/components/schemas/annotation-mask-basis'
+        - type: object
+          required:
+            - width
+          properties:
+            width:
+              $ref: '#/components/schemas/scale-at-width'
+    mask-by-height:
+      allOf:
+        - $ref: '#/components/schemas/annotation-mask-basis'
+        - type: object
+          required:
+            - height
+          properties:
+            height:
+              $ref: '#/components/schemas/scale-at-height'
+    mask-by-zoom:
+      allOf:
+        - $ref: '#/components/schemas/annotation-mask-basis'
+        - type: object
+          required:
+            - zoom
+          properties:
+            zoom:
+              $ref: '#/components/schemas/scale-at-zoom'
+    mask-by-level:
+      allOf:
+        - $ref: '#/components/schemas/annotation-mask-basis'
+        - type: object
+          required:
+            - level
+          properties:
+            level:
+              $ref: '#/components/schemas/scale-at-level'
+    annotation-crop-basis:
+      allOf:
+        - type: object
+          properties:
+            background_transparency:
+              type: integer
+              format: int32
+              minimum: 0
+              maximum: 100
+              default: 100
+              description: |
+                The background transparency. 100 means transparent background. When transparency is used, the target
+                content type must be an image format supporting transparency.
+        - $ref: '#/components/schemas/image-manipulation'
+    crop-by-size:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-size'
+        - $ref: '#/components/schemas/annotation-crop-basis'
+    crop-by-width:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-width'
+        - $ref: '#/components/schemas/annotation-crop-basis'
+    crop-by-height:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-height'
+        - $ref: '#/components/schemas/annotation-crop-basis'
+    crop-by-zoom:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-zoom'
+        - $ref: '#/components/schemas/annotation-crop-basis'
+    crop-by-level:
+      allOf:
+        - $ref: '#/components/schemas/mask-by-level'
+        - $ref: '#/components/schemas/annotation-crop-basis'
 
     # Files, metadata
     file-roles:
@@ -2238,6 +2509,23 @@ components:
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+      content:
+        image/jpeg:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+        image/png:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+        image/webp:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+    annotation-crop:
+      description: Annotation crop
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+        X-Image-Size-Limit:
+          $ref: '#/components/headers/X-Image-Size-Limit'
       content:
         image/jpeg:
           schema:
