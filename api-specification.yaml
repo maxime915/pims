@@ -550,7 +550,10 @@ paths:
 
         Get an annotation crop (with apparent background) where annotations are drawn according to their respective
         `fill_color`, `stroke_width` and `stroke_color`.
-        The crop is similar to an image window but where the transparency of the background can be adjusted.
+
+        The input spatial region is given by the rectangular envelope of all geometries multiplied by an optional
+        context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
+        `level`).
       parameters:
         - $ref: '#/components/parameters/path-filepath'
       requestBody:
@@ -1411,13 +1414,10 @@ components:
         Image channels used to render the response. **The reduction operation to merge the channels
         can be set in `c_reduction` parameter.**
         
-        Supported representations are:
-        * single channel index: `0`
-        * range of channel indexes, separated by semi-colon: `2:6`
-        * selection of channel indexes, separated by comma: `3,5,7`
+        This parameter is interpreted as a set such that duplicates are ignored.
       required: true
       schema:
-        $ref: '#/components/schemas/multiple-channel-index'
+        $ref: '#/components/schemas/multiple-channel-indexes'
     path-z-slice-selection:
       name: z_slices
       in: path
@@ -1431,7 +1431,7 @@ components:
         * selection of focal planes indexes, separated by comma: `3,5,7`
       required: true
       schema:
-        $ref: '#/components/schemas/multiple-z-slice-index'
+        $ref: '#/components/schemas/multiple-z-slice-indexes'
     path-timepoint-selection:
       name: timepoints
       in: path
@@ -1445,33 +1445,25 @@ components:
         * selection of timepoints indexes, separated by comma: `3,5,7`
       required: true
       schema:
-        $ref: '#/components/schemas/multiple-timepoint-index'
+        $ref: '#/components/schemas/multiple-timepoint-indexes'
     query-c-reduction:
       name: c_reduction
       in: query
-      description: |
-        Reduction function used to merge selected channels.
       required: false
       schema:
         $ref: '#/components/schemas/channel-reduction'
     query-z-reduction:
       name: z_reduction
       in: query
-      description: |
-        Reduction function used to combinate selected focal planes.
-        **Must be provided if `z_slices` is not a single focal plane index.**
       required: false
       schema:
-        $ref: '#/components/schemas/generic-reduction'
+        $ref: '#/components/schemas/z-slice-reduction'
     query-t-reduction:
       name: t_reduction
       in: query
-      description: |
-        Reduction function used to combinate selected timepoints.
-        **Must be provided if `timepoints` is not a single timepoint index.**
       required: false
       schema:
-        $ref: '#/components/schemas/generic-reduction'
+        $ref: '#/components/schemas/timepoint-reduction'
     query-min-intensities-visualisation:
       name: min_intensities
       in: query
@@ -1604,52 +1596,87 @@ components:
       format: int32
       description: A single channel index
       minimum: 0
-    multiple-channel-index:
+    range-channel-indexes:
+      type: string
+      format: range
+      description: A range of channel indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+      example: '2:6'
+    multiple-channel-indexes:
+      description: |
+        A set of channel indexes. As a set, duplicates are ignored.
+        **By default**, all channels are considered.
       oneOf:
         - $ref: '#/components/schemas/single-channel-index'
-        - type: string
-          format: range
-          description: A range of channel indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
-          example: '2:6'
-        - type: string
-          format: selection
-          description: A selection of channel indexes, separated by comma.
-          example: '3,5,7'
+        - $ref: '#/components/schemas/range-channel-indexes'
+        - type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/single-channel-index'
+              - $ref: '#/components/schemas/range-channel-indexes'
     single-z-slice-index:
       type: integer
       format: int32
       description: A single focal plane index
       minimum: 0
-    multiple-z-slice-index:
+    range-z-slice-indexes:
+      type: string
+      format: range
+      description: A range of focal plane indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+      example: '2:6'
+    multiple-z-slice-indexes:
+      description: |
+        A set of focal plane indexes. As a set, duplicates are ignored.
+        **By default**, the median focal plane is considered.
       oneOf:
         - $ref: '#/components/schemas/single-z-slice-index'
-        - type: string
-          format: range
-          description: A range of focal planes indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
-          example: '2:6'
-        - type: string
-          format: selection
-          description: A selection of focal planes indexes, separated by comma.
-          example: '3,5,7'
+        - $ref: '#/components/schemas/range-z-slice-indexes'
+        - type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/single-z-slice-index'
+              - $ref: '#/components/schemas/range-z-slice-indexes'
     single-timepoint-index:
       type: integer
       format: int32
       description: A single timepoint index
       minimum: 0
-    multiple-timepoint-index:
+    range-timepoint-indexes:
+      type: string
+      format: range
+      description: A range of timepoint indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
+      example: '2:6'
+    multiple-timepoint-indexes:
+      description: |
+        A set of timepoint indexes. As a set, duplicates are ignored.
+        **By default**, the first timepoint considered.
       oneOf:
         - $ref: '#/components/schemas/single-timepoint-index'
-        - type: string
-          format: range
-          description: A range of timepoints indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
-          example: '2:6'
-        - type: string
-          format: selection
-          description: A selection of timepoints indexes, separated by comma.
-          example: '3,5,7'
+        - $ref: '#/components/schemas/range-timepoint-indexes'
+        - type: array
+          items:
+            oneOf:
+              - $ref: '#/components/schemas/single-timepoint-index'
+              - $ref: '#/components/schemas/range-timepoint-indexes'
+    plane-selection:
+      type: object
+      properties:
+        channels:
+          $ref: '#/components/schemas/multiple-channel-indexes'
+        z_slices:
+          $ref: '#/components/schemas/multiple-z-slice-indexes'
+        timepoints:
+          $ref: '#/components/schemas/multiple-timepoint-indexes'
+        c_reduction:
+          $ref: '#/components/schemas/channel-reduction'
+        z_reduction:
+          $ref: '#/components/schemas/z-slice-reduction'
+        t_reduction:
+          $ref: '#/components/schemas/timepoint-reduction'
 
     # Dimensionality reduction
     channel-reduction:
+      description: |
+        Reduction function used to merge selected channels.
       type: string
       enum:
         - ADD
@@ -1663,6 +1690,18 @@ components:
         - MIN
         - AVG
         - MAX
+    z-slice-reduction:
+      description: |
+        Reduction function used to combinate selected focal planes.
+        **This parameter is required if `z_slices` is not a single focal plane index.**
+      allOf:
+        - $ref: '#/components/schemas/generic-reduction'
+    timepoint-reduction:
+      description: |
+        Reduction function used to combinate selected timepoints.
+        **This parameter is required if `timepoints` is not a single timepoint index.**
+      allOf:
+        - $ref: '#/components/schemas/generic-reduction'
 
     # Intensities
     intensity-selection:
@@ -2102,6 +2141,7 @@ components:
               description: |
                 The background transparency. 100 means transparent background. When transparency is used, the target
                 content type must be an image format supporting transparency.
+        - $ref: '#/components/schemas/plane-selection'
         - $ref: '#/components/schemas/image-manipulation'
     crop-by-size:
       allOf:
@@ -2152,6 +2192,7 @@ components:
                 * `CROSSHAIR` - A cross but whose intersection is removed to show the point locatio
                 * `CIRCLE` - A circle around the point location
                 This parameter has no effect on non-point geometries.
+        - $ref: '#/components/schemas/plane-selection'
         - $ref: '#/components/schemas/image-manipulation'
     drawing-by-size:
       allOf:
