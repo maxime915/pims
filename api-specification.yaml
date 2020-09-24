@@ -425,6 +425,50 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+    post:
+      summary: Get a thumbnail
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+        
+        Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
+        multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
+        given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+        thumbnail is extracted from the median focal plane at first timepoint.
+      tags:
+        - Thumbnails
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: thumb-by-size
+                  allOf:
+                    - $ref: '#/components/schemas/by-size'
+                    - $ref: '#/components/schemas/thumb-basis'
+                - title: thumb-by-width
+                  allOf:
+                    - $ref: '#/components/schemas/by-width'
+                    - $ref: '#/components/schemas/thumb-basis'
+                - title: thumb-by-height
+                  allOf:
+                    - $ref: '#/components/schemas/by-height'
+                    - $ref: '#/components/schemas/thumb-basis'
+      responses:
+        200:
+          $ref: '#/components/responses/thumbnail'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/annotation/mask:
     post:
       tags:
@@ -1521,10 +1565,8 @@ components:
     query-thumb-use-precomputed:
       name: use_precomputed
       in: query
-      description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
       schema:
-        type: boolean
-        default: true
+        $ref: '#/components/schemas/thumb-use-precomputed'
     query-histogram-type:
       name: type
       in: query
@@ -1893,6 +1935,21 @@ components:
           $ref: '#/components/schemas/gamma-list'
         log:
           $ref: '#/components/schemas/log'
+    image-manipulation-visualisation:
+      type: object
+      properties:
+        min_intensities:
+          $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
+        max_intensities:
+          $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
+        colormaps:
+          $ref: '#/components/schemas/colormap-id-list'
+        filters:
+          $ref: '#/components/schemas/filter-id-list'
+        gammas:
+          $ref: '#/components/schemas/gamma-list'
+        log:
+          $ref: '#/components/schemas/log'
 
     # Formats
     format-id:
@@ -1989,6 +2046,19 @@ components:
       minimum: 0
       example: 0
 
+    thumb-use-precomputed:
+      description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
+      type: boolean
+      default: true
+    thumb-basis:
+      allOf:
+        - $ref: '#/components/schemas/plane-selection'
+        - $ref: '#/components/schemas/image-manipulation-visualisation'
+        - type: object
+          properties:
+            use_precomputed:
+              $ref: '#/components/schemas/thumb-use-precomputed'
+
     # Annotation crops
     context-factor:
       type: number
@@ -2048,51 +2118,61 @@ components:
                 $ref: '#/components/schemas/annotation'
         context_factor:
           $ref: '#/components/schemas/context-factor'
+    by-size:
+      type: object
+      required:
+        - size
+      properties:
+        size:
+          $ref: '#/components/schemas/scale-at-size'
+    by-width:
+      type: object
+      required:
+        - width
+      properties:
+        width:
+          $ref: '#/components/schemas/scale-at-width'
+    by-height:
+      type: object
+      required:
+        - height
+      properties:
+        height:
+          $ref: '#/components/schemas/scale-at-height'
+    by-zoom:
+      type: object
+      required:
+        - zoom
+      properties:
+        zoom:
+          $ref: '#/components/schemas/scale-at-zoom'
+    by-level:
+      type: object
+      required:
+        - level
+      properties:
+        level:
+          $ref: '#/components/schemas/scale-at-level'
     mask-by-size:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - type: object
-          required:
-            - size
-          properties:
-            size:
-              $ref: '#/components/schemas/scale-at-size'
+        - $ref: '#/components/schemas/by-size'
     mask-by-width:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - type: object
-          required:
-            - width
-          properties:
-            width:
-              $ref: '#/components/schemas/scale-at-width'
+        - $ref: '#/components/schemas/by-width'
     mask-by-height:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - type: object
-          required:
-            - height
-          properties:
-            height:
-              $ref: '#/components/schemas/scale-at-height'
+        - $ref: '#/components/schemas/by-height'
     mask-by-zoom:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - type: object
-          required:
-            - zoom
-          properties:
-            zoom:
-              $ref: '#/components/schemas/scale-at-zoom'
+        - $ref: '#/components/schemas/by-zoom'
     mask-by-level:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - type: object
-          required:
-            - level
-          properties:
-            level:
-              $ref: '#/components/schemas/scale-at-level'
+        - $ref: '#/components/schemas/by-level'
     annotation-crop-basis:
       allOf:
         - type: object
