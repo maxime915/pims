@@ -48,85 +48,20 @@ paths:
       - $ref: '#/components/parameters/path-tile-index'
       - $ref: '#/components/parameters/header-etag'
     get:
-      summary: Get a tile from reference plane by zoom
-      tags:
-        - Tiles
-      description: |
-        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
-        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-      parameters:
-        - $ref: '#/components/parameters/query-min-intensities-visualisation'
-        - $ref: '#/components/parameters/query-max-intensities-visualisation'
-        - $ref: '#/components/parameters/query-colormaps'
-        - $ref: '#/components/parameters/query-filters'
-        - $ref: '#/components/parameters/query-gammas'
-        - $ref: '#/components/parameters/query-log'
-      responses:
-        200:
-          $ref: '#/components/responses/tile'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-    post:
-      summary: Get a tile from reference plane by zoom
-      tags:
-        - Tiles
-      description: |
-        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-        with body content must be used.**
-
-
-        Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with all image channels.
-        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                min_intensities:
-                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
-                max_intensities:
-                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
-                colormaps:
-                  $ref: '#/components/schemas/colormap-id-list'
-                filters:
-                  $ref: '#/components/schemas/filter-id-list'
-                gammas:
-                  $ref: '#/components/schemas/gamma-list'
-                log:
-                  $ref: '#/components/schemas/log'
-      responses:
-        200:
-          $ref: '#/components/responses/tile'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/zoom/{zoom}/ti/{tile_index}:
-    parameters:
-      - $ref: '#/components/parameters/path-filepath'
-      - $ref: '#/components/parameters/path-zoom'
-      - $ref: '#/components/parameters/path-tile-index'
-      - $ref: '#/components/parameters/query-channel-selection'
-      - $ref: '#/components/parameters/query-z-slice-selection'
-      - $ref: '#/components/parameters/query-timepoint-selection'
-      - $ref: '#/components/parameters/header-etag'
-    get:
-      summary: Get a tile from a plane by zoom
+      summary: Get a tile at zoom
       description: |
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
         planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
         planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+        tile is extracted from the median focal plane at first timepoint.
       tags:
         - Tiles
       parameters:
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
         - $ref: '#/components/parameters/query-c-reduction'
         - $ref: '#/components/parameters/query-z-reduction'
         - $ref: '#/components/parameters/query-t-reduction'
@@ -146,15 +81,17 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
     post:
-      summary: Get a tile from a plane by zoom
+      summary: Get a tile at zoom
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
         with body content must be used.**
 
-
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
         planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
         planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
       tags:
         - Tiles
       requestBody:
@@ -162,26 +99,9 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                c_reduction:
-                  $ref: '#/components/schemas/channel-reduction'
-                z_reduction:
-                  $ref: '#/components/schemas/generic-reduction'
-                t_reduction:
-                  $ref: '#/components/schemas/generic-reduction'
-                min_intensities:
-                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
-                max_intensities:
-                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
-                colormaps:
-                  $ref: '#/components/schemas/colormap-id-list'
-                filters:
-                  $ref: '#/components/schemas/filter-id-list'
-                gammas:
-                  $ref: '#/components/schemas/gamma-list'
-                log:
-                  $ref: '#/components/schemas/log'
+              allOf:
+                - $ref: '#/components/schemas/plane-selection'
+                - $ref: '#/components/schemas/image-manipulation-visualisation'
       responses:
         200:
           $ref: '#/components/responses/tile'
@@ -198,84 +118,20 @@ paths:
       - $ref: '#/components/parameters/path-tile-index'
       - $ref: '#/components/parameters/header-etag'
     get:
-      tags:
-        - Tiles
-      summary: Get a tile from reference plane by level
-      description: |
-        Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
-        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-      parameters:
-        - $ref: '#/components/parameters/query-min-intensities-visualisation'
-        - $ref: '#/components/parameters/query-max-intensities-visualisation'
-        - $ref: '#/components/parameters/query-colormaps'
-        - $ref: '#/components/parameters/query-filters'
-        - $ref: '#/components/parameters/query-gammas'
-        - $ref: '#/components/parameters/query-log'
-      responses:
-        200:
-          $ref: '#/components/responses/tile'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-    post:
-      tags:
-        - Tiles
-      summary: Get a tile from reference plane by level
-      description: |
-        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-        with body content must be used.**
-
-        Get a 8-bit tile at given tier level and tile index, optimized for visualisation, with all image channels.
-        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-      requestBody:
-        required: false
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                min_intensities:
-                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
-                max_intensities:
-                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
-                colormaps:
-                  $ref: '#/components/schemas/colormap-id-list'
-                filters:
-                  $ref: '#/components/schemas/filter-id-list'
-                gammas:
-                  $ref: '#/components/schemas/gamma-list'
-                log:
-                  $ref: '#/components/schemas/log'
-      responses:
-        200:
-          $ref: '#/components/responses/tile'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/bad-request-fp'
-        404:
-          $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/tile/c/{channels}/z/{z_slices}/t/{timepoints}/level/{level}/ti/{tile_index}:
-    parameters:
-      - $ref: '#/components/parameters/path-filepath'
-      - $ref: '#/components/parameters/path-level'
-      - $ref: '#/components/parameters/path-tile-index'
-      - $ref: '#/components/parameters/query-channel-selection'
-      - $ref: '#/components/parameters/query-z-slice-selection'
-      - $ref: '#/components/parameters/query-timepoint-selection'
-      - $ref: '#/components/parameters/header-etag'
-    get:
-      summary: Get a tile from a plane by level
+      summary: Get a tile at level
       description: |
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
         planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
         planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
       tags:
         - Tiles
       parameters:
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
         - $ref: '#/components/parameters/query-c-reduction'
         - $ref: '#/components/parameters/query-z-reduction'
         - $ref: '#/components/parameters/query-t-reduction'
@@ -295,15 +151,17 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
     post:
-      summary: Get a tile from a plane by level
+      summary: Get a tile at level
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
         with body content must be used.**
 
-
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
         planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
         planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
       tags:
         - Tiles
       requestBody:
@@ -311,26 +169,9 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                c_reduction:
-                  $ref: '#/components/schemas/channel-reduction'
-                z_reduction:
-                  $ref: '#/components/schemas/generic-reduction'
-                t_reduction:
-                  $ref: '#/components/schemas/generic-reduction'
-                min_intensities:
-                  $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
-                max_intensities:
-                  $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
-                colormaps:
-                  $ref: '#/components/schemas/colormap-id-list'
-                filters:
-                  $ref: '#/components/schemas/filter-id-list'
-                gammas:
-                  $ref: '#/components/schemas/gamma-list'
-                log:
-                  $ref: '#/components/schemas/log'
+              allOf:
+                - $ref: '#/components/schemas/plane-selection'
+                - $ref: '#/components/schemas/image-manipulation-visualisation'
       responses:
         200:
           $ref: '#/components/responses/tile'
