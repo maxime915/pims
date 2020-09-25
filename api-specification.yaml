@@ -12,9 +12,9 @@ tags:
       Tile size is always 256x256, except on borders.
   - name: 'Windows'
     description: ''
-  - name: 'Thumbnails'
+  - name: Thumbnails
     description: ''
-  - name: 'Rescaled'
+  - name: Resized
     description: ''
   - name: Annotations
     description: Annotations are geometries that can be reprsented on an image crop in various ways.
@@ -460,6 +460,107 @@ paths:
                   allOf:
                     - $ref: '#/components/schemas/by-height'
                     - $ref: '#/components/schemas/thumb-basis'
+      responses:
+        200:
+          $ref: '#/components/responses/thumbnail'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/resized:
+    get:
+      summary: Get a resized full image
+      description: |
+        Get a resized full image (thumbnail), with given channels, focal planes and timepoints. If
+        multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
+        given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+        thumbnail is extracted from the median focal plane at first timepoint.
+
+        **While `/file/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
+        such as computer vision, image processing or machine learning.**
+      tags:
+        - Resized
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
+        - $ref: '#/components/parameters/query-c-reduction'
+        - $ref: '#/components/parameters/query-z-reduction'
+        - $ref: '#/components/parameters/query-t-reduction'
+        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/query-thumb-width'
+        - $ref: '#/components/parameters/query-thumb-height'
+        - $ref: '#/components/parameters/query-thumb-zoom'
+        - $ref: '#/components/parameters/query-thumb-level'
+        - $ref: '#/components/parameters/query-min-intensities'
+        - $ref: '#/components/parameters/query-max-intensities'
+        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
+        - $ref: '#/components/parameters/query-bits'
+        - $ref: '#/components/parameters/query-colorspace'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          $ref: '#/components/responses/thumbnail'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+    post:
+      summary: Get a resized full image
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get a resized full image (thumbnail), with given channels, focal planes and timepoints. If
+        multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
+        given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+        thumbnail is extracted from the median focal plane at first timepoint.
+
+        **While `/file/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
+        such as computer vision, image processing or machine learning.**
+      tags:
+        - Resized
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: resized-by-size
+                  allOf:
+                    - $ref: '#/components/schemas/by-size'
+                    - $ref: '#/components/schemas/resized-basis'
+                - title: resized-by-width
+                  allOf:
+                    - $ref: '#/components/schemas/by-width'
+                    - $ref: '#/components/schemas/resized-basis'
+                - title: resized-by-height
+                  allOf:
+                    - $ref: '#/components/schemas/by-height'
+                    - $ref: '#/components/schemas/resized-basis'
+                - title: resized-by-zoom
+                  allOf:
+                    - $ref: '#/components/schemas/by-zoom'
+                    - $ref: '#/components/schemas/resized-basis'
+                - title: resized-by-level
+                  allOf:
+                    - $ref: '#/components/schemas/by-level'
+                    - $ref: '#/components/schemas/resized-basis'
       responses:
         200:
           $ref: '#/components/responses/thumbnail'
@@ -1478,6 +1579,22 @@ components:
       explode: false
       schema:
         $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
+    query-min-intensities:
+      name: min_intensities
+      in: query
+      required: false
+      style: form
+      explode: false
+      schema:
+        $ref: '#/components/schemas/min-intensity-selection-list'
+    query-max-intensities:
+      name: max_intensities
+      in: query
+      required: false
+      style: form
+      explode: false
+      schema:
+        $ref: '#/components/schemas/max-intensity-selection-list'
     query-colormaps:
       name: colormaps
       in: query
@@ -1508,6 +1625,18 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/log'
+    query-bits:
+      name: bits
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/bits'
+    query-colorspace:
+      name: colorspace
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/colorspace'
     query-thumb-size:
       name: size
       in: query
@@ -1919,6 +2048,33 @@ components:
       description: |
         Apply a logarithmic scale on image data to ease observation of high dynamic range images such as 16-bit images.
 
+    bits:
+      description: |
+        The target bit depth. It is a best-effort parameter as supported bit depths depend on target content type.
+        * `AUTO` - Try to set target bit depth equal to the source bit depth.
+      default: AUTO
+      oneOf:
+        - type: integer
+          format: int32
+          example: 8
+        - type: string
+          enum:
+            - AUTO
+    colorspace:
+      description: |
+        The target colorspace. It is a best-effort parameter as supported colorspaces depend on target content type.
+
+        * `GRAY` - Return the target in grayscale, using luminance if it was initially a color image.
+        * `COLOR` - Return the target in RGB colors.
+        * `AUTO` - Automatically returns the target in the best colorspace. If the source is grayscale and image
+        manipulation do not use colors, it returns the target in grayscale. Otherwise, target is in RGB colors.
+      default: AUTO
+      type: string
+      enum:
+        - GRAY
+        - COLOR
+        - AUTO
+
     # Image manipulation object
     image-manipulation:
       type: object
@@ -2058,6 +2214,16 @@ components:
           properties:
             use_precomputed:
               $ref: '#/components/schemas/thumb-use-precomputed'
+    resized-basis:
+      allOf:
+        - $ref: '#/components/schemas/plane-selection'
+        - $ref: '#/components/schemas/image-manipulation'
+        - type: object
+          properties:
+            bits:
+              $ref: '#/components/schemas/bits'
+            colorspace:
+              $ref: '#/components/schemas/colorspace'
 
     # Annotation crops
     context-factor:
