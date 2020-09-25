@@ -200,72 +200,91 @@ paths:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
       requestBody:
-        required: false
+        required: true
         content:
           application/json:
             schema:
               oneOf:
                 - title: tile-by-zoom-and-index
                   allOf:
-                    - type: object
-                      required:
-                        - zoom
-                        - ti
-                      properties:
-                        zoom:
-                          $ref: '#/components/schemas/scale-at-zoom'
-                        ti:
-                          $ref: '#/components/schemas/tile-index'
+                    - $ref: '#/components/schemas/zoom-tile-index'
                     - $ref: '#/components/schemas/plane-selection'
                     - $ref: '#/components/schemas/image-manipulation-visualisation'
                 - title: tile-by-level-and-index
                   allOf:
-                    - type: object
-                      required:
-                        - level
-                        - ti
-                      properties:
-                        level:
-                          $ref: '#/components/schemas/scale-at-level'
-                        ti:
-                          $ref: '#/components/schemas/tile-index'
+                    - $ref: '#/components/schemas/level-tile-index'
                     - $ref: '#/components/schemas/plane-selection'
                     - $ref: '#/components/schemas/image-manipulation-visualisation'
                 - title: tile-by-zoom-and-coordinates
                   allOf:
-                    - type: object
-                      required:
-                        - zoom
-                        - tx
-                        - ty
-                      properties:
-                        zoom:
-                          $ref: '#/components/schemas/scale-at-zoom'
-                        tx:
-                          $ref: '#/components/schemas/tile-x'
-                        ty:
-                          $ref: '#/components/schemas/tile-y'
+                    - $ref: '#/components/schemas/zoom-tile-coordinates'
                     - $ref: '#/components/schemas/plane-selection'
                     - $ref: '#/components/schemas/image-manipulation-visualisation'
                 - title: tile-by-level-and-coordinates
                   allOf:
-                    - type: object
-                      required:
-                        - level
-                        - tx
-                        - ty
-                      properties:
-                        level:
-                          $ref: '#/components/schemas/scale-at-level'
-                        tx:
-                          $ref: '#/components/schemas/tile-x'
-                        ty:
-                          $ref: '#/components/schemas/tile-y'
+                    - $ref: '#/components/schemas/level-tile-coordinates'
                     - $ref: '#/components/schemas/plane-selection'
                     - $ref: '#/components/schemas/image-manipulation-visualisation'
       responses:
         200:
           $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/window:
+    post:
+      summary: Get a window
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get a window (rectangular crop) extract from an image, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Windows
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: region-by-zoom-and-region
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-region'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: region-by-level-and-region
+                  allOf:
+                    - $ref: '#/components/schemas/level-region'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: region-by-zoom-and-tile-index
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-tile-index'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: region-by-level-and-tile-index
+                  allOf:
+                    - $ref: '#/components/schemas/level-tile-index'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: region-by-zoom-and-tile-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-tile-coordinates'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: region-by-level-and-tile-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/level-tile-coordinates'
+                    - $ref: '#/components/schemas/window-basis'
+      responses:
+        200:
+          $ref: '#/components/responses/window'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -2020,6 +2039,10 @@ components:
       type: string
       format: binary
       example: (binary)
+    window:
+      type: string
+      format: binary
+      example: (binary)
     generic-image:
       type: string
       format: binary
@@ -2094,6 +2117,122 @@ components:
       type: integer
       format: int64
       minimum: 0
+    zoom-tile-index:
+      type: object
+      required:
+        - zoom
+        - ti
+      properties:
+        zoom:
+          $ref: '#/components/schemas/scale-at-zoom'
+        ti:
+          $ref: '#/components/schemas/tile-index'
+    level-tile-index:
+      type: object
+      required:
+        - level
+        - ti
+      properties:
+        level:
+          $ref: '#/components/schemas/scale-at-level'
+        ti:
+          $ref: '#/components/schemas/tile-index'
+    zoom-tile-coordinates:
+      type: object
+      required:
+        - zoom
+        - tx
+        - ty
+      properties:
+        zoom:
+          $ref: '#/components/schemas/scale-at-zoom'
+        tx:
+          $ref: '#/components/schemas/tile-x'
+        ty:
+          $ref: '#/components/schemas/tile-y'
+    level-tile-coordinates:
+      type: object
+      required:
+        - level
+        - tx
+        - ty
+      properties:
+        level:
+          $ref: '#/components/schemas/scale-at-level'
+        tx:
+          $ref: '#/components/schemas/tile-x'
+        ty:
+          $ref: '#/components/schemas/tile-y'
+    zoom-region:
+      allOf:
+        - type: object
+          required:
+            - zoom
+          properties:
+            zoom:
+              $ref: '#/components/schemas/scale-at-zoom'
+            reference_tier:
+              $ref: '#/components/schemas/reference'
+        - $ref: '#/components/schemas/region'
+    level-region:
+      allOf:
+        - type: object
+          required:
+            - level
+          properties:
+            level:
+              $ref: '#/components/schemas/scale-at-level'
+            reference_tier:
+              $ref: '#/components/schemas/reference'
+        - $ref: '#/components/schemas/region'
+    reference:
+      type: string
+      enum:
+        - CURRENT
+        - TRUE_SIZE
+      default: TRUE_SIZE
+    region:
+      type: object
+      required:
+        - top
+        - left
+        - width
+        - height
+      properties:
+        top:
+          $ref: '#/components/schemas/region-coordinate'
+        left:
+          $ref: '#/components/schemas/region-coordinate'
+        width:
+          $ref: '#/components/schemas/region-length'
+        height:
+          $ref: '#/components/schemas/region-length'
+    region-coordinate:
+      oneOf:
+        - type: integer
+          format: int64
+          description: A coordinate in pixels in the reference tier.
+          minimum: 0
+          example: 256
+        - type: number
+          format: double
+          description: A coordinate expressed in percentage relatively to the reference tier.
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.5
+    region-length:
+      oneOf:
+        - type: integer
+          format: int64
+          description: A size in pixels in the reference tier.
+          minimum: 0
+          example: 256
+        - type: number
+          format: double
+          description: A size expressed in percentage relatively to the reference tier.
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.5
 
     thumb-use-precomputed:
       description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
@@ -2117,7 +2256,49 @@ components:
               $ref: '#/components/schemas/bits'
             colorspace:
               $ref: '#/components/schemas/colorspace'
-
+    window-basis:
+      allOf:
+        - $ref: '#/components/schemas/resized-basis'
+        - type: object
+          properties:
+            annotations:
+              $ref: '#/components/schemas/annotations'
+            annotation_style:
+              oneOf:
+                - title: MASK
+                  type: object
+                  required:
+                    - mode
+                  properties:
+                    mode:
+                      description: The mode to use to render annotations
+                      type: string
+                      enum:
+                        - MASK
+                - title: CROP
+                  type: object
+                  required:
+                    - mode
+                  properties:
+                    mode:
+                      description: The mode to use to render annotations
+                      type: string
+                      enum:
+                        - CROP
+                    background_transparency:
+                      $ref: '#/components/schemas/background-transparency'
+                - title: DRAWING
+                  allOf:
+                    - type: object
+                      required:
+                        - mode
+                      properties:
+                        mode:
+                          description: The mode to use to render annotations
+                          type: string
+                          enum:
+                            - DRAWING
+                    - $ref: '#/components/schemas/point-drawing-object'
     # Annotation crops
     context-factor:
       type: number
@@ -2147,6 +2328,12 @@ components:
           $ref: '#/components/schemas/stroke-color'
         stroke_width:
           $ref: '#/components/schemas/stroke-width'
+    annotations:
+      oneOf:
+        - $ref: '#/components/schemas/annotation'
+        - type: array
+          items:
+            $ref: '#/components/schemas/annotation'
     fill-color:
       type: string
       format: color
@@ -2170,11 +2357,7 @@ components:
         - annotations
       properties:
         annotations:
-          oneOf:
-            - $ref: '#/components/schemas/annotation'
-            - type: array
-              items:
-                $ref: '#/components/schemas/annotation'
+          $ref: '#/components/schemas/annotations'
         context_factor:
           $ref: '#/components/schemas/context-factor'
     by-size:
@@ -2232,19 +2415,21 @@ components:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
         - $ref: '#/components/schemas/by-level'
+    background-transparency:
+      type: integer
+      format: int32
+      minimum: 0
+      maximum: 100
+      default: 100
+      description: |
+        The background transparency. 100 means transparent background. When transparency is used, the target
+        content type must be an image format supporting transparency.
     annotation-crop-basis:
       allOf:
         - type: object
           properties:
             background_transparency:
-              type: integer
-              format: int32
-              minimum: 0
-              maximum: 100
-              default: 100
-              description: |
-                The background transparency. 100 means transparent background. When transparency is used, the target
-                content type must be an image format supporting transparency.
+              $ref: '#/components/schemas/background-transparency'
         - $ref: '#/components/schemas/plane-selection'
         - $ref: '#/components/schemas/image-manipulation'
     crop-by-size:
@@ -2267,6 +2452,29 @@ components:
       allOf:
         - $ref: '#/components/schemas/mask-by-level'
         - $ref: '#/components/schemas/annotation-crop-basis'
+    point-drawing-object:
+      type: object
+      properties:
+        point_envelope_size:
+          type: integer
+          default: 100
+          description: |
+            Point geometries have no area. An envelope must be specified to extract some image data.
+            This envelope is a square of size given by this parameter, whose the center is the given point.
+            This parameter has no effect on non-point geometries.
+        point_cross:
+          type: string
+          enum:
+            - CROSS
+            - CROSSHAIR
+            - CIRCLE
+          default: CROSS
+          description: |
+            Point geometries have no area. Possible representation as a drawing are:
+            * `CROSS` - A regular cross, hiding point location
+            * `CROSSHAIR` - A cross but whose intersection is removed to show the point locatio
+            * `CIRCLE` - A circle around the point location
+            This parameter has no effect on non-point geometries.
     annotation-drawing-basis:
       allOf:
         - type: object
@@ -2276,26 +2484,7 @@ components:
               default: false
               description: Try to adapt other parameters (such as input spatial region, context factor, target size)
                 to return a square image.
-            point_envelope_size:
-              type: integer
-              default: 100
-              description: |
-                Point geometries have no area. An envelope must be specified to extract some image data.
-                This envelope is a square of size given by this parameter, whose the center is the given point.
-                This parameter has no effect on non-point geometries.
-            point_cross:
-              type: string
-              enum:
-                - CROSS
-                - CROSSHAIR
-                - CIRCLE
-              default: CROSS
-              description: |
-                Point geometries have no area. Possible representation as a drawing are:
-                * `CROSS` - A regular cross, hiding point location
-                * `CROSSHAIR` - A cross but whose intersection is removed to show the point locatio
-                * `CIRCLE` - A circle around the point location
-                This parameter has no effect on non-point geometries.
+        - $ref: '#/components/schemas/point-drawing-object'
         - $ref: '#/components/schemas/plane-selection'
         - $ref: '#/components/schemas/image-manipulation'
     drawing-by-size:
@@ -2733,6 +2922,23 @@ components:
         image/webp:
           schema:
             $ref: '#/components/schemas/thumbnail'
+    window:
+      description: Window
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+        X-Image-Size-Limit:
+          $ref: '#/components/headers/X-Image-Size-Limit'
+      content:
+        image/jpeg:
+          schema:
+            $ref: '#/components/schemas/window'
+        image/png:
+          schema:
+            $ref: '#/components/schemas/window'
+        image/webp:
+          schema:
+            $ref: '#/components/schemas/window'
     generic-image:
       description: Image
       headers:
