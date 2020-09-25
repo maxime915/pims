@@ -6,7 +6,7 @@ info:
 servers:
   - url: 'https'
 tags:
-  - name: 'Tiles'
+  - name: Tiles
     description: |
       Tiles are rectangular regions extracted from an image at given resolution.
       Tile size is always 256x256, except on borders.
@@ -181,51 +181,97 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
-#  /file/{filepath}/tile/zoom/{zoom}/tx/{tile_x}/ty/{tile_y}:
-#    get:
-#      tags:
-#        - Tiles
-#      description: |
-#        Get a 8-bit tile at a given zoom level and tile coordinates, optimized for visualisation, with all image channels.
-#        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-#      parameters:
-#        - $ref: '#/components/parameters/filepath'
-#        - $ref: '#/components/parameters/zoom'
-#        - $ref: '#/components/parameters/tile_x'
-#        - $ref: '#/components/parameters/tile_y'
-#        - $ref: '#/components/parameters/etag'
-#      responses:
-#        200:
-#          $ref: '#/components/responses/tile'
-#        304:
-#          $ref: '#/components/responses/not-modified'
-#        400:
-#          $ref: '#/components/responses/bad-request-fp'
-#        404:
-#          $ref: '#/components/responses/not-found-fp'
-#  /file/{filepath}/tile/level/{level}/tx/{tile_x}/ty/{tile_y}:
-#    get:
-#      tags:
-#        - Tiles
-#      description: |
-#        Get a 8-bit tile at given tier level and tile coordinates, optimized for visualisation, with all image channels.
-#        For multidimensional images, the tile is extracted from the median focal plane at first timepoint.
-#      parameters:
-#        - $ref: '#/components/parameters/filepath'
-#        - $ref: '#/components/parameters/level'
-#        - $ref: '#/components/parameters/tile_x'
-#        - $ref: '#/components/parameters/tile_y'
-#        - $ref: '#/components/parameters/etag'
-#      responses:
-#        200:
-#          $ref: '#/components/responses/tile'
-#        304:
-#          $ref: '#/components/responses/not-modified'
-#        400:
-#          $ref: '#/components/responses/bad-request-fp'
-#        404:
-#          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/tile:
+    post:
+      summary: Get a tile (generic)
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
 
+        Get a 8-bit tile optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Tiles
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: tile-by-zoom-and-index
+                  allOf:
+                    - type: object
+                      required:
+                        - zoom
+                        - ti
+                      properties:
+                        zoom:
+                          $ref: '#/components/schemas/scale-at-zoom'
+                        ti:
+                          $ref: '#/components/schemas/tile-index'
+                    - $ref: '#/components/schemas/plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+                - title: tile-by-level-and-index
+                  allOf:
+                    - type: object
+                      required:
+                        - level
+                        - ti
+                      properties:
+                        level:
+                          $ref: '#/components/schemas/scale-at-level'
+                        ti:
+                          $ref: '#/components/schemas/tile-index'
+                    - $ref: '#/components/schemas/plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+                - title: tile-by-zoom-and-coordinates
+                  allOf:
+                    - type: object
+                      required:
+                        - zoom
+                        - tx
+                        - ty
+                      properties:
+                        zoom:
+                          $ref: '#/components/schemas/scale-at-zoom'
+                        tx:
+                          $ref: '#/components/schemas/tile-x'
+                        ty:
+                          $ref: '#/components/schemas/tile-y'
+                    - $ref: '#/components/schemas/plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+                - title: tile-by-level-and-coordinates
+                  allOf:
+                    - type: object
+                      required:
+                        - level
+                        - tx
+                        - ty
+                      properties:
+                        level:
+                          $ref: '#/components/schemas/scale-at-level'
+                        tx:
+                          $ref: '#/components/schemas/tile-x'
+                        ty:
+                          $ref: '#/components/schemas/tile-y'
+                    - $ref: '#/components/schemas/plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/thumb:
     get:
       summary: Get a thumbnail
@@ -1331,37 +1377,21 @@ components:
     path-tile-index:
       name: tile_index
       in: path
-      description: |
-        The tile index is the position of the tile in the given image pyramid tier.
-        It is computed as `n * n_x_tiles + m` where
-        * `n_x_tiles` is the number of tiles along the horizontal axis at given tier.
-        * `m` is the tile position along the horizontal axis at given tier (0 is left).
-        * `n` is the tile position along the vertical axis at given tier (0 is top).
       required: true
       schema:
-        type: integer
-        format: int64
-        minimum: 0
+        $ref: '#/components/schemas/tile-index'
     path-tile-x:
       name: tile_x
       in: path
-      description: |
-        The tile position along the horizontal axis at given tier (0 is left).
       required: true
       schema:
-        type: integer
-        format: int64
-        minimum: 0
+        $ref: '#/components/schemas/tile-x'
     path-tile-y:
       name: tile_y
       in: path
-      description: |
-        The tile position along the vertical axis at given tier (0 is top).
       required: true
       schema:
-        type: integer
-        format: int64
-        minimum: 0
+        $ref: '#/components/schemas/tile-y'
     query-channel-selection:
       name: channels
       in: query
@@ -2042,6 +2072,28 @@ components:
       format: int64
       minimum: 0
       example: 0
+    tile-index:
+      description: |
+        The tile index is the position of the tile in the given image pyramid tier.
+        It is computed as `n * n_x_tiles + m` where
+        * `n_x_tiles` is the number of tiles along the horizontal axis at given tier.
+        * `m` is the tile position along the horizontal axis at given tier (0 is left).
+        * `n` is the tile position along the vertical axis at given tier (0 is top).
+      type: integer
+      format: int64
+      minimum: 0
+    tile-x:
+      description: |
+         The tile position along the horizontal axis at given tier (0 is left).
+      type: integer
+      format: int64
+      minimum: 0
+    tile-y:
+      description: |
+        The tile position along the vertical axis at given tier (0 is top).
+      type: integer
+      format: int64
+      minimum: 0
 
     thumb-use-precomputed:
       description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
