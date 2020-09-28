@@ -1184,23 +1184,34 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}:
-    get:
-      description: Download a file
+    post:
+      description: Import a file
       tags:
-        - Export
+        - Import
       parameters:
         - $ref: '#/components/parameters/path-filepath'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                uploaded_file_id:
+                  type: integer
+                  format: int64
+                root_id:
+                  type: integer
+                  format: int64
+                user_id:
+                  type: integer
+                  format: int64
+                username:
+                  type: string
       responses:
-        200:
-          description: OK
-          headers:
-            Content-Disposition:
-              $ref: '#/components/headers/Content-Disposition'
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
+        202:
+          description: |
+            Accepted. The file will be imported.
         404:
           $ref: '#/components/responses/not-found-fp'
     delete:
