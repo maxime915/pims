@@ -598,11 +598,11 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
-  /file/{filepath}/footprint:
+  /file/{filepath}/spectral/footprint:
     post:
-      summary: Get hyperspectral footprint
+      summary: Get spectral footprint
       description: |
-        Get hyperspectral footprint. **At least one dimension must have a reduction
+        Get spectral footprint. **At least one dimension must have a reduction
         operation.**
 
         ***Example 1:***
@@ -668,10 +668,59 @@ paths:
                           allOf:
                             - $ref: '#/components/schemas/annotations'
                     - $ref: '#/components/schemas/footprint-plane-selection'
-
       responses:
         200:
           $ref: '#/components/responses/hyperspectral-footprint'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/spectral/window:
+    post:
+      summary: Get spectral window
+      description: |
+        Get spectral window. The input spatial region is given in the same way as regular windows. In output, it is
+        returned the spectrum of each pixel belonging to the given spatial region.
+      tags:
+        - Hyperspectral
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: region-by-zoom-and-region
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-region'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: region-by-level-and-region
+                  allOf:
+                    - $ref: '#/components/schemas/level-region'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: region-by-zoom-and-tile-index
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-tile-index'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: region-by-level-and-tile-index
+                  allOf:
+                    - $ref: '#/components/schemas/level-tile-index'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: region-by-zoom-and-tile-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-tile-coordinates'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: region-by-level-and-tile-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/level-tile-coordinates'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+      responses:
+        200:
+          $ref: '#/components/responses/hyperspectral-window'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -1838,7 +1887,39 @@ components:
           $ref: '#/components/schemas/footprint-reduction'
         t_reduction:
           $ref: '#/components/schemas/footprint-reduction'
+    spectral-window-plane-selection:
+      type: object
+      properties:
+        channels:
+          description: |
+            Image channels used to render the response. This parameter is interpreted as a set such that duplicates
+            are ignored.
 
+            **If this parameter represents a set of size > 1, `z_slices` and `timepoints` have to be single indexes.**
+
+            **By default,** all channels are considered.
+          allOf:
+            - $ref: '#/components/schemas/multiple-channel-indexes'
+        z_slices:
+          description: |
+            Image focal planes used to render the response. This parameter is interpreted as a set such that duplicates
+            are ignored.
+
+            **If this parameter represents a set of size > 1, `channels` and `timepoints` have to be single indexes.**
+
+            **By default,** the median focal plane considered.
+          allOf:
+            - $ref: '#/components/schemas/multiple-z-slice-indexes'
+        timepoints:
+          description: |
+            Image timepoints used to render the response. This parameter is interpreted as a set such that duplicates
+            are ignored.
+
+            **If this parameter represents a set of size > 1, `z_slices` and `channels` have to be single indexes.**
+
+            **By default,** the first timepoint considered.
+          allOf:
+            - $ref: '#/components/schemas/multiple-timepoint-indexes'
     # Intensities
     intensity-selection:
       oneOf:
@@ -3125,7 +3206,43 @@ components:
                       items:
                         type: integer
                         format: int32
-                    value:
+                    footprint:
                       description: The footprint value for the given coordinates.
                       type: number
                       format: double
+    hyperspectral-window:
+      description: Hyperspectral window
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              length:
+                type: integer
+                format: int64
+                description: The collection length.
+              items:
+                description: |
+                  Spectrum of every pixel in the spatial region.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    coordinates:
+                      description: |
+                        The spectrum location in **XYCZT order**. Negative values denote the spectral dimension.
+                      type: array
+                      minItems: 5
+                      maxItems: 5
+                      items:
+                        type: integer
+                        format: int32
+                    spectrum:
+                      description: The spectrum for the given coordinates.
+                      type: array
+                      items:
+                        type: integer
+                        format: int64
