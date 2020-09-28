@@ -598,6 +598,109 @@ paths:
           $ref: '#/components/responses/bad-request-fp'
         404:
           $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/annotation/spectra:
+    post:
+      summary: Get annotation spectra
+      description: |
+        Get spectrum of every pixels belonging to the annotation(s).
+      tags:
+        - Annotations
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: spectra-by-size
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-size'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: spectra-by-width
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-width'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: spectra-by-height
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-height'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: spectra-by-zoom
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-zoom'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+                - title: spectra-by-level
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-level'
+                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+      responses:
+        200:
+          $ref: '#/components/responses/hyperspectral-window'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/annotation/footprint:
+    post:
+      summary: Get annotation spectral footprint
+      description: |
+        Get annotation spectral footprint. **At least one dimension must have a reduction
+        operation.**
+
+        The input spatial region is given by the rectangular envelope of all geometries.
+      tags:
+        - Annotations
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: footprint-by-size
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-size'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: footprint-by-width
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-width'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: footprint-by-height
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-height'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: footprint-by-zoom
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-zoom'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: footprint-by-level
+                  allOf:
+                    - $ref: '#/components/schemas/annotations-object-basis'
+                    - $ref: '#/components/schemas/by-level'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+      responses:
+        200:
+          $ref: '#/components/responses/hyperspectral-footprint'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/spectral/footprint:
     post:
       summary: Get spectral footprint
@@ -655,18 +758,6 @@ paths:
                 - title: region-by-level-and-tile-coordinates
                   allOf:
                     - $ref: '#/components/schemas/level-tile-coordinates'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: region-by-annotations
-                  allOf:
-                    - type: object
-                      required:
-                        - annotations
-                      properties:
-                        annotations:
-                          description: |
-                            The input spatial region is given by the rectangular envelope of all geometries.
-                          allOf:
-                            - $ref: '#/components/schemas/annotations'
                     - $ref: '#/components/schemas/footprint-plane-selection'
       responses:
         200:
@@ -2525,6 +2616,13 @@ components:
         - type: array
           items:
             $ref: '#/components/schemas/annotation'
+    annotations-object-basis:
+      type: object
+      required:
+        - annotations
+      properties:
+        annotations:
+          $ref: '#/components/schemas/annotations'
     fill-color:
       type: string
       format: color
