@@ -18,6 +18,8 @@ tags:
     description: ''
   - name: Annotations
     description: Annotations are geometries that can be reprsented on an image crop in various ways.
+  - name: Hyperspectral
+    description: Hyperspectral specific extraction methods.
   - name: Metadata
     description: Metadata are data that provides information about other data, especially about files and images
       managed by PIMS.
@@ -590,6 +592,86 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/annotation-crop'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/bad-request-fp'
+        404:
+          $ref: '#/components/responses/not-found-fp'
+  /file/{filepath}/footprint:
+    post:
+      summary: Get hyperspectral footprint
+      description: |
+        Get hyperspectral footprint. **At least one dimension must have a reduction
+        operation.**
+
+        ***Example 1:***
+        * X, Y: range of pixel coordinates with `AVG` reduction
+        * C: range of channels
+        * Z: single focal plane
+        * T: single timepoint
+
+        Result: Average intensity of given pixels for each channel in the range, at given focal plane and timepoint.
+
+
+        ***Example 2:***
+        * X, Y: range of pixel coordinates
+        * C: range of channels with `MAX` reduction
+        * Z: range of focal planes
+        * T: range of timepoints
+
+        Result: Maximum intensity across all given channels for each (Z,T) plane combination.
+      tags:
+        - Hyperspectral
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: region-by-zoom-and-region
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-region'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: region-by-level-and-region
+                  allOf:
+                    - $ref: '#/components/schemas/level-region'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: region-by-zoom-and-tile-index
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-tile-index'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: region-by-level-and-tile-index
+                  allOf:
+                    - $ref: '#/components/schemas/level-tile-index'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: region-by-zoom-and-tile-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/zoom-tile-coordinates'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: region-by-level-and-tile-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/level-tile-coordinates'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+                - title: region-by-annotations
+                  allOf:
+                    - type: object
+                      required:
+                        - annotations
+                      properties:
+                        annotations:
+                          description: |
+                            The input spatial region is given by the rectangular envelope of all geometries.
+                          allOf:
+                            - $ref: '#/components/schemas/annotations'
+                    - $ref: '#/components/schemas/footprint-plane-selection'
+
+      responses:
+        200:
+          $ref: '#/components/responses/hyperspectral-footprint'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -1728,6 +1810,34 @@ components:
         **This parameter is required if `timepoints` is not a single timepoint index.**
       allOf:
         - $ref: '#/components/schemas/generic-reduction'
+    footprint-reduction:
+      description: |
+        Reduction function used to combinate selected items in the dimension.
+      allOf:
+        - $ref: '#/components/schemas/generic-reduction'
+    footprint-reduction-nullable:
+      nullable: true
+      allOf:
+        - $ref: '#/components/schemas/footprint-reduction'
+    footprint-plane-selection:
+      type: object
+      properties:
+        channels:
+          $ref: '#/components/schemas/multiple-channel-indexes'
+        z_slices:
+          $ref: '#/components/schemas/multiple-z-slice-indexes'
+        timepoints:
+          $ref: '#/components/schemas/multiple-timepoint-indexes'
+        x_reduction:
+          $ref: '#/components/schemas/footprint-reduction'
+        y_reduction:
+          $ref: '#/components/schemas/footprint-reduction'
+        c_reduction:
+          $ref: '#/components/schemas/footprint-reduction'
+        z_reduction:
+          $ref: '#/components/schemas/footprint-reduction'
+        t_reduction:
+          $ref: '#/components/schemas/footprint-reduction'
 
     # Intensities
     intensity-selection:
@@ -2971,3 +3081,51 @@ components:
         image/webp:
           schema:
             $ref: '#/components/schemas/generic-image'
+    hyperspectral-footprint:
+      description: Hyperspectral footprint
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reductions:
+                type: object
+                description: |
+                  Reduction operations applied to each dimension. **At least one dimension must have a reduction
+                  operation.**
+                properties:
+                  x:
+                    $ref: '#/components/schemas/footprint-reduction-nullable'
+                  y:
+                    $ref: '#/components/schemas/footprint-reduction-nullable'
+                  c:
+                    $ref: '#/components/schemas/footprint-reduction-nullable'
+                  z:
+                    $ref: '#/components/schemas/footprint-reduction-nullable'
+                  t:
+                    $ref: '#/components/schemas/footprint-reduction-nullable'
+              items:
+                description: |
+                  Hyperspectral footprints according given reduction operations for each non-reduced dimension
+                  combination.
+                type: array
+                items:
+                  type: object
+                  properties:
+                    coordinates:
+                      description: |
+                        The footprint coordinates in **XYCZT order**. Negative values denote a reduced
+                        dimension.
+                      type: array
+                      minItems: 5
+                      maxItems: 5
+                      items:
+                        type: integer
+                        format: int32
+                    value:
+                      description: The footprint value for the given coordinates.
+                      type: number
+                      format: double
