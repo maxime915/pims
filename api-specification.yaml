@@ -79,9 +79,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
     post:
       summary: Get a tile at zoom
       description: |
@@ -110,9 +110,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/tile/level/{level}/ti/{tile_index}:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
@@ -149,9 +149,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
     post:
       summary: Get a tile at level
       description: |
@@ -180,9 +180,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/tile:
     post:
       summary: Get a tile (generic)
@@ -233,9 +233,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/window:
     post:
       summary: Get a window
@@ -254,6 +254,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/header-x-image-size-safety'
       requestBody:
         required: true
         content:
@@ -290,13 +291,16 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
+        406:
+          $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}/thumb:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/header-etag'
+      - $ref: '#/components/parameters/header-x-image-size-safety'
     get:
       summary: Get a thumbnail
       description: |
@@ -331,9 +335,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
     post:
       summary: Get a thumbnail
       description: |
@@ -372,13 +376,14 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/resized:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/header-etag'
+      - $ref: '#/components/parameters/header-x-image-size-safety'
     get:
       summary: Get a resized full image
       description: |
@@ -419,9 +424,11 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
+        406:
+          $ref: '#/components/responses/problem-not-acceptable'
     post:
       summary: Get a resized full image
       description: |
@@ -471,9 +478,11 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
+        406:
+          $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}/annotation/mask:
     post:
       tags:
@@ -497,6 +506,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/header-x-image-size-safety'
       requestBody:
         required: true
         content:
@@ -514,9 +524,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/annotation/crop:
     post:
       tags:
@@ -539,6 +549,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/header-x-image-size-safety'
       requestBody:
         required: true
         content:
@@ -556,9 +567,11 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
+        406:
+          $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}/annotation/drawing:
     post:
       tags:
@@ -577,6 +590,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/header-x-image-size-safety'
       requestBody:
         required: true
         content:
@@ -594,9 +608,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/annotation/spectra:
     post:
       summary: Get annotation spectra
@@ -647,9 +661,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/annotation/footprint:
     post:
       summary: Get annotation spectral footprint
@@ -703,9 +717,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/spectral/footprint:
     post:
       summary: Get spectral footprint
@@ -773,9 +787,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/spectral/window:
     post:
       summary: Get spectral window
@@ -826,9 +840,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info:
     get:
       description: Get all information about a file
@@ -843,6 +857,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -850,9 +866,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/file:
     get:
       description: Get information about a file
@@ -867,6 +883,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -874,7 +892,7 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/image:
     get:
       description: Get information about an image.
@@ -889,6 +907,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -896,9 +916,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/channels:
     get:
       description: Get information about channels in an image
@@ -913,6 +933,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -925,9 +947,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/instrument:
     get:
       description: Get information about instrument in an image
@@ -942,6 +964,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -949,9 +973,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/associated:
     get:
       description: Get information about associated files in an image
@@ -967,6 +991,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -974,9 +1000,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/metadata:
     get:
       description: Get readable raw metadata from an image file
@@ -991,6 +1017,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -1006,9 +1034,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/associated/{associated_key}:
     get:
       summary: Get an associated image
@@ -1033,15 +1061,16 @@ paths:
               - macro
         - $ref: '#/components/parameters/query-thumb-length'
         - $ref: '#/components/parameters/header-etag'
+        - $ref: '#/components/parameters/header-x-image-size-safety'
       responses:
         200:
           $ref: '#/components/responses/generic-image'
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms:
     get:
       tags:
@@ -1056,6 +1085,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -1071,9 +1102,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms/full:
     get:
       tags:
@@ -1091,6 +1122,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -1103,9 +1136,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms/c/{channels}:
     get:
       tags:
@@ -1124,6 +1157,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -1141,9 +1176,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
     get:
       tags:
@@ -1164,6 +1199,8 @@ paths:
           headers:
             If-None-Match:
               $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
           content:
             application/json:
               schema:
@@ -1185,9 +1222,9 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/export/{format_id}:
     get:
       description: Export a file in another format
@@ -1208,9 +1245,11 @@ paths:
                 type: string
                 format: binary
         400:
-          $ref: '#/components/responses/bad-request-fp'
+          $ref: '#/components/responses/problem-bad-request'
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
+        406:
+          $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}:
     post:
       description: Import a file
@@ -1239,9 +1278,11 @@ paths:
       responses:
         202:
           description: |
-            Accepted. The file will be imported.
+            Accepted - The file will be imported.
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
+        409:
+          $ref: '#/components/responses/problem-conflict'
     delete:
       description: Delete a file and its children
       tags:
@@ -1252,7 +1293,7 @@ paths:
         204:
           description: OK - No content
         404:
-          $ref: '#/components/responses/not-found-fp'
+          $ref: '#/components/responses/problem-not-found'
   /info:
     get:
       description: Status of PIMS
@@ -1314,6 +1355,8 @@ paths:
                     description: Percentage of used space regarding total size
                     minimum: 0
                     maximum: 100
+        404:
+          $ref: '#/components/responses/problem-not-found'
   /formats:
     get:
       description: List of supported formats by PIMS
@@ -1353,7 +1396,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/format'
         404:
-          $ref: '#/components/responses/not-found'
+          $ref: '#/components/responses/problem-not-found'
   /colormaps:
     get:
       description: List of pre-defined colormaps in PIMS
@@ -1394,7 +1437,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/colormap'
         404:
-          $ref: '#/components/responses/not-found'
+          $ref: '#/components/responses/problem-not-found'
   /colormaps/{colormap_id}/representation:
     get:
       description: Get a graphic representation of a colormap
@@ -1430,7 +1473,7 @@ paths:
         304:
           $ref: '#/components/responses/not-modified'
         404:
-          $ref: '#/components/responses/not-found'
+          $ref: '#/components/responses/problem-not-found'
   /filters:
     get:
       description: List of available image filters in PIMS
@@ -1471,7 +1514,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/filter'
         404:
-          $ref: '#/components/responses/not-found'
+          $ref: '#/components/responses/problem-not-found'
   /slice/tile:
     get:
       description: Get a tile using IMS V2.x specification.
@@ -1641,6 +1684,25 @@ components:
       required: false
       schema:
         type: string
+    header-x-image-size-safety:
+      name: X-Image-Size-Safety
+      in: header
+      description: |
+        This header provides hints about the way the server has to deal with too large image responses.
+        * `SAFE_REJECT` - Reject too large image response and throw a `400 Bad Request`.
+        * `SAFE_RESIZE` - Resize the image response to an acceptable image size. Information about the resize are
+        returned in `X-Image-Size-Limit` header.
+        * `UNSAFE` - **At your own risk!** Try to fulfill the request but can cause unintended side effects
+        (unreadable response, server slown down, server failure, ...). It should only be used in rare controlled
+        situations.
+      required: false
+      schema:
+        default: SAFE_RESIZE
+        type: string
+        enum:
+          - SAFE_REJECT
+          - SAFE_RESIZE
+          - UNSAFE
     path-filepath:
       name: filepath
       in: path
@@ -3180,6 +3242,77 @@ components:
       type: string
       format: binary
       example: (binary)
+    problem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+          description: |
+            An URI that identifies the problem type.  When dereferenced,
+            it SHOULD provide human-readable documentation for the problem type
+            (e.g., using HTML).
+          default: 'about:blank'
+          example: 'problem/constraint-violation'
+        title:
+          type: string
+          description: |
+            A short, summary of the problem type. Written in english and readable
+            for engineers (usually not suited for non technical stakeholders and
+            not localized).
+          example: Service Unavailable
+        status:
+          type: integer
+          format: int32
+          description: |
+            The HTTP status code generated by the origin server for this occurrence
+            of the problem.
+          minimum: 400
+          maximum: 600
+          exclusiveMaximum: true
+          example: 503
+        detail:
+          type: string
+          description: |
+            A human readable explanation specific to this occurrence of the
+            problem.
+          example: Connection to database timed out
+        instance:
+          type: string
+          format: uri
+          description: |
+            An absolute URI that identifies the specific occurrence of the problem.
+            It may or may not yield further information if dereferenced.
+    invalid-parameters-problem:
+      description: Problem details for invalid input parameter(s)
+      allOf:
+        - $ref: '#/components/schemas/problem'
+        - type: object
+          properties:
+            invalid-parameters:
+              type: array
+              description: An array of parameter violations
+              items:
+                $ref: '#/components/schemas/invalid-parameter'
+    invalid-parameter:
+      type: object
+      properties:
+        in:
+          description: The location of the invalid parameter
+          type: string
+          enum:
+            - body
+            - path
+            - query
+            - header
+        name:
+          description: The name of the invalid parameter
+          type: string
+        reason:
+          description: A message explaining the violation
+          type: string
+        value:
+          description: The value of the erroneous parameter
   headers:
     If-None-Match:
       description: |
@@ -3191,6 +3324,37 @@ components:
       required: false
       schema:
         type: string
+    Cache-Control:
+      description: |
+        The RFC 7234 Cache-Control header field is providing directives to
+        control how proxies and clients are allowed to cache responses results
+        for performance. Clients and proxies are free to not support caching of
+        results, however if they do, they must obey all directives mentioned in
+        [RFC-7234 Section 5.2.2](https://tools.ietf.org/html/rfc7234) to the
+        word.
+
+        In case of caching, the directive provides the scope of the cache
+        entry, i.e. only for the original user (private) or shared between all
+        users (public), the lifetime of the cache entry in seconds (max-age),
+        and the strategy how to handle a stale cache entry (must-revalidate).
+        Please note, that the lifetime and validation directives for shared
+        caches are different (s-maxage, proxy-revalidate).
+      required: false
+      schema:
+        type: string
+        example: "private, must-revalidate, max-age=300"
+    Vary:
+      description: |
+        The RFC 7231 Vary header field in a response defines which parts of
+        a request message, aside the target URL and HTTP method, might have
+        influenced the response. A client or proxy cache must respect this
+        information, to ensure that it delivers the correct cache entry (see
+        [RFC-7231 Section
+        7.1.4](https://tools.ietf.org/html/rfc7231#section-7.1.4)).
+      required: false
+      schema:
+        type: string
+        example: "accept-encoding, accept-language"
     Content-Disposition:
       description: |
         This header indicates that the representation is supposed to be saved as
@@ -3217,31 +3381,44 @@ components:
           height_request:
             type: integer
   responses:
-    not-found-fp:
-      description: File path not found
+    problem-bad-request:
+      description: Bad request - Input payload fails business logic validation or generic error.
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
-    not-found:
-      description: Resource not found
+            $ref: '#/components/schemas/invalid-parameters-problem'
+    problem-not-found:
+      description: Not Found - The resource is not found.
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
-    bad-request-fp:
-      description: Bad Request. Input payload fails business logic validation.
+            $ref: '#/components/schemas/problem'
+    problem-not-acceptable:
+      description: |
+        Not Acceptable - The resource can only generate content not acceptable according to the Accept
+        headers sent in the request.
       content:
         application/problem+json:
           schema:
-            $ref: 'https://opensource.zalando.com/problem/schema.yaml#/Problem'
+            $ref: '#/components/schemas/problem'
+    problem-conflict:
+      description: |
+        Conflict - Another request already tries to create or update the same resource.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/problem'
     not-modified:
-      description: Not modified.
+      description: Not Modified
     tile:
-      description: The tile
+      description: OK - The tile
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
       content:
         image/jpeg:
           schema:
@@ -3253,10 +3430,14 @@ components:
           schema:
             $ref: '#/components/schemas/generic-image'
     thumbnail:
-      description: Thumbnail
+      description: OK - The thumbnail
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
         X-Image-Size-Limit:
           $ref: '#/components/headers/X-Image-Size-Limit'
       content:
@@ -3270,10 +3451,14 @@ components:
           schema:
             $ref: '#/components/schemas/generic-image'
     window:
-      description: Window
+      description: OK - The window
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
         X-Image-Size-Limit:
           $ref: '#/components/headers/X-Image-Size-Limit'
       content:
@@ -3287,10 +3472,14 @@ components:
           schema:
             $ref: '#/components/schemas/generic-image'
     annotation-crop:
-      description: Annotation crop
+      description: OK - The annotation crop
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
         X-Image-Size-Limit:
           $ref: '#/components/headers/X-Image-Size-Limit'
       content:
@@ -3304,10 +3493,14 @@ components:
           schema:
             $ref: '#/components/schemas/generic-image'
     generic-image:
-      description: Image
+      description: OK - Image
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
       content:
         image/jpeg:
           schema:
@@ -3319,10 +3512,14 @@ components:
           schema:
             $ref: '#/components/schemas/generic-image'
     hyperspectral-footprint:
-      description: Hyperspectral footprint
+      description: OK - Hyperspectral footprint
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
       content:
         application/json:
           schema:
@@ -3369,10 +3566,14 @@ components:
                       type: number
                       format: double
     hyperspectral-window:
-      description: Hyperspectral window
+      description: OK - Hyperspectral window
       headers:
         If-None-Match:
           $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
       content:
         application/json:
           schema:
