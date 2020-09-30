@@ -294,6 +294,9 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/thumb:
+    parameters:
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a thumbnail
       description: |
@@ -306,7 +309,6 @@ paths:
       tags:
         - Thumbnails
       parameters:
-        - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/query-channel-selection'
         - $ref: '#/components/parameters/query-z-slice-selection'
         - $ref: '#/components/parameters/query-timepoint-selection'
@@ -323,7 +325,6 @@ paths:
         - $ref: '#/components/parameters/query-gammas'
         - $ref: '#/components/parameters/query-log'
         - $ref: '#/components/parameters/query-thumb-use-precomputed'
-        - $ref: '#/components/parameters/header-etag'
       responses:
         200:
           $ref: '#/components/responses/thumbnail'
@@ -347,9 +348,6 @@ paths:
         thumbnail is extracted from the median focal plane at first timepoint.
       tags:
         - Thumbnails
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
       requestBody:
         required: true
         content:
@@ -378,6 +376,9 @@ paths:
         404:
           $ref: '#/components/responses/not-found-fp'
   /file/{filepath}/resized:
+    parameters:
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/header-etag'
     get:
       summary: Get a resized full image
       description: |
@@ -393,7 +394,6 @@ paths:
       tags:
         - Resized
       parameters:
-        - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/query-channel-selection'
         - $ref: '#/components/parameters/query-z-slice-selection'
         - $ref: '#/components/parameters/query-timepoint-selection'
@@ -413,7 +413,6 @@ paths:
         - $ref: '#/components/parameters/query-log'
         - $ref: '#/components/parameters/query-bits'
         - $ref: '#/components/parameters/query-colorspace'
-        - $ref: '#/components/parameters/header-etag'
       responses:
         200:
           $ref: '#/components/responses/thumbnail'
@@ -440,9 +439,6 @@ paths:
         such as computer vision, image processing or machine learning.**
       tags:
         - Resized
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
       requestBody:
         required: true
         content:
@@ -500,6 +496,7 @@ paths:
         Annotation `stroke_width` and `stroke_color` are ignored.
       parameters:
         - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
       requestBody:
         required: true
         content:
@@ -541,6 +538,7 @@ paths:
         Annotation `fill_color`, `stroke_width` and `stroke_color` are ignored.
       parameters:
         - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
       requestBody:
         required: true
         content:
@@ -578,6 +576,7 @@ paths:
         `level`).
       parameters:
         - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
       requestBody:
         required: true
         content:
@@ -602,6 +601,9 @@ paths:
     post:
       summary: Get annotation spectra
       description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
         Get spectrum of every pixels belonging to the annotation(s).
       tags:
         - Annotations
@@ -652,6 +654,9 @@ paths:
     post:
       summary: Get annotation spectral footprint
       description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
         Get annotation spectral footprint. **At least one dimension must have a reduction
         operation.**
 
@@ -705,6 +710,9 @@ paths:
     post:
       summary: Get spectral footprint
       description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
         Get spectral footprint. **At least one dimension must have a reduction
         operation.**
 
@@ -772,6 +780,9 @@ paths:
     post:
       summary: Get spectral window
       description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
         Get spectral window. The input spatial region is given in the same way as regular windows. In output, it is
         returned the spectrum of each pixel belonging to the given spatial region.
       tags:
@@ -3014,6 +3025,11 @@ components:
       items:
         type: object
         properties:
+          index:
+            type: integer
+            format: int64
+            description: Channel index.
+            minimum: 0
           samples_per_pixel:
             type: integer
             format: int64
@@ -3097,7 +3113,16 @@ components:
         type:
           type: string
           description: The metadata value type
-          default: string
+          default: STRING
+          enum:
+            - STRING
+            - INTEGER
+            - DECIMAL
+            - BOOLEAN
+            - JSON
+            - BASE64
+            - DATE
+            - DATE-TIME
 
     # Histograms
     histogram-type:
