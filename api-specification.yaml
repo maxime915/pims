@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Cytomine Python Image Managament Server PIMS
   description: Cytomine Python Image Managament Server PIMS
-  version: 0.1
+  version: 0.1.0
 servers:
   - url: 'https'
 tags:
