@@ -315,7 +315,7 @@ paths:
         - $ref: '#/components/parameters/query-c-reduction'
         - $ref: '#/components/parameters/query-z-reduction'
         - $ref: '#/components/parameters/query-t-reduction'
-        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/query-thumb-length'
         - $ref: '#/components/parameters/query-thumb-width'
         - $ref: '#/components/parameters/query-thumb-height'
         - $ref: '#/components/parameters/query-min-intensities-visualisation'
@@ -354,9 +354,9 @@ paths:
           application/json:
             schema:
               oneOf:
-                - title: thumb-by-size
+                - title: thumb-by-length
                   allOf:
-                    - $ref: '#/components/schemas/target-size-object'
+                    - $ref: '#/components/schemas/target-length-object'
                     - $ref: '#/components/schemas/thumb-basis'
                 - title: thumb-by-width
                   allOf:
@@ -400,7 +400,7 @@ paths:
         - $ref: '#/components/parameters/query-c-reduction'
         - $ref: '#/components/parameters/query-z-reduction'
         - $ref: '#/components/parameters/query-t-reduction'
-        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/query-thumb-length'
         - $ref: '#/components/parameters/query-thumb-width'
         - $ref: '#/components/parameters/query-thumb-height'
         - $ref: '#/components/parameters/query-thumb-zoom'
@@ -445,9 +445,9 @@ paths:
           application/json:
             schema:
               oneOf:
-                - title: resized-by-size
+                - title: resized-by-length
                   allOf:
-                    - $ref: '#/components/schemas/target-size-object'
+                    - $ref: '#/components/schemas/target-length-object'
                     - $ref: '#/components/schemas/resized-basis'
                 - title: resized-by-width
                   allOf:
@@ -503,7 +503,7 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/mask-by-size'
+                - $ref: '#/components/schemas/mask-by-length'
                 - $ref: '#/components/schemas/mask-by-width'
                 - $ref: '#/components/schemas/mask-by-height'
                 - $ref: '#/components/schemas/mask-by-zoom'
@@ -545,7 +545,7 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/crop-by-size'
+                - $ref: '#/components/schemas/crop-by-length'
                 - $ref: '#/components/schemas/crop-by-width'
                 - $ref: '#/components/schemas/crop-by-height'
                 - $ref: '#/components/schemas/crop-by-zoom'
@@ -583,7 +583,7 @@ paths:
           application/json:
             schema:
               oneOf:
-                - $ref: '#/components/schemas/drawing-by-size'
+                - $ref: '#/components/schemas/drawing-by-length'
                 - $ref: '#/components/schemas/drawing-by-width'
                 - $ref: '#/components/schemas/drawing-by-height'
                 - $ref: '#/components/schemas/drawing-by-zoom'
@@ -616,10 +616,10 @@ paths:
           application/json:
             schema:
               oneOf:
-                - title: spectra-by-size
+                - title: spectra-by-length
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-size-object'
+                    - $ref: '#/components/schemas/target-length-object'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: spectra-by-width
                   allOf:
@@ -672,10 +672,10 @@ paths:
           application/json:
             schema:
               oneOf:
-                - title: footprint-by-size
+                - title: footprint-by-length
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-size-object'
+                    - $ref: '#/components/schemas/target-length-object'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: footprint-by-width
                   allOf:
@@ -1031,7 +1031,7 @@ paths:
               - thumb
               - label
               - macro
-        - $ref: '#/components/parameters/query-thumb-size'
+        - $ref: '#/components/parameters/query-thumb-length'
         - $ref: '#/components/parameters/header-etag'
       responses:
         200:
@@ -1803,36 +1803,36 @@ components:
       required: false
       schema:
         $ref: '#/components/schemas/colorspace'
-    query-thumb-size:
-      name: size
+    query-thumb-length:
+      name: length
       in: query
       description: |
-        Size of the largest side of the thumbnail. The other dimension is adjusted to preserve the aspect ratio.
+        Length of the largest side of the thumbnail. The other dimension is adjusted to preserve the aspect ratio.
 
         **Ignored if other size-related parameter such as `width` or `height` is present.**
       required: false
       schema:
-        $ref: '#/components/schemas/target-size-default-256'
+        $ref: '#/components/schemas/target-length-default-256'
     query-thumb-width:
       name: width
       in: query
       description: |
         Width of the thumbnail. Height is adjusted to preserve the aspect ratio.
 
-        **Takes precedence over `size`.**
+        **Takes precedence over `length`.**
       required: false
       schema:
-        $ref: '#/components/schemas/target-size'
+        $ref: '#/components/schemas/target-length'
     query-thumb-height:
       name: height
       in: query
       description: |
         Height of the thumbnail. Width is adjusted to preserve the aspect ratio.
 
-        **Takes precedence over `width` and `size`.**
+        **Takes precedence over `width` and `length`.**
       required: false
       schema:
-        $ref: '#/components/schemas/target-size'
+        $ref: '#/components/schemas/target-length'
     query-thumb-zoom:
       name: zoom
       in: query
@@ -1841,7 +1841,7 @@ components:
         Zoom 0 has the worst resolution (smallest image, top of the image pyramid).
         Maximum admissible zoom level depends on image.
 
-        **Takes precedence over `height`, `width` and `size`.**
+        **Takes precedence over `height`, `width` and `length`.**
       required: false
       schema:
         $ref: '#/components/schemas/zoom-or-level'
@@ -1853,7 +1853,7 @@ components:
         Level 0 has the best resolution (largest image, basis of the image pyramid).
         Maximum admissible tier level depends on image.
 
-        **Takes precedence over `zoom`, `height`, `width` and `size`.**
+        **Takes precedence over `zoom`, `height`, `width` and `length`.**
       required: false
       schema:
         $ref: '#/components/schemas/zoom-or-level'
@@ -2433,47 +2433,49 @@ components:
       oneOf:
         - type: integer
           format: int64
-          description: A size in pixels in the reference tier.
+          description: A length in pixels in the reference tier.
           minimum: 0
           example: 256
         - type: number
           format: double
-          description: A size expressed in percentage relatively to the reference tier.
+          description: A length expressed in percentage relatively to the reference tier.
           minimum: 0.0
           maximum: 1.0
           example: 0.5
 
     # Output sizes
-    target-size:
-      description: Size of the largest side of the target. The other dimension is adjusted to preserve the aspect ratio.
+    target-length:
+      description: |
+        Length of the largest side of the target. The other dimension is adjusted to preserve the aspect
+        ratio.
       example: 256
       oneOf:
         - type: integer
           format: int64
-          description: A size in pixels.
+          description: A length in pixels.
           minimum: 0
           example: 256
         - type: number
           format: double
-          description: A size expressed in percentage relatively to the real image size.
+          description: A length expressed in percentage relatively to the real image length.
           minimum: 0.0
           maximum: 1.0
           example: 0.5
-    target-size-default-256:
+    target-length-default-256:
       default: 256
       allOf:
-        - $ref: '#/components/schemas/target-size'
-    target-size-object:
+        - $ref: '#/components/schemas/target-length'
+    target-length-object:
       type: object
       required:
-        - size
+        - length
       properties:
-        size:
-          $ref: '#/components/schemas/target-size'
+        length:
+          $ref: '#/components/schemas/target-length'
     target-width:
       description: Width of the target. Height is adjusted to preserve the aspect ratio.
       allOf:
-        - $ref: '#/components/schemas/target-size'
+        - $ref: '#/components/schemas/target-length'
     target-width-object:
       type: object
       required:
@@ -2484,7 +2486,7 @@ components:
     target-height:
       description: Height of the target. Width is adjusted to preserve the aspect ratio.
       allOf:
-        - $ref: '#/components/schemas/target-size'
+        - $ref: '#/components/schemas/target-length'
     target-height-object:
       type: object
       required:
@@ -2717,10 +2719,10 @@ components:
           $ref: '#/components/schemas/annotations'
         context_factor:
           $ref: '#/components/schemas/annotation-context-factor'
-    mask-by-size:
+    mask-by-length:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - $ref: '#/components/schemas/target-size-object'
+        - $ref: '#/components/schemas/target-length-object'
     mask-by-width:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
@@ -2754,9 +2756,9 @@ components:
               $ref: '#/components/schemas/annotation-bg-transparency'
         - $ref: '#/components/schemas/window-plane-selection'
         - $ref: '#/components/schemas/image-manipulation'
-    crop-by-size:
+    crop-by-length:
       allOf:
-        - $ref: '#/components/schemas/mask-by-size'
+        - $ref: '#/components/schemas/mask-by-length'
         - $ref: '#/components/schemas/annotation-crop-basis'
     crop-by-width:
       allOf:
@@ -2777,12 +2779,12 @@ components:
     annotation-point-drawing-object:
       type: object
       properties:
-        point_envelope_size:
+        point_envelope_length:
           type: integer
           default: 100
           description: |
             Point geometries have no area. An envelope must be specified to extract some image data.
-            This envelope is a square of size given by this parameter, whose the center is the given point.
+            This envelope is a square of length given by this parameter, whose the center is the given point.
             This parameter has no effect on non-point geometries.
         point_cross:
           type: string
@@ -2809,9 +2811,9 @@ components:
         - $ref: '#/components/schemas/annotation-point-drawing-object'
         - $ref: '#/components/schemas/window-plane-selection'
         - $ref: '#/components/schemas/image-manipulation'
-    drawing-by-size:
+    drawing-by-length:
       allOf:
-        - $ref: '#/components/schemas/mask-by-size'
+        - $ref: '#/components/schemas/mask-by-length'
         - $ref: '#/components/schemas/annotation-drawing-basis'
     drawing-by-width:
       allOf:
