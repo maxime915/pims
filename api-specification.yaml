@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.0.3
 info:
   title: Cytomine Python Image Managament Server PIMS
   description: Cytomine Python Image Managament Server PIMS
@@ -905,7 +905,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/channels-info'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    $ref: '#/components/schemas/channels-info'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -978,9 +983,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/metadata'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    description: Array of metadata
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/metadata'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -1037,9 +1048,15 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/simple-histogram'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    type: array
+                    description: Array of possible histograms
+                    items:
+                      $ref: '#/components/schemas/simple-histogram'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -1297,10 +1314,15 @@ paths:
           content:
             application/json:
               schema:
-                title: Formats
-                type: array
-                items:
-                  $ref: '#/components/schemas/format'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    description: Array of formats
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/format'
   /formats/{format_id}:
     get:
       description: Get a supported format by PIMS
@@ -1332,10 +1354,15 @@ paths:
           content:
             application/json:
               schema:
-                title: Colormaps
-                type: array
-                items:
-                  $ref: '#/components/schemas/colormap'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    description: Array of colormaps
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/colormap'
   /colormaps/{colormap_id}:
     get:
       description: Get a pre-defined colormap in PIMS
@@ -1404,10 +1431,15 @@ paths:
           content:
             application/json:
               schema:
-                title: Filters
-                type: array
-                items:
-                  $ref: '#/components/schemas/filter'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    description: Array of filters
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/filter'
   /filters/{filter_id}:
     get:
       description: Get an image filter in PIMS
@@ -3133,6 +3165,10 @@ components:
               items:
                 type: number
                 format: double
+    collection-size:
+      type: integer
+      format: int64
+      description: The collection size
   headers:
     If-None-Match:
       description: |
@@ -3297,6 +3333,8 @@ components:
                     $ref: '#/components/schemas/footprint-reduction-nullable'
                   t:
                     $ref: '#/components/schemas/footprint-reduction-nullable'
+              size:
+                $ref: '#/components/schemas/collection-size'
               items:
                 description: |
                   Hyperspectral footprints according given reduction operations for each non-reduced dimension
@@ -3329,10 +3367,8 @@ components:
           schema:
             type: object
             properties:
-              length:
-                type: integer
-                format: int64
-                description: The collection length.
+              size:
+                $ref: '#/components/schemas/collection-size'
               items:
                 description: |
                   Spectrum of every pixel in the spatial region.
