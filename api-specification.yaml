@@ -919,6 +919,32 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
+  /file/{filepath}/info/pyramid:
+    get:
+      description: Get information about an image pyramid.
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pyramid-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/channels:
     get:
       description: Get information about channels in an image
@@ -3036,6 +3062,45 @@ components:
           description: The number of bits within the type storing each pixel that are significants.
           type: integer
           minimum: 1
+    pyramid-info:
+      type: object
+      description: |
+        Information about an image pyramid.
+      properties:
+        tile_size:
+          type: integer
+          format: int32
+          description: The size of a tile
+          minimum: 1
+          example: 256
+        n_tiers:
+          type: integer
+          format: int64
+          description: The number of tiers in the pyramid.
+          minimum: 1
+        tiers:
+          type: array
+          items:
+            type: object
+            properties:
+              zoom:
+                description: The zoom at this tier
+                allOf:
+                  - $ref: '#/components/schemas/zoom-or-level'
+              level:
+                description: The level at this tier
+                allOf:
+                  - $ref: '#/components/schemas/zoom-or-level'
+              width:
+                description: The tier width
+                type: integer
+                format: int64
+                minimum: 1
+              height:
+                description: The tier height
+                type: integer
+                format: int64
+                minimum: 1
     instrument-info:
       type: object
       description: |
@@ -3117,6 +3182,8 @@ components:
           properties:
             image:
               $ref: '#/components/schemas/image-info'
+            pyramid:
+              $ref: '#/components/schemas/pyramid-info'
             channels:
               $ref: '#/components/schemas/channels-info'
             instrument:
