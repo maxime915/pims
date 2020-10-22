@@ -8,16 +8,70 @@ servers:
 tags:
   - name: Tiles
     description: |
-      Tiles are rectangular regions extracted from an image at given resolution.
-      Tile size is always 256x256, except on borders.
-  - name: 'Windows'
-    description: ''
+      Tiles are non-overlaping rectangular regions covering an image at given resolution (a tier in a pyramidal image).
+
+      Tile size is fixed except right-most or bottom-most tiles which might be smaller. It very often depends on
+      internal image parameters. Common tile sizes are `256*256` and `512*512`.
+
+      ### Input region
+      * Tile index and tier (zoom or level)
+      * Tile coordinates and tier (zoom or level)
+
+      ### Target size
+      Always defined by underlying image tile size.
+  - name: Windows
+    description: |
+      Windows are rectangular portions extracted from the underlying image content (input region) and optionnaly
+      rescaled (target size).
+
+      ### Input region
+      * Region (top, left, width, height) and reference tier (zoom or level)
+      * Tile index and tier (zoom or level)
+      * Tile coordinates and tier (zoom or level)
+
+      ### Target size
+      * Length (largest side)
+      * Zoom
+      * Level
   - name: Thumbnails
-    description: ''
+    description: |
+      Thumbnails are reduced-size versions of the full underlying image content. While resized are general purpose,
+      thumbnails are optimized for human visualisation.
+
+      ### Input region
+      Always full underlying image.
+
+      ### Target size
+      * Length (largest side)
+      * Width
+      * Height
   - name: Resized
-    description: ''
+    description: |
+      Resized are reduced-size versions of the full underlying image content. While thumbnails are optimized for
+      human visualisation, resized are general purpose.
+
+      ### Input region
+      Always full underlying image.
+
+      ### Target size
+      * Length (largest side)
+      * Width
+      * Height
+      * Zoom
+      * Level
   - name: Annotations
-    description: Annotations are geometries that can be reprsented on an image crop in various ways.
+    description: |
+      Annotations are geometries that can be reprsented on an image crop in various ways.
+
+      ### Input region
+      Always rectangular envelope of all geometries multiplied by an optional context factor.
+
+      ### Target size
+      * Length (largest side)
+      * Width
+      * Height
+      * Zoom
+      * Level
   - name: Hyperspectral
     description: Hyperspectral specific extraction methods.
   - name: Metadata
@@ -261,13 +315,35 @@ paths:
           application/json:
             schema:
               oneOf:
-                - title: region-by-zoom-and-region
+                - title: input-by-zoom-region-target-by-length
                   allOf:
-                    - $ref: '#/components/schemas/target-zoom-region'
+                    - $ref: '#/components/schemas/input-zoom-region'
+                    - $ref: '#/components/schemas/target-length-object'
                     - $ref: '#/components/schemas/window-basis'
-                - title: region-by-level-and-region
+                - title: input-by-zoom-region-target-by-zoom
                   allOf:
-                    - $ref: '#/components/schemas/target-level-region'
+                    - $ref: '#/components/schemas/input-zoom-region'
+                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-by-zoom-region-target-by-level
+                  allOf:
+                    - $ref: '#/components/schemas/input-zoom-region'
+                    - $ref: '#/components/schemas/target-level-object'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-by-level-region-target-by-length
+                  allOf:
+                    - $ref: '#/components/schemas/input-level-region'
+                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-by-level-region-target-by-zoom
+                  allOf:
+                    - $ref: '#/components/schemas/input-level-region'
+                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-by-level-region-target-by-level
+                  allOf:
+                    - $ref: '#/components/schemas/input-level-region'
+                    - $ref: '#/components/schemas/target-level-object'
                     - $ref: '#/components/schemas/window-basis'
                 - title: region-by-zoom-and-tile-index
                   allOf:
@@ -360,15 +436,15 @@ paths:
               oneOf:
                 - title: thumb-by-length
                   allOf:
-                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/target-length-object-required'
                     - $ref: '#/components/schemas/thumb-basis'
                 - title: thumb-by-width
                   allOf:
-                    - $ref: '#/components/schemas/target-width-object'
+                    - $ref: '#/components/schemas/target-width-object-required'
                     - $ref: '#/components/schemas/thumb-basis'
                 - title: thumb-by-height
                   allOf:
-                    - $ref: '#/components/schemas/target-height-object'
+                    - $ref: '#/components/schemas/target-height-object-required'
                     - $ref: '#/components/schemas/thumb-basis'
       responses:
         200:
@@ -454,23 +530,23 @@ paths:
               oneOf:
                 - title: resized-by-length
                   allOf:
-                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/target-length-object-required'
                     - $ref: '#/components/schemas/resized-basis'
                 - title: resized-by-width
                   allOf:
-                    - $ref: '#/components/schemas/target-width-object'
+                    - $ref: '#/components/schemas/target-width-object-required'
                     - $ref: '#/components/schemas/resized-basis'
                 - title: resized-by-height
                   allOf:
-                    - $ref: '#/components/schemas/target-height-object'
+                    - $ref: '#/components/schemas/target-height-object-required'
                     - $ref: '#/components/schemas/resized-basis'
                 - title: resized-by-zoom
                   allOf:
-                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/target-zoom-object-required'
                     - $ref: '#/components/schemas/resized-basis'
                 - title: resized-by-level
                   allOf:
-                    - $ref: '#/components/schemas/target-level-object'
+                    - $ref: '#/components/schemas/target-level-object-required'
                     - $ref: '#/components/schemas/resized-basis'
       responses:
         200:
@@ -633,27 +709,27 @@ paths:
                 - title: spectra-by-length
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/target-length-object-required'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: spectra-by-width
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-width-object'
+                    - $ref: '#/components/schemas/target-width-object-required'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: spectra-by-height
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-height-object'
+                    - $ref: '#/components/schemas/target-height-object-required'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: spectra-by-zoom
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/target-zoom-object-required'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: spectra-by-level
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-level-object'
+                    - $ref: '#/components/schemas/target-level-object-required'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
       responses:
         200:
@@ -689,27 +765,27 @@ paths:
                 - title: footprint-by-length
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/target-length-object-required'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: footprint-by-width
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-width-object'
+                    - $ref: '#/components/schemas/target-width-object-required'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: footprint-by-height
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-height-object'
+                    - $ref: '#/components/schemas/target-height-object-required'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: footprint-by-zoom
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/target-zoom-object-required'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: footprint-by-level
                   allOf:
                     - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-level-object'
+                    - $ref: '#/components/schemas/target-level-object-required'
                     - $ref: '#/components/schemas/footprint-plane-selection'
       responses:
         200:
@@ -759,11 +835,11 @@ paths:
               oneOf:
                 - title: region-by-zoom-and-region
                   allOf:
-                    - $ref: '#/components/schemas/target-zoom-region'
+                    - $ref: '#/components/schemas/input-zoom-region'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: region-by-level-and-region
                   allOf:
-                    - $ref: '#/components/schemas/target-level-region'
+                    - $ref: '#/components/schemas/input-level-region'
                     - $ref: '#/components/schemas/footprint-plane-selection'
                 - title: region-by-zoom-and-tile-index
                   allOf:
@@ -812,11 +888,11 @@ paths:
               oneOf:
                 - title: region-by-zoom-and-region
                   allOf:
-                    - $ref: '#/components/schemas/target-zoom-region'
+                    - $ref: '#/components/schemas/input-zoom-region'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: region-by-level-and-region
                   allOf:
-                    - $ref: '#/components/schemas/target-level-region'
+                    - $ref: '#/components/schemas/input-level-region'
                     - $ref: '#/components/schemas/spectral-window-plane-selection'
                 - title: region-by-zoom-and-tile-index
                   allOf:
@@ -1742,7 +1818,7 @@ components:
       in: path
       description: |
         The zoom level.
-        Zoom 0 has the worst resolution (smallest image, top of the image pyramid).
+        Zoom 0 denotes the tier with the worst resolution (smallest image, top of the image pyramid).
         Maximum admissible zoom level depends on image.
       required: true
       schema:
@@ -1752,7 +1828,7 @@ components:
       in: path
       description: |
         The tier level.
-        Level 0 has the best resolution (largest image, basis of the image pyramid).
+        Level 0 denotes the tier with the best resolution (largest image, basis of the image pyramid).
         Maximum admissible tier level depends on image.
       required: true
       schema:
@@ -1982,11 +2058,11 @@ components:
       example: '2:6'
     multiple-channel-indexes:
       description: |
-        Image channels used to render the response. The reduction operation to merge the channels
-        can be set in `c_reduction` parameter.
+        Image channels used to render the response.
         This parameter is interpreted as a set such that duplicates are ignored.
-
         **By default**, all channels are considered.
+
+        The reduction operation to merge the channels can be set in `c_reduction` parameter.
       oneOf:
         - $ref: '#/components/schemas/single-channel-index'
         - $ref: '#/components/schemas/range-channel-indexes'
@@ -2007,11 +2083,11 @@ components:
       example: '2:6'
     multiple-z-slice-indexes:
       description: |
-        Image focal planes used to render the response. The reduction operation to merge the focal planes
-        can be set in `z_reduction` parameter.
+        Image focal planes used to render the response.
         This parameter is interpreted as a set such that duplicates are ignored.
-
         **By default**, the median focal plane is considered.
+
+        The reduction operation to merge the focal planes can be set in `z_reduction` parameter.
       oneOf:
         - $ref: '#/components/schemas/single-z-slice-index'
         - $ref: '#/components/schemas/range-z-slice-indexes'
@@ -2032,11 +2108,11 @@ components:
       example: '2:6'
     multiple-timepoint-indexes:
       description: |
-        Image timepoints used to render the response. The reduction operation to merge the timepoints
-        can be set in `t_reduction` parameter.
+        Image timepoints used to render the response.
         This parameter is interpreted as a set such that duplicates are ignored.
-
         **By default**, the first timepoint considered.
+
+        The reduction operation to merge the timepoints can be set in `t_reduction` parameter.
       oneOf:
         - $ref: '#/components/schemas/single-timepoint-index'
         - $ref: '#/components/schemas/range-timepoint-indexes'
@@ -2482,14 +2558,9 @@ components:
       type: integer
       format: int64
       minimum: 0
-    reference:
-      type: string
-      enum:
-        - CURRENT
-        - TRUE_SIZE
-      default: TRUE_SIZE
     region:
       type: object
+      description: The input region in the reference tier.
       required:
         - top
         - left
@@ -2497,13 +2568,27 @@ components:
         - height
       properties:
         top:
-          $ref: '#/components/schemas/region-coordinate'
+          allOf:
+            - description: |
+                The input region top coordinate in the reference tier. The position `0` denotes the
+                top-most pixels in the image.
+            - $ref: '#/components/schemas/region-coordinate'
         left:
-          $ref: '#/components/schemas/region-coordinate'
+          allOf:
+            - description: |
+                The input region left coordinate in the reference tier. The position `0` denotes the left-most pixels
+                in the image.
+            - $ref: '#/components/schemas/region-coordinate'
         width:
-          $ref: '#/components/schemas/region-length'
+          allOf:
+            - description: |
+                The input region width in the reference tier.
+            - $ref: '#/components/schemas/region-length'
         height:
-          $ref: '#/components/schemas/region-length'
+          allOf:
+            - description: |
+                The input region height in the reference tier.
+            - $ref: '#/components/schemas/region-length'
     region-coordinate:
       oneOf:
         - type: integer
@@ -2553,10 +2638,15 @@ components:
       default: 256
       allOf:
         - $ref: '#/components/schemas/target-length'
-    target-length-object:
+    target-length-object-required:
       type: object
       required:
         - length
+      properties:
+        length:
+          $ref: '#/components/schemas/target-length'
+    target-length-object:
+      type: object
       properties:
         length:
           $ref: '#/components/schemas/target-length'
@@ -2564,10 +2654,15 @@ components:
       description: Width of the target. Height is adjusted to preserve the aspect ratio.
       allOf:
         - $ref: '#/components/schemas/target-length'
-    target-width-object:
+    target-width-object-required:
       type: object
       required:
         - width
+      properties:
+        width:
+          $ref: '#/components/schemas/target-width'
+    target-width-object:
+      type: object
       properties:
         width:
           $ref: '#/components/schemas/target-width'
@@ -2575,10 +2670,15 @@ components:
       description: Height of the target. Width is adjusted to preserve the aspect ratio.
       allOf:
         - $ref: '#/components/schemas/target-length'
-    target-height-object:
+    target-height-object-required:
       type: object
       required:
         - height
+      properties:
+        height:
+          $ref: '#/components/schemas/target-height'
+    target-height-object:
+      type: object
       properties:
         height:
           $ref: '#/components/schemas/target-height'
@@ -2589,10 +2689,15 @@ components:
         Maximum admissible zoom level depends on image.
       allOf:
         - $ref: '#/components/schemas/zoom-or-level'
-    target-zoom-object:
+    target-zoom-object-required:
       type: object
       required:
         - zoom
+      properties:
+        zoom:
+          $ref: '#/components/schemas/target-zoom'
+    target-zoom-object:
+      type: object
       properties:
         zoom:
           $ref: '#/components/schemas/target-zoom'
@@ -2603,10 +2708,15 @@ components:
         Maximum admissible tier level depends on image.     
       allOf:
         - $ref: '#/components/schemas/zoom-or-level'
-    target-level-object:
+    target-level-object-required:
       type: object
       required:
         - level
+      properties:
+        level:
+          $ref: '#/components/schemas/target-level'
+    target-level-object:
+      type: object
       properties:
         level:
           $ref: '#/components/schemas/target-level'
@@ -2656,28 +2766,31 @@ components:
           $ref: '#/components/schemas/tile-x'
         ty:
           $ref: '#/components/schemas/tile-y'
-    target-zoom-region:
-      allOf:
-        - type: object
-          required:
-            - zoom
-          properties:
-            zoom:
-              $ref: '#/components/schemas/target-zoom'
-            reference_tier:
-              $ref: '#/components/schemas/reference'
-        - $ref: '#/components/schemas/region'
-    target-level-region:
-      allOf:
-        - type: object
-          required:
-            - level
-          properties:
-            level:
-              $ref: '#/components/schemas/target-level'
-            reference_tier:
-              $ref: '#/components/schemas/reference'
-        - $ref: '#/components/schemas/region'
+    input-zoom-region:
+      type: object
+      required:
+        - region
+      properties:
+        region:
+          $ref: '#/components/schemas/region'
+        reference_zoom:
+          type: integer
+          description: |
+            The zoom denoting the tier to use as reference coordinate system for the input region. By default,
+            maximum zoom is used.
+    input-level-region:
+      type: object
+      required:
+        - region
+      properties:
+        region:
+          $ref: '#/components/schemas/region'
+        reference_level:
+          type: integer
+          default: 0
+          description: |
+            The level denoting the tier to use as reference coordinate system for the input region. By default,
+            level 0 is used.
     thumb-use-precomputed:
       description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
       type: boolean
@@ -2810,23 +2923,23 @@ components:
     mask-by-length:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - $ref: '#/components/schemas/target-length-object'
+        - $ref: '#/components/schemas/target-length-object-required'
     mask-by-width:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - $ref: '#/components/schemas/target-width-object'
+        - $ref: '#/components/schemas/target-width-object-required'
     mask-by-height:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - $ref: '#/components/schemas/target-height-object'
+        - $ref: '#/components/schemas/target-height-object-required'
     mask-by-zoom:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - $ref: '#/components/schemas/target-zoom-object'
+        - $ref: '#/components/schemas/target-zoom-object-required'
     mask-by-level:
       allOf:
         - $ref: '#/components/schemas/annotation-mask-basis'
-        - $ref: '#/components/schemas/target-level-object'
+        - $ref: '#/components/schemas/target-level-object-required'
     annotation-bg-transparency:
       type: integer
       format: int32
