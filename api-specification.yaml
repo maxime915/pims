@@ -5,7 +5,7 @@ info:
     Cytomine Python Image Managament Server (PIMS) HTTP API. While this API is intended to be internal, a lot of the
     following specification can be ported to the external Cytomine API.
 
-    # Additional formats
+    # Additional API formats
     In addition to OpenAPI types and formats, the following table contains some additional formats used in this
     specification.
 
