@@ -17,8 +17,8 @@ info:
     | `string` | `colormap-id` | **"jet"**, **"!jet"**||
     | `string` | `filter-id` | **"yen"** ||
   version: 0.1.0
-servers:
-  - url: 'https'
+#servers:
+#  - url: 'https'
 tags:
   - name: Tiles
     description: |
