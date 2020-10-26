@@ -118,6 +118,7 @@ paths:
       - $ref: '#/components/parameters/path-tile-index'
       - $ref: '#/components/parameters/header-etag'
     get:
+      operationId: pims.api.tile.get_by_zoom
       summary: Get a tile at zoom
       description: |
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
@@ -151,6 +152,7 @@ paths:
         404:
           $ref: '#/components/responses/problem-not-found'
     post:
+      operationId: pims.api.tile.get_with_body_by_zoom
       summary: Get a tile at zoom
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -188,6 +190,7 @@ paths:
       - $ref: '#/components/parameters/path-tile-index'
       - $ref: '#/components/parameters/header-etag'
     get:
+      operationId: pims.api.tile.get_by_level
       summary: Get a tile at level
       description: |
         Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
@@ -221,6 +224,7 @@ paths:
         404:
           $ref: '#/components/responses/problem-not-found'
     post:
+      operationId: pims.api.tile.get_with_body_by_level
       summary: Get a tile at level
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -253,6 +257,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/tile:
     post:
+      operationId: pims.api.tile.get_with_body
       summary: Get a tile (generic)
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -306,6 +311,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/window:
     post:
+      operationId: pims.api.window.get_with_body
       summary: Get a window
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -392,6 +398,7 @@ paths:
       - $ref: '#/components/parameters/header-etag'
       - $ref: '#/components/parameters/header-x-image-size-safety'
     get:
+      operationId: pims.api.thumb.get
       summary: Get a thumbnail
       description: |
         Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
@@ -429,6 +436,7 @@ paths:
         404:
           $ref: '#/components/responses/problem-not-found'
     post:
+      operationId: pims.api.thumb.get_with_body
       summary: Get a thumbnail
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -475,6 +483,7 @@ paths:
       - $ref: '#/components/parameters/header-etag'
       - $ref: '#/components/parameters/header-x-image-size-safety'
     get:
+      operationId: pims.api.resized.get
       summary: Get a resized full image
       description: |
         Get a resized full image (thumbnail), with given channels, focal planes and timepoints. If
@@ -520,6 +529,7 @@ paths:
         406:
           $ref: '#/components/responses/problem-not-acceptable'
     post:
+      operationId: pims.api.resized.get_with_body
       summary: Get a resized full image
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -575,6 +585,7 @@ paths:
           $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}/annotation/mask:
     post:
+      operationId: pims.api.annotation.mask
       tags:
         - Annotations
       summary: Get an annotation mask
@@ -619,6 +630,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/annotation/crop:
     post:
+      operationId: pims.api.annotation.crop
       tags:
         - Annotations
       summary: Get an annotation crop
@@ -664,6 +676,7 @@ paths:
           $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}/annotation/drawing:
     post:
+      operationId: pims.api.annotation.drawing
       tags:
         - Annotations
       summary: Get an annotation drawing
@@ -703,6 +716,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/annotation/spectra:
     post:
+      operationId: pims.api.annotation.spectra
       summary: Get annotation spectra
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -756,6 +770,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/annotation/footprint:
     post:
+      operationId: pims.api.annotation.footprint
       summary: Get annotation spectral footprint
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -812,6 +827,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/spectral/footprint:
     post:
+      operationId: pims.api.spectral.footprint
       summary: Get spectral footprint
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -882,6 +898,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/spectral/window:
     post:
+      operationId: pims.api.spectral.window
       summary: Get spectral window
       description: |
         **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
@@ -935,6 +952,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info:
     get:
+      operationId: pims.api.metadata.info
       description: Get all information about a file
       tags:
         - Metadata
@@ -961,6 +979,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/file:
     get:
+      operationId: pims.api.metadata.file
       description: Get information about a file
       tags:
         - Metadata
@@ -985,6 +1004,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/image:
     get:
+      operationId: pims.api.metadata.image
       description: Get information about an image.
       tags:
         - Metadata
@@ -1011,6 +1031,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/pyramid:
     get:
+      operationId: pims.api.metadata.pyramid
       description: Get information about an image pyramid.
       tags:
         - Metadata
@@ -1037,6 +1058,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/channels:
     get:
+      operationId: pims.api.metadata.channels
       description: Get information about channels in an image
       tags:
         - Metadata
@@ -1068,6 +1090,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/instrument:
     get:
+      operationId: pims.api.metadata.instrument
       description: Get information about instrument in an image
       tags:
         - Metadata
@@ -1094,6 +1117,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info/associated:
     get:
+      operationId: pims.api.metadata.associated
       description: Get information about associated files in an image
       tags:
         - Metadata
@@ -1121,6 +1145,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/metadata:
     get:
+      operationId: pims.api.metadata.metadata
       description: Get readable raw metadata from an image file
       tags:
         - Metadata
@@ -1155,6 +1180,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/associated/{associated_key}:
     get:
+      operationId: pims.api.metadata.associated_image
       summary: Get an associated image
       description: Get the associated image specified by the key, if it exists.
       tags:
@@ -1189,6 +1215,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms:
     get:
+      operationId: pims.api.histograms.list
       tags:
         - Histograms
       description: Get possible histograms
@@ -1223,6 +1250,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms/full:
     get:
+      operationId: pims.api.histograms.full
       tags:
         - Histograms
       summary: Get full image histogram
@@ -1257,6 +1285,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms/c/{channels}:
     get:
+      operationId: pims.api.histograms.per_channel
       tags:
         - Histograms
       summary: Get per-channel image histogram
@@ -1297,6 +1326,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
     get:
+      operationId: pims.api.histograms.per_plane
       tags:
         - Histograms
       summary: Get per-plane image histogram
@@ -1343,6 +1373,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/export/{format_id}:
     get:
+      operationId: pims.api.operations.export
       description: Export a file in another format
       tags:
         - Export
@@ -1368,6 +1399,7 @@ paths:
           $ref: '#/components/responses/problem-not-acceptable'
   /file/{filepath}:
     post:
+      operationId: pims.api.operations.import_
       description: Import a file
       tags:
         - Import
@@ -1400,6 +1432,7 @@ paths:
         409:
           $ref: '#/components/responses/problem-conflict'
     delete:
+      operationId: pims.api.operations.delete
       description: Delete a file and its children
       tags:
         - Housekeeping
@@ -1412,6 +1445,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /info:
     get:
+      operationId: pims.api.server.status
       description: Status of PIMS
       tags:
         - Server
@@ -1431,6 +1465,7 @@ paths:
                     description: PIMS API specification version
   /directory/{directorypath}/usage:
     get:
+      operationId: pims.api.housekeeping.usage
       description: Directory usage on disk
       tags:
         - Housekeeping
@@ -1475,6 +1510,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /formats:
     get:
+      operationId: pims.api.formats.list
       description: List of supported formats by PIMS
       tags:
         - Formats
@@ -1495,6 +1531,7 @@ paths:
                       $ref: '#/components/schemas/format'
   /formats/{format_id}:
     get:
+      operationId: pims.api.formats.show
       description: Get a supported format by PIMS
       tags:
         - Formats
@@ -1515,6 +1552,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /colormaps:
     get:
+      operationId: pims.api.colormaps.list
       description: List of pre-defined colormaps in PIMS
       tags:
         - Colormaps
@@ -1535,6 +1573,7 @@ paths:
                       $ref: '#/components/schemas/colormap'
   /colormaps/{colormap_id}:
     get:
+      operationId: pims.api.colormaps.show
       description: Get a pre-defined colormap in PIMS
       tags:
         - Colormaps
@@ -1556,6 +1595,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /colormaps/{colormap_id}/representation:
     get:
+      operationId: pims.api.colormaps.representation
       description: Get a graphic representation of a colormap
       tags:
         - Colormaps
@@ -1592,6 +1632,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /filters:
     get:
+      operationId: pims.api.filters.list
       description: List of available image filters in PIMS
       tags:
         - Filters
@@ -1612,6 +1653,7 @@ paths:
                       $ref: '#/components/schemas/filter'
   /filters/{filter_id}:
     get:
+      operationId: pims.api.filters.show
       description: Get an image filter in PIMS
       tags:
         - Filters
@@ -1633,6 +1675,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /slice/tile:
     get:
+      operationId: pims.api.tile.get_v2
       description: Get a tile using IMS V2.x specification.
       deprecated: true
       tags:
@@ -1699,6 +1742,7 @@ paths:
           description: Bad request
   /image/tile.jpg:
     get:
+      operationId: pims.api.tile.get_v1
       description: Get a tile using IMS V1.x specification.
       deprecated: true
       tags:
@@ -1758,6 +1802,7 @@ paths:
           description: Bad request
   /storage/size.json:
     get:
+      operationId: pims.api.housekeeping.usage_v1
       tags:
         - Housekeeping
       deprecated: true
