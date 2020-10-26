@@ -1266,7 +1266,7 @@ paths:
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/query-histogram-type'
         - $ref: '#/components/parameters/query-histogram-bins'
-        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/path-channel-selection'
       responses:
         200:
           description: OK
@@ -1306,9 +1306,9 @@ paths:
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/query-histogram-type'
         - $ref: '#/components/parameters/query-histogram-bins'
-        - $ref: '#/components/parameters/query-channel-selection'
-        - $ref: '#/components/parameters/query-z-slice-selection'
-        - $ref: '#/components/parameters/query-timepoint-selection'
+        - $ref: '#/components/parameters/path-channel-selection'
+        - $ref: '#/components/parameters/path-z-slice-selection'
+        - $ref: '#/components/parameters/path-timepoint-selection'
       responses:
         200:
           description: OK
@@ -1873,6 +1873,14 @@ components:
       explode: false
       schema:
         $ref: '#/components/schemas/multiple-channel-indexes'
+    path-channel-selection:
+      name: channels
+      in: path
+      required: true
+      style: form
+      explode: false
+      schema:
+        $ref: '#/components/schemas/multiple-channel-indexes'
     query-z-slice-selection:
       name: z_slices
       in: query
@@ -1881,10 +1889,26 @@ components:
       explode: false
       schema:
         $ref: '#/components/schemas/multiple-z-slice-indexes'
+    path-z-slice-selection:
+      name: z_slices
+      in: path
+      required: true
+      style: form
+      explode: false
+      schema:
+        $ref: '#/components/schemas/multiple-z-slice-indexes'
     query-timepoint-selection:
       name: timepoints
       in: query
       required: false
+      style: form
+      explode: false
+      schema:
+        $ref: '#/components/schemas/multiple-timepoint-indexes'
+    path-timepoint-selection:
+      name: timepoints
+      in: path
+      required: true
       style: form
       explode: false
       schema:
