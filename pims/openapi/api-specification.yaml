@@ -2284,8 +2284,9 @@ components:
           items:
             $ref: '#/components/schemas/intensity-selection'
     min-intensity-selection-list-default-auto-image:
-      default: AUTO_IMAGE
+      x-default: AUTO_IMAGE
       allOf:
+        - default: AUTO_IMAGE
         - $ref: '#/components/schemas/min-intensity-selection-list'
     max-intensity-selection-list:
       description: |
@@ -2318,8 +2319,9 @@ components:
           items:
             $ref: '#/components/schemas/intensity-selection'
     max-intensity-selection-list-default-auto-image:
-      default: AUTO_IMAGE
+      x-default: AUTO_IMAGE
       allOf:
+        - default: AUTO_IMAGE
         - $ref: '#/components/schemas/max-intensity-selection-list'
 
     # Colormap
@@ -2435,9 +2437,11 @@ components:
         If `gamma < 1`, faint objects become more intense while bright objects do not.
 
         If `gamma > 1`, medium-intensity objects become fainter while bright objects do not.
-      default: 1
+      x-default: 1
       oneOf:
-        - $ref: '#/components/schemas/gamma'
+        - allOf:
+          - default: 1
+          - $ref: '#/components/schemas/gamma'
         - type: array
           description: |
             Expected format is an array of size:
@@ -2649,8 +2653,9 @@ components:
           maximum: 1.0
           example: 0.5
     target-length-default-256:
-      default: 256
+      x-default: 256
       allOf:
+        - default: 256
         - $ref: '#/components/schemas/target-length'
     target-length-object-required:
       type: object
