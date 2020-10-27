@@ -1614,6 +1614,8 @@ paths:
             type: integer
             format: int32
             default: 100
+            maximum: 512
+            minimum: 10
         - name: height
           in: query
           required: false
@@ -1622,10 +1624,12 @@ paths:
             type: integer
             format: int32
             default: 32
+            maximum: 512
+            minimum: 1
         - $ref: '#/components/parameters/header-etag'
       responses:
         200:
-          $ref: '#/components/responses/generic-image'
+          $ref: '#/components/responses/colormap-representation'
         304:
           $ref: '#/components/responses/not-modified'
         404:
@@ -2397,7 +2401,7 @@ components:
     colormap-id:
       type: string
       format: colormap-id
-      description: A unique identifier for an image filter
+      description: A unique identifier for a colormap
       example: JET
     colormap-id-list:
       description: |
@@ -3777,6 +3781,22 @@ components:
           schema:
             $ref: '#/components/schemas/generic-image'
         image/webp:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+    colormap-representation:
+      description: OK - Image
+      headers:
+        If-None-Match:
+          $ref: '#/components/headers/If-None-Match'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
+      content:
+        image/jpeg:
+          schema:
+            $ref: '#/components/schemas/generic-image'
+        image/png:
           schema:
             $ref: '#/components/schemas/generic-image'
     hyperspectral-footprint:
