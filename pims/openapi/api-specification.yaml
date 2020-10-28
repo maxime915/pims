@@ -2621,6 +2621,10 @@ components:
           type: boolean
           description: Whether PIMS can write a file in this format or not.
           default: false
+        plugin:
+          type: string
+          description: PIMS plugin providing this format, returned as a Python module.
+          example: pims.formats.vms
 
     zoom-or-level:
       type: integer
