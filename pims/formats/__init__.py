@@ -1,3 +1,4 @@
+import logging
 from importlib import import_module
 from inspect import isclass, isabstract
 from pkgutil import iter_modules
@@ -5,6 +6,8 @@ from pkgutil import iter_modules
 from pims.formats.abstract import AbstractFormat
 
 FORMAT_PLUGIN_PREFIX = 'pims_format_'
+
+logger = logging.getLogger("pims.formats")
 
 
 def _discover_format_plugins(existing=None):
@@ -35,7 +38,9 @@ def _find_formats_in_module(mod):
         submodule_name = "{}.{}".format(mod.__name__, name)
         for var in vars(import_module(submodule_name)).values():
             if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var):
-                formats.append(var)
+                format = var
+                formats.append(format)
+                logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))
     return formats
 
 
@@ -50,6 +55,7 @@ def _get_all_formats():
     """
     formats = list()
     for module_name in FORMAT_PLUGINS:
+        logger.info("Importing formats from {} plugin...".format(module_name))
         formats.extend(_find_formats_in_module(import_module(module_name)))
 
     return formats
