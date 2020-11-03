@@ -31,7 +31,7 @@ else:
 
 
 def create_app(test_config=None):
-    app = connexion.FlaskApp(__name__, specification_dir='openapi/')
+    app = connexion.FlaskApp(__name__, specification_dir='openapi/', options={'swagger_url': '/docs'})
     api = app.add_api('api-specification.yaml')
     flask_app = app.app
     flask_app.config.from_pyfile(CONFIG_FILE)
