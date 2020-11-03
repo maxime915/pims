@@ -954,6 +954,7 @@ paths:
     get:
       operationId: pims.api.metadata.info
       description: Get all information about a file
+      summary: Get all file information
       tags:
         - Metadata
       parameters:
@@ -981,6 +982,7 @@ paths:
     get:
       operationId: pims.api.metadata.file
       description: Get information about a file
+      summary: Get file information
       tags:
         - Metadata
       parameters:
@@ -1006,6 +1008,7 @@ paths:
     get:
       operationId: pims.api.metadata.image
       description: Get information about an image.
+      summary: Get image information
       tags:
         - Metadata
       parameters:
@@ -1033,6 +1036,7 @@ paths:
     get:
       operationId: pims.api.metadata.pyramid
       description: Get information about an image pyramid.
+      summary: Get image pyramid information
       tags:
         - Metadata
       parameters:
@@ -1060,6 +1064,7 @@ paths:
     get:
       operationId: pims.api.metadata.channels
       description: Get information about channels in an image
+      summary: Get image channel information
       tags:
         - Metadata
       parameters:
@@ -1092,6 +1097,7 @@ paths:
     get:
       operationId: pims.api.metadata.instrument
       description: Get information about instrument in an image
+      summary: Get image instrument information
       tags:
         - Metadata
       parameters:
@@ -1119,6 +1125,7 @@ paths:
     get:
       operationId: pims.api.metadata.associated
       description: Get information about associated files in an image
+      summary: Get associated file information
       tags:
         - Metadata
         - Associated
@@ -1147,6 +1154,7 @@ paths:
     get:
       operationId: pims.api.metadata.metadata
       description: Get readable raw metadata from an image file
+      summary: Get image metadata
       tags:
         - Metadata
       parameters:
@@ -1216,6 +1224,7 @@ paths:
   /file/{filepath}/histograms:
     get:
       operationId: pims.api.histograms.list
+      summary: Get possible histograms
       tags:
         - Histograms
       description: Get possible histograms
@@ -1375,6 +1384,7 @@ paths:
     get:
       operationId: pims.api.operations.export
       description: Export a file in another format
+      summary: Export file
       tags:
         - Export
       parameters:
@@ -1401,6 +1411,7 @@ paths:
     post:
       operationId: pims.api.operations.import_
       description: Import a file
+      summary: Import a file
       tags:
         - Import
       parameters:
@@ -1434,6 +1445,7 @@ paths:
     delete:
       operationId: pims.api.operations.delete
       description: Delete a file and its children
+      summary: Delete a file
       tags:
         - Housekeeping
       parameters:
@@ -1447,6 +1459,7 @@ paths:
     get:
       operationId: pims.api.server.status
       description: Status of PIMS
+      summary: Status of PIMS
       tags:
         - Server
       responses:
@@ -1467,6 +1480,7 @@ paths:
     get:
       operationId: pims.api.housekeeping.usage
       description: Directory usage on disk
+      summary: Directory usage
       tags:
         - Housekeeping
       parameters:
@@ -1512,6 +1526,7 @@ paths:
     get:
       operationId: pims.api.formats.list
       description: List of supported formats by PIMS
+      summary: List all formats
       tags:
         - Formats
       responses:
@@ -1533,6 +1548,7 @@ paths:
     get:
       operationId: pims.api.formats.show
       description: Get a supported format by PIMS
+      summary: Get a format
       tags:
         - Formats
       parameters:
@@ -1554,6 +1570,7 @@ paths:
     get:
       operationId: pims.api.colormaps.list
       description: List of pre-defined colormaps in PIMS
+      summary: List all colormaps
       tags:
         - Colormaps
       responses:
@@ -1575,6 +1592,7 @@ paths:
     get:
       operationId: pims.api.colormaps.show
       description: Get a pre-defined colormap in PIMS
+      summary: Get a colormap
       tags:
         - Colormaps
       parameters:
@@ -1597,6 +1615,7 @@ paths:
     get:
       operationId: pims.api.colormaps.representation
       description: Get a graphic representation of a colormap
+      summary: Get a colormap representation
       tags:
         - Colormaps
       parameters:
@@ -1638,6 +1657,7 @@ paths:
     get:
       operationId: pims.api.filters.list
       description: List of available image filters in PIMS
+      summary: List all image filters
       tags:
         - Filters
       responses:
@@ -1659,6 +1679,7 @@ paths:
     get:
       operationId: pims.api.filters.show
       description: Get an image filter in PIMS
+      summary: Get an image filter
       tags:
         - Filters
       parameters:
@@ -1681,6 +1702,7 @@ paths:
     get:
       operationId: pims.api.tile.get_v2
       description: Get a tile using IMS V2.x specification.
+      summary: Get a tile (V2.x)
       deprecated: true
       tags:
         - Tiles
@@ -1748,6 +1770,7 @@ paths:
     get:
       operationId: pims.api.tile.get_v1
       description: Get a tile using IMS V1.x specification.
+      summary: Get a tile (V1.x)
       deprecated: true
       tags:
         - Tiles
@@ -1811,6 +1834,7 @@ paths:
         - Housekeeping
       deprecated: true
       description: Get used and free space of the image storage in IMS v1.x and v2.x
+      summary: Get storage space (v1.x)
       responses:
         200:
           description: OK
