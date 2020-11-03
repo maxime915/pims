@@ -1,3 +1,4 @@
+import os
 import time
 from logging.config import dictConfig
 
@@ -22,11 +23,21 @@ dictConfig({
     }
 })
 
+if os.environ.get("PIMS_SETTINGS"):
+    CONFIG_FILE = os.environ.get("PIMS_SETTINGS")
+else:
+    here = os.path.abspath(os.path.dirname(__file__))
+    CONFIG_FILE = os.path.join(os.path.abspath(os.path.join(here, os.pardir)), "app-config.cfg")
 
-def create_app():
+
+def create_app(test_config=None):
     app = connexion.FlaskApp(__name__, specification_dir='openapi/')
     api = app.add_api('api-specification.yaml')
     flask_app = app.app
+    flask_app.config.from_pyfile(CONFIG_FILE)
+
+    if test_config is not None:
+        flask_app.config.from_mapping(test_config)
 
     flask_app.config['api_version'] = api.specification.raw['info']['version']
 

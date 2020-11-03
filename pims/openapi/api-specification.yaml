@@ -1875,6 +1875,7 @@ components:
       required: true
       schema:
         type: string
+        format: path
       example: '123/my-file.ext'
     path-zoom:
       name: zoom
@@ -3167,6 +3168,7 @@ components:
           $ref: '#/components/schemas/file-type'
         filepath:
           type: string
+          format: path
           description: The file path (filename with path, relative to the server root)
           example: /a/b/c/thefile.png
         stem:
