@@ -10,6 +10,14 @@ class FilepathNotFoundProblem(ProblemException):
         detail = 'The file {} does not exist.'.format(filepath)
         type = "problem/resource-not-found"
         super(FilepathNotFoundProblem, self).__init__(status=404, title=title, detail=detail, type=type)
+
+
+class FilepathRepresentationNotFoundProblem(ProblemException):
+    def __init__(self, filepath):
+        title = 'No appropriate representation found for this filepath'
+        detail = 'The file {} does not have an appropriate representation.'.format(filepath)
+        type = "problem/resource-not-found"
+        super(FilepathRepresentationNotFoundProblem, self).__init__(status=404, title=title, detail=detail, type=type)
         
         
 def filepath2path(filepath):
@@ -51,6 +59,24 @@ def _path_as_dict(path):
     return data
 
 
+def _image_as_dict(image):
+    return {
+        "width": image.width,
+        "height": image.height,
+        "depth": image.depth,
+        "duration": image.duration,
+        "n_channels": image.n_channels,
+        "physical_size_x": image.physical_size_x,
+        "physical_size_y": image.physical_size_y,
+        "physical_size_z": image.physical_size_z,
+        "frame_rate": image.frame_rate,
+        "acquired_at": image.acquisition_datetime,
+        "description": image.description,
+        "pixel_type": image.pixel_type,
+        "significant_bits": image.significant_bits
+    }
+
+
 def info(filepath):
     pass
 
@@ -63,7 +89,18 @@ def file(filepath):
 
 
 def image(filepath):
-    pass
+    path = filepath2path(filepath)
+    if not path.exists():
+        raise FilepathNotFoundProblem(filepath)
+
+    if not path.is_single():
+        raise FilepathRepresentationNotFoundProblem(filepath)
+
+    original = path.get_original()
+    if not original.exists():
+        raise FilepathRepresentationNotFoundProblem(filepath)
+
+    return _image_as_dict(original)
 
 
 def pyramid(filepath):

@@ -5,6 +5,9 @@ _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
 
 class AbstractFormat(ABC):
+    def __init__(self, imagepath):
+        self._imagepath = imagepath
+
     @classmethod
     def get_identifier(cls, uppercase=True):
         """
@@ -50,6 +53,9 @@ class AbstractFormat(ABC):
     def is_convertible(cls):
         return hasattr(cls, 'convert') and callable(cls.convert)
 
+    def is_this_format(self):
+        return False
+
     @property
     @abstractmethod
     def width(self):
@@ -59,3 +65,49 @@ class AbstractFormat(ABC):
     @abstractmethod
     def height(self):
         pass
+
+    @property
+    @abstractmethod
+    def pixel_type(self):
+        pass
+
+    @property
+    @abstractmethod
+    def significant_bits(self):
+        pass
+
+    @property
+    def depth(self):
+        return 1
+
+    @property
+    def duration(self):
+        return 1
+
+    @property
+    def n_channels(self):
+        return 1
+
+    @property
+    def physical_size_x(self):
+        return None
+
+    @property
+    def physical_size_y(self):
+        return None
+
+    @property
+    def physical_size_z(self):
+        return None
+
+    @property
+    def frame_rate(self):
+        return None
+
+    @property
+    def acquisition_datetime(self):
+        return None
+
+    @property
+    def description(self):
+        return None

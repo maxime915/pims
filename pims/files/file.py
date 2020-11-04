@@ -114,3 +114,63 @@ class Path(type(_Path()), _Path):
 
     def is_single(self):
         return not self.is_collection()
+
+
+class Image(Path):
+    def __init__(self, *pathsegments):
+        super().__init__(*pathsegments)
+        # TODO: temporary until we have file type matcher
+        from pims.formats.common import JPEGFormat
+        self._format = JPEGFormat(self)
+
+    @property
+    def width(self):
+        return self._format.width
+
+    @property
+    def physical_size_x(self):
+        return self._format.physical_size_x
+
+    @property
+    def height(self):
+        return self._format.height
+
+    @property
+    def physical_size_y(self):
+        return self._format.physical_size_y
+
+    @property
+    def depth(self):
+        return self._format.depth
+
+    @property
+    def physical_size_z(self):
+        return self._format.physical_size_z
+
+    @property
+    def duration(self):
+        return self._format.duration
+
+    @property
+    def frame_rate(self):
+        return self._format.frame_rate
+
+    @property
+    def n_channels(self):
+        return self._format.n_channels
+
+    @property
+    def pixel_type(self):
+        return self._format.pixel_type
+
+    @property
+    def significant_bits(self):
+        return self._format.significant_bits
+
+    @property
+    def acquisition_datetime(self):
+        return self._format.acquisition_datetime
+
+    @property
+    def description(self):
+        return self._format.description
