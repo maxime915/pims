@@ -7,34 +7,40 @@ from flask import current_app
 
 from pims.app import create_app
 
+
 with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
-    _fake_files = f.read().splitlines()
+    lines = f.read().splitlines()
+    _fake_files = dict()
+    for line in lines[1:]:
+        filetype, filepath, link, role, kind = line.split(",")
+        _fake_files[filepath] = {
+            "filetype": filetype,
+            "filepath": filepath,
+            "link": link,
+            "role": role,
+            "collection": (kind == "collection")
+        }
 
 
 def create_fake_files(fake_files):
-    last_file = None
-    for ff in fake_files:
-        filetype, name, _ = ff.split(",")
-
-        path = Path(current_app.config['FILE_ROOT_PATH'], name)
+    root = Path(current_app.config['FILE_ROOT_PATH'])
+    for ff in fake_files.values():
+        path = root / Path(ff['filepath'])
         path.parent.mkdir(exist_ok=True, parents=True)
 
-        if filetype == "f":
+        if ff['filetype'] == "f":
             path.touch(exist_ok=True)
-            last_file = path
-        elif filetype == "l" and not path.exists():
-            path.symlink_to(last_file)
+        elif ff['filetype'] == "d":
+            path.mkdir(exist_ok=True, parents=True)
+        elif ff['filetype'] == "l" and not path.exists():
+            link = root / Path(ff['link'])
+            target_is_directory = True if fake_files[ff['link']]['filetype'] == "d" else False
+            path.symlink_to(link, target_is_directory=target_is_directory)
 
 
 @pytest.fixture
 def fake_files():
-    types, names, roles = list(), list(), list()
-    for ff in _fake_files:
-        filetype, name, role = ff.split(",")
-        types.append(filetype)
-        names.append(name)
-        roles.append(role)
-    return types, names, roles
+    return _fake_files
 
 
 @pytest.fixture

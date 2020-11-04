@@ -999,7 +999,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/file-info'
+                oneOf:
+                  - $ref: '#/components/schemas/file-info'
+                  - $ref: '#/components/schemas/collection-file-type-info'
+                discriminator:
+                  propertyName: file_type
+                  mapping:
+                    SINGLE: '#/components/schemas/file-info'
+                    COLLECTION: '#/components/schemas/collection-file-type-info'
         304:
           $ref: '#/components/responses/not-modified'
         404:
@@ -3155,25 +3162,23 @@ components:
         - $ref: '#/components/schemas/annotation-drawing-basis'
           
     # Files, metadata
-    file-roles:
-      type: array
+    file-role:
       description: |
-        The roles of a file. The same image data can be represented in different ways, in different files, each of them
+        The role of a file. The same image data can be represented in different ways, in different files, each of them
         serving differnt purposes.
 
-        * `ORIGINAL` - This file is an original file such as received by PIMS.
-        * `METADATA` - This file contains (part of) metadata.
+        * `UPLOAD` - This file is the one such as received by PIMS.
+        * `ORIGINAL` - This file is in its original format and contains (part of) metadata.
         * `SPATIAL` - This file is used to retrieve regular 2D spatial regions from the image.
         * `SPECTRAL` - This file is used to retrieve spectral data from the image.
         * `NONE` - This file has no defined role for PIMS.
-      items:
-        type: string
-        enum:
-          - METADATA
-          - ORIGINAL
-          - SPATIAL
-          - SPECTRAL
-          - NONE
+      type: string
+      enum:
+        - METADATA
+        - ORIGINAL
+        - SPATIAL
+        - SPECTRAL
+        - NONE
     file-type:
       type: string
       description: |
@@ -3215,8 +3220,8 @@ components:
           type: boolean
           description: Whether the file is a symbolic link or not
           default: false
-        roles:
-          $ref: '#/components/schemas/file-roles'
+        role:
+          $ref: '#/components/schemas/file-role'
     image-info:
       description: |
         Information about an image

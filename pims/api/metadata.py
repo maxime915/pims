@@ -24,24 +24,31 @@ def path2filepath(path):
 
 
 def _path_as_dict(path):
-    roles = []
+    role = "NONE"
     if path.has_original_role():
-        roles.append("ORIGINAL")
+        role = "ORIGINAL"
     if path.has_spatial_role():
-        roles.append("SPATIAL")
+        role = "SPATIAL"
     if path.has_spectral_role():
-        roles.append("SPECTRAL")
+        role = "SPECTRAL"
+    if path.has_upload_role():
+        role = "UPLOAD"
 
-    return {
+    data = {
         "created_at": path.creation_datetime,
         "extension": path.extension,
         "file_type": "COLLECTION" if path.is_collection() else "SINGLE",
         "filepath": path2filepath(path),
         "is_symbolic": path.is_symlink(),
-        "roles": roles,
+        "role": role,
         "size": path.size,
         "stem": path.true_stem
     }
+
+    if path.is_collection():
+        data["children"] = [_path_as_dict(p) for p in path.get_extracted_children()]
+
+    return data
 
 
 def info(filepath):

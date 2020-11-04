@@ -25,7 +25,7 @@ def test_extensions(app):
 def test_upload_root(app, fake_files):
     with app.app_context():
         root = Path(app.config['FILE_ROOT_PATH'])
-        _, fake_names, _ = fake_files
+        fake_names = fake_files.keys()
         for ff in fake_names:
             path = root / Path(ff)
             assert path.upload_root() == root / Path(ff.split("/")[0])
@@ -34,34 +34,43 @@ def test_upload_root(app, fake_files):
 def test_roles(app, fake_files):
     with app.app_context():
         root = Path(app.config['FILE_ROOT_PATH'])
-        _, fake_names, fake_roles = fake_files
-        for name, role in zip(fake_names, fake_roles):
+        for ff in fake_files.values():
+            name = ff['filepath']
+            role = ff['role']
             path = root / Path(name)
-            if role == "none":
+            if role == "upload":
+                assert path.has_upload_role()
                 assert not path.has_original_role()
                 assert not path.has_spatial_role()
                 assert not path.has_spectral_role()
             elif role == "original":
+                assert not path.has_upload_role()
                 assert path.has_original_role()
                 assert not path.has_spatial_role()
                 assert not path.has_spectral_role()
             elif role == "visualisation":
+                assert not path.has_upload_role()
                 assert not path.has_original_role()
                 assert path.has_spatial_role()
                 assert not path.has_spectral_role()
             elif role == "spectral":
+                assert not path.has_upload_role()
                 assert not path.has_original_role()
                 assert not path.has_spatial_role()
                 assert path.has_spectral_role()
+            else:
+                assert not path.has_upload_role()
+                assert not path.has_original_role()
+                assert not path.has_spatial_role()
+                assert not path.has_spectral_role()
 
 
 def test_collection(app, fake_files):
     with app.app_context():
         root = Path(app.config['FILE_ROOT_PATH'])
-        _, fake_names, _ = fake_files
-        for name in fake_names:
+        for ff in fake_files.values():
+            name = ff['filepath']
+            is_collection = ff['collection']
             path = root / Path(name)
-            if "upload4" in name and "extracted" not in name:
-                assert path.is_collection()
-            else:
-                assert not path.is_collection()
+            assert path.is_collection() == is_collection
+            assert path.is_single() == (not is_collection)
