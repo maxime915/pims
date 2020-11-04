@@ -124,6 +124,10 @@ class Image(Path):
         self._format = JPEGFormat(self)
 
     @property
+    def format(self):
+        return self._format
+
+    @property
     def width(self):
         return self._format.width
 

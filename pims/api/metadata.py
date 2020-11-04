@@ -61,6 +61,7 @@ def _path_as_dict(path):
 
 def _image_as_dict(image):
     return {
+        "original_format": image.format.get_identifier(),
         "width": image.width,
         "height": image.height,
         "depth": image.depth,

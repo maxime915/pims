@@ -3227,6 +3227,10 @@ components:
         Information about an image
       type: object
       properties:
+        original_format:
+          description: The original image format identifier.
+          allOf:
+            - $ref: '#/components/schemas/format-id'
         width:
           type: integer
           format: int64
