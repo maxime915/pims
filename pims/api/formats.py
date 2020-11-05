@@ -1,14 +1,5 @@
-from connexion import ProblemException
-
+from pims.api.exceptions import FormatNotFoundProblem
 from pims.formats import FORMATS
-
-
-class FormatNotFoundProblem(ProblemException):
-    def __init__(self, colormap_id):
-        title = 'Format not found'
-        detail = 'The format {} does not exist.'.format(colormap_id)
-        type = "problem/resource-not-found"
-        super(FormatNotFoundProblem, self).__init__(status=404, title=title, detail=detail, type=type)
 
 
 def _format_to_dict(format):

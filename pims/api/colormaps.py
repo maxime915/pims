@@ -1,19 +1,12 @@
 from enum import Enum
 from io import BytesIO
 
-from connexion import ProblemException, request, NoContent
+from connexion import request, NoContent
 from flask import send_file
 
+from pims.api.exceptions import ColormapNotFoundProblem
 from pims.api.utils import mimetype_to_mpl_slug, JPEG_MIMETYPES, PNG_MIMETYPES
 from pims.processing.colormaps import COLORMAPS
-
-
-class NotFoundColormapProblem(ProblemException):
-    def __init__(self, colormap_id):
-        title = 'Colormap not found'
-        detail = 'The colormap {} does not exist.'.format(colormap_id)
-        type = "problem/resource-not-found"
-        super(NotFoundColormapProblem, self).__init__(status=404, title=title, detail=detail, type=type)
 
 
 class ColormapType(Enum):
@@ -41,7 +34,7 @@ def list():
 
 def show(colormap_id):
     if colormap_id not in COLORMAPS.keys():
-        raise NotFoundColormapProblem(colormap_id)
+        raise ColormapNotFoundProblem(colormap_id)
 
     return _colormap_to_dict(COLORMAPS[colormap_id], colormap_id)
 
@@ -50,7 +43,7 @@ def representation(colormap_id, width, height):
     # TODO: handle request and response headers
 
     if colormap_id not in COLORMAPS.keys():
-        raise NotFoundColormapProblem(colormap_id)
+        raise ColormapNotFoundProblem(colormap_id)
 
     SUPPORTED_MIMETYPES = dict()
     SUPPORTED_MIMETYPES.update(PNG_MIMETYPES)

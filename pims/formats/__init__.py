@@ -63,3 +63,11 @@ def _get_all_formats():
 
 FORMAT_PLUGINS = _discover_format_plugins([__name__])
 FORMATS = {f.get_identifier(): f for f in _get_all_formats()}
+
+
+def identify_format(imagepath):
+    for format in FORMATS.values():
+        if format(imagepath).match():
+            return format(imagepath)
+
+    return None

@@ -1,25 +1,9 @@
-from connexion import ProblemException
 from flask import current_app
 
+from pims.api.exceptions import FilepathNotFoundProblem, NoAppropriateRepresentationProblem
 from pims.files.file import Path
 
 
-class FilepathNotFoundProblem(ProblemException):
-    def __init__(self, filepath):
-        title = 'Filepath not found'
-        detail = 'The file {} does not exist.'.format(filepath)
-        type = "problem/resource-not-found"
-        super(FilepathNotFoundProblem, self).__init__(status=404, title=title, detail=detail, type=type)
-
-
-class FilepathRepresentationNotFoundProblem(ProblemException):
-    def __init__(self, filepath):
-        title = 'No appropriate representation found for this filepath'
-        detail = 'The file {} does not have an appropriate representation.'.format(filepath)
-        type = "problem/resource-not-found"
-        super(FilepathRepresentationNotFoundProblem, self).__init__(status=404, title=title, detail=detail, type=type)
-        
-        
 def filepath2path(filepath):
     return Path(current_app.config['FILE_ROOT_PATH'], filepath)
 
@@ -95,11 +79,11 @@ def image(filepath):
         raise FilepathNotFoundProblem(filepath)
 
     if not path.is_single():
-        raise FilepathRepresentationNotFoundProblem(filepath)
+        raise NoAppropriateRepresentationProblem(filepath)
 
     original = path.get_original()
     if not original.exists():
-        raise FilepathRepresentationNotFoundProblem(filepath)
+        raise NoAppropriateRepresentationProblem(filepath)
 
     return _image_as_dict(original)
 

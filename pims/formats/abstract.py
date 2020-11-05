@@ -53,7 +53,7 @@ class AbstractFormat(ABC):
     def is_convertible(cls):
         return hasattr(cls, 'convert') and callable(cls.convert)
 
-    def is_this_format(self):
+    def match(self):
         return False
 
     @property
