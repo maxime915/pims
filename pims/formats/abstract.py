@@ -53,6 +53,14 @@ class AbstractFormat(ABC):
     def is_convertible(cls):
         return hasattr(cls, 'convert') and callable(cls.convert)
 
+    @classmethod
+    def is_spatial(cls):
+        return False
+
+    @classmethod
+    def is_spectral(cls):
+        return False
+
     def match(self):
         return False
 

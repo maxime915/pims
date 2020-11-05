@@ -1,6 +1,8 @@
 from datetime import datetime
 from pathlib import Path as _Path
 
+from pims.formats.factories import FormatFactory, SpatialReadableFormatFactory, SpectralReadableFormatFactory
+
 PROCESSED_DIR = "processed"
 EXTRACTED_DIR = "extracted"
 
@@ -10,6 +12,8 @@ EXTRACTED_FILE_DIR_PREFIX = "file"
 ORIGINAL_STEM = "original"
 SPATIAL_STEM = "visualisation"
 SPECTRAL_STEM = "spectral"
+
+_NUM_SIGNATURE_BYTES = 262
 
 
 class Path(type(_Path()), _Path):
@@ -81,19 +85,27 @@ class Path(type(_Path()), _Path):
             return None
 
         original = next((child for child in self.processed_root().iterdir() if child.has_original_role()), None)
-        return Image(original) if original else None
+
+        from pims.files.image import Image
+        return Image(original, factory=FormatFactory()) if original else None
 
     def get_spatial(self):
         if not self.processed_root().exists():
             return None
 
-        return next((child for child in self.processed_root().iterdir() if child.has_spatial_role()), None)
+        spatial = next((child for child in self.processed_root().iterdir() if child.has_spatial_role()), None)
+
+        from pims.files.image import Image
+        return Image(spatial, factory=SpatialReadableFormatFactory()) if spatial else None
 
     def get_spectral(self):
         if not self.processed_root().exists():
             return None
 
-        return next((child for child in self.processed_root().iterdir() if child.has_spectral_role()), None)
+        spectral = next((child for child in self.processed_root().iterdir() if child.has_spectral_role()), None)
+
+        from pims.files.image import Image
+        return Image(spectral, factory=SpectralReadableFormatFactory()) if spectral else None
 
     def get_extracted_children(self):
         if not self.is_collection():
@@ -115,66 +127,6 @@ class Path(type(_Path()), _Path):
     def is_single(self):
         return not self.is_collection()
 
-
-class Image(Path):
-    def __init__(self, *pathsegments):
-        super().__init__(*pathsegments)
-        # TODO: temporary until we have file type matcher
-        from pims.formats.common import JPEGFormat
-        self._format = JPEGFormat(self)
-
-    @property
-    def format(self):
-        return self._format
-
-    @property
-    def width(self):
-        return self._format.width
-
-    @property
-    def physical_size_x(self):
-        return self._format.physical_size_x
-
-    @property
-    def height(self):
-        return self._format.height
-
-    @property
-    def physical_size_y(self):
-        return self._format.physical_size_y
-
-    @property
-    def depth(self):
-        return self._format.depth
-
-    @property
-    def physical_size_z(self):
-        return self._format.physical_size_z
-
-    @property
-    def duration(self):
-        return self._format.duration
-
-    @property
-    def frame_rate(self):
-        return self._format.frame_rate
-
-    @property
-    def n_channels(self):
-        return self._format.n_channels
-
-    @property
-    def pixel_type(self):
-        return self._format.pixel_type
-
-    @property
-    def significant_bits(self):
-        return self._format.significant_bits
-
-    @property
-    def acquisition_datetime(self):
-        return self._format.acquisition_datetime
-
-    @property
-    def description(self):
-        return self._format.description
+    def signature(self):
+        with self.open('rb') as fp:
+            return bytearray(fp.read(_NUM_SIGNATURE_BYTES))

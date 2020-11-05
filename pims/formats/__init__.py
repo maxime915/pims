@@ -33,9 +33,13 @@ def _find_formats_in_module(mod):
     formats: list
         The format classes
     """
+    invalid_submodules = ["pims.formats.abstract", "pims.formats.factories"]
     formats = list()
     for _, name, _ in iter_modules(mod.__path__):
         submodule_name = "{}.{}".format(mod.__name__, name)
+        if submodule_name in invalid_submodules:
+            continue
+
         for var in vars(import_module(submodule_name)).values():
             if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var):
                 format = var
@@ -63,11 +67,3 @@ def _get_all_formats():
 
 FORMAT_PLUGINS = _discover_format_plugins([__name__])
 FORMATS = {f.get_identifier(): f for f in _get_all_formats()}
-
-
-def identify_format(imagepath):
-    for format in FORMATS.values():
-        if format(imagepath).match():
-            return format(imagepath)
-
-    return None

@@ -2,6 +2,10 @@ from pims.formats.abstract import AbstractFormat
 
 
 class JPEGFormat(AbstractFormat):
+    @classmethod
+    def is_spatial(cls):
+        return True
+
     def match(self):
         buf = self._imagepath.signature()
         return (len(buf) > 2 and
