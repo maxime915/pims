@@ -1,18 +1,5 @@
-from flask import current_app
-
 from pims.api.exceptions import FilepathNotFoundProblem, NoAppropriateRepresentationProblem
-from pims.files.file import Path
-
-
-def filepath2path(filepath):
-    return Path(current_app.config['FILE_ROOT_PATH'], filepath)
-
-
-def path2filepath(path):
-    root = current_app.config['FILE_ROOT_PATH']
-    if root[-1] != "/":
-        root += "/"
-    return str(path).replace(root, "")
+from pims.api.utils import filepath2path, path2filepath
 
 
 def _path_as_dict(path):

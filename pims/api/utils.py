@@ -1,4 +1,5 @@
 from connexion.exceptions import UnsupportedMediaTypeProblem
+from flask import current_app
 
 PNG_MIMETYPES = {
     "image/png": "PNG",
@@ -30,3 +31,41 @@ def mimetype_to_mpl_slug(mimetype):
         raise UnsupportedMediaTypeProblem()
 
     return SUPPORTED_MIMETYPES[mimetype].lower()
+
+
+def filepath2path(filepath):
+    """
+    Transform a relative filepath to a path.
+
+    Parameters
+    ----------
+    filepath: str
+        Relative filepath
+
+    Returns
+    -------
+    path: Path
+        Absolute resolved path
+    """
+    from pims.files.file import Path
+    return Path(current_app.config['FILE_ROOT_PATH'], filepath)
+
+
+def path2filepath(path):
+    """
+    Transform an absolute path to a relative filepath.
+
+    Parameters
+    ----------
+    path: Path
+        Absolute resolved path
+
+    Returns
+    -------
+    filepath: str
+        Relative filepath
+    """
+    root = current_app.config['FILE_ROOT_PATH']
+    if root[-1] != "/":
+        root += "/"
+    return str(path).replace(root, "")
