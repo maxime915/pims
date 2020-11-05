@@ -982,7 +982,7 @@ paths:
     get:
       operationId: pims.api.metadata.file
       description: Get information about a file
-      summary: Get file information
+      summary: Get file info
       tags:
         - Metadata
       parameters:
@@ -1015,7 +1015,7 @@ paths:
     get:
       operationId: pims.api.metadata.image
       description: Get information about an image.
-      summary: Get image information
+      summary: Get image info
       tags:
         - Metadata
       parameters:
@@ -1043,7 +1043,7 @@ paths:
     get:
       operationId: pims.api.metadata.pyramid
       description: Get information about an image pyramid.
-      summary: Get image pyramid information
+      summary: Get image pyramid info
       tags:
         - Metadata
       parameters:
@@ -1071,7 +1071,7 @@ paths:
     get:
       operationId: pims.api.metadata.channels
       description: Get information about channels in an image
-      summary: Get image channel information
+      summary: Get image channel info
       tags:
         - Metadata
       parameters:
@@ -1104,7 +1104,7 @@ paths:
     get:
       operationId: pims.api.metadata.instrument
       description: Get information about instrument in an image
-      summary: Get image instrument information
+      summary: Get image instrument info
       tags:
         - Metadata
       parameters:
@@ -1132,7 +1132,7 @@ paths:
     get:
       operationId: pims.api.metadata.associated
       description: Get information about associated files in an image
-      summary: Get associated file information
+      summary: Get associated file info
       tags:
         - Metadata
         - Associated
@@ -3174,7 +3174,7 @@ components:
         * `NONE` - This file has no defined role for PIMS.
       type: string
       enum:
-        - METADATA
+        - UPLOAD
         - ORIGINAL
         - SPATIAL
         - SPECTRAL
