@@ -33,7 +33,7 @@ def _find_formats_in_module(mod):
     formats: list
         The format classes
     """
-    invalid_submodules = ["pims.formats.abstract", "pims.formats.factories"]
+    invalid_submodules = ["pims.formats.abstract", "pims.formats.factories", "pims.formats.metadata"]
     formats = list()
     for _, name, _ in iter_modules(mod.__path__):
         submodule_name = "{}.{}".format(mod.__name__, name)
