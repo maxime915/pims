@@ -49,29 +49,38 @@ def _image_as_dict(image):
     }
 
 
+def check_path_existence(path):
+    if not path.exists():
+        raise FilepathNotFoundProblem(path)
+
+
+def check_path_is_single(path):
+    if not path.is_single():
+        raise NoAppropriateRepresentationProblem(path)
+
+
+def check_representation_existence(path):
+    if not path.exists():
+        raise NoAppropriateRepresentationProblem(path)
+
+
 def info(filepath):
     pass
 
 
 def file(filepath):
     path = filepath2path(filepath)
-    if not path.exists():
-        raise FilepathNotFoundProblem(filepath)
+    check_path_existence(path)
     return _path_as_dict(path)
 
 
 def image(filepath):
     path = filepath2path(filepath)
-    if not path.exists():
-        raise FilepathNotFoundProblem(filepath)
-
-    if not path.is_single():
-        raise NoAppropriateRepresentationProblem(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
 
     original = path.get_original()
-    if not original.exists():
-        raise NoAppropriateRepresentationProblem(filepath)
-
+    check_representation_existence(original)
     return _image_as_dict(original)
 
 
