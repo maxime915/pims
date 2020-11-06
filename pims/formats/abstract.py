@@ -1,12 +1,18 @@
 import re
 from abc import abstractmethod, ABC
 
+from pims.formats.metadata import MetadataStore
+
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
 
 class AbstractFormat(ABC):
     def __init__(self, imagepath):
         self._imagepath = imagepath
+        self._core_metadata = MetadataStore()
+        self._objective_metadata = MetadataStore()
+        self._microscope_metadata = MetadataStore()
+        self._associated_metadata = MetadataStore()
 
     @classmethod
     def get_identifier(cls, uppercase=True):
@@ -119,3 +125,19 @@ class AbstractFormat(ABC):
     @property
     def description(self):
         return None
+
+    @property
+    def core_metadata(self):
+        return self._core_metadata
+
+    @property
+    def objective_metadata(self):
+        return self._objective_metadata
+
+    @property
+    def microscope_metadata(self):
+        return self._microscope_metadata
+
+    @property
+    def associated_metadata(self):
+        return self._associated_metadata

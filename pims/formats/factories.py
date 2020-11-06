@@ -6,7 +6,7 @@ class FormatFactory:
         self.formats = formats
 
     def match(self, path):
-        for format in self.formats.values():
+        for format in self.formats:
             if format(path).match():
                 return format(path)
 

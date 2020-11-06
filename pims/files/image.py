@@ -67,3 +67,19 @@ class Image(Path):
     @property
     def description(self):
         return self._format.description
+
+    @property
+    def metadata(self):
+        return self._format.metadata
+
+    @property
+    def objective(self):
+        return self._format.objective_metadata
+
+    @property
+    def microscope(self):
+        return self._format.microscope_metadata
+
+    @property
+    def associated(self):
+        return self._format.associated_metadata

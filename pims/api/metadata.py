@@ -49,6 +49,26 @@ def _image_as_dict(image):
     }
 
 
+def _instrument_as_dict(image):
+    return {
+        "objective": {
+            "nominal_magnification": image.objective.get_value("nominal_magnification", None),
+            "calibrated_magnification": image.objective.get_value("calibrated_magnification", None)
+        },
+        "microscope": {
+            "model": image.microscope.get_value("model", None)
+        }
+    }
+
+
+def _associated_as_dict(image):
+    return {
+        "has_macro": ("macro" in image.associated),
+        "has_thumbnail": ("thumb" in image.associated),
+        "has_label": ("label" in image.associated)
+    }
+
+
 def check_path_existence(path):
     if not path.exists():
         raise FilepathNotFoundProblem(path)
@@ -93,11 +113,23 @@ def channels(filepath):
 
 
 def instrument(filepath):
-    pass
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    original = path.get_original()
+    check_representation_existence(original)
+    return _instrument_as_dict(original)
 
 
 def associated(filepath):
-    pass
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    original = path.get_original()
+    check_representation_existence(original)
+    return _associated_as_dict(original)
 
 
 def associated_image(filepath):
