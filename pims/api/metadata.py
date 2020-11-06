@@ -93,7 +93,21 @@ def check_representation_existence(path):
 
 
 def info(filepath):
-    pass
+    path = filepath2path(filepath)
+    check_path_existence(path)
+
+    data = _path_as_dict(path)
+    if path.is_collection():
+        return data
+
+    original = path.get_original()
+    check_representation_existence(original)
+    data["image"] = _image_as_dict(original)
+    data["instrument"] = _instrument_as_dict(original)
+    data["associated"] = _associated_as_dict(original)
+    data["channels"] = None  # TODO
+    data["pyramid"] = None  # TODO
+    return data
 
 
 def file(filepath):
