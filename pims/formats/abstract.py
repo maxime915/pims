@@ -9,10 +9,10 @@ _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 class AbstractFormat(ABC):
     def __init__(self, imagepath):
         self._imagepath = imagepath
-        self._core_metadata = MetadataStore()
-        self._objective_metadata = MetadataStore()
-        self._microscope_metadata = MetadataStore()
-        self._associated_metadata = MetadataStore()
+        self._core_metadata = MetadataStore("CORE")
+        self._objective_metadata = MetadataStore("OBJECTIVE")
+        self._microscope_metadata = MetadataStore("MICROSCOPE")
+        self._associated_metadata = MetadataStore("ASSOCIATED")
 
     @classmethod
     def get_identifier(cls, uppercase=True):
@@ -141,3 +141,6 @@ class AbstractFormat(ABC):
     @property
     def associated_metadata(self):
         return self._associated_metadata
+
+    def get_raw_metadata(self):
+        return MetadataStore("RAW")

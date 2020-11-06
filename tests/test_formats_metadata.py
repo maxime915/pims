@@ -64,7 +64,7 @@ def test_metadata():
 
 
 def test_metadatastore():
-    ms = MetadataStore()
+    ms = MetadataStore("TEST")
     assert len(ms) == 0
 
     ms.set("a", "b", MetadataType.STRING)

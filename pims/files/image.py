@@ -69,8 +69,8 @@ class Image(Path):
         return self._format.description
 
     @property
-    def metadata(self):
-        return self._format.metadata
+    def core(self):
+        return self._format.core_metadata
 
     @property
     def objective(self):
@@ -83,3 +83,7 @@ class Image(Path):
     @property
     def associated(self):
         return self._format.associated_metadata
+
+    @property
+    def raw_metadata(self):
+        return self._format.get_raw_metadata()

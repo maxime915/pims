@@ -3477,6 +3477,9 @@ components:
             - BASE64
             - DATE
             - DATE-TIME
+        namespace:
+          type: string
+          description: The metadata namespace to avoid key name conflicts
 
     # Histograms
     histogram-type:

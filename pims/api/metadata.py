@@ -69,6 +69,14 @@ def _associated_as_dict(image):
     }
 
 
+def _metadata_as_dict(metadata):
+    return {
+        "key": metadata.name,
+        "value": str(metadata.raw_value),
+        "type": metadata.dtype.name
+    }
+
+
 def check_path_existence(path):
     if not path.exists():
         raise FilepathNotFoundProblem(path)
@@ -137,5 +145,24 @@ def associated_image(filepath):
 
 
 def metadata(filepath):
-    pass
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    original = path.get_original()
+    check_representation_existence(original)
+
+    data = list()
+    stores = [original.core, original.objective, original.microscope,
+              original.associated, original.raw_metadata]
+    for store in stores:
+        for metadata in store.values():
+            item = _metadata_as_dict(metadata)
+            item.update(dict(namespace=store.namespace))
+            data.append(item)
+
+    return {
+        "items": data,
+        "size": len(data)
+    }
 

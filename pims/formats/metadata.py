@@ -109,7 +109,8 @@ class MetadataStore(MutableMapping):
     """
     A store of metadata, extracted from a file (e.g. an image)
     """
-    def __init__(self):
+    def __init__(self, namespace):
+        self.namespace = namespace
         self._data = dict()
 
     def __delitem__(self, v: str) -> None:
