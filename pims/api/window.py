@@ -1,3 +1,3 @@
-def get_with_body(filepath, body):
+def show_window_with_body(filepath, body):
     pass
 

@@ -1,7 +1,7 @@
-def get(filepath):
+def show_thumb(filepath):
     pass
 
 
-def get_with_body(filepath, body):
+def show_thumb_with_body(filepath, body):
     pass
 

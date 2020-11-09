@@ -17,7 +17,7 @@ def _usage_as_dict(path):
     }
 
 
-def path_usage(directorypath):
+def show_path_usage(directorypath):
     path = filepath2path(directorypath)
     check_path_existence(path)
     if not path.is_dir():
@@ -26,12 +26,12 @@ def path_usage(directorypath):
     return _usage_as_dict(path)
 
 
-def usage():
+def show_disk_usage():
     return _usage_as_dict(filepath2path("."))
 
 
-def usage_v1():
-    data = usage()
+def show_disk_usage_v1():
+    data = show_disk_usage()
     return {
         "available": data["mount_available_size"],
         "used": data["mount_used_size"],
@@ -40,4 +40,3 @@ def usage_v1():
         "ip": None,
         "mount": data["mount_point"]
     }
-

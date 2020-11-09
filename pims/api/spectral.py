@@ -1,8 +1,8 @@
-def footprint(filepath, body):
+def show_spectral_footprint(filepath, body):
     pass
 
 
-def window(filepath, body):
+def show_spectral_window(filepath, body):
     pass
 
 

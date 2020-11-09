@@ -14,7 +14,7 @@ def _format_to_dict(format):
     }
 
 
-def list():
+def list_formats():
     formats = [_format_to_dict(format) for format in FORMATS.values()]
     return {
         "items": formats,
@@ -22,9 +22,8 @@ def list():
     }
 
 
-def show(format_id):
+def show_format(format_id):
     format_id = format_id.upper()
     if format_id not in FORMATS.keys():
         raise FormatNotFoundProblem(format_id)
     return _format_to_dict(FORMATS[format_id])
-

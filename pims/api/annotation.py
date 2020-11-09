@@ -1,20 +1,20 @@
-def mask(filepath, body):
+def show_mask(filepath, body):
     pass
 
 
-def crop(filepath, body):
+def show_crop(filepath, body):
     pass
 
 
-def drawing(filepath, body):
+def show_drawing(filepath, body):
     pass
 
 
-def spectra(filepath, body):
+def show_spectra(filepath, body):
     pass
 
 
-def footprint(filepath, body):
+def show_footprint(filepath, body):
     pass
 
 

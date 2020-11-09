@@ -1,7 +1,7 @@
-def list():
+def list_filters():
     pass
 
 
-def show(filter_id):
+def show_filter(filter_id):
     pass
 

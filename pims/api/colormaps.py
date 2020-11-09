@@ -24,7 +24,7 @@ def _colormap_to_dict(colormap, colormap_id):
     }
 
 
-def list():
+def list_colormaps():
     colormaps = [_colormap_to_dict(c, cid) for cid, c in COLORMAPS.items()]
     return {
         "items": colormaps,
@@ -32,14 +32,14 @@ def list():
     }
 
 
-def show(colormap_id):
+def show_colormap(colormap_id):
     if colormap_id not in COLORMAPS.keys():
         raise ColormapNotFoundProblem(colormap_id)
 
     return _colormap_to_dict(COLORMAPS[colormap_id], colormap_id)
 
 
-def representation(colormap_id, width, height):
+def show_colormap_representation(colormap_id, width, height):
     # TODO: handle request and response headers
 
     if colormap_id not in COLORMAPS.keys():

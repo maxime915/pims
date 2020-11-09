@@ -78,7 +78,7 @@ def _metadata_as_dict(metadata):
     }
 
 
-def info(filepath):
+def show_info(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
 
@@ -96,13 +96,13 @@ def info(filepath):
     return data
 
 
-def file(filepath):
+def show_file(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
     return _path_as_dict(path)
 
 
-def image(filepath):
+def show_image(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
     check_path_is_single(path)
@@ -112,15 +112,15 @@ def image(filepath):
     return _image_as_dict(original)
 
 
-def pyramid(filepath):
+def show_pyramid(filepath):
     pass
 
 
-def channels(filepath):
+def show_channels(filepath):
     pass
 
 
-def instrument(filepath):
+def show_instrument(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
     check_path_is_single(path)
@@ -130,7 +130,7 @@ def instrument(filepath):
     return _instrument_as_dict(original)
 
 
-def associated(filepath):
+def show_associated(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
     check_path_is_single(path)
@@ -140,11 +140,11 @@ def associated(filepath):
     return _associated_as_dict(original)
 
 
-def associated_image(filepath):
+def show_associated_image(filepath):
     pass
 
 
-def metadata(filepath):
+def show_metadata(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
     check_path_is_single(path)
@@ -165,4 +165,3 @@ def metadata(filepath):
         "items": data,
         "size": len(data)
     }
-

@@ -1,15 +1,15 @@
-def list(filepath):
+def list_histograms(filepath):
     pass
 
 
-def full(filepath):
+def show_full_histogram(filepath):
     pass
 
 
-def per_channel(filepath):
+def show_histogram_per_channel(filepath):
     pass
 
 
-def per_plane(filepath):
+def show_histogram_per_plane(filepath):
     pass
 

@@ -1,7 +1,7 @@
-def get(filepath):
+def show_resized(filepath):
     pass
 
 
-def get_with_body(filepath, body):
+def show_resized_with_body(filepath, body):
     pass
 
