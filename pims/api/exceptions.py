@@ -21,6 +21,14 @@ class NoAppropriateRepresentationProblem(ProblemException):
         super(NoAppropriateRepresentationProblem, self).__init__(status=400, title=title, detail=detail)
 
 
+class NotADirectoryProblem(ProblemException):
+    def __init__(self, filepath):
+        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        title = 'Not a directory'
+        detail = 'The filepath {} is not a directory'.format(filepath)
+        super(NotADirectoryProblem, self).__init__(status=400, title=title, detail=detail)
+
+
 class NoMatchingFormatProblem(ProblemException):
     def __init__(self, filepath):
         filepath = path2filepath(filepath) if type(filepath) is not str else filepath
@@ -41,3 +49,18 @@ class ColormapNotFoundProblem(ProblemException):
         title = 'Colormap not found'
         detail = 'The colormap {} does not exist.'.format(colormap_id)
         super(ColormapNotFoundProblem, self).__init__(status=404, title=title, detail=detail)
+
+
+def check_path_existence(path):
+    if not path.exists():
+        raise FilepathNotFoundProblem(path)
+
+
+def check_path_is_single(path):
+    if not path.is_single():
+        raise NoAppropriateRepresentationProblem(path)
+
+
+def check_representation_existence(path):
+    if not path.exists():
+        raise NoAppropriateRepresentationProblem(path)

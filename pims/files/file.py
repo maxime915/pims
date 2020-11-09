@@ -1,3 +1,4 @@
+import shutil
 from datetime import datetime
 from pathlib import Path as _Path
 
@@ -39,6 +40,15 @@ class Path(type(_Path()), _Path):
     @property
     def true_stem(self):
         return self.stem.split('.')[0]
+
+    def mount_point(self):
+        for parent in self.parents:
+            if parent.is_mount():
+                return parent
+        return None
+
+    def mount_disk_usage(self):
+        return shutil.disk_usage(self)
 
     def recursive_iterdir(self):
         for p in self.rglob("**/*"):

@@ -1483,11 +1483,11 @@ paths:
                   api_version:
                     type: string
                     description: PIMS API specification version
-  /directory/{directorypath}/usage:
+  /directory/{directorypath}/disk-usage:
     get:
-      operationId: pims.api.housekeeping.usage
-      description: Directory usage on disk
-      summary: Directory usage
+      operationId: pims.api.housekeeping.path_usage
+      description: Disk usage of a filepath.
+      summary: Directory disk usage
       tags:
         - Housekeeping
       parameters:
@@ -1496,6 +1496,7 @@ paths:
           in: path
           schema:
             type: string
+            format: path
           description: The path of the directory
       responses:
         200:
@@ -1503,30 +1504,23 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  n_children:
-                    type: integer
-                    format: int32
-                    description: Number of file children in the directory (recursively)
-                  used_size:
-                    type: integer
-                    format: int64
-                    description: Size of the directory, in bytes.
-                  available_size:
-                    type: integer
-                    format: int64
-                    description: Available size on disk for the directory, in bytes.
-                  total_size:
-                    type: integer
-                    format: int64
-                    description: Directory's disk size, in bytes.
-                  used_size_percentage:
-                    type: number
-                    format: double
-                    description: Percentage of used space regarding total size
-                    minimum: 0
-                    maximum: 100
+                $ref: '#/components/schemas/disk-usage'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+  /disk-usage:
+    get:
+      operationId: pims.api.housekeeping.usage
+      description: Disk usage of PIMS.
+      summary: PIMS disk usage
+      tags:
+        - Housekeeping
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/disk-usage'
         404:
           $ref: '#/components/responses/problem-not-found'
   /formats:
@@ -3551,6 +3545,44 @@ components:
       type: integer
       format: int64
       description: The collection size
+    disk-usage:
+      type: object
+      properties:
+#        n_children:
+#          type: integer
+#          format: int32
+#          description: Number of file children in the directory (recursively)
+        mount:
+          type: string
+          format: path
+          description: The mounting point of the file system having the directory.
+        mount_available_size:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Available space on the mounted file system having the directory, in bytes.
+        mount_total_size:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Total space on the mounted file system having the directory, in bytes.
+        mount_used_size_percentage:
+          type: number
+          format: double
+          description: Percentage of used space regarding total space of the mounted file system
+          minimum: 0
+          maximum: 100
+        used_size:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Used space by the directory, in bytes.
+        used_size_percentage:
+          type: number
+          format: double
+          description: Percentage of directory used space regarding total space of the mounted file system
+          minimum: 0
+          maximum: 100
     # Outputs
     generic-image:
       type: string

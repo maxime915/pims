@@ -1,4 +1,5 @@
-from pims.api.exceptions import FilepathNotFoundProblem, NoAppropriateRepresentationProblem
+from pims.api.exceptions import check_path_existence, check_path_is_single, \
+    check_representation_existence
 from pims.api.utils import filepath2path, path2filepath
 
 
@@ -75,21 +76,6 @@ def _metadata_as_dict(metadata):
         "value": str(metadata.raw_value),
         "type": metadata.dtype.name
     }
-
-
-def check_path_existence(path):
-    if not path.exists():
-        raise FilepathNotFoundProblem(path)
-
-
-def check_path_is_single(path):
-    if not path.is_single():
-        raise NoAppropriateRepresentationProblem(path)
-
-
-def check_representation_existence(path):
-    if not path.exists():
-        raise NoAppropriateRepresentationProblem(path)
 
 
 def info(filepath):
