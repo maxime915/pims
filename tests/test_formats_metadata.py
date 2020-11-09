@@ -29,6 +29,9 @@ def test_boolean_parser():
     with pytest.raises(ValueError):
         boolean_parser("test")
 
+    with pytest.raises(ValueError):
+        boolean_parser(1)
+
 
 def test_json_parser():
     assert json_parser("{}") == dict()
@@ -88,9 +91,30 @@ def test_metadatastore():
     assert ms.get_value("a") == "b"
     assert ms.get_dtype("a") == MetadataType.STRING
 
+    assert ms.get_dtype("foo", MetadataType.INTEGER) == MetadataType.INTEGER
+    assert ms.get_value("foo", 42) == 42
+
     ms.set("a", "2")
     assert len(ms) == 1
     assert ms.get("a") == Metadata("a", "2", MetadataType.INTEGER)
     assert ms.get("a") == Metadata("a", "2")
     assert ms.get_value("a") == 2
     assert ms.get_value("a", parsed=False) == "2"
+
+    d = dict(a=Metadata("a", 2))
+    assert str(ms) == str(d)
+    assert repr(ms) == str(d)
+    assert next(iter(ms)) == next(iter(d))
+    assert ms.keys() == d.keys()
+    for a, b in zip(ms.values(), d.values()):
+        assert a == b
+    for a, b in zip(ms.items(), d.items()):
+        assert a == b
+    assert "b" not in ms
+    assert "a" in ms
+
+    ms["foo"] = Metadata("foo", 2)
+    assert "foo" in ms
+
+    with pytest.raises(NotImplementedError):
+        del ms["foo"]

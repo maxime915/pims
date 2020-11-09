@@ -118,6 +118,12 @@ class Metadata:
         return isinstance(o, Metadata) and self.name == o.name \
                and self.parsed_value == o.parsed_value
 
+    def __str__(self):
+        return "{}={} ({})".format(self.name, self.parsed_value, self.dtype.name)
+
+    def __repr__(self):
+        return "{}={} ({})".format(self.name, self.parsed_value, self.dtype.name)
+
 
 class MetadataStore(MutableMapping):
     """
@@ -156,7 +162,7 @@ class MetadataStore(MutableMapping):
     def get(self, k: str, default=None):
         return self._data.get(k, default)
 
-    def get_value(self, k: str, parsed=True, default=None):
+    def get_value(self, k: str, default=None, parsed=True):
         metadata = self.get(k, None)
         if metadata:
             return metadata.parsed_value if parsed else metadata.raw_value

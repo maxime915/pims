@@ -11,18 +11,14 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
-from pims.app import create_app
-
-
-def test_config():
-    assert not create_app().testing
-    assert create_app({'TESTING': True}).testing
+from pims import __version__
 
 
-def test_env_config(tmp_path, monkeypatch):
-    p = tmp_path / "test-config.cfg"
-    p.write_text('FILE_ROOT_PATH="/tmp/test"')
-    monkeypatch.setenv("PIMS_SETTINGS", str(p))
+def test_status(app, client):
+    response = client.get("/info")
+    assert response.status_code == 200
+    assert response.content_type == "application/json"
 
-    assert create_app().config["FILE_ROOT_PATH"] == "/tmp/test"
+    json = response.get_json()
+    assert json["version"] == __version__
+    assert json["api_version"] == app.config["api_version"]
