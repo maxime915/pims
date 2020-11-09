@@ -18,7 +18,7 @@ from pims.api.utils.parameter import filepath2path, path2filepath
 from pims.api.utils.response import response_list
 
 
-def _path_as_dict(path):
+def _serialize_path_info(path):
     role = "NONE"
     if path.has_original_role():
         role = "ORIGINAL"
@@ -41,12 +41,12 @@ def _path_as_dict(path):
     }
 
     if path.is_collection():
-        data["children"] = [_path_as_dict(p) for p in path.get_extracted_children()]
+        data["children"] = [_serialize_path_info(p) for p in path.get_extracted_children()]
 
     return data
 
 
-def _image_as_dict(image):
+def _serialize_image_info(image):
     return {
         "original_format": image.format.get_identifier(),
         "width": image.width,
@@ -65,7 +65,7 @@ def _image_as_dict(image):
     }
 
 
-def _instrument_as_dict(image):
+def _serialize_instrument(image):
     return {
         "objective": {
             "nominal_magnification": image.objective.get_value("nominal_magnification", None),
@@ -77,7 +77,7 @@ def _instrument_as_dict(image):
     }
 
 
-def _associated_as_dict(image):
+def _serialize_associated(image):
     return {
         "has_macro": ("macro" in image.associated),
         "has_thumbnail": ("thumb" in image.associated),
@@ -85,7 +85,7 @@ def _associated_as_dict(image):
     }
 
 
-def _metadata_as_dict(metadata):
+def _serialize_metadata(metadata):
     return {
         "key": metadata.name,
         "value": str(metadata.raw_value),
@@ -97,15 +97,15 @@ def show_info(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
 
-    data = _path_as_dict(path)
+    data = _serialize_path_info(path)
     if path.is_collection():
         return data
 
     original = path.get_original()
     check_representation_existence(original)
-    data["image"] = _image_as_dict(original)
-    data["instrument"] = _instrument_as_dict(original)
-    data["associated"] = _associated_as_dict(original)
+    data["image"] = _serialize_image_info(original)
+    data["instrument"] = _serialize_instrument(original)
+    data["associated"] = _serialize_associated(original)
     data["channels"] = None  # TODO
     data["pyramid"] = None  # TODO
     return data
@@ -114,7 +114,7 @@ def show_info(filepath):
 def show_file(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
-    return _path_as_dict(path)
+    return _serialize_path_info(path)
 
 
 def show_image(filepath):
@@ -124,7 +124,7 @@ def show_image(filepath):
 
     original = path.get_original()
     check_representation_existence(original)
-    return _image_as_dict(original)
+    return _serialize_image_info(original)
 
 
 def show_pyramid(filepath):
@@ -142,7 +142,7 @@ def show_instrument(filepath):
 
     original = path.get_original()
     check_representation_existence(original)
-    return _instrument_as_dict(original)
+    return _serialize_instrument(original)
 
 
 def show_associated(filepath):
@@ -152,7 +152,7 @@ def show_associated(filepath):
 
     original = path.get_original()
     check_representation_existence(original)
-    return _associated_as_dict(original)
+    return _serialize_associated(original)
 
 
 def show_associated_image(filepath):
@@ -172,7 +172,7 @@ def show_metadata(filepath):
               original.associated, original.raw_metadata]
     for store in stores:
         for metadata in store.values():
-            item = _metadata_as_dict(metadata)
+            item = _serialize_metadata(metadata)
             item.update(dict(namespace=store.namespace))
             data.append(item)
 

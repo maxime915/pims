@@ -31,7 +31,7 @@ class ColormapType(Enum):
     QUALITATIVE = "QUALITATIVE"
 
 
-def _colormap_to_dict(colormap, colormap_id):
+def _serialize_colormap(colormap, colormap_id):
     return {
         'id': colormap_id,
         'n_colors': colormap.number,
@@ -41,7 +41,7 @@ def _colormap_to_dict(colormap, colormap_id):
 
 
 def list_colormaps():
-    colormaps = [_colormap_to_dict(c, cid) for cid, c in COLORMAPS.items()]
+    colormaps = [_serialize_colormap(c, cid) for cid, c in COLORMAPS.items()]
     return response_list(colormaps)
 
 
@@ -49,7 +49,7 @@ def show_colormap(colormap_id):
     if colormap_id not in COLORMAPS.keys():
         raise ColormapNotFoundProblem(colormap_id)
 
-    return _colormap_to_dict(COLORMAPS[colormap_id], colormap_id)
+    return _serialize_colormap(COLORMAPS[colormap_id], colormap_id)
 
 
 def show_colormap_representation(colormap_id, width, height):

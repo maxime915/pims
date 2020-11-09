@@ -16,7 +16,7 @@ from pims.api.exceptions import check_path_existence, NotADirectoryProblem
 from pims.api.utils.parameter import filepath2path
 
 
-def _usage_as_dict(path):
+def _serialize_usage(path):
     usage = path.mount_disk_usage()
     size = path.size
     mount_point = path.mount_point()
@@ -37,11 +37,11 @@ def show_path_usage(directorypath):
     if not path.is_dir():
         raise NotADirectoryProblem(directorypath)
 
-    return _usage_as_dict(path)
+    return _serialize_usage(path)
 
 
 def show_disk_usage():
-    return _usage_as_dict(filepath2path("."))
+    return _serialize_usage(filepath2path("."))
 
 
 def show_disk_usage_v1():
