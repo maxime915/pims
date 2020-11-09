@@ -20,7 +20,8 @@ from connexion import request, NoContent
 from flask import send_file
 
 from pims.api.exceptions import ColormapNotFoundProblem
-from pims.api.utils import mimetype_to_mpl_slug, JPEG_MIMETYPES, PNG_MIMETYPES
+from pims.api.utils.mimetype import mimetype_to_mpl_slug, JPEG_MIMETYPES, PNG_MIMETYPES
+from pims.api.utils.response import response_list
 from pims.processing.colormaps import COLORMAPS
 
 
@@ -41,10 +42,7 @@ def _colormap_to_dict(colormap, colormap_id):
 
 def list_colormaps():
     colormaps = [_colormap_to_dict(c, cid) for cid, c in COLORMAPS.items()]
-    return {
-        "items": colormaps,
-        "size": len(colormaps)
-    }
+    return response_list(colormaps)
 
 
 def show_colormap(colormap_id):

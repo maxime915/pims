@@ -14,7 +14,8 @@
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, \
     check_representation_existence
-from pims.api.utils import filepath2path, path2filepath
+from pims.api.utils.parameter import filepath2path, path2filepath
+from pims.api.utils.response import response_list
 
 
 def _path_as_dict(path):
@@ -175,7 +176,4 @@ def show_metadata(filepath):
             item.update(dict(namespace=store.namespace))
             data.append(item)
 
-    return {
-        "items": data,
-        "size": len(data)
-    }
+    return response_list(data)

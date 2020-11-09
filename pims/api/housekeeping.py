@@ -13,7 +13,7 @@
 # * limitations under the License.
 
 from pims.api.exceptions import check_path_existence, NotADirectoryProblem
-from pims.api.utils import filepath2path
+from pims.api.utils.parameter import filepath2path
 
 
 def _usage_as_dict(path):

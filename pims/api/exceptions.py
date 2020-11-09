@@ -14,7 +14,7 @@
 
 from connexion import ProblemException
 
-from pims.api.utils import path2filepath
+from pims.api.utils.parameter import path2filepath
 
 
 class FilepathNotFoundProblem(ProblemException):

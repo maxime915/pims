@@ -13,6 +13,7 @@
 # * limitations under the License.
 
 from pims.api.exceptions import FormatNotFoundProblem
+from pims.api.utils.response import response_list
 from pims.formats import FORMATS
 
 
@@ -30,10 +31,7 @@ def _format_to_dict(format):
 
 def list_formats():
     formats = [_format_to_dict(format) for format in FORMATS.values()]
-    return {
-        "items": formats,
-        "size": len(formats)
-    }
+    return response_list(formats)
 
 
 def show_format(format_id):
