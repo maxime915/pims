@@ -32,71 +32,73 @@ class Image(Path):
 
     @property
     def width(self):
-        return self._format.width
+        return self._format.get_image_metadata().width
 
     @property
     def physical_size_x(self):
-        return self._format.physical_size_x
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().physical_size_x
 
     @property
     def height(self):
-        return self._format.height
+        return self._format.get_image_metadata().height
 
     @property
     def physical_size_y(self):
-        return self._format.physical_size_y
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().physical_size_y
 
     @property
     def depth(self):
-        return self._format.depth
+        return self._format.get_image_metadata().depth
 
     @property
     def physical_size_z(self):
-        return self._format.physical_size_z
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().physical_size_z
 
     @property
     def duration(self):
-        return self._format.duration
+        return self._format.get_image_metadata().duration
 
     @property
     def frame_rate(self):
-        return self._format.frame_rate
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().frame_rate
 
     @property
     def n_channels(self):
-        return self._format.n_channels
+        return self._format.get_image_metadata().n_channels
 
     @property
     def pixel_type(self):
-        return self._format.pixel_type
+        return self._format.get_image_metadata().pixel_type
 
     @property
     def significant_bits(self):
-        return self._format.significant_bits
+        return self._format.get_image_metadata().significant_bits
 
     @property
     def acquisition_datetime(self):
-        return self._format.acquisition_datetime
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().acquisition_datetime
 
     @property
     def description(self):
-        return self._format.description
-
-    @property
-    def core(self):
-        return self._format.core_metadata
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().description
 
     @property
     def objective(self):
-        return self._format.objective_metadata
+        return self._format.get_image_metadata().objective
 
     @property
     def microscope(self):
-        return self._format.microscope_metadata
+        return self._format.get_image_metadata().microscope
 
     @property
     def associated(self):
-        return self._format.associated_metadata
+        return self._format.get_image_metadata().associated
 
     @property
     def raw_metadata(self):

@@ -68,26 +68,27 @@ def _serialize_image_info(image):
 def _serialize_instrument(image):
     return {
         "objective": {
-            "nominal_magnification": image.objective.get_value("nominal_magnification", None),
-            "calibrated_magnification": image.objective.get_value("calibrated_magnification", None)
+            "nominal_magnification": image.objective.nominal_magnification,
+            "calibrated_magnification": image.objective.calibrated_magnification
         },
         "microscope": {
-            "model": image.microscope.get_value("model", None)
+            "model": image.microscope.model
         }
     }
 
 
 def _serialize_associated(image):
     return {
-        "has_macro": ("macro" in image.associated),
-        "has_thumbnail": ("thumb" in image.associated),
-        "has_label": ("label" in image.associated)
+        "has_macro": image.associated.has_macro,
+        "has_thumbnail": image.associated.has_thumb,
+        "has_label": image.associated.has_label
     }
 
 
 def _serialize_metadata(metadata):
     return {
-        "key": metadata.name,
+        "namespace": metadata.namespace,
+        "key": metadata.key,
         "value": str(metadata.raw_value),
         "type": metadata.dtype.name
     }
@@ -167,13 +168,5 @@ def show_metadata(filepath):
     original = path.get_original()
     check_representation_existence(original)
 
-    data = list()
-    stores = [original.core, original.objective, original.microscope,
-              original.associated, original.raw_metadata]
-    for store in stores:
-        for metadata in store.values():
-            item = _serialize_metadata(metadata)
-            item.update(dict(namespace=store.namespace))
-            data.append(item)
-
-    return response_list(data)
+    store = original.raw_metadata
+    return response_list([_serialize_metadata(md) for md in store.values()])

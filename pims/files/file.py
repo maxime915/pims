@@ -16,7 +16,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path as _Path
 
-from pims.formats.factories import FormatFactory, SpatialReadableFormatFactory, SpectralReadableFormatFactory
+from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory, SpectralReadableFormatFactory
 
 PROCESSED_DIR = "processed"
 EXTRACTED_DIR = "extracted"

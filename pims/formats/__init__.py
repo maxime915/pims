@@ -17,7 +17,7 @@ from importlib import import_module
 from inspect import isclass, isabstract
 from pkgutil import iter_modules
 
-from pims.formats.abstract import AbstractFormat
+from pims.formats.utils.abstract import AbstractFormat
 
 FORMAT_PLUGIN_PREFIX = 'pims_format_'
 

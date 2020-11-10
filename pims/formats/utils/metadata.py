@@ -53,9 +53,9 @@ class MetadataType(Enum):
     def __init__(self, parse_func=str):
         self.parse_func = parse_func
 
+    BOOLEAN = boolean_parser
     INTEGER = int
     DECIMAL = float
-    BOOLEAN = boolean_parser
     JSON = json_parser
 
     # BASE64 = 6
@@ -70,13 +70,13 @@ class Metadata:
     """
     A metadata from a file (e.g. an image).
     """
-    def __init__(self, name, value, dtype=None):
+    def __init__(self, key, value, dtype=None, namespace=None):
         """
         Initialize a metadata.
 
         Parameters
         ----------
-        name: string
+        key: string
             The name of the metadata
         value: any
             The value of the metadata
@@ -84,10 +84,11 @@ class Metadata:
             The type of the metadata. If not provided, the type is inferred
             from the value.
         """
-        self._name = name
+        self._key = key
         self._raw_value = value
         self._dtype = dtype if dtype else self.infer_dtype()
         self._parsed_value = self._dtype.parse_func(self._raw_value)
+        self._namespace = str(namespace) if namespace is not None else ""
 
     @property
     def raw_value(self):
@@ -102,8 +103,16 @@ class Metadata:
         return self._dtype
 
     @property
-    def name(self) -> str:
-        return self._name
+    def key(self) -> str:
+        return self._key
+
+    @property
+    def namespace(self):
+        return self._namespace
+
+    @property
+    def namespaced_key(self):
+        return "{}.{}".format(self.namespace, self.key) if self.namespace else self.key
 
     def infer_dtype(self) -> MetadataType:
         for dtype in MetadataType:
@@ -115,22 +124,22 @@ class Metadata:
         return MetadataType.STRING
 
     def __eq__(self, o: object) -> bool:
-        return isinstance(o, Metadata) and self.name == o.name \
-               and self.parsed_value == o.parsed_value
+        return isinstance(o, Metadata) and self.key == o.key \
+               and self.parsed_value == o.parsed_value \
+               and self.namespace == o.namespace
 
     def __str__(self):
-        return "{}={} ({})".format(self.name, self.parsed_value, self.dtype.name)
+        return "{}={} ({})".format(self.namespaced_key, self.parsed_value, self.dtype.name)
 
     def __repr__(self):
-        return "{}={} ({})".format(self.name, self.parsed_value, self.dtype.name)
+        return "{}={} ({})".format(self.namespaced_key, self.parsed_value, self.dtype.name)
 
 
 class MetadataStore(MutableMapping):
     """
     A store of metadata, extracted from a file (e.g. an image)
     """
-    def __init__(self, namespace):
-        self.namespace = namespace
+    def __init__(self):
         self._data = dict()
 
     def __delitem__(self, v: str) -> None:
@@ -139,22 +148,24 @@ class MetadataStore(MutableMapping):
     def __setitem__(self, k: str, v: Metadata) -> None:
         self._data[k] = v
 
-    def set(self, name: str, value, dtype=None) -> None:
+    def set(self, key: str, value, dtype=None, namespace=None) -> None:
         """
         Set a metadata in the store.
 
         Parameters
         ----------
-        name: str
+        key: str
             The name of the metadata
         value: any
             The value of the metadata
         dtype: MetadataType (optional)
             The type of the metadata. If not provided, the type is inferred
             from the value.
+        namespace: str (optional)
+            The metadata namespace
         """
-        metadata = Metadata(name, value, dtype)
-        self._data[name] = metadata
+        metadata = Metadata(key, value, dtype, namespace)
+        self._data[metadata.namespaced_key] = metadata
 
     def __getitem__(self, k: str) -> Metadata:
         return self._data[k]
@@ -197,3 +208,103 @@ class MetadataStore(MutableMapping):
 
     def __repr__(self) -> str:
         return repr(self._data)
+
+
+class _MetadataStorable:
+    def metadata_namespace(self):
+        return None
+
+    def to_metadata_store(self, store):
+        for attr in self.__dict__:
+            if not attr.startswith("_"):
+                value = getattr(self, attr)
+                if isinstance(value, list):
+                    for item in value:
+                        if issubclass(type(item), _MetadataStorable):
+                            item.to_metadata_store(store)
+                elif issubclass(type(value), _MetadataStorable):
+                    value.to_metadata_store(store)
+                elif value is not None:
+                    store.set(attr, value, namespace=self.metadata_namespace())
+        return store
+
+
+class ImageChannel(_MetadataStorable):
+    def __init__(self, index=None, emission_wavelength=None, excitation_wavelength=None, samples_per_pixel=None,
+                 suggested_name=None):
+        self.emission_wavelength = emission_wavelength
+        self.excitation_wavelength = excitation_wavelength
+        self.index = index
+        self.samples_per_pixel = samples_per_pixel
+        self.suggested_name = suggested_name
+
+    def metadata_namespace(self):
+        return "channel[{}]".format(self.index)
+
+
+class ImageObjective(_MetadataStorable):
+    def __init__(self):
+        self.nominal_magnification = None
+        self.calibrated_magnification = None
+
+    def metadata_namespace(self):
+        return "objective"
+
+
+class ImageMicroscope(_MetadataStorable):
+    def __init__(self):
+        self.model = None
+
+    def metadata_namespace(self):
+        return "microscope"
+
+
+class ImageAssociated(_MetadataStorable):
+    def __init__(self):
+        self.has_thumb = False
+        self.has_label = False
+        self.has_macro = False
+
+    def metadata_namespace(self):
+        return "associated"
+
+
+class ImageMetadata(_MetadataStorable):
+    def __init__(self):
+        self._is_complete = False
+
+        self.width = None
+        self.height = None
+        self.depth = None
+        self.n_channels = None
+        self.duration = None
+
+        self.pixel_type = None
+        self.significant_bits = None
+
+        self.physical_size_x = None
+        self.physical_size_y = None
+        self.physical_size_z = None
+        self.frame_rate = None
+
+        self.acquisition_datetime = None
+        self.description = None
+
+        self.channels = list()
+        self.objective = ImageObjective()
+        self.microscope = ImageMicroscope()
+        self.associated = ImageAssociated()
+
+    def set_channel(self, channel):
+        self.channels.insert(channel.index, channel)
+
+    def metadata_namespace(self):
+        return "image"
+
+    @property
+    def is_complete(self):
+        return self._is_complete
+
+    @is_complete.setter
+    def is_complete(self, value):
+        self._is_complete = value

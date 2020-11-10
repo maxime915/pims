@@ -15,18 +15,16 @@
 import re
 from abc import abstractmethod, ABC
 
-from pims.formats.metadata import MetadataStore
+from pims.formats.utils.metadata import MetadataStore, ImageMetadata
 
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
 
 class AbstractFormat(ABC):
-    def __init__(self, imagepath):
-        self._imagepath = imagepath
-        self._core_metadata = MetadataStore("CORE")
-        self._objective_metadata = MetadataStore("OBJECTIVE")
-        self._microscope_metadata = MetadataStore("MICROSCOPE")
-        self._associated_metadata = MetadataStore("ASSOCIATED")
+    def __init__(self, path):
+        self._path = path
+
+        self._image_metadata = ImageMetadata()
 
     @classmethod
     def get_identifier(cls, uppercase=True):
@@ -82,79 +80,31 @@ class AbstractFormat(ABC):
         return False
 
     def match(self):
+        """
+        Identify if it is this format or not.
+
+        Returns
+        -------
+        match: boolean
+            Whether it is this format
+        """
         return False
 
-    @property
+    def require_complete_metadata(self):
+        if not self._image_metadata.is_complete:
+            self.read_complete_metadata()
+
     @abstractmethod
-    def width(self):
+    def read_basic_metadata(self):
         pass
 
-    @property
     @abstractmethod
-    def height(self):
-        pass
+    def read_complete_metadata(self):
+        self._image_metadata.is_complete = True
 
-    @property
-    @abstractmethod
-    def pixel_type(self):
-        pass
-
-    @property
-    @abstractmethod
-    def significant_bits(self):
-        pass
-
-    @property
-    def depth(self):
-        return 1
-
-    @property
-    def duration(self):
-        return 1
-
-    @property
-    def n_channels(self):
-        return 1
-
-    @property
-    def physical_size_x(self):
-        return None
-
-    @property
-    def physical_size_y(self):
-        return None
-
-    @property
-    def physical_size_z(self):
-        return None
-
-    @property
-    def frame_rate(self):
-        return None
-
-    @property
-    def acquisition_datetime(self):
-        return None
-
-    @property
-    def description(self):
-        return None
-
-    @property
-    def core_metadata(self):
-        return self._core_metadata
-
-    @property
-    def objective_metadata(self):
-        return self._objective_metadata
-
-    @property
-    def microscope_metadata(self):
-        return self._microscope_metadata
-
-    @property
-    def associated_metadata(self):
-        return self._associated_metadata
+    def get_image_metadata(self):
+        return self._image_metadata
 
     def get_raw_metadata(self):
-        return MetadataStore("RAW")
+        self.read_complete_metadata()
+        return self._image_metadata.to_metadata_store(MetadataStore())

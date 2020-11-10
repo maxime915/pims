@@ -16,7 +16,8 @@ import json
 
 import pytest
 
-from pims.formats.metadata import Metadata, MetadataType, MetadataStore, boolean_parser, json_parser
+from pims.formats.utils.metadata import Metadata, MetadataType, MetadataStore, boolean_parser, json_parser, \
+    ImageMetadata, ImageChannel
 
 
 def test_boolean_parser():
@@ -67,21 +68,23 @@ def test_metadata():
 
     for item in data:
         value, dtype, parsed_value = item
-        m = Metadata("test", value, dtype)
-        assert m.name == "test"
+        m = Metadata("test", value, dtype, "NAMESPACE")
+        assert m.key == "test"
         assert m.raw_value == value
         assert m.dtype == dtype
         assert m.parsed_value == parsed_value
+        assert m.namespace == "NAMESPACE"
 
         m = Metadata("test", value)
-        assert m.name == "test"
+        assert m.key == "test"
         assert m.raw_value == value
         assert m.dtype == dtype
         assert m.parsed_value == parsed_value
+        assert m.namespace == ""
 
 
 def test_metadatastore():
-    ms = MetadataStore("TEST")
+    ms = MetadataStore()
     assert len(ms) == 0
 
     ms.set("a", "b", MetadataType.STRING)
@@ -118,3 +121,21 @@ def test_metadatastore():
 
     with pytest.raises(NotImplementedError):
         del ms["foo"]
+
+
+def test_to_metadata_store():
+    imd = ImageMetadata()
+    imd.width = 10
+    imd.height = 100
+    imd.objective.nominal_magnification = 2
+    imd.microscope.model = "foo"
+    imd.associated.has_label = True
+    imd.set_channel(ImageChannel(index=1))
+
+    store = imd.to_metadata_store(MetadataStore())
+    assert store.get_value("image.width") == 10
+    assert store.get_value("image.height") == 100
+    assert store.get_value("objective.nominal_magnification") == 2
+    assert store.get_value("channel[1].index") == 1
+    assert store.get_value("microscope.model") == "foo"
+    assert store.get_value("associated.has_label") is True
