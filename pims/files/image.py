@@ -89,15 +89,23 @@ class Image(Path):
         return self._format.get_image_metadata().description
 
     @property
+    def channels(self):
+        self._format.require_complete_metadata()
+        return self._format.get_image_metadata().channels
+
+    @property
     def objective(self):
+        self._format.require_complete_metadata()
         return self._format.get_image_metadata().objective
 
     @property
     def microscope(self):
+        self._format.require_complete_metadata()
         return self._format.get_image_metadata().microscope
 
     @property
     def associated(self):
+        self._format.require_complete_metadata()
         return self._format.get_image_metadata().associated
 
     @property

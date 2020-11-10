@@ -85,6 +85,16 @@ def _serialize_associated(image):
     }
 
 
+def _serialize_channels(image):
+    return [{
+        "index": c.index,
+        "emission_wavelength": c.emission_wavelength,
+        "excitation_wavelength": c.excitation_wavelength,
+        "samples_per_pixel": c.samples_per_pixel,
+        "suggested_name": c.suggested_name
+    } for c in image.channels]
+
+
 def _serialize_metadata(metadata):
     return {
         "namespace": metadata.namespace,
@@ -107,7 +117,7 @@ def show_info(filepath):
     data["image"] = _serialize_image_info(original)
     data["instrument"] = _serialize_instrument(original)
     data["associated"] = _serialize_associated(original)
-    data["channels"] = None  # TODO
+    data["channels"] = _serialize_channels(original)
     data["pyramid"] = None  # TODO
     return data
 
@@ -133,7 +143,13 @@ def show_pyramid(filepath):
 
 
 def show_channels(filepath):
-    pass
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    original = path.get_original()
+    check_representation_existence(original)
+    return response_list(_serialize_channels(original))
 
 
 def show_instrument(filepath):
