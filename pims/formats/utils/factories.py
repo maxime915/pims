@@ -31,11 +31,11 @@ class FormatFactory:
 
 class SpatialReadableFormatFactory(FormatFactory):
     def __init__(self):
-        formats = [f for f in FORMATS.values() if f.is_spatial() and f.is_readable()]
+        formats = [f for f in FORMATS.values() if f.is_spatial()]  # and f.is_readable()]
         super(SpatialReadableFormatFactory, self).__init__(formats)
 
 
 class SpectralReadableFormatFactory(FormatFactory):
     def __init__(self):
-        formats = [f for f in FORMATS.values() if f.is_spectral() and f.is_readable()]
+        formats = [f for f in FORMATS.values() if f.is_spectral()]  # and f.is_readable()]
         super(SpectralReadableFormatFactory, self).__init__(formats)

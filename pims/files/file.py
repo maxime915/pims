@@ -131,6 +131,22 @@ class Path(type(_Path()), _Path):
         from pims.files.image import Image
         return Image(spectral, factory=SpectralReadableFormatFactory()) if spectral else None
 
+    def get_representations(self):
+        representations = [self.get_upload(), self.get_original(), self.get_spatial(), self.get_spectral()]
+        return [representation for representation in representations if representation is not None]
+
+    def get_representation(self, role):
+        if role == "UPLOAD":
+            return self.get_upload()
+        elif role == "ORIGINAL":
+            return self.get_original()
+        elif role == "SPATIAL":
+            return self.get_spatial()
+        elif role == "SPECTRAL":
+            return self.get_spectral()
+        else:
+            return None
+
     def get_extracted_children(self):
         if not self.is_collection():
             return []
@@ -152,5 +168,5 @@ class Path(type(_Path()), _Path):
         return not self.is_collection()
 
     def signature(self):
-        with self.open('rb') as fp:
+        with self.resolve().open('rb') as fp:
             return bytearray(fp.read(_NUM_SIGNATURE_BYTES))

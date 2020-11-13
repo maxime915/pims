@@ -1039,11 +1039,11 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /image/{filepath}/info/pyramid:
+  /image/{filepath}/info/representations:
     get:
-      operationId: pims.api.metadata.show_pyramid
-      description: Get information about an image pyramid.
-      summary: Get image pyramid info
+      operationId: pims.api.metadata.list_representations
+      description: Get information about all image representations
+      summary: Get all image representation info
       tags:
         - Metadata
       parameters:
@@ -1060,7 +1060,46 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/pyramid-info'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    $ref: '#/components/schemas/representation-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+  /image/{filepath}/info/representations/{representation}:
+    get:
+      operationId: pims.api.metadata.show_representation
+      description: Get information about an image representation.
+      summary: Get image representation info
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+        - name: representation
+          in: path
+          description: The image representation
+          required: true
+          schema:
+            $ref: '#/components/schemas/file-role'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/representation-info'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -3300,6 +3339,34 @@ components:
           description: The number of bits within the type storing each pixel that are significants.
           type: integer
           minimum: 1
+    representation-info:
+      oneOf:
+        - $ref: '#/components/schemas/simple-representation-info'
+        - $ref: '#/components/schemas/full-representation-info'
+      discriminator:
+        propertyName: "role"
+        mapping:
+          ORIGINAL: '#/components/schemas/simple-representation-info'
+          UPLOAD: '#/components/schemas/simple-representation-info'
+          SPATIAL: '#/components/schemas/full-representation-info'
+          SPECTRAL: '#/components/schemas/full-representation-info'
+          NONE: '#/components/schemas/simple-representation-info'
+    simple-representation-info:
+      type: object
+      description: |
+        Information about an image representation.
+      properties:
+        role:
+          $ref: '#/components/schemas/file-role'
+        file:
+          $ref: '#/components/schemas/file-info'
+    full-representation-info:
+      allOf:
+        - $ref: '#/components/schemas/simple-representation-info'
+        - type: object
+          properties:
+            pyramid:
+              $ref: '#/components/schemas/pyramid-info'
     pyramid-info:
       type: object
       description: |
@@ -3418,14 +3485,14 @@ components:
       properties:
         image:
           $ref: '#/components/schemas/image-info'
-        pyramid:
-          $ref: '#/components/schemas/pyramid-info'
         channels:
           $ref: '#/components/schemas/channels-info'
         instrument:
           $ref: '#/components/schemas/instrument-info'
         associated:
           $ref: '#/components/schemas/associated-info'
+        representations:
+          $ref: '#/components/schemas/representation-info'
     collection-file-type-info:
       allOf:
         - $ref: '#/components/schemas/file-info'

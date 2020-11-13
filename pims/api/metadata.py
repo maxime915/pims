@@ -18,7 +18,7 @@ from pims.api.utils.parameter import filepath2path, path2filepath
 from pims.api.utils.response import response_list
 
 
-def _serialize_path_info(path):
+def _serialize_path_role(path):
     role = "NONE"
     if path.has_original_role():
         role = "ORIGINAL"
@@ -28,14 +28,17 @@ def _serialize_path_info(path):
         role = "SPECTRAL"
     if path.has_upload_role():
         role = "UPLOAD"
+    return role
 
+
+def _serialize_path_info(path):
     data = {
         "created_at": path.creation_datetime,
         "extension": path.extension,
         "file_type": "COLLECTION" if path.is_collection() else "SINGLE",
         "filepath": path2filepath(path),
         "is_symbolic": path.is_symlink(),
-        "role": role,
+        "role": _serialize_path_role(path),
         "size": path.size,
         "stem": path.true_stem
     }
@@ -104,6 +107,18 @@ def _serialize_metadata(metadata):
     }
 
 
+def _serialize_representation(path):
+    data = {
+        "role": _serialize_path_role(path),
+        "file": _serialize_path_info(path)
+    }
+
+    if path.has_spatial_role() or path.has_spectral_role():
+        data["pyramid"] = None  # TODO
+
+    return data
+
+
 def show_file(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
@@ -122,7 +137,7 @@ def show_info(filepath):
     data["instrument"] = _serialize_instrument(original)
     data["associated"] = _serialize_associated(original)
     data["channels"] = _serialize_channels(original)
-    data["pyramid"] = None  # TODO
+    data["representations"] = [_serialize_representation(rpr) for rpr in original.get_representations()]
     return data
 
 
@@ -184,3 +199,20 @@ def show_metadata(filepath):
 
     store = original.raw_metadata
     return response_list([_serialize_metadata(md) for md in store.values()])
+
+
+def list_representations(filepath):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    return response_list([_serialize_representation(rpr) for rpr in path.get_representations()])
+
+
+def show_representation(filepath, representation):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    rpr = path.get_representation(representation)
+    return _serialize_representation(rpr)
