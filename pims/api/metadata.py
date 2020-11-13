@@ -60,7 +60,7 @@ def _serialize_image_info(image):
         "frame_rate": image.frame_rate,
         "acquired_at": image.acquisition_datetime,
         "description": image.description,
-        "pixel_type": str(image.pixel_type),
+        "pixel_type": image.pixel_type,
         "significant_bits": image.significant_bits
     }
 
@@ -100,7 +100,7 @@ def _serialize_metadata(metadata):
         "namespace": metadata.namespace,
         "key": metadata.key,
         "value": str(metadata.raw_value),
-        "type": metadata.dtype.name
+        "type": metadata.dtype
     }
 
 

@@ -119,7 +119,7 @@ class Metadata:
             try:
                 dtype.parse_func(self._raw_value)
                 return dtype
-            except ValueError:
+            except (ValueError, TypeError):
                 pass
         return MetadataType.STRING
 

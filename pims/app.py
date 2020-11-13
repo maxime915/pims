@@ -11,14 +11,16 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
 import os
 import time
 from logging.config import dictConfig
+from enum import Enum
 
+import numpy
 from colors import colors
 
 import connexion
+from connexion.apps.flask_app import FlaskJSONEncoder
 from flask import g, request
 
 dictConfig({
@@ -48,6 +50,7 @@ def create_app(test_config=None):
     app = connexion.FlaskApp(__name__, specification_dir='openapi/', options={'swagger_url': '/docs'})
     api = app.add_api('api-specification.yaml')
     flask_app = app.app
+    flask_app.json_encoder = PimsJSONEncoder
     flask_app.config.from_pyfile(CONFIG_FILE)
 
     if test_config is not None:
@@ -87,3 +90,14 @@ def create_app(test_config=None):
         return response
 
     return flask_app
+
+
+class PimsJSONEncoder(FlaskJSONEncoder):
+    def default(self, o):
+        if isinstance(o, numpy.dtype):
+            return str(o)
+
+        if isinstance(o, Enum):
+            return o.name
+
+        return FlaskJSONEncoder.default(self, o)
