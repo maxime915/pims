@@ -104,28 +104,26 @@ def _serialize_metadata(metadata):
     }
 
 
+def show_file(filepath):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    return _serialize_path_info(path)
+
+
 def show_info(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
-
-    data = _serialize_path_info(path)
-    if path.is_collection():
-        return data
+    check_path_is_single(path)
 
     original = path.get_original()
     check_representation_existence(original)
+    data = dict()
     data["image"] = _serialize_image_info(original)
     data["instrument"] = _serialize_instrument(original)
     data["associated"] = _serialize_associated(original)
     data["channels"] = _serialize_channels(original)
     data["pyramid"] = None  # TODO
     return data
-
-
-def show_file(filepath):
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    return _serialize_path_info(path)
 
 
 def show_image(filepath):

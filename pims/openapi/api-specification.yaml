@@ -111,7 +111,7 @@ tags:
   - name: Server
   - name: Housekeeping
 paths:
-  /file/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
+  /image/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/path-zoom'
@@ -183,7 +183,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/tile/level/{level}/ti/{tile_index}:
+  /image/{filepath}/tile/level/{level}/ti/{tile_index}:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/path-level'
@@ -255,7 +255,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/tile:
+  /image/{filepath}/tile:
     post:
       operationId: pims.api.tile.show_tile_with_body
       summary: Get a tile (generic)
@@ -309,7 +309,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/window:
+  /image/{filepath}/window:
     post:
       operationId: pims.api.window.show_window_with_body
       summary: Get a window
@@ -392,7 +392,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
         406:
           $ref: '#/components/responses/problem-not-acceptable'
-  /file/{filepath}/thumb:
+  /image/{filepath}/thumb:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/header-etag'
@@ -477,7 +477,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/resized:
+  /image/{filepath}/resized:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/header-etag'
@@ -493,7 +493,7 @@ paths:
         **By default**, all image channels are used and when the image is multidimensional, the
         thumbnail is extracted from the median focal plane at first timepoint.
 
-        **While `/file/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
+        **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
         such as computer vision, image processing or machine learning.**
       tags:
         - Resized
@@ -542,7 +542,7 @@ paths:
         **By default**, all image channels are used and when the image is multidimensional, the
         thumbnail is extracted from the median focal plane at first timepoint.
 
-        **While `/file/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
+        **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
         such as computer vision, image processing or machine learning.**
       tags:
         - Resized
@@ -583,7 +583,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
         406:
           $ref: '#/components/responses/problem-not-acceptable'
-  /file/{filepath}/annotation/mask:
+  /image/{filepath}/annotation/mask:
     post:
       operationId: pims.api.annotation.show_mask
       tags:
@@ -628,7 +628,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/annotation/crop:
+  /image/{filepath}/annotation/crop:
     post:
       operationId: pims.api.annotation.show_crop
       tags:
@@ -674,7 +674,7 @@ paths:
           $ref: '#/components/responses/problem-not-found'
         406:
           $ref: '#/components/responses/problem-not-acceptable'
-  /file/{filepath}/annotation/drawing:
+  /image/{filepath}/annotation/drawing:
     post:
       operationId: pims.api.annotation.show_drawing
       tags:
@@ -714,7 +714,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/annotation/spectra:
+  /image/{filepath}/annotation/spectra:
     post:
       operationId: pims.api.annotation.show_spectra
       summary: Get annotation spectra
@@ -768,7 +768,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/annotation/footprint:
+  /image/{filepath}/annotation/footprint:
     post:
       operationId: pims.api.annotation.show_footprint
       summary: Get annotation spectral footprint
@@ -825,7 +825,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/spectral/footprint:
+  /image/{filepath}/spectral/footprint:
     post:
       operationId: pims.api.spectral.show_spectral_footprint
       summary: Get spectral footprint
@@ -896,7 +896,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/spectral/window:
+  /image/{filepath}/spectral/window:
     post:
       operationId: pims.api.spectral.show_spectral_window
       summary: Get spectral window
@@ -952,34 +952,6 @@ paths:
           $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info:
     get:
-      operationId: pims.api.metadata.show_info
-      description: Get all information about a file
-      summary: Get all file information
-      tags:
-        - Metadata
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
-      responses:
-        200:
-          description: OK
-          headers:
-            If-None-Match:
-              $ref: '#/components/headers/If-None-Match'
-            Cache-Control:
-              $ref: '#/components/headers/Cache-Control'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/info'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/problem-bad-request'
-        404:
-          $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/info/file:
-    get:
       operationId: pims.api.metadata.show_file
       description: Get information about a file
       summary: Get file info
@@ -1011,11 +983,39 @@ paths:
           $ref: '#/components/responses/not-modified'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/info/image:
+  /image/{filepath}/info:
+    get:
+      operationId: pims.api.metadata.show_info
+      description: Get all information about an image
+      summary: Get all image info
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/image-full-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+  /image/{filepath}/info/image:
     get:
       operationId: pims.api.metadata.show_image
       description: Get information about an image.
-      summary: Get image info
+      summary: Get standard image info
       tags:
         - Metadata
       parameters:
@@ -1039,7 +1039,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/info/pyramid:
+  /image/{filepath}/info/pyramid:
     get:
       operationId: pims.api.metadata.show_pyramid
       description: Get information about an image pyramid.
@@ -1067,7 +1067,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/info/channels:
+  /image/{filepath}/info/channels:
     get:
       operationId: pims.api.metadata.show_channels
       description: Get information about channels in an image
@@ -1100,7 +1100,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/info/instrument:
+  /image/{filepath}/info/instrument:
     get:
       operationId: pims.api.metadata.show_instrument
       description: Get information about instrument in an image
@@ -1128,7 +1128,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/info/associated:
+  /image/{filepath}/info/associated:
     get:
       operationId: pims.api.metadata.show_associated
       description: Get information about associated files in an image
@@ -1157,7 +1157,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/metadata:
+  /image/{filepath}/metadata:
     get:
       operationId: pims.api.metadata.show_metadata
       description: Get readable raw metadata from an image file
@@ -1193,7 +1193,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/associated/{associated_key}:
+  /image/{filepath}/associated/{associated_key}:
     get:
       operationId: pims.api.metadata.show_associated_image
       summary: Get an associated image
@@ -1228,7 +1228,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/histograms:
+  /image/{filepath}/histograms:
     get:
       operationId: pims.api.histograms.list_histograms
       summary: Get possible histograms
@@ -1264,7 +1264,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/histograms/full:
+  /image/{filepath}/histograms/full:
     get:
       operationId: pims.api.histograms.show_full_histogram
       tags:
@@ -1299,7 +1299,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/histograms/c/{channels}:
+  /image/{filepath}/histograms/c/{channels}:
     get:
       operationId: pims.api.histograms.show_histogram_per_channel
       tags:
@@ -1340,7 +1340,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
+  /image/{filepath}/histograms/c/{channels}/z/{z_slices}/t/{timepoints}:
     get:
       operationId: pims.api.histograms.show_histogram_per_plane
       tags:
@@ -1387,7 +1387,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /file/{filepath}/export/{format_id}:
+  /image/{filepath}/export/{format_id}:
     get:
       operationId: pims.api.operations.export
       description: Export a file in another format
@@ -3413,21 +3413,19 @@ components:
           description: Whether the image file has a macro image (generally, in slide scanners, a low resolution picture
             of the entire slide) or not.
           default: false
-    single-file-type-info:
-      allOf:
-        - $ref: '#/components/schemas/file-info'
-        - type: object
-          properties:
-            image:
-              $ref: '#/components/schemas/image-info'
-            pyramid:
-              $ref: '#/components/schemas/pyramid-info'
-            channels:
-              $ref: '#/components/schemas/channels-info'
-            instrument:
-              $ref: '#/components/schemas/instrument-info'
-            associated:
-              $ref: '#/components/schemas/associated-info'
+    image-full-info:
+      type: object
+      properties:
+        image:
+          $ref: '#/components/schemas/image-info'
+        pyramid:
+          $ref: '#/components/schemas/pyramid-info'
+        channels:
+          $ref: '#/components/schemas/channels-info'
+        instrument:
+          $ref: '#/components/schemas/instrument-info'
+        associated:
+          $ref: '#/components/schemas/associated-info'
     collection-file-type-info:
       allOf:
         - $ref: '#/components/schemas/file-info'
@@ -3438,15 +3436,6 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/file-info'
-    info:
-      oneOf:
-        - $ref: '#/components/schemas/single-file-type-info'
-        - $ref: '#/components/schemas/collection-file-type-info'
-      discriminator:
-        propertyName: file_type
-        mapping:
-          SINGLE: '#/components/schemas/single-file-type-info'
-          COLLECTION: '#/components/schemas/collection-file-type-info'
     metadata:
       type: object
       description: |
