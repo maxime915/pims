@@ -20,6 +20,16 @@ from pims.formats.utils.metadata import MetadataStore, ImageMetadata
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
 
+class PathMatchProxy:
+    def __init__(self, path):
+        self.path = path
+
+    def get(self, name, delayed_func):
+        if not hasattr(self, name):
+            setattr(self, name, delayed_func())
+        return getattr(self, name)
+
+
 class AbstractFormat(ABC):
     def __init__(self, path):
         self._path = path
@@ -79,9 +89,15 @@ class AbstractFormat(ABC):
     def is_spectral(cls):
         return False
 
-    def match(self):
+    @classmethod
+    def match(cls, proxypath: PathMatchProxy):
         """
         Identify if it is this format or not.
+
+        Parameters
+        ----------
+        proxypath : PathMatchProxy
+            The path, proxied with some useful results across formats.
 
         Returns
         -------
@@ -90,9 +106,9 @@ class AbstractFormat(ABC):
         """
         return False
 
-    def require_complete_metadata(self):
-        if not self._image_metadata.is_complete:
-            self.read_complete_metadata()
+    @classmethod
+    def from_proxy(cls, proxypath):
+        return cls(path=proxypath.path)
 
     @abstractmethod
     def read_basic_metadata(self):

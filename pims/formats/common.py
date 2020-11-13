@@ -26,8 +26,9 @@ class JPEGFormat(AbstractFormat):
     def is_spatial(cls):
         return True
 
-    def match(self):
-        buf = self._path.signature()
+    @classmethod
+    def match(cls, proxypath):
+        buf = proxypath.get("signature", proxypath.path.signature)
         return (len(buf) > 2 and
                 buf[0] == 0xFF and
                 buf[1] == 0xD8 and
@@ -41,8 +42,9 @@ class PNGFormat(AbstractFormat):
     def read_complete_metadata(self):
         pass
 
-    def match(self):
-        buf = self._path.signature()
+    @classmethod
+    def match(cls, proxypath):
+        buf = proxypath.get("signature", proxypath.path.signature)
         return (len(buf) > 3 and
                 buf[0] == 0x89 and
                 buf[1] == 0x50 and
@@ -57,8 +59,9 @@ class WebPFormat(AbstractFormat):
     def read_complete_metadata(self):
         pass
 
-    def match(self):
-        buf = self._path.signature()
+    @classmethod
+    def match(cls, proxypath):
+        buf = proxypath.get("signature", proxypath.path.signature)
         return (len(buf) > 13 and
                 buf[0] == 0x52 and
                 buf[1] == 0x49 and
