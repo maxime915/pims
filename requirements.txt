@@ -3,3 +3,5 @@ connexion~=2.7.0
 palettable~=3.3.0
 setuptools~=50.3.0
 ansicolors~=1.1.8
+tifffile~=2020.10.1
+pytest~=6.1.2

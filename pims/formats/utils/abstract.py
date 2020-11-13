@@ -34,7 +34,7 @@ class AbstractFormat(ABC):
     def __init__(self, path):
         self._path = path
 
-        self._image_metadata = ImageMetadata()
+        self._image_metadata = None
 
     @classmethod
     def get_identifier(cls, uppercase=True):
@@ -111,16 +111,20 @@ class AbstractFormat(ABC):
         return cls(path=proxypath.path)
 
     @abstractmethod
-    def read_basic_metadata(self):
+    def init_standard_metadata(self):
         pass
 
     @abstractmethod
-    def read_complete_metadata(self):
+    def init_complete_metadata(self):
         self._image_metadata.is_complete = True
 
-    def get_image_metadata(self):
+    def get_image_metadata(self, complete=False):
+        if not self._image_metadata:
+            self.init_standard_metadata()
+        if complete and not self._image_metadata.is_complete:
+            self.init_complete_metadata()
         return self._image_metadata
 
     def get_raw_metadata(self):
-        self.read_complete_metadata()
-        return self._image_metadata.to_metadata_store(MetadataStore())
+        metadata = self.get_image_metadata(True)
+        return metadata.to_metadata_store(MetadataStore())

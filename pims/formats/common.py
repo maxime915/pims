@@ -13,14 +13,15 @@
 # * limitations under the License.
 
 from pims.formats.utils.abstract import AbstractFormat
+from pims.formats.utils.metadata import ImageMetadata
 
 
 class JPEGFormat(AbstractFormat):
-    def read_basic_metadata(self):
-        pass
+    def init_standard_metadata(self):
+        self._image_metadata = ImageMetadata()
 
-    def read_complete_metadata(self):
-        super(JPEGFormat, self).read_complete_metadata()
+    def init_complete_metadata(self):
+        super(JPEGFormat, self).init_complete_metadata()
 
     @classmethod
     def is_spatial(cls):
@@ -36,10 +37,10 @@ class JPEGFormat(AbstractFormat):
 
 
 class PNGFormat(AbstractFormat):
-    def read_basic_metadata(self):
-        pass
+    def init_standard_metadata(self):
+        self._image_metadata = ImageMetadata()
 
-    def read_complete_metadata(self):
+    def init_complete_metadata(self):
         pass
 
     @classmethod
@@ -53,10 +54,10 @@ class PNGFormat(AbstractFormat):
 
 
 class WebPFormat(AbstractFormat):
-    def read_basic_metadata(self):
-        pass
+    def init_standard_metadata(self):
+        self._image_metadata = ImageMetadata()
 
-    def read_complete_metadata(self):
+    def init_complete_metadata(self):
         pass
 
     @classmethod

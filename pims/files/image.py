@@ -36,8 +36,7 @@ class Image(Path):
 
     @property
     def physical_size_x(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().physical_size_x
+        return self._format.get_image_metadata(True).physical_size_x
 
     @property
     def height(self):
@@ -45,8 +44,7 @@ class Image(Path):
 
     @property
     def physical_size_y(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().physical_size_y
+        return self._format.get_image_metadata(True).physical_size_y
 
     @property
     def depth(self):
@@ -54,8 +52,7 @@ class Image(Path):
 
     @property
     def physical_size_z(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().physical_size_z
+        return self._format.get_image_metadata(True).physical_size_z
 
     @property
     def duration(self):
@@ -63,7 +60,6 @@ class Image(Path):
 
     @property
     def frame_rate(self):
-        self._format.require_complete_metadata()
         return self._format.get_image_metadata().frame_rate
 
     @property
@@ -80,33 +76,27 @@ class Image(Path):
 
     @property
     def acquisition_datetime(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().acquisition_datetime
+        return self._format.get_image_metadata(True).acquisition_datetime
 
     @property
     def description(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().description
+        return self._format.get_image_metadata(True).description
 
     @property
     def channels(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().channels
+        return self._format.get_image_metadata(True).channels
 
     @property
     def objective(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().objective
+        return self._format.get_image_metadata(True).objective
 
     @property
     def microscope(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().microscope
+        return self._format.get_image_metadata(True).microscope
 
     @property
     def associated(self):
-        self._format.require_complete_metadata()
-        return self._format.get_image_metadata().associated
+        return self._format.get_image_metadata(True).associated
 
     @property
     def raw_metadata(self):
