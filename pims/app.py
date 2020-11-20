@@ -17,11 +17,15 @@ from logging.config import dictConfig
 from enum import Enum
 
 import numpy
+import pint
 from colors import colors
 
 import connexion
 from connexion.apps.flask_app import FlaskJSONEncoder
 from flask import g, request
+from pint import Quantity
+
+UNIT_REGISTRY = pint.UnitRegistry()
 
 dictConfig({
     'version': 1,
@@ -99,5 +103,8 @@ class PimsJSONEncoder(FlaskJSONEncoder):
 
         if isinstance(o, Enum):
             return o.name
+
+        if isinstance(o, Quantity):
+            return round(o.magnitude, 6)
 
         return FlaskJSONEncoder.default(self, o)

@@ -11,6 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from pint import Quantity
 
 
 def response_list(list_):
@@ -18,3 +19,11 @@ def response_list(list_):
         "items": list_,
         "size": len(list_)
     }
+
+
+def convert_quantity(quantity, unit):
+    if quantity is None:
+        return None
+    elif isinstance(quantity, Quantity):
+        return quantity.to(unit)
+    return quantity

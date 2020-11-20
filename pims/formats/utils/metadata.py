@@ -19,30 +19,57 @@ from enum import Enum
 from typing import ValuesView, AbstractSet, Tuple
 
 
-class JsonParser:
-    def __call__(self, value) -> dict:
+def parse_json(value, raise_exc=False):
+    try:
         return json.loads(value)
+    except:
+        if raise_exc:
+            raise
+        return None
+
+
+class JsonParser:
+    def __call__(self, value):
+        return parse_json(value, True)
+
+
+def parse_boolean(value, raise_exc=False):
+    _true_set = {'yes', 'true', 't', 'y', '1'}
+    _false_set = {'no', 'false', 'f', 'n', '0'}
+
+    if value is True or value is False:
+        return value
+    elif isinstance(value, str):
+        value = value.lower()
+        if value in _true_set:
+            return True
+        if value in _false_set:
+            return False
+
+    if raise_exc:
+        raise ValueError('Expected "%s"' % '", "'.join(_true_set | _false_set))
+    return None
 
 
 class BooleanParser:
-    def __call__(self, value) -> bool:
-        _true_set = {'yes', 'true', 't', 'y', '1'}
-        _false_set = {'no', 'false', 'f', 'n', '0'}
-
-        if value is True or value is False:
-            return value
-        elif isinstance(value, str):
-            value = value.lower()
-            if value in _true_set:
-                return True
-            if value in _false_set:
-                return False
-
-        raise ValueError('Expected "%s"' % '", "'.join(_true_set | _false_set))
+    def __call__(self, value):
+        return parse_boolean(value, True)
 
 
-json_parser = JsonParser()
-boolean_parser = BooleanParser()
+def parse_float(value, raise_exc=False):
+    if type(value) == str:
+        value = value.replace(",", ".")
+    try:
+        return float(value)
+    except:
+        if raise_exc:
+            raise
+        return None
+
+
+class FloatParser:
+    def __call__(self, value):
+        return parse_float(value, True)
 
 
 class MetadataType(Enum):
@@ -53,10 +80,10 @@ class MetadataType(Enum):
     def __init__(self, parse_func=str):
         self.parse_func = parse_func
 
-    BOOLEAN = boolean_parser
+    BOOLEAN = BooleanParser()
     INTEGER = int
-    DECIMAL = float
-    JSON = json_parser
+    DECIMAL = FloatParser()
+    JSON = JsonParser()
 
     # BASE64 = 6
     # DATE = 7

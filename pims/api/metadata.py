@@ -15,7 +15,7 @@
 from pims.api.exceptions import check_path_existence, check_path_is_single, \
     check_representation_existence
 from pims.api.utils.parameter import filepath2path, path2filepath
-from pims.api.utils.response import response_list
+from pims.api.utils.response import response_list, convert_quantity
 
 
 def _serialize_path_role(path):
@@ -57,9 +57,9 @@ def _serialize_image_info(image):
         "depth": image.depth,
         "duration": image.duration,
         "n_channels": image.n_channels,
-        "physical_size_x": image.physical_size_x,
-        "physical_size_y": image.physical_size_y,
-        "physical_size_z": image.physical_size_z,
+        "physical_size_x": convert_quantity(image.physical_size_x, "nanometers"),
+        "physical_size_y": convert_quantity(image.physical_size_y, "nanometers"),
+        "physical_size_z": convert_quantity(image.physical_size_z, "nanometers"),
         "frame_rate": image.frame_rate,
         "acquired_at": image.acquisition_datetime,
         "description": image.description,
