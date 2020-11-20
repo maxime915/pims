@@ -101,3 +101,10 @@ class Image(Path):
     @property
     def raw_metadata(self):
         return self._format.get_raw_metadata()
+
+    @property
+    def pyramid(self):
+        try:
+            return self._format.pyramid
+        except AttributeError:
+            return None

@@ -107,6 +107,27 @@ def _serialize_metadata(metadata):
     }
 
 
+def _serialize_pyramid(pyramid):
+    if pyramid is None:
+        return None
+
+    def _serialize_tier(pyramid, level, tier):
+        return {
+            "width": tier.width,
+            "height": tier.height,
+            "level": level,
+            "zoom": pyramid.level_to_zoom(level),
+            "tile_width": tier.tile_width,
+            "tile_height": tier.tile_height,
+            "downsample_factor": tier.width_factor
+        }
+
+    return {
+        "n_tiers": pyramid.n_levels,
+        "tiers": [_serialize_tier(pyramid, level, tier) for level, tier in enumerate(pyramid)]
+    }
+
+
 def _serialize_representation(path):
     data = {
         "role": _serialize_path_role(path),
@@ -114,7 +135,7 @@ def _serialize_representation(path):
     }
 
     if path.has_spatial_role() or path.has_spectral_role():
-        data["pyramid"] = None  # TODO
+        data["pyramid"] = _serialize_pyramid(path.pyramid)
 
     return data
 

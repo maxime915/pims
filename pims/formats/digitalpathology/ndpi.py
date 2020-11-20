@@ -13,6 +13,7 @@
 # * limitations under the License.
 from pims.formats.common.tiff import AbstractTiffFormat, read_tifffile
 from pims.formats.utils.metadata import parse_float
+from pims.formats.utils.pyramid import Pyramid
 from tifffile import lazyattr, astype
 
 
@@ -64,10 +65,19 @@ class NDPIFormat(AbstractTiffFormat):
 
         imd.is_complete = True
 
-
     def get_raw_metadata(self):
         store = super(NDPIFormat, self).get_raw_metadata()
         for key, value in self.ndpi_tags.items():
             store.set(key.replace(" ", ""), value, namespace="Hamamatsu")
 
         return store
+
+    @lazyattr
+    def pyramid(self):
+        pyramid = Pyramid(self.baseline.imagewidth, self.baseline.imagelength,
+                          (self.baseline.tilewidth, self.baseline.tilelength))
+        for level in self._tf.series[0].levels[1:]:
+            keyframe = level.keyframe
+            pyramid.insert_tier(keyframe.imagewidth, keyframe.imagelength, (keyframe.tilewidth, keyframe.tilelength))
+
+        return pyramid
