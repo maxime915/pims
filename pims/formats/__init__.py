@@ -55,7 +55,8 @@ def _find_formats_in_module(mod):
             continue
 
         for var in vars(import_module(submodule_name)).values():
-            if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var):
+            if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var) \
+                    and 'Abstract' not in var.__name__:
                 format = var
                 formats.append(format)
                 logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))

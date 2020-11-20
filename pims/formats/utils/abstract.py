@@ -24,9 +24,9 @@ class PathMatchProxy:
     def __init__(self, path):
         self.path = path
 
-    def get(self, name, delayed_func):
+    def get(self, name, delayed_func, *args, **kwargs):
         if not hasattr(self, name):
-            setattr(self, name, delayed_func())
+            setattr(self, name, delayed_func(*args, **kwargs))
         return getattr(self, name)
 
 
