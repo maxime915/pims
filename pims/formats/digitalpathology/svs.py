@@ -20,9 +20,19 @@ from tifffile import lazyattr, astype
 
 
 class SVSFormat(AbstractTiffFormat):
+    """
+    Aperio SVS format.
+    References:
+        https://openslide.org/formats/aperio/
+        https://docs.openmicroscopy.org/bio-formats/6.5.1/formats/aperio-svs-tiff.html
+        https://github.com/ome/bioformats/blob/master/components/formats-gpl/src/loci/formats/in/SVSReader.java
+        https://www.leicabiosystems.com/digital-pathology/manage/aperio-imagescope/
+        https://github.com/openslide/openslide/blob/master/src/openslide-vendor-aperio.c
+    """
+
     @classmethod
     def get_name(cls):
-        return "Aperio SVS"
+        return "Leica Aperio SVS"
 
     @classmethod
     def match(cls, proxypath):
@@ -54,17 +64,16 @@ class SVSFormat(AbstractTiffFormat):
         return result
 
     def init_complete_metadata(self):
-        baseline = self._tf.pages[0]
         imd = self._image_metadata
 
         svs_metadata = self.svs_raw_metadata
-        imd.description = baseline.description
+        imd.description = self.baseline.description
         imd.acquisition_datetime = self.parse_acquisition_date(
             svs_metadata.get("Date", None), svs_metadata.get("Time", None))
 
         imd.physical_size_x = self.parse_physical_size(svs_metadata.get("MPP", None))
         imd.physical_size_y = imd.physical_size_x
-        imd.objective.nominal_magnification = svs_metadata.get("AppMag", None)
+        imd.objective.nominal_magnification = parse_float(svs_metadata.get("AppMag", None))
 
         series_names = [s.name.lower() for s in self._tf.series]
         imd.associated.has_thumb = "thumbnail" in series_names
@@ -98,7 +107,6 @@ class SVSFormat(AbstractTiffFormat):
     def get_raw_metadata(self):
         store = super(SVSFormat, self).get_raw_metadata()
         for key, value in self.svs_raw_metadata.items():
-            key = key if key is not "" else "Info"
             store.set(key.replace(" ", ""), value, namespace="Aperio")
 
         return store

@@ -16,7 +16,7 @@ from datetime import datetime
 from pims.app import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
-from tifffile import tifffile, lazyattr
+from tifffile import tifffile, lazyattr, TiffTag
 
 
 class AbstractTiffFormat(AbstractFormat):
@@ -72,7 +72,6 @@ class AbstractTiffFormat(AbstractFormat):
 
         imd.physical_size_x = self.parse_physical_size(tags.get("XResolution"), tags.get("ResolutionUnit"))
         imd.physical_size_y = self.parse_physical_size(tags.get("YResolution"), tags.get("ResolutionUnit"))
-        imd.is_complete = True
 
     @staticmethod
     def parse_acquisition_date(date):
@@ -81,12 +80,14 @@ class AbstractTiffFormat(AbstractFormat):
 
         Parameters
         ----------
-        date: str, datetime
+        date: str, datetime, TiffTag
 
         Returns
         -------
         datetime: datetime, None
         """
+        date = get_tag_value(date)
+
         if isinstance(date, datetime):
             return date
         elif isinstance(date, str) and (len(date) != 19 or date[16] != ':'):
@@ -104,13 +105,15 @@ class AbstractTiffFormat(AbstractFormat):
 
         Parameters
         ----------
-        physical_size: tuple, int
+        physical_size: tuple, int, TiffTag
         unit: tifffile.RESUNIT
 
         Returns
         -------
         physical_size: Quantity
         """
+        physical_size = get_tag_value(physical_size)
+        unit = get_tag_value(unit)
         if not unit or physical_size is None:
             return None
         if type(physical_size) == tuple and len(physical_size) == 1:
@@ -128,3 +131,9 @@ def read_tifffile(path):
     except tifffile.TiffFileError:
         tf = None
     return tf
+
+def get_tag_value(tag):
+    if isinstance(tag, TiffTag):
+        return tag.value
+    else:
+        return tag
