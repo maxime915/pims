@@ -11,46 +11,8 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
-from pims.formats.utils.abstract import AbstractFormat
+from pims.formats import AbstractFormat
 from pims.formats.utils.metadata import ImageMetadata
-
-
-class JPEGFormat(AbstractFormat):
-    def init_standard_metadata(self):
-        self._image_metadata = ImageMetadata()
-
-    def init_complete_metadata(self):
-        super(JPEGFormat, self).init_complete_metadata()
-
-    @classmethod
-    def is_spatial(cls):
-        return True
-
-    @classmethod
-    def match(cls, proxypath):
-        buf = proxypath.get("signature", proxypath.path.signature)
-        return (len(buf) > 2 and
-                buf[0] == 0xFF and
-                buf[1] == 0xD8 and
-                buf[2] == 0xFF)
-
-
-class PNGFormat(AbstractFormat):
-    def init_standard_metadata(self):
-        self._image_metadata = ImageMetadata()
-
-    def init_complete_metadata(self):
-        pass
-
-    @classmethod
-    def match(cls, proxypath):
-        buf = proxypath.get("signature", proxypath.path.signature)
-        return (len(buf) > 3 and
-                buf[0] == 0x89 and
-                buf[1] == 0x50 and
-                buf[2] == 0x4E and
-                buf[3] == 0x47)
 
 
 class WebPFormat(AbstractFormat):

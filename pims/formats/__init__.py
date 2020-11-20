@@ -20,16 +20,19 @@ from pkgutil import iter_modules
 from pims.formats.utils.abstract import AbstractFormat
 
 FORMAT_PLUGIN_PREFIX = 'pims_format_'
+NON_PLUGINS_MODULES = ["pims.formats.utils"]
 
 logger = logging.getLogger("pims.formats")
 
 
-def _discover_format_plugins(existing=None):
-    if not existing:
-        existing = set()
-    plugins = existing
+def _discover_format_plugins():
+
+    plugins = [name for _, name, _ in iter_modules(__path__, prefix="pims.formats.")
+               if name not in NON_PLUGINS_MODULES]
     plugins += [name for _, name, _ in iter_modules()
                 if name.startswith(FORMAT_PLUGIN_PREFIX)]
+
+    logger.info("Format plugins: found {} plugin(s) ({})".format(len(plugins), ", ".join(plugins)))
     return plugins
 
 
@@ -47,13 +50,9 @@ def _find_formats_in_module(mod):
     formats: list
         The format classes
     """
-    invalid_submodules = ["pims.formats.abstract", "pims.formats.factories", "pims.formats.metadata"]
     formats = list()
     for _, name, _ in iter_modules(mod.__path__):
         submodule_name = "{}.{}".format(mod.__name__, name)
-        if submodule_name in invalid_submodules:
-            continue
-
         for var in vars(import_module(submodule_name)).values():
             if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var) \
                     and 'Abstract' not in var.__name__:
@@ -80,5 +79,5 @@ def _get_all_formats():
     return formats
 
 
-FORMAT_PLUGINS = _discover_format_plugins([__name__])
+FORMAT_PLUGINS = _discover_format_plugins()
 FORMATS = {f.get_identifier(): f for f in _get_all_formats()}

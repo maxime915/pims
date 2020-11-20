@@ -67,7 +67,7 @@ class AbstractFormat(ABC):
 
     @classmethod
     def get_plugin_name(cls):
-        return cls.__module__
+        return '.'.join(cls.__module__.split('.')[:-1])
 
     @classmethod
     def is_readable(cls):
