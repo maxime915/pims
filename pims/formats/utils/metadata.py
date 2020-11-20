@@ -112,7 +112,7 @@ class Metadata:
             from the value.
         """
         self._key = key
-        self._raw_value = value
+        self._raw_value = str(value)
         self._dtype = dtype if dtype else self.infer_dtype()
         self._parsed_value = self._dtype.parse_func(self._raw_value)
         self._namespace = str(namespace) if namespace is not None else ""
