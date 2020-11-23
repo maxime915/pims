@@ -257,12 +257,11 @@ class _MetadataStorable:
 
 
 class ImageChannel(_MetadataStorable):
-    def __init__(self, index=None, emission_wavelength=None, excitation_wavelength=None, samples_per_pixel=None,
+    def __init__(self, index=None, emission_wavelength=None, excitation_wavelength=None,
                  suggested_name=None):
         self.emission_wavelength = emission_wavelength
         self.excitation_wavelength = excitation_wavelength
         self.index = index
-        self.samples_per_pixel = samples_per_pixel
         self.suggested_name = suggested_name
 
     def metadata_namespace(self):

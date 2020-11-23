@@ -59,11 +59,11 @@ class AbstractTiffFormat(AbstractFormat):
         imd.significant_bits = self.baseline.bitspersample
         imd.n_channels = self.baseline.samplesperpixel
         if imd.n_channels == 3:
-            imd.set_channel(ImageChannel(index=0, samples_per_pixel=imd.significant_bits, suggested_name='R'))
-            imd.set_channel(ImageChannel(index=1, samples_per_pixel=imd.significant_bits, suggested_name='G'))
-            imd.set_channel(ImageChannel(index=2, samples_per_pixel=imd.significant_bits, suggested_name='B'))
+            imd.set_channel(ImageChannel(index=0, suggested_name='R'))
+            imd.set_channel(ImageChannel(index=1, suggested_name='G'))
+            imd.set_channel(ImageChannel(index=2, suggested_name='B'))
         else:
-            imd.set_channel(ImageChannel(index=0, samples_per_pixel=imd.significant_bits, suggested_name='L'))
+            imd.set_channel(ImageChannel(index=0, suggested_name='L'))
 
         self._image_metadata = imd
 

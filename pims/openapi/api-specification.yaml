@@ -3288,19 +3288,19 @@ components:
           type: number
           format: double
           description: |
-            The physical size of a pixel along the X axis, expressed in nanometers (nm).
+            The physical size of a pixel along the X axis, expressed in micrometers (µm).
           nullable: true
         physical_size_y:
           type: number
           format: double
           description: |
-            The physical size of a pixel along the Y axis, expressed in nanometers (nm).
+            The physical size of a pixel along the Y axis, expressed in micrometers (µm).
           nullable: true
         physical_size_z:
           type: number
           format: double
           description: |
-            The physical size of a pixel (voxel) along the Z axis, expressed in nanometers (nm).
+            The physical size of a pixel (voxel) along the Z axis, expressed in micrometers (µm).
           nullable: true
         frame_rate:
           type: number
@@ -3372,12 +3372,6 @@ components:
       description: |
         Information about an image pyramid.
       properties:
-        tile_size:
-          type: integer
-          format: int32
-          description: The size of a tile
-          minimum: 1
-          example: 256
         n_tiers:
           type: integer
           format: int64
@@ -3406,6 +3400,23 @@ components:
                 type: integer
                 format: int64
                 minimum: 1
+              tile_width:
+                type: integer
+                format: int32
+                description: The width of a tile
+                minimum: 1
+                example: 256
+              tile_height:
+                type: integer
+                format: int32
+                description: The height of a tile
+                minimum: 1
+                example: 256
+              downsampling_factor:
+                type: number
+                format: double
+                description: The factor by which the tier downsamples the basis of the pyramid.
+                example: 2.0
     instrument-info:
       type: object
       description: |
@@ -3443,12 +3454,6 @@ components:
             format: int64
             description: Channel index.
             minimum: 0
-          samples_per_pixel:
-            type: integer
-            format: int64
-            description: Number of samples taken by detector to form the pixel value.
-            minimum: 1
-            maximum: 3
           suggested_name:
             type: string
             description: Suggested name for the channel infered from other properties.

@@ -57,9 +57,9 @@ def _serialize_image_info(image):
         "depth": image.depth,
         "duration": image.duration,
         "n_channels": image.n_channels,
-        "physical_size_x": convert_quantity(image.physical_size_x, "nanometers"),
-        "physical_size_y": convert_quantity(image.physical_size_y, "nanometers"),
-        "physical_size_z": convert_quantity(image.physical_size_z, "nanometers"),
+        "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
+        "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
+        "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),
         "frame_rate": image.frame_rate,
         "acquired_at": image.acquisition_datetime,
         "description": image.description,
@@ -93,7 +93,6 @@ def _serialize_channels(image):
         "index": c.index,
         "emission_wavelength": c.emission_wavelength,
         "excitation_wavelength": c.excitation_wavelength,
-        "samples_per_pixel": c.samples_per_pixel,
         "suggested_name": c.suggested_name
     } for c in image.channels]
 
