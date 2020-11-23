@@ -111,20 +111,20 @@ def _serialize_pyramid(pyramid):
     if pyramid is None:
         return None
 
-    def _serialize_tier(pyramid, level, tier):
+    def _serialize_tier(tier):
         return {
             "width": tier.width,
             "height": tier.height,
-            "level": level,
-            "zoom": pyramid.level_to_zoom(level),
+            "level": tier.level,
+            "zoom": tier.zoom,
             "tile_width": tier.tile_width,
             "tile_height": tier.tile_height,
-            "downsample_factor": tier.width_factor
+            "downsampling_factor": tier.width_factor
         }
 
     return {
         "n_tiers": pyramid.n_levels,
-        "tiers": [_serialize_tier(pyramid, level, tier) for level, tier in enumerate(pyramid)]
+        "tiers": [_serialize_tier(tier) for tier in pyramid]
     }
 
 

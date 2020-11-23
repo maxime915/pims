@@ -18,6 +18,8 @@ from pims.formats import AbstractFormat
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
 from tifffile import tifffile, lazyattr, TiffTag
 
+from pims.formats.utils.pyramid import Pyramid
+
 
 class AbstractTiffFormat(AbstractFormat):
     def __init__(self, path, _tf=None):
@@ -42,6 +44,10 @@ class AbstractTiffFormat(AbstractFormat):
     @lazyattr
     def baseline(self):
         return self._tf.pages[0]
+
+    @lazyattr
+    def baseline_series(self):
+        return self._tf.series[0]
 
     def init_standard_metadata(self):
         imd = ImageMetadata()
@@ -90,7 +96,7 @@ class AbstractTiffFormat(AbstractFormat):
 
         if isinstance(date, datetime):
             return date
-        elif isinstance(date, str) and (len(date) != 19 or date[16] != ':'):
+        elif not isinstance(date, str) or (len(date) != 19 or date[16] != ':'):
             return None
         else:
             try:
@@ -124,6 +130,16 @@ class AbstractTiffFormat(AbstractFormat):
             rational = physical_size
         return rational[1] / rational[0] * UNIT_REGISTRY(unit.name.lower())
 
+    @lazyattr
+    def pyramid(self):
+        pyramid = Pyramid()
+        baseline = self.baseline_series
+        for level in baseline.levels:
+            page = level[0]
+            pyramid.insert_tier(page.imagewidth, page.imagelength, (page.tilewidth, page.tilelength))
+
+        return pyramid
+
 
 def read_tifffile(path):
     try:
@@ -132,8 +148,68 @@ def read_tifffile(path):
         tf = None
     return tf
 
+
 def get_tag_value(tag):
     if isinstance(tag, TiffTag):
         return tag.value
     else:
         return tag
+
+
+TIFF_FLAGS = (
+    'geotiff',
+    'philips',
+    'shaped',
+    'lsm',
+    'ome',
+    'imagej',
+    'fluoview',
+    'stk',
+    'sis',
+    'svs',
+    'scn',
+    'qpi',
+    'ndpi',
+    'scanimage',
+    'mdgel',
+)
+
+
+class PyrTiffFormat(AbstractTiffFormat):
+    @classmethod
+    def match(cls, proxypath):
+        if super().match(proxypath):
+            tf = proxypath.get("tf", read_tifffile, proxypath.path.resolve())
+            for name in TIFF_FLAGS:
+                if getattr(tf, 'is_' + name, False):
+                    return False
+
+            if len(tf.series) == 1:
+                baseline = tf.series[0]
+                if baseline and baseline.is_pyramidal:
+                    for level in baseline.levels:
+                        if level.keyframe.is_tiled is False:
+                            return False
+                    return True
+        return False
+
+    def init_complete_metadata(self):
+        super(PyrTiffFormat, self).init_complete_metadata()
+        imd = self._image_metadata
+        imd.is_complete = True
+
+
+class PlanarTiffFormat(AbstractTiffFormat):
+    @classmethod
+    def match(cls, proxypath):
+        if super().match(proxypath):
+            tf = proxypath.get("tf", read_tifffile, proxypath.path.resolve())
+            for name in TIFF_FLAGS:
+                if getattr(tf, 'is_' + name, False):
+                    return False
+
+            if len(tf.series) == 1:
+                baseline = tf.series[0]
+                if baseline and not baseline.is_pyramidal and len(baseline.levels) == 1:
+                    return True
+        return False

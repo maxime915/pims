@@ -14,12 +14,12 @@
 
 
 class PyramidTier:
-    def __init__(self, width, height, tile_size, base=None):
+    def __init__(self, width, height, tile_size, pyramid):
         self.width = width
         self.height = height
         self.tile_width = tile_size[0] if type(tile_size) == tuple else tile_size
         self.tile_height = tile_size[1] if type(tile_size) == tuple else tile_size
-        self.base = base
+        self.pyramid = pyramid
 
     @property
     def n_pixels(self):
@@ -27,10 +27,10 @@ class PyramidTier:
 
     @property
     def factor(self):
-        if self.base is None:
+        if self.pyramid.base is None:
             return 1.0, 1.0
         else:
-            return self.base.width / self.width, self.base.height / self.height
+            return self.pyramid.base.width / self.width, self.pyramid.base.height / self.height
 
     @property
     def width_factor(self):
@@ -40,11 +40,18 @@ class PyramidTier:
     def height_factor(self):
         return self.factor[1]
 
+    @property
+    def level(self):
+        return self.pyramid.tiers.index(self)
+
+    @property
+    def zoom(self):
+        return self.pyramid.level_to_zoom(self.level)
+
 
 class Pyramid:
-    def __init__(self, baseline_width, baseline_height, baseline_tile_size):
-        self._base = PyramidTier(baseline_width, baseline_height, baseline_tile_size)
-        self._tiers = [self._base]
+    def __init__(self):
+        self._tiers = []
 
     @property
     def n_levels(self):
@@ -62,6 +69,14 @@ class Pyramid:
     def max_zoom(self):
         return self.n_zooms - 1
 
+    @property
+    def tiers(self):
+        return self._tiers
+
+    @property
+    def base(self):
+        return self._tiers[0] if self.n_levels > 0 else None
+
     def zoom_to_level(self, zoom):
         return self.max_zoom - zoom
 
@@ -69,7 +84,7 @@ class Pyramid:
         return self.max_level - level
 
     def insert_tier(self, width, height, tile_size):
-        tier = PyramidTier(width, height, tile_size, base=self._base)
+        tier = PyramidTier(width, height, tile_size, pyramid=self)
         idx = 0
         while idx < len(self._tiers) and tier.n_pixels < self._tiers[idx].n_pixels:
             idx += 1

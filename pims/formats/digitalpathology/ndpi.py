@@ -71,13 +71,3 @@ class NDPIFormat(AbstractTiffFormat):
             store.set(key.replace(" ", ""), value, namespace="Hamamatsu")
 
         return store
-
-    @lazyattr
-    def pyramid(self):
-        pyramid = Pyramid(self.baseline.imagewidth, self.baseline.imagelength,
-                          (self.baseline.tilewidth, self.baseline.tilelength))
-        for level in self._tf.series[0].levels[1:]:
-            keyframe = level.keyframe
-            pyramid.insert_tier(keyframe.imagewidth, keyframe.imagelength, (keyframe.tilewidth, keyframe.tilelength))
-
-        return pyramid

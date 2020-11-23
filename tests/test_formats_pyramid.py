@@ -15,17 +15,14 @@ from pims.formats.utils.pyramid import PyramidTier, Pyramid
 
 
 def test_pyramid_tier():
-    tier = PyramidTier(1000, 2000, 256)
+    tier = PyramidTier(1000, 2000, 256, Pyramid())
     assert tier.n_pixels == 1000 * 2000
     assert tier.factor == (1.0, 1.0)
 
-    tier2 = PyramidTier(500, 500, 256, base=tier)
-    assert tier2.n_pixels == 500 * 500
-    assert tier2.factor == (2.0, 4.0)
-
 
 def test_pyramid():
-    p = Pyramid(1000, 2000, 256)
+    p = Pyramid()
+    p.insert_tier(1000, 2000, 256)
     assert p.n_levels == 1
     assert p.max_level == 0
     assert p.n_zooms == 1
@@ -34,8 +31,14 @@ def test_pyramid():
     p.insert_tier(100, 200, 256)
     assert p.n_levels == 2
     assert p.get_tier_at_level(1).n_pixels == 100 * 200
+    assert p.get_tier_at_level(1).level == 1
+    assert p.get_tier_at_level(1).zoom == 0
 
     p.insert_tier(500, 1000, 256)
     assert p.n_levels == 3
     assert p.get_tier_at_level(1).n_pixels == 500 * 1000
+    assert p.get_tier_at_level(1).level == 1
+    assert p.get_tier_at_level(1).zoom == 1
     assert p.get_tier_at_level(2).n_pixels == 100 * 200
+    assert p.get_tier_at_level(2).level == 2
+    assert p.get_tier_at_level(2).zoom == 0
