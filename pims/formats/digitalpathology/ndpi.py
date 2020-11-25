@@ -68,6 +68,8 @@ class NDPIFormat(AbstractTiffFormat):
     def get_raw_metadata(self):
         store = super(NDPIFormat, self).get_raw_metadata()
         for key, value in self.ndpi_tags.items():
-            store.set(key.replace(" ", ""), value, namespace="Hamamatsu")
+            key = key.replace(" ", "")
+            if key not in ('McuStarts', '65439'):
+                store.set(key, value, namespace="Hamamatsu")
 
         return store

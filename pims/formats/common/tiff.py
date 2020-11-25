@@ -12,6 +12,7 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 from datetime import datetime
+from enum import Enum
 
 from pims.app import UNIT_REGISTRY
 from pims.formats import AbstractFormat
@@ -19,6 +20,8 @@ from pims.formats.utils.metadata import ImageMetadata, ImageChannel
 from tifffile import tifffile, lazyattr, TiffTag
 
 from pims.formats.utils.pyramid import Pyramid
+
+import numpy as np
 
 
 class AbstractTiffFormat(AbstractFormat):
@@ -139,6 +142,16 @@ class AbstractTiffFormat(AbstractFormat):
             pyramid.insert_tier(page.imagewidth, page.imagelength, (page.tilewidth, page.tilelength))
 
         return pyramid
+
+    def get_raw_metadata(self):
+        skipped_tags = (273, 279, 278, 288, 289, 320, 324, 325, 347, 437, 519, 520, 521, 559, 20624,
+                        20625, 34675) + tuple(range(65420, 65459))
+        store = super(AbstractTiffFormat, self).get_raw_metadata()
+        for tag in self.baseline.tags:
+            if tag.code not in skipped_tags and type(tag.value) not in (bytes, np.ndarray):
+                value = tag.value.name if isinstance(tag.value, Enum) else tag.value
+                store.set(tag.name, value, namespace="TIFF")
+        return store
 
 
 def read_tifffile(path):
