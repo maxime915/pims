@@ -11,10 +11,11 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
+import collections
 import json
 
 from collections.abc import MutableMapping
+from datetime import datetime, date, time
 from enum import Enum
 from typing import ValuesView, AbstractSet, Tuple
 
@@ -77,57 +78,48 @@ class MetadataType(Enum):
     Types for metadata.
     MetadataType names come from API specification.
     """
-    def __init__(self, parse_func=str):
-        self.parse_func = parse_func
+    def __init__(self, python_type=str):
+        self.python_type = python_type
 
-    BOOLEAN = BooleanParser()
+    BOOLEAN = bool
     INTEGER = int
-    DECIMAL = FloatParser()
-    JSON = JsonParser()
-
-    # BASE64 = 6
-    # DATE = 7
-    # DATETIME = 8
-
-    # must come last (generic)
+    DECIMAL = float
+    JSON = dict
+    LIST = list
+    DATE = date
+    TIME = time
+    DATETIME = datetime
     STRING = str
+    UNKNOWN = type(None)
 
 
 class Metadata:
     """
     A metadata from a file (e.g. an image).
     """
-    def __init__(self, key, value, dtype=None, namespace=None):
+    def __init__(self, key, value, namespace=""):
         """
         Initialize a metadata.
 
         Parameters
         ----------
-        key: string
+        key: str
             The name of the metadata
         value: any
             The value of the metadata
-        dtype: MetadataType (optional)
-            The type of the metadata. If not provided, the type is inferred
-            from the value.
+        namespace: str
+            The namespace of the key-value pair.
+
+        All attributes are read-only.
         """
         self._key = key
-        self._raw_value = str(value)
-        self._dtype = dtype if dtype else self.infer_dtype()
-        self._parsed_value = self._dtype.parse_func(self._raw_value)
-        self._namespace = str(namespace) if namespace is not None else ""
+        self._value = value
+        self._namespace = namespace.upper()
+        self._metadata_type = self.infer_metadata_type()
 
     @property
-    def raw_value(self):
-        return self._raw_value
-
-    @property
-    def parsed_value(self):
-        return self._parsed_value
-
-    @property
-    def dtype(self) -> MetadataType:
-        return self._dtype
+    def value(self):
+        return self._value
 
     @property
     def key(self) -> str:
@@ -141,110 +133,135 @@ class Metadata:
     def namespaced_key(self):
         return "{}.{}".format(self.namespace, self.key) if self.namespace else self.key
 
-    def infer_dtype(self) -> MetadataType:
-        for dtype in MetadataType:
-            try:
-                dtype.parse_func(self._raw_value)
-                return dtype
-            except (ValueError, TypeError):
-                pass
-        return MetadataType.STRING
+    @property
+    def metadata_type(self) -> MetadataType:
+        return self._metadata_type
+
+    def infer_metadata_type(self):
+        for mt in MetadataType:
+            if type(self._value) == mt.python_type:
+                return mt
+        return MetadataType.UNKNOWN
 
     def __eq__(self, o: object) -> bool:
         return isinstance(o, Metadata) and self.key == o.key \
-               and self.parsed_value == o.parsed_value \
+               and self.value == o.value \
                and self.namespace == o.namespace
 
     def __str__(self):
-        return "{}={} ({})".format(self.namespaced_key, self.parsed_value, self.dtype.name)
+        return "{}={} ({})".format(self.namespaced_key, str(self.value), self.metadata_type.name)
 
     def __repr__(self):
-        return "{}={} ({})".format(self.namespaced_key, self.parsed_value, self.dtype.name)
+        return "{}={} ({})".format(self.namespaced_key, str(self.value), self.metadata_type.name)
 
 
-class MetadataStore(MutableMapping):
+class MetadataStore:
     """
-    A store of metadata, extracted from a file (e.g. an image)
+    A set of metadata stores, extracted from a file (e.g. an image).
+    Nested dict like interface.
+    1st level dict represents namespaced stores.
+    2nd level dicts are metadata dictionaries for each namespace.
     """
     def __init__(self):
-        self._data = dict()
+        self._namedstores = dict()
 
-    def __delitem__(self, v: str) -> None:
-        raise NotImplementedError
+    @staticmethod
+    def _split_namespaced_key(namespaced_key):
+        split = namespaced_key.split('.', 1)
+        return ("", namespaced_key) if len(split) < 2 else split
 
-    def __setitem__(self, k: str, v: Metadata) -> None:
-        self._data[k] = v
-
-    def set(self, key: str, value, dtype=None, namespace=None) -> None:
+    def set(self, namespaced_key, value, namespace=None) -> None:
         """
         Set a metadata in the store.
 
         Parameters
         ----------
-        key: str
-            The name of the metadata
+        namespaced_key: str
+            The name of the metadata, starting with its namespace. Namespace and key are dot-separated.
         value: any
             The value of the metadata
-        dtype: MetadataType (optional)
-            The type of the metadata. If not provided, the type is inferred
-            from the value.
-        namespace: str (optional)
-            The metadata namespace
+        namespace: str, optional
+            If given, prepend the namespaced_key with this namespace
         """
-        metadata = Metadata(key, value, dtype, namespace)
-        self._data[metadata.namespaced_key] = metadata
+        if namespace:
+            namespaced_key = "{}.{}".format(namespace, namespaced_key)
+        namespace, key = self._split_namespaced_key(namespaced_key)
+        metadata = Metadata(key, value, namespace)
+        store = self._namedstores.get(metadata.namespace, dict())
+        store[key] = metadata
+        self._namedstores[metadata.namespace] = store
 
-    def __getitem__(self, k: str) -> Metadata:
-        return self._data[k]
+    def get_namedstore(self, namespace, default=None):
+        return self._namedstores.get(namespace.upper(), default)
 
-    def get(self, k: str, default=None):
-        return self._data.get(k, default)
-
-    def get_value(self, k: str, default=None, parsed=True):
-        metadata = self.get(k, None)
-        if metadata:
-            return metadata.parsed_value if parsed else metadata.raw_value
+    def get(self, namespaced_key, default=None):
+        namespace, key = self._split_namespaced_key(namespaced_key)
+        store = self.get_namedstore(namespace)
+        if store:
+            return store.get(key, default)
         return default
 
-    def get_dtype(self, k: str, default=None):
-        metadata = self.get(k, None)
+    def get_value(self, namespaced_key, default=None):
+        metadata = self.get(namespaced_key, None)
         if metadata:
-            return metadata.dtype
+            return metadata.value
         return default
+
+    def get_metadata_type(self, namespaced_key, default=None):
+        metadata = self.get(namespaced_key, None)
+        if metadata:
+            return metadata.metadata_type
+        return default
+
+    @staticmethod
+    def _flatten(d, parent_key='', sep='.'):
+        items = []
+        for k, v in d.items():
+            new_key = parent_key + sep + k if parent_key else k
+            if isinstance(v, collections.MutableMapping):
+                items.extend(MetadataStore._flatten(v, new_key, sep=sep).items())
+            else:
+                items.append((new_key, v))
+        return dict(items)
+
+    def flatten(self):
+        return self._flatten(self._namedstores)
 
     def items(self) -> AbstractSet[Tuple[str, Metadata]]:
-        return self._data.items()
+        return self.flatten().items()
 
     def keys(self) -> AbstractSet[str]:
-        return self._data.keys()
+        return self.flatten().keys()
 
     def values(self) -> ValuesView[Metadata]:
-        return self._data.values()
+        return self.flatten().values()
 
     def __contains__(self, o: object) -> bool:
-        return o in self._data
+        if type(o) == Metadata:
+            return self.get(o.namespaced_key) is not None
+        return o in self._namedstores
 
     def __len__(self) -> int:
-        return len(self._data)
+        return len(self._namedstores)
 
     def __iter__(self):
-        return iter(self._data)
+        return iter(self._namedstores)
 
     def __str__(self) -> str:
-        return str(self._data)
+        return str(self._namedstores)
 
     def __repr__(self) -> str:
-        return repr(self._data)
+        return repr(self._namedstores)
 
 
 class _MetadataStorable:
     def metadata_namespace(self):
-        return None
+        return ""
 
     def to_metadata_store(self, store):
-        for attr in self.__dict__:
-            if not attr.startswith("_"):
-                value = getattr(self, attr)
+        for key in self.__dict__:
+            if not key.startswith("_"):
+                value = getattr(self, key)
                 if isinstance(value, list):
                     for item in value:
                         if issubclass(type(item), _MetadataStorable):
@@ -252,13 +269,13 @@ class _MetadataStorable:
                 elif issubclass(type(value), _MetadataStorable):
                     value.to_metadata_store(store)
                 elif value is not None:
-                    store.set(attr, value, namespace=self.metadata_namespace())
+                    store.set(key, value, namespace=self.metadata_namespace())
         return store
 
 
 class ImageChannel(_MetadataStorable):
-    def __init__(self, index=None, emission_wavelength=None, excitation_wavelength=None,
-                 suggested_name=None):
+    def __init__(self, index=None, emission_wavelength=None,
+                 excitation_wavelength=None, suggested_name=None):
         self.emission_wavelength = emission_wavelength
         self.excitation_wavelength = excitation_wavelength
         self.index = index

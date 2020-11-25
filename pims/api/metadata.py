@@ -16,6 +16,7 @@ from pims.api.exceptions import check_path_existence, check_path_is_single, \
     check_representation_existence
 from pims.api.utils.parameter import filepath2path, path2filepath
 from pims.api.utils.response import response_list, convert_quantity
+from pims.formats.utils.metadata import MetadataType
 
 
 def _serialize_path_role(path):
@@ -101,8 +102,8 @@ def _serialize_metadata(metadata):
     return {
         "namespace": metadata.namespace,
         "key": metadata.key,
-        "value": str(metadata.raw_value),
-        "type": metadata.dtype
+        "value": metadata.value if metadata.metadata_type != MetadataType.UNKNOWN else str(metadata.value),
+        "type": metadata.metadata_type
     }
 
 

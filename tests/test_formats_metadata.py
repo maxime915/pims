@@ -13,6 +13,7 @@
 # * limitations under the License.
 
 import json
+import datetime
 
 import pytest
 
@@ -72,53 +73,55 @@ def test_metadatatype():
 
 def test_metadata():
     data = [
-        ("b", MetadataType.STRING, "b"),
-        ("2", MetadataType.INTEGER, 2),
-        ("2.2", MetadataType.DECIMAL, 2.2),
-        ("True", MetadataType.BOOLEAN, True),
-        ("true", MetadataType.BOOLEAN, True),
-        ('{"a":2}', MetadataType.JSON, json.loads('{"a":2}'))
+        (MetadataType.STRING, "b"),
+        (MetadataType.INTEGER, 2),
+        (MetadataType.DECIMAL, 2.2),
+        (MetadataType.BOOLEAN, True),
+        (MetadataType.LIST, [3, 4]),
+        (MetadataType.JSON, json.loads('{"a":2}')),
+        (MetadataType.DATETIME, datetime.datetime.now()),
+        (MetadataType.DATE, datetime.date(2020, 1, 1)),
+        (MetadataType.TIME, datetime.time(10, 30, 3))
+
     ]
 
     for item in data:
-        value, dtype, parsed_value = item
-        m = Metadata("test", value, dtype, "NAMESPACE")
+        dtype, value = item
+        m = Metadata("test", value, "namespace")
         assert m.key == "test"
-        assert m.raw_value == value
-        assert m.dtype == dtype
-        assert m.parsed_value == parsed_value
+        assert m.value == value
+        assert m.metadata_type == dtype
         assert m.namespace == "NAMESPACE"
+        assert m.namespaced_key == "NAMESPACE.test"
 
         m = Metadata("test", value)
         assert m.key == "test"
-        assert m.raw_value == value
-        assert m.dtype == dtype
-        assert m.parsed_value == parsed_value
+        assert m.value == value
+        assert m.metadata_type == dtype
         assert m.namespace == ""
+        assert m.namespaced_key == "test"
 
 
 def test_metadatastore():
     ms = MetadataStore()
     assert len(ms) == 0
 
-    ms.set("a", "b", MetadataType.STRING)
-    assert len(ms) == 1
-    assert ms["a"] == Metadata("a", "b", MetadataType.STRING)
-    assert ms.get("a") == Metadata("a", "b", MetadataType.STRING)
+    ms.set("a", "b")
+    assert ms.get("a") == Metadata("a", "b")
     assert ms.get_value("a") == "b"
-    assert ms.get_dtype("a") == MetadataType.STRING
 
-    assert ms.get_dtype("foo", MetadataType.INTEGER) == MetadataType.INTEGER
-    assert ms.get_value("foo", 42) == 42
+    ms.set("test.a", 2)
+    assert len(ms) == 2
+    assert ms.get("test.a") == Metadata("a", 2, "test")
+    assert ms.get_value("test.a") == 2
 
-    ms.set("a", "2")
-    assert len(ms) == 1
-    assert ms.get("a") == Metadata("a", "2", MetadataType.INTEGER)
-    assert ms.get("a") == Metadata("a", "2")
-    assert ms.get_value("a") == 2
-    assert ms.get_value("a", parsed=False) == "2"
+    ms.set("test.a", 3, "test2")
+    assert len(ms) == 3
+    assert ms.get("test2.test.a") == Metadata("test.a", 3, "test2")
 
-    d = dict(a=Metadata("a", 2))
+    ms = MetadataStore()
+    ms.set("test.a", 2)
+    d = dict(TEST=dict(a=Metadata("a", 2, "test")))
     assert str(ms) == str(d)
     assert repr(ms) == str(d)
     assert next(iter(ms)) == next(iter(d))
@@ -128,13 +131,8 @@ def test_metadatastore():
     for a, b in zip(ms.items(), d.items()):
         assert a == b
     assert "b" not in ms
-    assert "a" in ms
-
-    ms["foo"] = Metadata("foo", 2)
-    assert "foo" in ms
-
-    with pytest.raises(NotImplementedError):
-        del ms["foo"]
+    assert "TEST" in ms
+    assert Metadata("a", 2, "test") in ms
 
 
 def test_to_metadata_store():
