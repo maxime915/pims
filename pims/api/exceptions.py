@@ -51,6 +51,14 @@ class NoMatchingFormatProblem(ProblemException):
         super(NoMatchingFormatProblem, self).__init__(status=400, title=title, detail=detail)
 
 
+class MetadataParsingProblem(ProblemException):
+    def __init__(self, filepath):
+        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        title = "Metadata cannot be correctly understood."
+        detail = "The filepath {} has unsupported metadata.".format(filepath)
+        super(MetadataParsingProblem, self).__init__(status=400, title=title, detail=detail)
+
+
 class FormatNotFoundProblem(ProblemException):
     def __init__(self, format_id):
         title = 'Format not found'

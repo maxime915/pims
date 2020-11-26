@@ -14,7 +14,6 @@
 import collections
 import json
 
-from collections.abc import MutableMapping
 from datetime import datetime, date, time
 from enum import Enum
 from typing import ValuesView, AbstractSet, Tuple
@@ -27,11 +26,6 @@ def parse_json(value, raise_exc=False):
         if raise_exc:
             raise
         return None
-
-
-class JsonParser:
-    def __call__(self, value):
-        return parse_json(value, True)
 
 
 def parse_boolean(value, raise_exc=False):
@@ -52,11 +46,6 @@ def parse_boolean(value, raise_exc=False):
     return None
 
 
-class BooleanParser:
-    def __call__(self, value):
-        return parse_boolean(value, True)
-
-
 def parse_float(value, raise_exc=False):
     if type(value) == str:
         value = value.replace(",", ".")
@@ -68,9 +57,36 @@ def parse_float(value, raise_exc=False):
         return None
 
 
-class FloatParser:
-    def __call__(self, value):
-        return parse_float(value, True)
+def parse_datetime(value, formats=None, raise_exc=False):
+    if formats is None:
+        formats = [
+            "%Y:%m:%d %H:%M:%S",
+            "%m/%d/%y %H:%M:%S"
+        ]
+
+    for format in formats:
+        try:
+            return datetime.strptime(value, format)
+        except (ValueError, TypeError):
+            continue
+    if raise_exc:
+        raise ValueError
+    return None
+
+
+def parse_bytes(value, encoding=None, errors='strict', raise_exc=False):
+    """Return Unicode string from encoded bytes."""
+    try:
+        if encoding is not None:
+            return value.decode(encoding, errors)
+        try:
+            return value.decode('utf-8', errors)
+        except UnicodeDecodeError:
+            return value.decode('cp1252', errors)
+    except Exception:
+        if raise_exc:
+            raise ValueError
+        return None
 
 
 class MetadataType(Enum):
