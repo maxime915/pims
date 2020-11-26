@@ -15,6 +15,21 @@ import json
 import subprocess
 
 
+def is_valid_key(key):
+    # https://exiftool.org/TagNames/Extra.html
+    # File:Comment - comment embedded in JPEG, GIF89a or PPM/PGM/PBM image
+    # File:MaxVal - maximum pixel value in PPM or PGM image
+    if key in ("File:Comment", "File:MaxVal"):
+        return True
+
+    invalid_prefixes = ("ExifTool", "System", "File", "SourceFile")
+    for invalid_prefix in invalid_prefixes:
+        if key.startswith(invalid_prefix):
+            return False
+
+    return True
+
+
 def read_raw_metadata(path):
     bytes_info = "use -b option to extract)"
 
@@ -31,8 +46,7 @@ def read_raw_metadata(path):
         return {
             k.replace(":", "."): v.strip() if type(v) == str else v
             for k, v in metadata.items()
-            if not k.startswith("ExifTool") and not k.startswith("File")
-               and k != "SourceFile" and bytes_info not in str(v)
+            if is_valid_key(k) and bytes_info not in str(v)
         }
 
     return dict()
