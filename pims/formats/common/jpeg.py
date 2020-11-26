@@ -68,7 +68,8 @@ class JPEGFormat(AbstractFormat):
 
         raw = self.jpeg_raw_metadata
         imd.description = get_first(raw, ("File.Comment", "EXIF.ImageDescription", "EXIF.UserComment"))
-        imd.acquisition_datetime = parse_datetime(get_first(raw, ("EXIF.CreationDate", "EXIF.DateTimeOriginal")))
+        imd.acquisition_datetime = parse_datetime(get_first(raw, ("EXIF.CreationDate", "EXIF.DateTimeOriginal",
+                                                                  "EXIF.ModifyDate")))
 
         imd.physical_size_x = self.parse_physical_size(raw.get("EXIF.XResolution"), raw.get("EXIF.ResolutionUnit"))
         imd.physical_size_y = self.parse_physical_size(raw.get("EXIF.YResolution"), raw.get("EXIF.ResolutionUnit"))

@@ -85,7 +85,8 @@ class PNGFormat(AbstractFormat):
         raw = self.png_raw_metadata
         imd.description = get_first(raw, ("PNG.Comment", "EXIF.ImageDescription", "EXIF.UserComment"))
         imd.acquisition_datetime = parse_datetime(get_first(raw, ("PNG.CreationTime", "PNG.ModifyDate",
-                                                                  "EXIF.CreationDate", "EXIF.DateTimeOriginal")))
+                                                                  "EXIF.CreationDate", "EXIF.DateTimeOriginal",
+                                                                  "EXIF.ModifyDate")))
 
         imd.physical_size_x = self.parse_physical_size(raw.get("PNG.PixelsPerUnitX"), raw.get(
             "PNG.PixelUnits"), True)
