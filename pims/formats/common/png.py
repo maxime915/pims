@@ -62,7 +62,7 @@ class PNGFormat(AbstractFormat):
             imd.significant_bits = 8
             imd.pixel_type = np.dtype("uint8")
 
-        channel_mode = "L" if mode.startswith("I") else mode
+        channel_mode = "L" if mode.startswith("I") or mode == "1" else mode
         if channel_mode in ("L", "RGB", "RGBA", "LA"):
             imd.n_channels = len(channel_mode)
             for i, name in enumerate(channel_mode):

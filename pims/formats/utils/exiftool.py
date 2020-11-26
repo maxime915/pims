@@ -17,12 +17,9 @@ import subprocess
 
 def is_valid_key(key):
     # https://exiftool.org/TagNames/Extra.html
-    # File:Comment - comment embedded in JPEG, GIF89a or PPM/PGM/PBM image
-    # File:MaxVal - maximum pixel value in PPM or PGM image
-    if key in ("File:Comment", "File:MaxVal"):
-        return True
-
-    invalid_prefixes = ("ExifTool", "System", "File", "SourceFile")
+    file_keys = ('FileName', 'Directory', 'FileSize', 'FileModifyDate', 'FileAccessDate', 'FileInodeChangeDate',
+                 'FilePermissions', 'FileType', 'FileType', 'FileTypeExtension', 'MIMEType', 'ExifByteOrder')
+    invalid_prefixes = ("ExifTool", "System", "SourceFile") + tuple("File:{}".format(k) for k in file_keys)
     for invalid_prefix in invalid_prefixes:
         if key.startswith(invalid_prefix):
             return False
