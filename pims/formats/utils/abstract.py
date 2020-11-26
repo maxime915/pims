@@ -37,6 +37,13 @@ class AbstractFormat(ABC):
         self._image_metadata = None
 
     @classmethod
+    def init(cls):
+        """
+        Initialize the format, such that all third-party libs are ready.
+        """
+        pass
+
+    @classmethod
     def get_identifier(cls, uppercase=True):
         """
         Get the format identifier. It must be unique across all formats.

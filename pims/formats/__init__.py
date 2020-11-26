@@ -58,6 +58,7 @@ def _find_formats_in_module(mod):
                     and 'Abstract' not in var.__name__:
                 format = var
                 formats.append(format)
+                format.init()
                 logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))
     return formats
 
