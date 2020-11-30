@@ -65,7 +65,7 @@ class WebPFormat(AbstractFormat):
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
             log.error("{}: Mode {} is not supported.".format(self._path, mode))
             raise MetadataParsingProblem(self._path)
-        self._image_metadata = imd
+        self._imd = imd
 
     @lazyattr
     def webp_raw_metadata(self):
@@ -73,7 +73,7 @@ class WebPFormat(AbstractFormat):
 
     def init_complete_metadata(self):
         # Tags reference: https://exiftool.org/TagNames/RIFF.html
-        imd = self._image_metadata
+        imd = self._imd
 
         raw = self.webp_raw_metadata
         imd.description = get_first(raw, ("RIFF.Comment", "EXIF.ImageDescription", "EXIF.UserComment"))

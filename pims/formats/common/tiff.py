@@ -68,12 +68,12 @@ class AbstractTiffFormat(AbstractFormat):
         else:
             imd.set_channel(ImageChannel(index=0, suggested_name='L'))
 
-        self._image_metadata = imd
+        self._imd = imd
 
     def init_complete_metadata(self):
         tags = self.baseline.tags
 
-        imd = self._image_metadata
+        imd = self._imd
         imd.description = self.baseline.description
 
         acquisition_datetime = self.parse_acquisition_date(tags.get(306))
@@ -208,7 +208,7 @@ class PyrTiffFormat(AbstractTiffFormat):
 
     def init_complete_metadata(self):
         super(PyrTiffFormat, self).init_complete_metadata()
-        imd = self._image_metadata
+        imd = self._imd
         imd.is_complete = True
 
 

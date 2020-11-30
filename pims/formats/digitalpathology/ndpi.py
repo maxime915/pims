@@ -51,7 +51,7 @@ class NDPIFormat(AbstractTiffFormat):
 
     def init_complete_metadata(self):
         super(NDPIFormat, self).init_complete_metadata()
-        imd = self._image_metadata
+        imd = self._imd
 
         # Magnification extracted by OpenSlide
         imd.objective.nominal_magnification = parse_float(self.ndpi_tags.get("Magnification", None))

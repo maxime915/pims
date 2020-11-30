@@ -65,7 +65,7 @@ class BMPFormat(AbstractFormat):
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#bmp
             log.error("{}: Mode {} is not supported.".format(self._path, mode))
             raise MetadataParsingProblem(self._path)
-        self._image_metadata = imd
+        self._imd = imd
 
     @lazyattr
     def bmp_raw_metadata(self):
@@ -73,7 +73,7 @@ class BMPFormat(AbstractFormat):
 
     def init_complete_metadata(self):
         # Tags reference: https://exiftool.org/TagNames/BMP.html
-        imd = self._image_metadata
+        imd = self._imd
 
         raw = self.bmp_raw_metadata
         imd.description = raw.get("File.Comment")

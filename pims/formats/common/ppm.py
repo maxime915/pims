@@ -82,14 +82,14 @@ class PPMFormat(AbstractFormat):
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#ppm
             log.error("{}: Mode {} is not supported.".format(self._path, mode))
             raise MetadataParsingProblem(self._path)
-        self._image_metadata = imd
+        self._imd = imd
 
     @lazyattr
     def ppm_raw_metadata(self):
         return read_raw_metadata(self._path)
 
     def init_complete_metadata(self):
-        imd = self._image_metadata
+        imd = self._imd
 
         raw = self.ppm_raw_metadata
         imd.description = raw.get("File.Comment")

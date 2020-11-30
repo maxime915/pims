@@ -65,7 +65,7 @@ class SVSFormat(AbstractTiffFormat):
         return result
 
     def init_complete_metadata(self):
-        imd = self._image_metadata
+        imd = self._imd
 
         svs_metadata = self.svs_raw_metadata
         imd.description = self.baseline.description

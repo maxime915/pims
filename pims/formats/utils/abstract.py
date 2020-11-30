@@ -15,7 +15,10 @@
 import re
 from abc import abstractmethod, ABC
 
+from tifffile import lazyattr
+
 from pims.formats.utils.metadata import MetadataStore, ImageMetadata
+from pims.formats.utils.pyramid import Pyramid
 
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
@@ -34,7 +37,7 @@ class AbstractFormat(ABC):
     def __init__(self, path):
         self._path = path
 
-        self._image_metadata = None
+        self._imd = None
 
     @classmethod
     def init(cls):
@@ -123,15 +126,25 @@ class AbstractFormat(ABC):
 
     @abstractmethod
     def init_complete_metadata(self):
-        self._image_metadata.is_complete = True
+        self._imd.is_complete = True
 
     def get_image_metadata(self, complete=False):
-        if not self._image_metadata:
+        if not self._imd:
             self.init_standard_metadata()
-        if complete and not self._image_metadata.is_complete:
+        if complete and not self._imd.is_complete:
             self.init_complete_metadata()
-        return self._image_metadata
+        return self._imd
 
     def get_raw_metadata(self):
         metadata = self.get_image_metadata(True)
         return metadata.to_metadata_store(MetadataStore())
+
+    @lazyattr
+    def pyramid(self):
+        if not self._imd:
+            self.init_standard_metadata()
+
+        p = Pyramid()
+        p.insert_tier(self._imd.width, self._imd.height,
+                      (self._imd.width, self._imd.height))
+        return p

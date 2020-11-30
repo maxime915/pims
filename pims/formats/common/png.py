@@ -72,7 +72,7 @@ class PNGFormat(AbstractFormat):
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png
             log.error("{}: Mode {} is not supported.".format(self._path, mode))
             raise MetadataParsingProblem(self._path)
-        self._image_metadata = imd
+        self._imd = imd
 
     @lazyattr
     def png_raw_metadata(self):
@@ -80,7 +80,7 @@ class PNGFormat(AbstractFormat):
 
     def init_complete_metadata(self):
         # Tags reference: https://exiftool.org/TagNames/PNG.html
-        imd = self._image_metadata
+        imd = self._imd
 
         raw = self.png_raw_metadata
         imd.description = get_first(raw, ("PNG.Comment", "EXIF.ImageDescription", "EXIF.UserComment"))
