@@ -25,21 +25,39 @@ from connexion.apps.flask_app import FlaskJSONEncoder
 from flask import g, request
 from pint import Quantity
 
+from pims.connexion import PIMSOpenAPIURIParser, PIMSParameterValidator
+
 UNIT_REGISTRY = pint.UnitRegistry()
 
 dictConfig({
     'version': 1,
-    'formatters': {'default': {
-        'format': '[%(asctime)s][%(threadName)s] %(levelname)s in %(name)s: %(message)s',
-    }},
-    'handlers': {'wsgi': {
-        'class': 'logging.StreamHandler',
-        'stream': 'ext://flask.logging.wsgi_errors_stream',
-        'formatter': 'default'
-    }},
-    'root': {
-        'level': 'DEBUG',
-        'handlers': ['wsgi']
+    'formatters': {
+        'default': {
+            'format': '[%(asctime)s][%(threadName)s] %(levelname)s in %(name)s: %(message)s',
+        }
+    },
+    'handlers': {
+        'default': {
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',
+            'formatter': 'default'
+        }
+    },
+    'loggers': {
+        '': {
+            'level': 'DEBUG',
+            'handlers': ['default'],
+            'propagate': True
+        },
+        'connexion': {
+            'level': 'INFO',
+            'handlers': ['default'],
+            'propagate': False
+        },
+        'pyvips.voperation': {
+            'level': 'INFO',
+            'handlers': ['default'],
+        }
     }
 })
 
@@ -51,8 +69,16 @@ def create_app(test_config=None):
         here = os.path.abspath(os.path.dirname(__file__))
         CONFIG_FILE = os.path.join(os.path.abspath(os.path.join(here, os.pardir)), "app-config.cfg")
 
-    app = connexion.FlaskApp(__name__, specification_dir='openapi/', options={'swagger_url': '/docs'})
-    api = app.add_api('api-specification.yaml')
+    connexion_opts = {
+        'swagger_url': '/docs',
+        'uri_parser_class': PIMSOpenAPIURIParser
+    }
+    app = connexion.FlaskApp(__name__, specification_dir='openapi/', options=connexion_opts)
+
+    validator_map = {
+        'parameter': PIMSParameterValidator
+    }
+    api = app.add_api('api-specification.yaml', validator_map=validator_map)
     flask_app = app.app
     flask_app.json_encoder = PimsJSONEncoder
     flask_app.config.from_pyfile(CONFIG_FILE)
