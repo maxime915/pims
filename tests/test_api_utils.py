@@ -13,10 +13,11 @@
 # * limitations under the License.
 import os
 
+import pint
 import pytest
 
 from pims.api.utils.parameter import filepath2path, path2filepath
-from pims.api.utils.response import response_list
+from pims.api.utils.response import response_list, convert_quantity
 from pims.files.file import Path
 
 
@@ -28,6 +29,14 @@ def test_response_list():
     items = ["a", "b"]
     resp = response_list(items)
     assert resp == dict(items=items, size=len(items))
+
+
+def test_convert_quantity():
+    assert convert_quantity(None, 'meters') is None
+    assert convert_quantity(3, 'meters') == 3
+
+    ureg = pint.UnitRegistry()
+    assert convert_quantity(3 * ureg('cm'), 'meters').magnitude == 0.03
 
 
 @pytest.mark.parametrize("filepath", ("/abc", "abc", "abc/foo"))
