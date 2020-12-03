@@ -108,3 +108,66 @@ class Image(Path):
             return self._format.pyramid
         except AttributeError:
             return None
+
+    def tile(self, level, tile_index, c=None, z=None, t=None):
+        """
+        Get tile at specified level and tile index for all (C,Z,T) combinations.
+
+        Returns
+        ------
+        tile: image-like (PILImage, VIPSImage, numpy array)
+            The tile (dimensions: tile_size x tile_size x len(c) x len(z) x len(t))
+        """
+        return self._format.get_tile(level, tile_index, c, z, t)
+
+    def window(self, viewport, out_width, out_height, c=None, z=None, t=None):
+        """
+        Get window for specified viewport. The output dimensions are best-effort i.e.
+        out_width and out_height are the effective spatial lengths if the underlying window
+        extractor is able to return these spatial dimensions.
+
+        Returns
+        -------
+        window: image-like (PILImage, VIPSImage, numpy array)
+            The window (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
+        """
+        if hasattr(self._format, "get_window"):
+            return self._format.get_window(viewport, out_width, out_height, c, z, t)
+        else:
+            # TODO: implement window from tiles
+            raise NotImplementedError
+
+    def thumbnail(self, out_width, out_height, precomputed=False, c=None, z=None, t=None):
+        """
+        Get thumbnail. The output dimensions are best-effort i.e. out_width and out_height
+        are the effective spatial lengths if the underlying thumbnail
+        extractor is able to return these spatial dimensions.
+
+        Returns
+        -------
+        thumbnail: image-like (PILImage, VIPSImage, numpy array)
+            The thumbnail (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
+        """
+        if hasattr(self._format, "get_thumbnail"):
+            return self._format.get_thumbnail(out_width, out_height, precomputed, c, z, t)
+        else:
+            # TODO
+            raise NotImplementedError
+
+    def label(self, out_width, out_height):
+        """
+        Get associated image "label". The output dimensions are best-effort.
+        """
+        if self.associated.has_label and hasattr(self._format, "get_label"):
+            return self._format.get_label(out_width, out_height)
+        else:
+            return None
+
+    def macro(self, out_width, out_height):
+        """
+        Get associated image "macro". The output dimensions are best-effort.
+        """
+        if self.associated.has_macro and hasattr(self._format, "get_macro"):
+            return self._format.get_macro(out_width, out_height)
+        else:
+            return None

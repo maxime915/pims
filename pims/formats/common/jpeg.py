@@ -15,6 +15,7 @@ import logging
 import numpy as np
 
 from PIL import Image as PILImage
+from pyvips import Image as VIPSImage, Size
 from pims.api.exceptions import MetadataParsingProblem
 from pims.app import UNIT_REGISTRY
 from pims.formats import AbstractFormat
@@ -22,6 +23,8 @@ from pims.formats.utils.dict_utils import get_first
 from pims.formats.utils.exiftool import read_raw_metadata
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel, parse_datetime, parse_float
 from tifffile import lazyattr
+
+from pims.formats.utils.vips import vips_format_to_dtype, vips_interpretation_to_mode
 
 log = logging.getLogger("pims.formats")
 
@@ -37,18 +40,19 @@ class JPEGFormat(AbstractFormat):
     """
     def __init__(self, path, **kwargs):
         super().__init__(path)
-        self._pil = PILImage.open(path, formats=["JPEG"])
+        # self._pil = PILImage.open(path, formats=["JPEG"])
+        self._vips = VIPSImage.new_from_file(str(path))
 
     def init_standard_metadata(self):
         imd = ImageMetadata()
-        imd.width = self._pil.width
-        imd.height = self._pil.height
+        imd.width = self._vips.width
+        imd.height = self._vips.height
         imd.depth = 1
         imd.duration = 1
-        imd.pixel_type = np.dtype("uint8")
+        imd.pixel_type = np.dtype(vips_format_to_dtype[self._vips.format])
         imd.significant_bits = 8
 
-        mode = self._pil.mode  # Possible values: L, RGB, CMYK
+        mode = vips_interpretation_to_mode.get(self._vips.interpretation)  # Possible values: L, RGB, CMYK
         if mode in ("L", "RGB", "CMYK"):
             imd.n_channels = len(mode)
             for i, name in enumerate(mode):
@@ -103,3 +107,6 @@ class JPEGFormat(AbstractFormat):
                 buf[0] == 0xFF and
                 buf[1] == 0xD8 and
                 buf[2] == 0xFF)
+
+    def get_thumbnail(self, out_width, out_height, *args, **kwargs):
+        return self._vips.thumbnail_image(out_width, height=out_height, size=Size.FORCE)
