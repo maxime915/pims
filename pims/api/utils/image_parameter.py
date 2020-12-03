@@ -16,25 +16,75 @@ from connexion.exceptions import BadRequestProblem
 from pims.api.utils.schema_format import parse_range, is_range
 
 
-def get_shape_with_ratio(length1, image_length1, image_length2):
-    factor = length1 if type(length1) == float else length1 / image_length1
-    length1 = length1 if type(length1) == int else round(factor * image_length1)
-    length2 = round(factor * image_length2)
-    return length1, length2
+def get_rationed_resizing(resized, length, other_length):
+    """
+    Get resized lengths for `length` and `other_length` according to
+    the ratio between `resized` and `length`.
+
+    Parameters
+    ----------
+    resized : int or float
+        Already resized length. If float, it is the ratio.
+    length : int
+        Non-resized length related to `resized`.
+    other_length : int
+        Other non-resized length to resize according the ratio.
+
+    Returns
+    -------
+    resized : int
+        First resized length according ratio.
+    other_resized : int
+        Other resized length according ratio.
+    """
+    ratio = resized if type(resized) == float else resized / length
+    resized = resized if type(resized) == int else round(ratio * length)
+    other_resized = round(ratio * other_length)
+    return resized, other_resized
 
 
-def get_output_dimensions(in_image, height, width, length):
+def get_output_dimensions(in_image, height=None, width=None, length=None):
+    """
+    Get output dimensions according, by order of precedence, either height,
+    either width or the largest image length and such that ratio is preserved.
+
+    Parameters
+    ----------
+    in_image : Image
+        Input image with the aspect ratio to preserve.
+    height : int or float (optional)
+        Output height absolute size (int) or ratio (float)
+    width : int or float (optional)
+        Output width absolute size (int) or ratio (float).
+        Ignored if `height` is not None.
+    length : int or float (optional)
+        Output largest side absolute size (int) or ratio (float).
+        Ignored if `width` or `height` is not None.
+
+    Returns
+    -------
+    out_width : int
+        Output width preserving aspect ratio.
+    out_height : int
+        Output height preserving aspect ratio.
+
+    Raises
+    ------
+    BadRequestProblem
+        If it is impossible to determine output dimensions.
+    """
     if height is not None:
-        out_height, out_width = get_shape_with_ratio(height, in_image.height, in_image.width)
+        out_height, out_width = get_rationed_resizing(height, in_image.height, in_image.width)
     elif width is not None:
-        out_width, out_height = get_shape_with_ratio(width, in_image.width, in_image.height)
+        out_width, out_height = get_rationed_resizing(width, in_image.width, in_image.height)
     elif length is not None:
         if in_image.width > in_image.height:
-            out_width, out_height = get_shape_with_ratio(length, in_image.width, in_image.height)
+            out_width, out_height = get_rationed_resizing(length, in_image.width, in_image.height)
         else:
-            out_height, out_width = get_shape_with_ratio(height, in_image.height, in_image.width)
+            out_height, out_width = get_rationed_resizing(length, in_image.height, in_image.width)
     else:
-        raise BadRequestProblem(detail='Impossible to determine output dimensions')
+        raise BadRequestProblem(detail='Impossible to determine output dimensions. '
+                                       'Height, width and length cannot all be unset.')
 
     return out_width, out_height
 
