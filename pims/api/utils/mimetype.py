@@ -41,3 +41,11 @@ def mimetype_to_mpl_slug(mimetype):
         raise UnsupportedMediaTypeProblem()
 
     return SUPPORTED_MIMETYPES[mimetype].lower()
+
+
+def get_output_format(request, supported=None):
+    if not supported:
+        supported = SUPPORTED_MIMETYPES
+
+    response_mimetype = request.accept_mimetypes.best_match(supported.keys())
+    return supported.get(response_mimetype), response_mimetype
