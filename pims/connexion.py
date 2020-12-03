@@ -21,7 +21,7 @@ from connexion.decorators.validation import TYPE_MAP, TypeValidationError, _json
     validate_parameter_list
 from connexion.exceptions import ExtraParameterProblem, BadRequestProblem
 from connexion.operations import OpenAPIOperation
-from connexion.utils import is_nullable, is_null, make_type
+from connexion.utils import is_nullable, is_null, deep_merge
 from jsonschema import draft4_format_checker, ValidationError
 from jsonschema.validators import extend, Draft4Validator
 from werkzeug.datastructures import FileStorage
@@ -30,38 +30,10 @@ logger = logging.getLogger("connexion.custom")
 
 
 def _get_val_from_param(self, value, query_defn):
-    query_schema = query_defn["schema"]
-
-    if is_nullable(query_schema) and is_null(value):
-        return None
-
-    # HOT FIX for allOf. In the way we use it, it's okay but value should be validated against all schemas.
-    param_allof = query_schema.get('allOf')
-    param_type = query_schema.get('type')
-    param_oneof = query_schema.get('oneOf')
-    if param_allof:
-        for schema in param_allof:
-            if schema.get('type'):
-                param_type = schema.get('type')
-                break
-            elif schema.get('oneOf'):
-                param_oneof = schema.get('oneOf')
-                break
-
-    if param_oneof:
-        exc = None
-        for oneof in param_oneof:
-            try:
-                return make_type(value, oneof.get('type'))
-            except (ValueError, TypeError) as e:
-                exc = e
-                continue
-        raise exc
-
-    elif param_type == "array":
-        return [make_type(part, query_schema["items"]["type"]) for part in value]
-    else:
-        return make_type(value, param_type)
+    try:
+        return coerce_type(query_defn, value)
+    except TypeValidationError as e:
+        return str(e)
 
 
 def _get_query_defaults(self, query_defns):
@@ -74,6 +46,9 @@ def _get_query_defaults(self, query_defns):
                 defaults[k] = self._get_default_obj(v["schema"])
             else:
                 defaults[k] = v["schema"]["default"]
+
+            if v["schema"].get('x-single-or-array') and type(defaults[k]) != list:
+                defaults[k] = [defaults[k]]
         except KeyError:
             pass
     return defaults
@@ -105,7 +80,8 @@ class PIMSOpenAPIURIParser(OpenAPIURIParser):
                 # multiple values in a path is impossible
                 values = [values]
 
-            if param_schema is not None and 'type' in param_schema and param_schema['type'] == 'array':
+            if param_schema is not None \
+                    and (param_schema.get('type') == 'array' or param_schema.get('x-single-or-array')):
                 # resolve variable re-assignment, handle explode
                 values = self._resolve_param_duplicates(values, param_defn, _in)
                 # handle array styles
@@ -116,57 +92,81 @@ class PIMSOpenAPIURIParser(OpenAPIURIParser):
         return resolved_param
 
 
-def coerce_type(param, value, parameter_type, parameter_name=None):
+def merge_allof(schema):
+    if 'allOf' in schema:
+        merged = dict()
+        for item in schema['allOf']:
+            merged = deep_merge(merged, merge_allof(item))
+        return merged
+    elif 'oneOf' in schema:
+        schema['oneOf'] = [merge_allof(s) for s in schema['oneOf']]
+        return schema
+    elif 'items' in schema:
+        schema['items'] = merge_allof(schema['items'])
+        return schema
+    else:
+        return schema
 
+
+def coerce_type(param, value, parameter_type=None, parameter_name=None):
     def make_type(value, type_literal):
         type_func = TYPE_MAP.get(type_literal)
         return type_func(value)
 
-    param_schema = param.get("schema", param)
+    param_schema = merge_allof(copy.deepcopy(param.get("schema", param)))
     if is_nullable(param_schema) and is_null(value):
         return None
 
-    param_type = param_schema.get('type')
-    param_oneof = param_schema.get('oneOf')
-    parameter_name = parameter_name if parameter_name else param.get('name')
-    if param_oneof:
-        for oneof in param_oneof:
-            try:
-                return make_type(value, oneof.get('type'))
-            except (ValueError, TypeError):
-                continue
-        return value
-    elif param_type == "array":
-        converted_params = []
-        for v in value:
-            try:
-                converted = make_type(v, param_schema["items"]["type"])
-            except (ValueError, TypeError):
-                converted = v
-            converted_params.append(converted)
-        return converted_params
-    elif param_type == 'object':
-        if param_schema.get('properties'):
-            def cast_leaves(d, schema):
-                if type(d) is not dict:
-                    try:
-                        return make_type(d, schema['type'])
-                    except (ValueError, TypeError):
-                        return d
-                for k, v in d.items():
-                    if k in schema['properties']:
-                        d[k] = cast_leaves(v, schema['properties'][k])
-                return d
+    errors = []
+    params_schemas = param_schema['oneOf'] if 'oneOf' in param_schema else [param_schema]
+    for param_schema in params_schemas:
+        param_type = param_schema.get('type')
+        parameter_name = parameter_name if parameter_name else param.get('name')
+        if param_type == "array":
+            converted_params = []
+            for v in value:
+                try:
+                    converted = make_type(v, param_schema["items"]["type"])
+                except KeyError:
+                    converted = v
+                    for one_of_schema in param_schema["items"]["oneOf"]:
+                        try:
+                            converted = make_type(v, one_of_schema["type"])
+                            break
+                        except (ValueError, TypeError):
+                            continue
+                except (ValueError, TypeError):
+                    converted = v
+                converted_params.append(converted)
+            return converted_params
+        elif param_type == 'object':
+            if param_schema.get('properties'):
+                def cast_leaves(d, schema):
+                    if type(d) is not dict:
+                        try:
+                            return make_type(d, schema['type'])
+                        except (ValueError, TypeError):
+                            return d
+                    for k, v in d.items():
+                        if k in schema['properties']:
+                            d[k] = cast_leaves(v, schema['properties'][k])
+                    return d
 
-            return cast_leaves(value, param_schema)
-        return value
-    else:
-        try:
-            return make_type(value, param_type)
-        except ValueError:
-            raise TypeValidationError(param_type, parameter_type, parameter_name)
-        except TypeError:
+                return cast_leaves(value, param_schema)
             return value
+        else:
+            try:
+                return make_type(value, param_type)
+            except ValueError:
+                errors.append(TypeValidationError(param_type, parameter_type, parameter_name))
+                continue
+            except TypeError:
+                continue
+
+    if len(errors) > 0:
+        raise errors[-1]
+
+    return value
 
 
 class PIMSParameterValidator(object):

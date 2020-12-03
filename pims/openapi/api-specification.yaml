@@ -2209,6 +2209,7 @@ components:
       description: A range of channel indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
       example: '2:6'
     multiple-channel-indexes:
+      x-single-or-array: true
       description: |
         Image channels used to render the response.
         This parameter is interpreted as a set such that duplicates are ignored.
@@ -2234,6 +2235,7 @@ components:
       description: A range of focal plane indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
       example: '2:6'
     multiple-z-slice-indexes:
+      x-single-or-array: true
       description: |
         Image focal planes used to render the response.
         This parameter is interpreted as a set such that duplicates are ignored.
@@ -2259,6 +2261,7 @@ components:
       description: A range of timepoint indexes. Start index is inclusive, last one exclusive and must be separated by `:`.
       example: '2:6'
     multiple-timepoint-indexes:
+      x-single-or-array: true
       description: |
         Image timepoints used to render the response.
         This parameter is interpreted as a set such that duplicates are ignored.
@@ -2383,17 +2386,19 @@ components:
           $ref: '#/components/schemas/footprint-reduction'
 
     # Intensities
-    intensity-selection:
-      oneOf:
-        - type: string
-          enum:
-            - AUTO_IMAGE
-            - AUTO_PLANE
-            - STRETCH_IMAGE
-            - STRETCH_PLANE
-        - type: integer
-          format: int64
+    intensity-selection-enum:
+      type: string
+      enum:
+        - AUTO_IMAGE
+        - AUTO_PLANE
+        - STRETCH_IMAGE
+        - STRETCH_PLANE
+    intensity-selection-value:
+      type: integer
+      format: int64
+      minimum: 0
     min-intensity-selection-list:
+      x-single-or-array: true
       description: |
         Intensity in the original image used as minimum intensity (black) to create the response.
         As a consequence, original image intensities lower than this value will be black in the response.
@@ -2412,7 +2417,8 @@ components:
         * `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, for each channel.
         * `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel.
       oneOf:
-        - $ref: '#/components/schemas/intensity-selection'
+        - $ref: '#/components/schemas/intensity-selection-enum'
+        - $ref: '#/components/schemas/intensity-selection-value'
         - type: array
           description: |
             Expected format is an array of size:
@@ -2420,13 +2426,17 @@ components:
             * equals to the number of channels used to render the response in order to apply a minimum intensity per channel
           minItems: 1
           items:
-            $ref: '#/components/schemas/intensity-selection'
+            oneOf:
+              - $ref: '#/components/schemas/intensity-selection-enum'
+              - $ref: '#/components/schemas/intensity-selection-value'
     min-intensity-selection-list-default-auto-image:
+      x-single-or-array: true
       x-default: AUTO_IMAGE
       allOf:
         - default: AUTO_IMAGE
         - $ref: '#/components/schemas/min-intensity-selection-list'
     max-intensity-selection-list:
+      x-single-or-array: true
       description: |
         Intensity in the original image used as maximum intensity (white) to create the response.
         As a consequence, original image intensities greater than this value will be white in the response.
@@ -2447,7 +2457,8 @@ components:
         * `STRETCH_IMAGE` - Set `max_intensity` to greatest intensity in the original image, for each channel.
         * `STRETCH_PLANE` - Set `max_intensity` to greatest intensity in the set of planes, for each channel.
       oneOf:
-        - $ref: '#/components/schemas/intensity-selection'
+        - $ref: '#/components/schemas/intensity-selection-enum'
+        - $ref: '#/components/schemas/intensity-selection-value'
         - type: array
           description: |
             Expected format is an array of size:
@@ -2455,8 +2466,11 @@ components:
             * equals to the number of channels used to render the response in order to apply a maximum intensity per channel
           minItems: 1
           items:
-            $ref: '#/components/schemas/intensity-selection'
+            oneOf:
+              - $ref: '#/components/schemas/intensity-selection-enum'
+              - $ref: '#/components/schemas/intensity-selection-value'
     max-intensity-selection-list-default-auto-image:
+      x-single-or-array: true
       x-default: AUTO_IMAGE
       allOf:
         - default: AUTO_IMAGE
@@ -2469,6 +2483,7 @@ components:
       description: A unique identifier for a colormap
       example: JET
     colormap-id-list:
+      x-single-or-array: true
       description: |
         A colormap is a function that maps the colors of the original image (source) to the colors of the response
         image. The usage of colormap produces a false-color representation of the original image and helps at
@@ -2522,6 +2537,7 @@ components:
       description: A unique identifier for an image filter
       example: 'OTSU'
     filter-id-list:
+      x-single-or-array: true
       description: |
         An image filter is used to change the appareance of an image and helps at understanding the
         source image.
@@ -2576,6 +2592,7 @@ components:
 
         If `gamma > 1`, medium-intensity objects become fainter while bright objects do not.
       x-default: 1
+      x-single-or-array: true
       oneOf:
         - allOf:
           - default: 1
@@ -3060,6 +3077,7 @@ components:
         stroke_width:
           $ref: '#/components/schemas/annotation-stroke-width'
     annotations:
+      x-single-or-array: true
       oneOf:
         - $ref: '#/components/schemas/annotation'
         - type: array
