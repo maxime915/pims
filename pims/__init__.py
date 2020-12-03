@@ -16,3 +16,8 @@ from .__version__ import __title__, __description__, __url__
 from .__version__ import __version__
 from .__version__ import __license__, __copyright__
 from .__version__ import __author__, __email__
+
+# PIMS constants
+PIMS_SLUG_JPEG = "JPEG"
+PIMS_SLUG_WEBP = "WEBP"
+PIMS_SLUG_PNG = "PNG"

@@ -14,9 +14,7 @@
 import os
 
 import pytest
-from connexion.exceptions import UnsupportedMediaTypeProblem
 
-from pims.api.utils.mimetype import mimetype_to_mpl_slug
 from pims.api.utils.parameter import filepath2path, path2filepath
 from pims.api.utils.response import response_list
 from pims.files.file import Path
@@ -46,12 +44,3 @@ def test_path2filepath(app, rootpath):
         path = Path(rootpath) / "dir/file"
         assert path2filepath(path) == "dir/file"
         app.config["FILE_ROOT_PATH"] = true_root
-
-
-@pytest.mark.parametrize(("mimetype", "slug"), (("image/jpg", "jpeg"), ("image/png", "png"), ("foo", None)))
-def test_mimetype_to_mpl_slug(mimetype, slug):
-    if not slug:
-        with pytest.raises(UnsupportedMediaTypeProblem):
-            mimetype_to_mpl_slug(mimetype)
-    else:
-        assert mimetype_to_mpl_slug(mimetype) == slug

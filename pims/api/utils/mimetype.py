@@ -11,41 +11,64 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from connexion.exceptions import UnsupportedMediaTypeProblem
+from collections import OrderedDict
+
+from pims import PIMS_SLUG_PNG, PIMS_SLUG_WEBP, PIMS_SLUG_JPEG
+from pims.api.exceptions import NoAcceptableResponseMimetypeProblem
 
 PNG_MIMETYPES = {
-    "image/png": "PNG",
+    "image/png": PIMS_SLUG_PNG,
+    "image/apng":  PIMS_SLUG_PNG
 }
 WEBP_MIMETYPES = {
-    "image/webp": "WEBP"
+    "image/webp": PIMS_SLUG_WEBP
 }
 JPEG_MIMETYPES = {
-    "image/jpg": "JPEG",
-    "image/jpeg": "JPEG"
+    "image/jpg": PIMS_SLUG_JPEG,
+    "image/jpeg": PIMS_SLUG_JPEG
 }
 
-SUPPORTED_MIMETYPES = dict()
-SUPPORTED_MIMETYPES.update(PNG_MIMETYPES)
-SUPPORTED_MIMETYPES.update(JPEG_MIMETYPES)
-SUPPORTED_MIMETYPES.update(WEBP_MIMETYPES)
 
-
-def mimetype_to_mpl_slug(mimetype):
+def build_mimetype_dict(*mimetype_dicts):
+    """Build an ordered dict from a list of dicts.
+    Order in these sub-dictionaries is not guaranteed.
     """
-    Return the format slug identifier used by Matplotlib for the given mime type.
+    ordered_mimetypes = OrderedDict()
+    for mimetype_dict in mimetype_dicts:
+        ordered_mimetypes.update(mimetype_dict)
+    return ordered_mimetypes
 
-    Matplotlib format slugs are: png, jpg, jpeg, ...
-    See https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.savefig.html
+
+VISUALISATION_MIMETYPES = build_mimetype_dict(WEBP_MIMETYPES, JPEG_MIMETYPES, PNG_MIMETYPES)
+PROCESSING_MIMETYPES = build_mimetype_dict(PNG_MIMETYPES, JPEG_MIMETYPES, WEBP_MIMETYPES)
+
+
+def get_output_format(request, supported):
     """
-    if mimetype not in SUPPORTED_MIMETYPES.keys():
-        raise UnsupportedMediaTypeProblem()
+    Get the best output/response format and mime type according to
+    the request and the ordered dictionary of supported mime types.
 
-    return SUPPORTED_MIMETYPES[mimetype].lower()
+    Parameters
+    ----------
+    request : request
+    supported : OrderedDict
+        Ordered dictionary of supported mime types.
 
+    Returns
+    -------
+    output_format : str
+        PIMS slug for the best match
+    output_mimetype : str
+        Mime type associated to the output format
 
-def get_output_format(request, supported=None):
-    if not supported:
-        supported = SUPPORTED_MIMETYPES
-
+    Raises
+    ------
+    NoAcceptableResponseMimetypeProblem
+        If there is no acceptable mime type.
+    """
     response_mimetype = request.accept_mimetypes.best_match(supported.keys())
-    return supported.get(response_mimetype), response_mimetype
+    output_format = supported.get(response_mimetype)
+    if output_format:
+        return output_format, response_mimetype
+
+    raise NoAcceptableResponseMimetypeProblem(str(request.accept_mimetypes), list(supported.keys()))

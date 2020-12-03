@@ -73,6 +73,17 @@ class ColormapNotFoundProblem(ProblemException):
         super(ColormapNotFoundProblem, self).__init__(status=404, title=title, detail=detail)
 
 
+class NoAcceptableResponseMimetypeProblem(ProblemException):
+    def __init__(self, accept_header, supported_mimetypes):
+        title = 'No acceptable response mime type'
+        detail = 'There is no acceptable response mime type in Accept header.'
+        ext = {
+            'accept_header': accept_header,
+            'supported_mimetypes': supported_mimetypes
+        }
+        super(NoAcceptableResponseMimetypeProblem, self).__init__(status=406, title=title, detail=detail, ext=ext)
+
+
 def check_path_existence(path):
     if not path.exists():
         raise FilepathNotFoundProblem(path)

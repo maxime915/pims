@@ -16,11 +16,11 @@
 from enum import Enum
 from io import BytesIO
 
-from connexion import request, NoContent
+from connexion import request
 from flask import send_file
 
 from pims.api.exceptions import ColormapNotFoundProblem
-from pims.api.utils.mimetype import mimetype_to_mpl_slug, JPEG_MIMETYPES, PNG_MIMETYPES
+from pims.api.utils.mimetype import JPEG_MIMETYPES, PNG_MIMETYPES, build_mimetype_dict, get_output_format
 from pims.api.utils.response import response_list
 from pims.processing.colormaps import COLORMAPS
 
@@ -58,12 +58,8 @@ def show_colormap_representation(colormap_id, width, height):
     if colormap_id not in COLORMAPS.keys():
         raise ColormapNotFoundProblem(colormap_id)
 
-    SUPPORTED_MIMETYPES = dict()
-    SUPPORTED_MIMETYPES.update(PNG_MIMETYPES)
-    SUPPORTED_MIMETYPES.update(JPEG_MIMETYPES)
-    response_mimetype = request.accept_mimetypes.best_match(SUPPORTED_MIMETYPES.keys())
-    if response_mimetype is None:
-        return NoContent, 406
+    supported_mimetypes = build_mimetype_dict(JPEG_MIMETYPES, PNG_MIMETYPES)
+    format_slug, response_mimetype = get_output_format(request, supported_mimetypes)
 
     fp = BytesIO()
 
@@ -71,7 +67,9 @@ def show_colormap_representation(colormap_id, width, height):
     width = round(width / 100, 2)
     height = round(height / 100, 2)
 
-    format_slug = mimetype_to_mpl_slug(response_mimetype)
+    # Matplotlib format slugs are: png, jpg, jpeg, ...
+    # See https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.savefig.html
+    format_slug = format_slug.lower()
     colormap = COLORMAPS[colormap_id]
     colormap._write_image(fp, 'discrete', format=format_slug, size=(width, height))
 
