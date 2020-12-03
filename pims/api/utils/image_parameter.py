@@ -13,6 +13,8 @@
 # * limitations under the License.
 from connexion.exceptions import BadRequestProblem
 
+from pims.api.utils.schema_format import parse_range, is_range
+
 
 def get_shape_with_ratio(length1, image_length1, image_length2):
     factor = length1 if type(length1) == float else length1 / image_length1
@@ -37,35 +39,13 @@ def get_output_dimensions(in_image, height, width, length):
     return out_width, out_height
 
 
-def is_int(value):
-    try:
-        int(value)
-        return True
-    except ValueError:
-        return False
-
-
-def is_range(value):
-    split = value.split(':')
-    return len(split) == 2 and all([bound.strip() == '' or is_int(bound) for bound in split])
-
-
-def get_range(range_, mini, maxi):
-    low, high = range_.split(':')
-    low = mini if low.strip() == '' else int(low)
-    high = maxi if high.strip() == '' else int(high)
-
-    low, high = min(low, high), max(low, high)
-    return range(low, high)
-
-
 def get_parsed_planes(planes, reduction, n_planes):
     plane_indexes = list()
     for plane in planes:
         if type(plane) == int:
             plane_indexes.append(plane)
         elif is_range(plane):
-            plane_indexes += [*get_range(plane, 0, n_planes)]
+            plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
             raise BadRequestProblem("Invalid plane index/range")
 
