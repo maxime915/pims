@@ -13,6 +13,7 @@
 # * limitations under the License.
 from connexion.exceptions import BadRequestProblem
 
+from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.schema_format import parse_range, is_range
 
 
@@ -87,6 +88,48 @@ def get_output_dimensions(in_image, height=None, width=None, length=None):
                                        'Height, width and length cannot all be unset.')
 
     return out_width, out_height
+
+
+def safeguard_output_dimensions(safe_mode, max_size, width, height):
+    """
+    Safeguard image output dimensions according to safe mode and maximum
+    admissible size.
+
+    Parameters
+    ----------
+    safe_mode : str (SAFE_REJECT, SAFE_RESIZE, UNSAFE)
+        How to handle too large image response. See API specification for details.
+    max_size : int
+        Maximum admissible size when mode is SAFE_*
+    width : int
+        Expected output width
+    height : int
+        Expected output height
+
+    Returns
+    -------
+    width : int
+        Safeguarded output width according to mode.
+    height : int
+        Safeguarded output height according to mode.
+
+    Raises
+    ------
+    TooLargeOutputProblem
+        If mode is SAFE_REJECT and the expect output size is unsafe.
+    """
+    if safe_mode == 'UNSAFE':
+        return width, height
+    elif safe_mode == 'SAFE_REJECT' and (width > max_size or height > max_size):
+        raise TooLargeOutputProblem(width, height, max_size)
+    elif safe_mode == 'SAFE_RESIZE' and (width > max_size or height > max_size):
+        if width > height:
+            return get_rationed_resizing(max_size, width, height)
+        else:
+            height, width = get_rationed_resizing(max_size, height, width)
+            return width, height
+    else:
+        return width, height
 
 
 def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):

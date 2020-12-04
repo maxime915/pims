@@ -14,13 +14,15 @@
 from io import BytesIO
 
 from connexion import request
-from flask import send_file
+from flask import send_file, current_app
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
 from pims.api.utils.image_parameter import get_output_dimensions, get_channel_indexes, \
-    get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity
+    get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
+    safeguard_output_dimensions
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
+from pims.api.utils.header import add_image_size_limit_header
 from pims.processing.window import Thumbnail
 
 
@@ -37,8 +39,10 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     check_representation_existence(in_image)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    out_width, out_height = get_output_dimensions(in_image, height, width, length)
-    # TODO: check X-Image-Size-Safety
+    req_width, req_height = get_output_dimensions(in_image, height, width, length)
+    safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
+    out_width, out_height = safeguard_output_dimensions(safe_mode, current_app.config['OUTPUT_SIZE_LIMIT'],
+                                                        req_width, req_height)
 
     channels, z_slices, timepoints = ensure_list(channels), ensure_list(z_slices), ensure_list(timepoints)
     min_intensities, max_intensities = ensure_list(min_intensities), ensure_list(max_intensities)
@@ -63,7 +67,10 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     thumb = Thumbnail(in_image, out_width, out_height, out_format, log, use_precomputed, gammas)
     fp = BytesIO(thumb.get_processed_buffer())
     fp.seek(0)
-    return send_file(fp, mimetype=mimetype)
+
+    headers = dict()
+    add_image_size_limit_header(headers, req_width, req_height, out_width, out_height)
+    return send_file(fp, mimetype=mimetype), headers
 
 
 def show_thumb_with_body(filepath, body):

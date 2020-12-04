@@ -14,8 +14,9 @@
 import pytest
 from connexion.exceptions import BadRequestProblem
 
+from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions, parse_planes, \
-    check_reduction_validity, check_array_size, ensure_list
+    check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions
 from tests.conftest import not_raises
 
 
@@ -79,3 +80,16 @@ def test_ensure_list():
     assert ensure_list("a") == ['a']
     assert ensure_list([2]) == [2]
     assert ensure_list(None) is None
+
+
+def test_safeguard_output_dimensions():
+    assert safeguard_output_dimensions('UNSAFE', 100, 10000, 10000) == (10000, 10000)
+    assert safeguard_output_dimensions('SAFE_RESIZE', 100, 10, 99) == (10, 99)
+    assert safeguard_output_dimensions('SAFE_RESIZE', 100, 1000, 2000) == (50, 100)
+    assert safeguard_output_dimensions('SAFE_RESIZE', 100, 2000, 1000) == (100, 50)
+
+    with pytest.raises(TooLargeOutputProblem):
+        assert safeguard_output_dimensions('SAFE_REJECT', 100, 1000, 2000)
+
+    with not_raises(TooLargeOutputProblem):
+        assert safeguard_output_dimensions('SAFE_REJECT', 100, 10, 99)

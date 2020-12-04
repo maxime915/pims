@@ -84,6 +84,19 @@ class NoAcceptableResponseMimetypeProblem(ProblemException):
         super(NoAcceptableResponseMimetypeProblem, self).__init__(status=406, title=title, detail=detail, ext=ext)
 
 
+class TooLargeOutputProblem(ProblemException):
+    def __init__(self, width, height, max_size):
+        title = 'Too large image output dimensions.'
+        detail = 'Requested output dimensions exceed maximum admissible size. ' \
+                 'The request has been rejected as X-Image-Size-Safety header is set to SAFE_REJECT.'
+        ext ={
+            "request_width": width,
+            "request_height": height,
+            "max_size": max_size
+        }
+        super(TooLargeOutputProblem, self).__init__(status=400, title=title, detail=detail, ext=ext)
+
+
 def check_path_existence(path):
     if not path.exists():
         raise FilepathNotFoundProblem(path)

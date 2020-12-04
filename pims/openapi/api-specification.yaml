@@ -3799,11 +3799,15 @@ components:
       schema:
         type: object
         properties:
-          reached:
-            type: boolean
-          width_request:
+          ratio:
+            type: number
+          request_width:
             type: integer
-          height_request:
+          request_height:
+            type: integer
+          safe_width:
+            type: integer
+          safe_height:
             type: integer
   responses:
     problem-bad-request:
