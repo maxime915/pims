@@ -49,11 +49,11 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     colormaps, filters, gammas = ensure_list(colormaps), ensure_list(filters), ensure_list(gammas)
 
     channels = get_channel_indexes(in_image, channels)
-    check_reduction_validity(channels, c_reduction)
+    check_reduction_validity(channels, c_reduction, 'channels')
     z_slices = get_zslice_indexes(in_image, z_slices)
-    check_reduction_validity(z_slices, z_reduction)
+    check_reduction_validity(z_slices, z_reduction, 'z_slices')
     timepoints = get_timepoint_indexes(in_image, timepoints)
-    check_reduction_validity(timepoints, t_reduction)
+    check_reduction_validity(timepoints, t_reduction, 'timepoints')
 
     array_parameters = (gammas, filters, colormaps, max_intensities, max_intensities)
     for array_parameter in array_parameters:
@@ -74,5 +74,5 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
 
 
 def show_thumb_with_body(filepath, body):
-    pass
+    return show_thumb(filepath, **body)
 

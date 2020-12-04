@@ -54,9 +54,54 @@ def _get_query_defaults(self, query_defns):
     return defaults
 
 
+def _get_body_argument(self, body, arguments, has_kwargs, sanitize):
+    body_schema = merge_allof(copy.deepcopy(self.body_schema))
+    x_body_name = sanitize(body_schema.get('x-body-name', 'body'))
+    if is_nullable(body_schema) and is_null(body):
+        return {x_body_name: None}
+
+    default_body = body_schema.get('default', {})
+
+    # by OpenAPI specification `additionalProperties` defaults to `true`
+    # see: https://github.com/OAI/OpenAPI-Specification/blame/3.0.2/versions/3.0.2.md#L2305
+    # BUT do not allow by default to simplify PIMS implementation
+    additional_props = body_schema.get("additionalProperties", False)
+
+    if body is None:
+        body = copy.deepcopy(default_body)
+
+    if body_schema.get("oneOf"):
+        keys = body.keys()
+        for oneof_schema in body_schema.get("oneOf"):
+            # TODO: better schema discrimination. Currently, discrimination is done with required props.
+            required = oneof_schema.get("required", [])
+            if all(k in keys for k in required):
+                body_schema = oneof_schema
+                break
+
+    if body_schema.get("type") != "object":
+        if x_body_name in arguments or has_kwargs:
+            return {x_body_name: body}
+        return {}
+
+    body_arg = copy.deepcopy(default_body)
+    body_arg.update(copy.deepcopy(self._get_default_obj(body_schema)))
+    body_arg.update(body or {})
+
+    res = {}
+    body_props = {k: {"schema": v} for k, v
+                  in body_schema.get("properties", {}).items()}
+    if body_props or additional_props:
+        res = self._get_typed_body_values(body_arg, body_props, additional_props)
+
+    if x_body_name in arguments or has_kwargs:
+        return {x_body_name: res}
+    return {}
+
 # Monkey patching
 OpenAPIOperation._get_val_from_param = _get_val_from_param
 OpenAPIOperation._get_query_defaults = _get_query_defaults
+OpenAPIOperation._get_body_argument = _get_body_argument
 
 
 class PIMSOpenAPIURIParser(OpenAPIURIParser):
