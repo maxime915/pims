@@ -13,12 +13,12 @@
 # * limitations under the License.
 from io import BytesIO
 
-from connexion import NoContent, request
+from connexion import request
 from flask import send_file
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
-from pims.api.utils.image_parameter import get_output_dimensions, get_channel_planes, \
-    get_z_slice_planes, get_timepoint_planes, check_array_size, ensure_list
+from pims.api.utils.image_parameter import get_output_dimensions, get_channel_indexes, \
+    get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
 from pims.processing.window import Thumbnail
@@ -33,25 +33,32 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     check_path_existence(path)
     check_path_is_single(path)
 
-    in_image = path.get_spatial()  # TODO: should depends on channels/z_slices/timepoints
+    in_image = path.get_spatial()
     check_representation_existence(in_image)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
     out_width, out_height = get_output_dimensions(in_image, height, width, length)
+    # TODO: check X-Image-Size-Safety
 
     channels, z_slices, timepoints = ensure_list(channels), ensure_list(z_slices), ensure_list(timepoints)
     min_intensities, max_intensities = ensure_list(min_intensities), ensure_list(max_intensities)
     colormaps, filters, gammas = ensure_list(colormaps), ensure_list(filters), ensure_list(gammas)
 
-    channels, c_reduction = get_channel_planes(in_image, channels, c_reduction)
-    z_slices, z_reduction = get_z_slice_planes(in_image, z_slices, z_reduction)
-    timepoints, t_reduction = get_timepoint_planes(in_image, timepoints, t_reduction)
+    channels = get_channel_indexes(in_image, channels)
+    check_reduction_validity(channels, c_reduction)
+    z_slices = get_zslice_indexes(in_image, z_slices)
+    check_reduction_validity(z_slices, z_reduction)
+    timepoints = get_timepoint_indexes(in_image, timepoints)
+    check_reduction_validity(timepoints, t_reduction)
 
-    check_array_size(gammas, allowed=[1, len(channels)], nullable=True)
-    check_array_size(filters, allowed=[1, len(channels)], nullable=True)
-    check_array_size(colormaps, allowed=[1, len(channels)], nullable=True)
-    check_array_size(min_intensities, allowed=[1, len(channels)], nullable=True)
-    check_array_size(max_intensities, allowed=[1, len(channels)], nullable=True)
+    array_parameters = (gammas, filters, colormaps, max_intensities, max_intensities)
+    for array_parameter in array_parameters:
+        check_array_size(array_parameter, allowed=[1, len(channels)], nullable=True)
+
+    # TODO: verify maximum allowed values for min_intensities
+    # TODO: verify maximum allowed values for max_intensities
+    # TODO: verify colormap names are valid
+    # TODO: verify filter names are valid
 
     thumb = Thumbnail(in_image, out_width, out_height, out_format, log, use_precomputed, gammas)
     fp = BytesIO(thumb.get_processed_buffer())

@@ -18,6 +18,7 @@ from pathlib import Path
 
 import pytest
 from flask import current_app
+from contextlib import contextmanager
 
 from pims.app import create_app
 
@@ -82,3 +83,21 @@ def client(app):
 @pytest.fixture
 def runner(app):
     return app.test_cli_runner()
+
+
+@contextmanager
+def not_raises(expected_exc):
+    try:
+        yield
+
+    except expected_exc as err:
+        raise AssertionError(
+            "Did raise exception {0} when it should not!".format(
+                repr(expected_exc)
+            )
+        )
+
+    except Exception as err:
+        raise AssertionError(
+            "An unexpected exception {0} raised.".format(repr(err))
+        )

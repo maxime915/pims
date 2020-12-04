@@ -14,7 +14,9 @@
 import pytest
 from connexion.exceptions import BadRequestProblem
 
-from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions
+from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions, parse_planes, \
+    check_reduction_validity, check_array_size, ensure_list
+from tests.conftest import not_raises
 
 
 def test_get_rationed_resizing():
@@ -36,3 +38,44 @@ def test_get_output_dimensions():
 
     with pytest.raises(BadRequestProblem):
         get_output_dimensions(FakeImage(1000, 2000))
+
+
+def test_parse_planes():
+    assert parse_planes([], 10) == {0}
+    assert parse_planes([1, 2], 10) == {1, 2}
+    assert parse_planes([1, 2, 200], 10) == {1, 2}
+    assert parse_planes([2, '5:'], 8) == {2, 5, 6, 7}
+    assert parse_planes([':'], 3) == {0, 1, 2}
+    assert parse_planes(None, 10, default=[1, 2]) == {1, 2}
+
+    with pytest.raises(BadRequestProblem):
+        parse_planes([2, '5:', 'foo'], 10)
+
+
+def test_check_reduction_validity():
+    with not_raises(BadRequestProblem):
+        check_reduction_validity([0], None)
+        check_reduction_validity([], None)
+        check_reduction_validity([1, 2], "SUM")
+
+    with pytest.raises(BadRequestProblem):
+        check_reduction_validity([1, 2], None)
+
+
+def test_check_array_size():
+    with not_raises(BadRequestProblem):
+        check_array_size([1], [1, 2], True)
+        check_array_size(None, [1, 2], True)
+
+    with pytest.raises(BadRequestProblem):
+        check_array_size([1], [2], True)
+        check_array_size(None, [1], False)
+        check_array_size([1], [], True)
+
+
+def test_ensure_list():
+    assert ensure_list(3) == [3]
+    assert ensure_list((2, 4)) == [(2, 4)]
+    assert ensure_list("a") == ['a']
+    assert ensure_list([2]) == [2]
+    assert ensure_list(None) is None

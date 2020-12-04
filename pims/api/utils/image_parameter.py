@@ -89,68 +89,149 @@ def get_output_dimensions(in_image, height=None, width=None, length=None):
     return out_width, out_height
 
 
-def get_parsed_planes(planes, reduction, n_planes):
+def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
+    """
+    Get a set of planes from a list of plane indexes and ranges.
+
+    Parameters
+    ----------
+    planes_to_parse : list or None
+        List of plane indexes and ranges to parse.
+    n_planes : int
+        Number of planes. It is the maximum output set size.
+    default : int or list
+        Plane index or list of plane indexes used as default set if `planes_to_parse` is empty (or None).
+        Default is returned as a set but default values are expected to be in acceptable range.
+    name : str
+        Name of plane dimension (e.g. 'channels', 'z_slices', ...) used for exception messages.
+
+    Returns
+    -------
+    set
+        Set of valid plane indexes.
+
+    Raises
+    ------
+    BadRequestProblem
+        If an item of `planes_to_parse´ is invalid.
+    """
     plane_indexes = list()
-    for plane in planes:
-        if type(plane) == int:
+
+    if not planes_to_parse:
+        return set(ensure_list(default))
+
+    for plane in planes_to_parse:
+        if type(plane) is int:
             plane_indexes.append(plane)
         elif is_range(plane):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
-            raise BadRequestProblem("Invalid plane index/range")
-
-    plane_indexes = set([idx for idx in plane_indexes if 0 <= idx < n_planes])
-    if len(plane_indexes) > 1 and reduction is None:
-        raise BadRequestProblem("Missing reduction")
-
-    return plane_indexes, reduction
+            raise BadRequestProblem(detail='{} is not a valid index or range for {}.'.format(plane, name))
+    return set([idx for idx in plane_indexes if 0 <= idx < n_planes])
 
 
-def get_channel_planes(image, planes, reduction):
+def get_channel_indexes(image, planes):
     """
     Image channels used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
     By default, all channels are considered.
     """
-    if not planes:
-        plane_indexes = [*range(0, image.n_channels)]
-        return plane_indexes, reduction
-    return get_parsed_planes(planes, reduction, image.n_channels)
+    default = [*range(0, image.n_channels)]
+    return parse_planes(planes, image.n_channels, default, 'channels')
 
 
-def get_z_slice_planes(image, planes, reduction):
+def get_zslice_indexes(image, planes):
     """
     Image focal planes used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
     By default, the median focal plane is considered.
     """
-    if not planes:
-        return round(image.depth / 2), reduction
-    return get_parsed_planes(planes, reduction, image.depth)
+    default = [round(image.depth / 2)]
+    return parse_planes(planes, image.depth, default, 'z_slices')
 
 
-def get_timepoint_planes(image, planes, reduction):
+def get_timepoint_indexes(image, planes):
     """
     Image timepoints used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
     By default, the first timepoint considered.
     """
-    if not planes:
-        return 0, reduction
-    return get_parsed_planes(planes, reduction, image.duration)
+    default = [0]
+    return parse_planes(planes, image.duration, default, 'timepoints')
 
 
-def check_array_size(array, allowed, nullable=True):
-    if array is None:
+def check_reduction_validity(planes, reduction, name='planes'):
+    """
+    Verify if a reduction function is given when needed i.e. when
+    the set of planes has a size > 1.
+
+    Parameters
+    ----------
+    planes : set
+        Set of planes
+    reduction : str or None
+        Reduction function to reduce the set of planes.
+    name : str
+        Name of plane dimension (e.g. 'channels', 'z_slices', ...) used for exception messages.
+
+    Raises
+    ------
+    BadRequestProblem
+        If no reduction function is given while needed.
+    """
+    if len(planes) > 1 and reduction is None:
+        raise BadRequestProblem(detail='A reduction is required for {}'.format(name))
+
+
+def check_array_size(iterable, allowed, nullable=True, name=None):
+    """
+    Verify an iterable has an allowed size or, optionally, is empty.
+
+    Parameters
+    ----------
+    iterable : iterable
+        Iterable which the size has to be verified.
+    allowed : list of int
+        Allowed iterable sizes
+    nullable : boolean
+        Whether no iterable at all is accepted or not.
+    name : str (optional)
+        Iterable name for exception messages.
+
+    Raises
+    ------
+    BadRequestProblem
+        If the iterable doesn't have one of the allowed sizes
+        or is None if `nullable` is false.
+
+    """
+    if iterable is None:
         if not nullable:
-            raise BadRequestProblem()
+            name = 'A parameter' if not name else name
+            raise BadRequestProblem(detail="{} is unset while it is not allowed.".format(name))
         return
 
-    if not len(array) in allowed:
-        raise BadRequestProblem("Bad array size")
+    if not len(iterable) in allowed:
+        name = 'A parameter' if not name else name
+        allowed_str = ', '.join([str(i) for i in allowed])
+        raise BadRequestProblem("{} has a size of {} while only "
+                                "these sizes are allowed: {}".format(name, len(iterable), allowed_str))
 
 
 def ensure_list(value):
+    """
+    Ensure it is a list.
+
+    Parameters
+    ----------
+    value : any
+        Value to convert as a list
+
+    Returns
+    -------
+    list
+        The value converted as a list if it is not already the case.
+    """
     if value is not None:
-        return value if type(value) == list else [value]
+        return value if type(value) is list else [value]
     return value
