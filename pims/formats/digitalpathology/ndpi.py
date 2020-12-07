@@ -60,8 +60,16 @@ class NDPIFormat(AbstractTiffFormat):
         imd.microscope.model = self.ndpi_tags.get("Model", None)
 
         # NDPI series: Baseline, Macro, Map
-        series_names = [s.name.lower() for s in self._tf.series]
-        imd.associated.has_macro = "macro" in series_names
+        for serie in self._tf.series:
+            name = serie.name.lower()
+            if name == "macro":
+                associated = imd.associated_macro
+            else:
+                continue
+            page = serie[0]
+            associated.width = page.imagewidth
+            associated.height = page.imagelength
+            associated.n_channels = page.samplesperpixel
 
         imd.is_complete = True
 
@@ -73,3 +81,11 @@ class NDPIFormat(AbstractTiffFormat):
                 store.set(key, value, namespace="Hamamatsu")
 
         return store
+
+    def get_macro(self, *args, **kwargs):
+        series = next((s for s in self._tf.series if s.name.lower() == 'macro'), None)
+        if not series:
+            return None
+
+        page = series[0]
+        return page.asarray()

@@ -319,13 +319,18 @@ class ImageMicroscope(_MetadataStorable):
 
 
 class ImageAssociated(_MetadataStorable):
-    def __init__(self):
-        self.has_thumb = False
-        self.has_label = False
-        self.has_macro = False
+    def __init__(self, kind):
+        self.width = None
+        self.height = None
+        self.n_channels = None
+        self._kind = kind
+
+    @property
+    def exists(self):
+        return self.width is not None and self.height is not None and self.n_channels is not None
 
     def metadata_namespace(self):
-        return "associated"
+        return "associated.{}".format(self._kind)
 
 
 class ImageMetadata(_MetadataStorable):
@@ -352,7 +357,9 @@ class ImageMetadata(_MetadataStorable):
         self.channels = list()
         self.objective = ImageObjective()
         self.microscope = ImageMicroscope()
-        self.associated = ImageAssociated()
+        self.associated_thumb = ImageAssociated('thumb')
+        self.associated_label = ImageAssociated('label')
+        self.associated_macro = ImageAssociated('macro')
 
     def set_channel(self, channel):
         self.channels.insert(channel.index, channel)

@@ -23,7 +23,7 @@ from pims.api.utils.image_parameter import get_output_dimensions, get_channel_in
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
 from pims.api.utils.header import add_image_size_limit_header
-from pims.processing.window import Thumbnail
+from pims.processing.image_response import ThumbnailResponse
 
 
 def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
@@ -64,7 +64,7 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     # TODO: verify colormap names are valid
     # TODO: verify filter names are valid
 
-    thumb = Thumbnail(in_image, out_width, out_height, out_format, log, use_precomputed, gammas)
+    thumb = ThumbnailResponse(in_image, out_width, out_height, out_format, log, use_precomputed, gammas)
     fp = BytesIO(thumb.get_processed_buffer())
     fp.seek(0)
 

@@ -11,12 +11,20 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from io import BytesIO
+
+from flask import current_app, send_file
+from connexion import request
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, \
-    check_representation_existence
+    check_representation_existence, NoAppropriateRepresentationProblem
+from pims.api.utils.header import add_image_size_limit_header
+from pims.api.utils.image_parameter import get_output_dimensions, safeguard_output_dimensions
+from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path, path2filepath
 from pims.api.utils.response import response_list, convert_quantity
 from pims.formats.utils.metadata import MetadataType
+from pims.processing.image_response import AssociatedResponse
 
 
 def _serialize_path_role(path):
@@ -82,11 +90,15 @@ def _serialize_instrument(image):
 
 
 def _serialize_associated(image):
-    return {
-        "has_macro": image.associated.has_macro,
-        "has_thumbnail": image.associated.has_thumb,
-        "has_label": image.associated.has_label
-    }
+    return [
+        {
+            "name": associated._kind,
+            "width": associated.width,
+            "height": associated.height,
+            "n_channels": associated.n_channels
+        } for associated in (image.associated_thumb, image.associated_label, image.associated_macro)
+        if associated.exists
+    ]
 
 
 def _serialize_channels(image):
@@ -172,10 +184,6 @@ def show_image(filepath):
     return _serialize_image_info(original)
 
 
-def show_pyramid(filepath):
-    pass
-
-
 def show_channels(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
@@ -206,8 +214,34 @@ def show_associated(filepath):
     return _serialize_associated(original)
 
 
-def show_associated_image(filepath):
-    pass
+def show_associated_image(filepath, associated_key, length=None, width=None, height=None):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    in_image = path.get_spatial()
+    check_representation_existence(in_image)
+
+    associated = None
+    if associated_key in ('thumb', 'label', 'macro'):
+        associated = getattr(in_image, 'associated_{}'.format(associated_key))
+
+    if not associated or not associated.exists:
+        raise NoAppropriateRepresentationProblem(filepath, associated_key)
+
+    out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
+    req_width, req_height = get_output_dimensions(associated, height, width, length)
+    safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
+    out_width, out_height = safeguard_output_dimensions(safe_mode, current_app.config['OUTPUT_SIZE_LIMIT'],
+                                                        req_width, req_height)
+
+    thumb = AssociatedResponse(in_image, associated_key, out_width, out_height, out_format)
+    fp = BytesIO(thumb.get_processed_buffer())
+    fp.seek(0)
+
+    headers = dict()
+    add_image_size_limit_header(headers, req_width, req_height, out_width, out_height)
+    return send_file(fp, mimetype=mimetype), headers
 
 
 def show_metadata(filepath):

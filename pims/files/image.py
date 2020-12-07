@@ -95,8 +95,16 @@ class Image(Path):
         return self._format.get_image_metadata(True).microscope
 
     @property
-    def associated(self):
-        return self._format.get_image_metadata(True).associated
+    def associated_thumb(self):
+        return self._format.get_image_metadata(True).associated_thumb
+    
+    @property
+    def associated_label(self):
+        return self._format.get_image_metadata(True).associated_label
+    
+    @property
+    def associated_macro(self):
+        return self._format.get_image_metadata(True).associated_macro
 
     @property
     def raw_metadata(self):
@@ -158,7 +166,7 @@ class Image(Path):
         """
         Get associated image "label". The output dimensions are best-effort.
         """
-        if self.associated.has_label and hasattr(self._format, "get_label"):
+        if self.associated_label.exists and hasattr(self._format, "get_label"):
             return self._format.get_label(out_width, out_height)
         else:
             return None
@@ -167,7 +175,7 @@ class Image(Path):
         """
         Get associated image "macro". The output dimensions are best-effort.
         """
-        if self.associated.has_macro and hasattr(self._format, "get_macro"):
+        if self.associated_macro.exists and hasattr(self._format, "get_macro"):
             return self._format.get_macro(out_width, out_height)
         else:
             return None

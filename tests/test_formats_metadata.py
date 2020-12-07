@@ -141,7 +141,7 @@ def test_to_metadata_store():
     imd.height = 100
     imd.objective.nominal_magnification = 2
     imd.microscope.model = "foo"
-    imd.associated.has_label = True
+    imd.associated_label.exists = True
     imd.set_channel(ImageChannel(index=1))
 
     store = imd.to_metadata_store(MetadataStore())
@@ -150,4 +150,4 @@ def test_to_metadata_store():
     assert store.get_value("objective.nominal_magnification") == 2
     assert store.get_value("channel[1].index") == 1
     assert store.get_value("microscope.model") == "foo"
-    assert store.get_value("associated.has_label") is True
+    assert store.get_value("associated_label.exists") is True

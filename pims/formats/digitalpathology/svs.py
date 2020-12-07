@@ -76,10 +76,20 @@ class SVSFormat(AbstractTiffFormat):
         imd.physical_size_y = imd.physical_size_x
         imd.objective.nominal_magnification = parse_float(svs_metadata.get("AppMag", None))
 
-        series_names = [s.name.lower() for s in self._tf.series]
-        imd.associated.has_thumb = "thumbnail" in series_names
-        imd.associated.has_label = "label" in series_names
-        imd.associated.has_macro = "macro" in series_names
+        for serie in self._tf.series:
+            name = serie.name.lower()
+            if name == "thumbnail":
+                associated = imd.associated_thumb
+            elif name == "label":
+                associated = imd.associated_label
+            elif name == "macro":
+                associated = imd.associated_macro
+            else:
+                continue
+            page = serie[0]
+            associated.width = page.imagewidth
+            associated.height = page.imagelength
+            associated.n_channels = page.samplesperpixel
 
         imd.is_complete = True
 
@@ -111,3 +121,19 @@ class SVSFormat(AbstractTiffFormat):
             store.set(key.replace(" ", ""), value, namespace="Aperio")
 
         return store
+
+    def get_label(self, *args, **kwargs):
+        series = next((s for s in self._tf.series if s.name.lower() == 'label'), None)
+        if not series:
+            return None
+
+        page = series[0]
+        return page.asarray()
+
+    def get_macro(self, *args, **kwargs):
+        series = next((s for s in self._tf.series if s.name.lower() == 'macro'), None)
+        if not series:
+            return None
+
+        page = series[0]
+        return page.asarray()
