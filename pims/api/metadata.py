@@ -236,7 +236,7 @@ def show_associated_image(filepath, associated_key, length=None, width=None, hei
                                                         req_width, req_height)
 
     thumb = AssociatedResponse(in_image, associated_key, out_width, out_height, out_format)
-    fp = BytesIO(thumb.get_processed_buffer())
+    fp = BytesIO(thumb.get_response_buffer())
     fp.seek(0)
 
     headers = dict()

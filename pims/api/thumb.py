@@ -65,7 +65,7 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     # TODO: verify filter names are valid
 
     thumb = ThumbnailResponse(in_image, out_width, out_height, out_format, log, use_precomputed, gammas)
-    fp = BytesIO(thumb.get_processed_buffer())
+    fp = BytesIO(thumb.get_response_buffer())
     fp.seek(0)
 
     headers = dict()
