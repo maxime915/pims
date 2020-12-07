@@ -16,7 +16,7 @@ from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format
 
 from pyvips import Image as VIPSImage, Size
 
-import numpy as np
+from pims.processing.adapters import imglib_adapters
 
 
 class ImageResponse:
@@ -36,8 +36,7 @@ class ThumbnailResponse(ImageResponse):
 
     def process(self):
         thumb = self.in_image.thumbnail(self.out_width, self.out_height, precomputed=self.use_precomputed)
-        if type(thumb) != VIPSImage:
-            thumb = VIPSImage.new_from_array(thumb)
+        thumb = imglib_adapters.get((type(thumb), VIPSImage))(thumb)
 
         if self.gamma:
             thumb = thumb.gamma(exponent=self.gamma[0])
@@ -76,13 +75,7 @@ class AssociatedResponse(ImageResponse):
         else:
             associated = self.in_image.thumbnail(self.out_width, self.out_height, precomputed=True)
 
-        if type(associated) == np.ndarray:
-            h, w, d = associated.shape
-            vips_type = dtype_to_vips_format[str(associated.dtype)]
-            linear = associated.reshape(associated.size)
-            associated = VIPSImage.new_from_memory(linear.data, w, h, d, vips_type)
-        elif type(associated) != VIPSImage:
-            associated = VIPSImage.new_from_array(associated)
+        associated = imglib_adapters.get((type(associated), VIPSImage))(associated)
 
         if associated.width != self.out_width or associated.height != self.out_height:
             associated = associated.thumbnail_image(self.out_width, height=self.out_height, size=Size.FORCE)
