@@ -122,18 +122,34 @@ class SVSFormat(AbstractTiffFormat):
 
         return store
 
-    def get_label(self, *args, **kwargs):
-        series = next((s for s in self._tf.series if s.name.lower() == 'label'), None)
-        if not series:
+    @lazyattr
+    def thumbnail_series(self):
+        return next((s for s in self._tf.series if s.name.lower() == 'thumbnail'), None)
+
+    @lazyattr
+    def label_series(self):
+        return next((s for s in self._tf.series if s.name.lower() == 'label'), None)
+
+    @lazyattr
+    def macro_series(self):
+        return next((s for s in self._tf.series if s.name.lower() == 'macro'), None)
+
+    def read_thumbnail(self, out_width, out_height, precomputed, *args):
+        if precomputed and self.thumbnail_series is not None:
+            page = self.thumbnail_series[0]
+            return page.asarray()
+        return super(SVSFormat, self).read_thumbnail(out_width, out_height, precomputed, *args)
+
+    def read_label(self, *args, **kwargs):
+        if not self.label_series:
             return None
 
-        page = series[0]
+        page = self.label_series[0]
         return page.asarray()
 
-    def get_macro(self, *args, **kwargs):
-        series = next((s for s in self._tf.series if s.name.lower() == 'macro'), None)
-        if not series:
+    def read_macro(self, *args, **kwargs):
+        if not self.macro_series:
             return None
 
-        page = series[0]
+        page = self.macro_series[0]
         return page.asarray()

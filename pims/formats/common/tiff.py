@@ -139,7 +139,8 @@ class AbstractTiffFormat(AbstractFormat):
         baseline = self.baseline_series
         for level in baseline.levels:
             page = level[0]
-            pyramid.insert_tier(page.imagewidth, page.imagelength, (page.tilewidth, page.tilelength))
+            pyramid.insert_tier(page.imagewidth, page.imagelength, (page.tilewidth, page.tilelength),
+                                page_index=page.index)
 
         return pyramid
 
@@ -152,6 +153,10 @@ class AbstractTiffFormat(AbstractFormat):
                 value = tag.value.name if isinstance(tag.value, Enum) else tag.value
                 store.set(tag.name, value, namespace="TIFF")
         return store
+
+    def read_thumbnail(self, out_width, out_height, precomputed, c, z, t):
+        tier = self.pyramid.most_appropriate_tier(out_width, out_height)
+        return self._tf.pages[tier.data.get('page_index')].asarray()
 
 
 def read_tifffile(path):

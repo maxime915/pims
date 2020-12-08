@@ -156,8 +156,8 @@ class Image(Path):
         thumbnail: image-like (PILImage, VIPSImage, numpy array)
             The thumbnail (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
         """
-        if hasattr(self._format, "get_thumbnail"):
-            return self._format.get_thumbnail(out_width, out_height, precomputed, c, z, t)
+        if hasattr(self._format, "read_thumbnail"):
+            return self._format.read_thumbnail(out_width, out_height, precomputed, c, z, t)
         else:
             # TODO
             raise NotImplementedError
@@ -166,8 +166,8 @@ class Image(Path):
         """
         Get associated image "label". The output dimensions are best-effort.
         """
-        if self.associated_label.exists and hasattr(self._format, "get_label"):
-            return self._format.get_label(out_width, out_height)
+        if self.associated_label.exists and hasattr(self._format, "read_label"):
+            return self._format.read_label(out_width, out_height)
         else:
             return None
 
@@ -175,7 +175,7 @@ class Image(Path):
         """
         Get associated image "macro". The output dimensions are best-effort.
         """
-        if self.associated_macro.exists and hasattr(self._format, "get_macro"):
-            return self._format.get_macro(out_width, out_height)
+        if self.associated_macro.exists and hasattr(self._format, "read_macro"):
+            return self._format.read_macro(out_width, out_height)
         else:
             return None

@@ -108,5 +108,5 @@ class JPEGFormat(AbstractFormat):
                 buf[1] == 0xD8 and
                 buf[2] == 0xFF)
 
-    def get_thumbnail(self, out_width, out_height, *args, **kwargs):
+    def read_thumbnail(self, out_width, out_height, *args, **kwargs):
         return self._vips.thumbnail_image(out_width, height=out_height, size=Size.FORCE)

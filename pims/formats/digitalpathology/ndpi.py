@@ -82,10 +82,13 @@ class NDPIFormat(AbstractTiffFormat):
 
         return store
 
-    def get_macro(self, *args, **kwargs):
-        series = next((s for s in self._tf.series if s.name.lower() == 'macro'), None)
-        if not series:
+    @lazyattr
+    def macro_series(self):
+        return next((s for s in self._tf.series if s.name.lower() == 'macro'), None)
+
+    def read_macro(self, *args, **kwargs):
+        if not self.macro_series:
             return None
 
-        page = series[0]
+        page = self.macro_series[0]
         return page.asarray()

@@ -14,12 +14,13 @@
 
 
 class PyramidTier:
-    def __init__(self, width, height, tile_size, pyramid):
+    def __init__(self, width, height, tile_size, pyramid, data=None):
         self.width = width
         self.height = height
         self.tile_width = tile_size[0] if type(tile_size) == tuple else tile_size
         self.tile_height = tile_size[1] if type(tile_size) == tuple else tile_size
         self.pyramid = pyramid
+        self.data = data if type(data) is dict else dict()
 
     @property
     def n_pixels(self):
@@ -83,8 +84,8 @@ class Pyramid:
     def level_to_zoom(self, level):
         return self.max_level - level
 
-    def insert_tier(self, width, height, tile_size):
-        tier = PyramidTier(width, height, tile_size, pyramid=self)
+    def insert_tier(self, width, height, tile_size, **tier_data):
+        tier = PyramidTier(width, height, tile_size, pyramid=self, data=tier_data)
         idx = 0
         while idx < len(self._tiers) and tier.n_pixels < self._tiers[idx].n_pixels:
             idx += 1
@@ -101,3 +102,27 @@ class Pyramid:
 
     def __iter__(self):
         return iter(self._tiers)
+
+    def most_appropriate_tier(self, width, height):
+        """
+        Get the highest pyramid tier with size larger than `width` x `height`.
+
+        Parameters
+        ----------
+        width : int
+            Minimum tier width
+        height : int
+            Minimum tier height
+
+        Returns
+        -------
+        PyramidTier
+            Highest pyramid tier whose size is larger than given lengths.
+        """
+        best = self._tiers[0]
+        for tier in self._tiers:
+            if tier.width >= width and tier.height >= height:
+                best = tier
+            else:
+                break
+        return best
