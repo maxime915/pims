@@ -69,16 +69,48 @@ def numpy_to_pil(np_array, *args, **kwargs):
 
 
 def pil_to_vips(pil_image, *args, **kwargs):
-    pass
+    """
+    Convert a Pillow image to a VIPS image. Potentially slow as conversion is 2-step,
+    with numpy used as intermediate.
+
+    Parameters
+    ----------
+    pil_image : PILImage
+        Pillow image to convert
+    args
+    kwargs
+
+    Returns
+    -------
+    VIPSImage
+        VIPS image representation of the array
+    """
+    return numpy_to_vips(pil_to_numpy(pil_image))
 
 
 def pil_to_numpy(pil_image, *args, **kwargs):
-    pass
+    """
+    Convert a Pillow image to a Numpy array.
+
+    Parameters
+    ----------
+    pil_image : PILImage
+        Pillow image to convert
+    args
+    kwargs
+
+    Returns
+    -------
+    arr : Numpy array
+        Array representation of Pillow image.
+    """
+    return np.asarray(pil_image)
 
 
 def vips_to_numpy(vips_image, *args, **kwargs):
     """
     Convert a VIPS image to a Numpy array.
+
     Parameters
     ----------
     vips_image : VIPSImage
@@ -106,12 +138,12 @@ def identity(v, *args, **kwargs):
 
 imglib_adapters = {
     (np.ndarray, VIPSImage): numpy_to_vips,
-    (np.ndarray, PILImage): numpy_to_pil,
+    (np.ndarray, PILImage.Image): numpy_to_pil,
     (np.ndarray, np.ndarray): identity,
-    (PILImage, VIPSImage): pil_to_vips,
-    (PILImage, np.ndarray): pil_to_numpy,
-    (PILImage, PILImage): identity,
+    (PILImage.Image, VIPSImage): pil_to_vips,
+    (PILImage.Image, np.ndarray): pil_to_numpy,
+    (PILImage.Image, PILImage.Image): identity,
     (VIPSImage, np.ndarray): vips_to_numpy,
-    (VIPSImage, PILImage): vips_to_pil,
+    (VIPSImage, PILImage.Image): vips_to_pil,
     (VIPSImage, VIPSImage): identity
 }

@@ -16,9 +16,10 @@ import numpy as np
 import pytest
 
 from pims.formats.utils.vips import vips_format_to_dtype
-from pims.processing.adapters import numpy_to_vips, vips_to_numpy
+from pims.processing.adapters import numpy_to_vips, vips_to_numpy, pil_to_numpy, pil_to_vips
 
 from pyvips import Image as VIPSImage
+from PIL import Image as PILImage
 
 
 def test_numpy_to_vips():
@@ -56,3 +57,20 @@ def test_vips_to_numpy():
     assert h == img.height
     assert d == img.bands
     assert arr.dtype == vips_format_to_dtype[img.format]
+
+
+def test_pil_to_numpy():
+    img = PILImage.new("RGB", (20, 30))
+    arr = pil_to_numpy(img)
+    h, w, d = arr.shape
+    assert w == 20
+    assert h == 30
+    assert d == 3
+
+
+def test_pil_to_vips():
+    img = PILImage.new("RGB", (20, 30))
+    vips = pil_to_vips(img)
+    assert vips.width == 20
+    assert vips.height == 30
+    assert vips.bands == 3
