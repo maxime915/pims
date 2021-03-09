@@ -13,6 +13,8 @@
 # * limitations under the License.
 from connexion.exceptions import BadRequestProblem
 
+from ordered_set import OrderedSet
+
 from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.schema_format import parse_range, is_range
 
@@ -161,7 +163,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
     plane_indexes = list()
 
     if not planes_to_parse:
-        return set(ensure_list(default))
+        return OrderedSet(ensure_list(default))
 
     for plane in planes_to_parse:
         if type(plane) is int:
@@ -170,7 +172,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
             raise BadRequestProblem(detail='{} is not a valid index or range for {}.'.format(plane, name))
-    return set([idx for idx in plane_indexes if 0 <= idx < n_planes])
+    return OrderedSet([idx for idx in plane_indexes if 0 <= idx < n_planes])
 
 
 def get_channel_indexes(image, planes):
