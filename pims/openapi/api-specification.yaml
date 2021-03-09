@@ -86,8 +86,8 @@ tags:
       * Height
       * Zoom
       * Level
-  - name: Hyperspectral
-    description: Hyperspectral specific extraction methods.
+#  - name: Hyperspectral
+#    description: Hyperspectral specific extraction methods.
   - name: Metadata
     description: Metadata are data that provides information about other data, especially about files and images
       managed by PIMS.
@@ -103,8 +103,8 @@ tags:
   - name: Formats
     description: PIMS formats are image-related file formats and their methods to identify them, read and extract
       information from the underlying files.
-  - name: Colormaps
-    description: Colormaps are functions that maps colors of an input image to the colors of a target image.
+#  - name: Colormaps
+#    description: Colormaps are functions that maps colors of an input image to the colors of a target image.
   - name: Filters
     description: Image filters are used to change the appareance of an image and helps at understanding the
       source image.
@@ -133,12 +133,12 @@ paths:
         - $ref: '#/components/parameters/query-channel-selection'
         - $ref: '#/components/parameters/query-z-slice-selection'
         - $ref: '#/components/parameters/query-timepoint-selection'
-        - $ref: '#/components/parameters/query-c-reduction'
-        - $ref: '#/components/parameters/query-z-reduction'
-        - $ref: '#/components/parameters/query-t-reduction'
+#        - $ref: '#/components/parameters/query-c-reduction'
+#        - $ref: '#/components/parameters/query-z-reduction'
+#        - $ref: '#/components/parameters/query-t-reduction'
         - $ref: '#/components/parameters/query-min-intensities-visualisation'
         - $ref: '#/components/parameters/query-max-intensities-visualisation'
-        - $ref: '#/components/parameters/query-colormaps'
+#        - $ref: '#/components/parameters/query-colormaps'
         - $ref: '#/components/parameters/query-filters'
         - $ref: '#/components/parameters/query-gammas'
         - $ref: '#/components/parameters/query-log'
@@ -205,12 +205,12 @@ paths:
         - $ref: '#/components/parameters/query-channel-selection'
         - $ref: '#/components/parameters/query-z-slice-selection'
         - $ref: '#/components/parameters/query-timepoint-selection'
-        - $ref: '#/components/parameters/query-c-reduction'
-        - $ref: '#/components/parameters/query-z-reduction'
-        - $ref: '#/components/parameters/query-t-reduction'
+#        - $ref: '#/components/parameters/query-c-reduction'
+#        - $ref: '#/components/parameters/query-z-reduction'
+#        - $ref: '#/components/parameters/query-t-reduction'
         - $ref: '#/components/parameters/query-min-intensities-visualisation'
         - $ref: '#/components/parameters/query-max-intensities-visualisation'
-        - $ref: '#/components/parameters/query-colormaps'
+#        - $ref: '#/components/parameters/query-colormaps'
         - $ref: '#/components/parameters/query-filters'
         - $ref: '#/components/parameters/query-gammas'
         - $ref: '#/components/parameters/query-log'
@@ -413,15 +413,15 @@ paths:
         - $ref: '#/components/parameters/query-channel-selection'
         - $ref: '#/components/parameters/query-z-slice-selection'
         - $ref: '#/components/parameters/query-timepoint-selection'
-        - $ref: '#/components/parameters/query-c-reduction'
-        - $ref: '#/components/parameters/query-z-reduction'
-        - $ref: '#/components/parameters/query-t-reduction'
+#        - $ref: '#/components/parameters/query-c-reduction'
+#        - $ref: '#/components/parameters/query-z-reduction'
+#        - $ref: '#/components/parameters/query-t-reduction'
         - $ref: '#/components/parameters/query-thumb-length'
         - $ref: '#/components/parameters/query-thumb-width'
         - $ref: '#/components/parameters/query-thumb-height'
         - $ref: '#/components/parameters/query-min-intensities-visualisation'
         - $ref: '#/components/parameters/query-max-intensities-visualisation'
-        - $ref: '#/components/parameters/query-colormaps'
+#        - $ref: '#/components/parameters/query-colormaps'
         - $ref: '#/components/parameters/query-filters'
         - $ref: '#/components/parameters/query-gammas'
         - $ref: '#/components/parameters/query-log'
@@ -501,9 +501,9 @@ paths:
         - $ref: '#/components/parameters/query-channel-selection'
         - $ref: '#/components/parameters/query-z-slice-selection'
         - $ref: '#/components/parameters/query-timepoint-selection'
-        - $ref: '#/components/parameters/query-c-reduction'
-        - $ref: '#/components/parameters/query-z-reduction'
-        - $ref: '#/components/parameters/query-t-reduction'
+#        - $ref: '#/components/parameters/query-c-reduction'
+#        - $ref: '#/components/parameters/query-z-reduction'
+#        - $ref: '#/components/parameters/query-t-reduction'
         - $ref: '#/components/parameters/query-thumb-length'
         - $ref: '#/components/parameters/query-thumb-width'
         - $ref: '#/components/parameters/query-thumb-height'
@@ -511,7 +511,7 @@ paths:
         - $ref: '#/components/parameters/query-thumb-level'
         - $ref: '#/components/parameters/query-min-intensities'
         - $ref: '#/components/parameters/query-max-intensities'
-        - $ref: '#/components/parameters/query-colormaps'
+#        - $ref: '#/components/parameters/query-colormaps'
         - $ref: '#/components/parameters/query-filters'
         - $ref: '#/components/parameters/query-gammas'
         - $ref: '#/components/parameters/query-log'
@@ -714,242 +714,242 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /image/{filepath}/annotation/spectra:
-    post:
-      operationId: pims.api.annotation.show_spectra
-      summary: Get annotation spectra
-      description: |
-        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-        with body content must be used.**
-
-        Get spectrum of every pixels belonging to the annotation(s).
-      tags:
-        - Annotations
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - title: spectra-by-length
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-length-object-required'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: spectra-by-width
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-width-object-required'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: spectra-by-height
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-height-object-required'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: spectra-by-zoom
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-zoom-object-required'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: spectra-by-level
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-level-object-required'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-      responses:
-        200:
-          $ref: '#/components/responses/hyperspectral-window'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/problem-bad-request'
-        404:
-          $ref: '#/components/responses/problem-not-found'
-  /image/{filepath}/annotation/footprint:
-    post:
-      operationId: pims.api.annotation.show_footprint
-      summary: Get annotation spectral footprint
-      description: |
-        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-        with body content must be used.**
-
-        Get annotation spectral footprint. **At least one dimension must have a reduction
-        operation.**
-
-        The input spatial region is given by the rectangular envelope of all geometries.
-      tags:
-        - Annotations
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - title: footprint-by-length
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-length-object-required'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: footprint-by-width
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-width-object-required'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: footprint-by-height
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-height-object-required'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: footprint-by-zoom
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-zoom-object-required'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: footprint-by-level
-                  allOf:
-                    - $ref: '#/components/schemas/annotations-object-basis'
-                    - $ref: '#/components/schemas/target-level-object-required'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-      responses:
-        200:
-          $ref: '#/components/responses/hyperspectral-footprint'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/problem-bad-request'
-        404:
-          $ref: '#/components/responses/problem-not-found'
-  /image/{filepath}/spectral/footprint:
-    post:
-      operationId: pims.api.spectral.show_spectral_footprint
-      summary: Get spectral footprint
-      description: |
-        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-        with body content must be used.**
-
-        Get spectral footprint. **At least one dimension must have a reduction
-        operation.**
-
-        ***Example 1:***
-        * X, Y: range of pixel coordinates with `AVG` reduction
-        * C: range of channels
-        * Z: single focal plane
-        * T: single timepoint
-
-        Result: Average intensity of given pixels for each channel in the range, at given focal plane and timepoint.
-
-
-        ***Example 2:***
-        * X, Y: range of pixel coordinates
-        * C: range of channels with `MAX` reduction
-        * Z: range of focal planes
-        * T: range of timepoints
-
-        Result: Maximum intensity across all given channels for each (Z,T) plane combination.
-      tags:
-        - Hyperspectral
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - title: region-by-zoom-and-region
-                  allOf:
-                    - $ref: '#/components/schemas/input-zoom-region'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: region-by-level-and-region
-                  allOf:
-                    - $ref: '#/components/schemas/input-level-region'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: region-by-zoom-and-tile-index
-                  allOf:
-                    - $ref: '#/components/schemas/target-zoom-tile-index'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: region-by-level-and-tile-index
-                  allOf:
-                    - $ref: '#/components/schemas/target-level-tile-index'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: region-by-zoom-and-tile-coordinates
-                  allOf:
-                    - $ref: '#/components/schemas/target-zoom-tile-coordinates'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-                - title: region-by-level-and-tile-coordinates
-                  allOf:
-                    - $ref: '#/components/schemas/target-level-tile-coordinates'
-                    - $ref: '#/components/schemas/footprint-plane-selection'
-      responses:
-        200:
-          $ref: '#/components/responses/hyperspectral-footprint'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/problem-bad-request'
-        404:
-          $ref: '#/components/responses/problem-not-found'
-  /image/{filepath}/spectral/window:
-    post:
-      operationId: pims.api.spectral.show_spectral_window
-      summary: Get spectral window
-      description: |
-        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-        with body content must be used.**
-
-        Get spectral window. The input spatial region is given in the same way as regular windows. In output, it is
-        returned the spectrum of each pixel belonging to the given spatial region.
-      tags:
-        - Hyperspectral
-      parameters:
-        - $ref: '#/components/parameters/path-filepath'
-        - $ref: '#/components/parameters/header-etag'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              oneOf:
-                - title: region-by-zoom-and-region
-                  allOf:
-                    - $ref: '#/components/schemas/input-zoom-region'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: region-by-level-and-region
-                  allOf:
-                    - $ref: '#/components/schemas/input-level-region'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: region-by-zoom-and-tile-index
-                  allOf:
-                    - $ref: '#/components/schemas/target-zoom-tile-index'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: region-by-level-and-tile-index
-                  allOf:
-                    - $ref: '#/components/schemas/target-level-tile-index'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: region-by-zoom-and-tile-coordinates
-                  allOf:
-                    - $ref: '#/components/schemas/target-zoom-tile-coordinates'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-                - title: region-by-level-and-tile-coordinates
-                  allOf:
-                    - $ref: '#/components/schemas/target-level-tile-coordinates'
-                    - $ref: '#/components/schemas/spectral-window-plane-selection'
-      responses:
-        200:
-          $ref: '#/components/responses/hyperspectral-window'
-        304:
-          $ref: '#/components/responses/not-modified'
-        400:
-          $ref: '#/components/responses/problem-bad-request'
-        404:
-          $ref: '#/components/responses/problem-not-found'
+#  /image/{filepath}/annotation/spectra:
+#    post:
+#      operationId: pims.api.annotation.show_spectra
+#      summary: Get annotation spectra
+#      description: |
+#        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+#        with body content must be used.**
+#
+#        Get spectrum of every pixels belonging to the annotation(s).
+#      tags:
+#        - Annotations
+#      parameters:
+#        - $ref: '#/components/parameters/path-filepath'
+#        - $ref: '#/components/parameters/header-etag'
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              oneOf:
+#                - title: spectra-by-length
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-length-object-required'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: spectra-by-width
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-width-object-required'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: spectra-by-height
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-height-object-required'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: spectra-by-zoom
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-zoom-object-required'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: spectra-by-level
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-level-object-required'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/hyperspectral-window'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        400:
+#          $ref: '#/components/responses/problem-bad-request'
+#        404:
+#          $ref: '#/components/responses/problem-not-found'
+#  /image/{filepath}/annotation/footprint:
+#    post:
+#      operationId: pims.api.annotation.show_footprint
+#      summary: Get annotation spectral footprint
+#      description: |
+#        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+#        with body content must be used.**
+#
+#        Get annotation spectral footprint. **At least one dimension must have a reduction
+#        operation.**
+#
+#        The input spatial region is given by the rectangular envelope of all geometries.
+#      tags:
+#        - Annotations
+#      parameters:
+#        - $ref: '#/components/parameters/path-filepath'
+#        - $ref: '#/components/parameters/header-etag'
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              oneOf:
+#                - title: footprint-by-length
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-length-object-required'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: footprint-by-width
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-width-object-required'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: footprint-by-height
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-height-object-required'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: footprint-by-zoom
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-zoom-object-required'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: footprint-by-level
+#                  allOf:
+#                    - $ref: '#/components/schemas/annotations-object-basis'
+#                    - $ref: '#/components/schemas/target-level-object-required'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/hyperspectral-footprint'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        400:
+#          $ref: '#/components/responses/problem-bad-request'
+#        404:
+#          $ref: '#/components/responses/problem-not-found'
+#  /image/{filepath}/spectral/footprint:
+#    post:
+#      operationId: pims.api.spectral.show_spectral_footprint
+#      summary: Get spectral footprint
+#      description: |
+#        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+#        with body content must be used.**
+#
+#        Get spectral footprint. **At least one dimension must have a reduction
+#        operation.**
+#
+#        ***Example 1:***
+#        * X, Y: range of pixel coordinates with `AVG` reduction
+#        * C: range of channels
+#        * Z: single focal plane
+#        * T: single timepoint
+#
+#        Result: Average intensity of given pixels for each channel in the range, at given focal plane and timepoint.
+#
+#
+#        ***Example 2:***
+#        * X, Y: range of pixel coordinates
+#        * C: range of channels with `MAX` reduction
+#        * Z: range of focal planes
+#        * T: range of timepoints
+#
+#        Result: Maximum intensity across all given channels for each (Z,T) plane combination.
+#      tags:
+#        - Hyperspectral
+#      parameters:
+#        - $ref: '#/components/parameters/path-filepath'
+#        - $ref: '#/components/parameters/header-etag'
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              oneOf:
+#                - title: region-by-zoom-and-region
+#                  allOf:
+#                    - $ref: '#/components/schemas/input-zoom-region'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: region-by-level-and-region
+#                  allOf:
+#                    - $ref: '#/components/schemas/input-level-region'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: region-by-zoom-and-tile-index
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-zoom-tile-index'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: region-by-level-and-tile-index
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-level-tile-index'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: region-by-zoom-and-tile-coordinates
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-zoom-tile-coordinates'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#                - title: region-by-level-and-tile-coordinates
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-level-tile-coordinates'
+#                    - $ref: '#/components/schemas/footprint-plane-selection'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/hyperspectral-footprint'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        400:
+#          $ref: '#/components/responses/problem-bad-request'
+#        404:
+#          $ref: '#/components/responses/problem-not-found'
+#  /image/{filepath}/spectral/window:
+#    post:
+#      operationId: pims.api.spectral.show_spectral_window
+#      summary: Get spectral window
+#      description: |
+#        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+#        with body content must be used.**
+#
+#        Get spectral window. The input spatial region is given in the same way as regular windows. In output, it is
+#        returned the spectrum of each pixel belonging to the given spatial region.
+#      tags:
+#        - Hyperspectral
+#      parameters:
+#        - $ref: '#/components/parameters/path-filepath'
+#        - $ref: '#/components/parameters/header-etag'
+#      requestBody:
+#        required: true
+#        content:
+#          application/json:
+#            schema:
+#              oneOf:
+#                - title: region-by-zoom-and-region
+#                  allOf:
+#                    - $ref: '#/components/schemas/input-zoom-region'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: region-by-level-and-region
+#                  allOf:
+#                    - $ref: '#/components/schemas/input-level-region'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: region-by-zoom-and-tile-index
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-zoom-tile-index'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: region-by-level-and-tile-index
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-level-tile-index'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: region-by-zoom-and-tile-coordinates
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-zoom-tile-coordinates'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#                - title: region-by-level-and-tile-coordinates
+#                  allOf:
+#                    - $ref: '#/components/schemas/target-level-tile-coordinates'
+#                    - $ref: '#/components/schemas/spectral-window-plane-selection'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/hyperspectral-window'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        400:
+#          $ref: '#/components/responses/problem-bad-request'
+#        404:
+#          $ref: '#/components/responses/problem-not-found'
   /file/{filepath}/info:
     get:
       operationId: pims.api.metadata.show_file
@@ -1606,93 +1606,93 @@ paths:
                 $ref: '#/components/schemas/format'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /colormaps:
-    get:
-      operationId: pims.api.colormaps.list_colormaps
-      description: List of pre-defined colormaps in PIMS
-      summary: List all colormaps
-      tags:
-        - Colormaps
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  size:
-                    $ref: '#/components/schemas/collection-size'
-                  items:
-                    description: Array of colormaps
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/colormap'
-  /colormaps/{colormap_id}:
-    get:
-      operationId: pims.api.colormaps.show_colormap
-      description: Get a pre-defined colormap in PIMS
-      summary: Get a colormap
-      tags:
-        - Colormaps
-      parameters:
-        - name: colormap_id
-          in: path
-          required: true
-          description: Colormap unique identifier
-          schema:
-            $ref: '#/components/schemas/colormap-id'
-      responses:
-        200:
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/colormap'
-        404:
-          $ref: '#/components/responses/problem-not-found'
-  /colormaps/{colormap_id}/representation:
-    get:
-      operationId: pims.api.colormaps.show_colormap_representation
-      description: Get a graphic representation of a colormap
-      summary: Get a colormap representation
-      tags:
-        - Colormaps
-      parameters:
-        - name: colormap_id
-          in: path
-          required: true
-          description: Colormap unique identifier
-          schema:
-            $ref: '#/components/schemas/colormap-id'
-        - name: width
-          in: query
-          required: false
-          description: Width of the graphic representation, in pixels.
-          schema:
-            type: integer
-            format: int32
-            default: 100
-            maximum: 512
-            minimum: 10
-        - name: height
-          in: query
-          required: false
-          description: Height of the graphic representation, in pixels.
-          schema:
-            type: integer
-            format: int32
-            default: 32
-            maximum: 512
-            minimum: 1
-        - $ref: '#/components/parameters/header-etag'
-      responses:
-        200:
-          $ref: '#/components/responses/colormap-representation'
-        304:
-          $ref: '#/components/responses/not-modified'
-        404:
-          $ref: '#/components/responses/problem-not-found'
+#  /colormaps:
+#    get:
+#      operationId: pims.api.colormaps.list_colormaps
+#      description: List of pre-defined colormaps in PIMS
+#      summary: List all colormaps
+#      tags:
+#        - Colormaps
+#      responses:
+#        200:
+#          description: OK
+#          content:
+#            application/json:
+#              schema:
+#                type: object
+#                properties:
+#                  size:
+#                    $ref: '#/components/schemas/collection-size'
+#                  items:
+#                    description: Array of colormaps
+#                    type: array
+#                    items:
+#                      $ref: '#/components/schemas/colormap'
+#  /colormaps/{colormap_id}:
+#    get:
+#      operationId: pims.api.colormaps.show_colormap
+#      description: Get a pre-defined colormap in PIMS
+#      summary: Get a colormap
+#      tags:
+#        - Colormaps
+#      parameters:
+#        - name: colormap_id
+#          in: path
+#          required: true
+#          description: Colormap unique identifier
+#          schema:
+#            $ref: '#/components/schemas/colormap-id'
+#      responses:
+#        200:
+#          description: OK
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/colormap'
+#        404:
+#          $ref: '#/components/responses/problem-not-found'
+#  /colormaps/{colormap_id}/representation:
+#    get:
+#      operationId: pims.api.colormaps.show_colormap_representation
+#      description: Get a graphic representation of a colormap
+#      summary: Get a colormap representation
+#      tags:
+#        - Colormaps
+#      parameters:
+#        - name: colormap_id
+#          in: path
+#          required: true
+#          description: Colormap unique identifier
+#          schema:
+#            $ref: '#/components/schemas/colormap-id'
+#        - name: width
+#          in: query
+#          required: false
+#          description: Width of the graphic representation, in pixels.
+#          schema:
+#            type: integer
+#            format: int32
+#            default: 100
+#            maximum: 512
+#            minimum: 10
+#        - name: height
+#          in: query
+#          required: false
+#          description: Height of the graphic representation, in pixels.
+#          schema:
+#            type: integer
+#            format: int32
+#            default: 32
+#            maximum: 512
+#            minimum: 1
+#        - $ref: '#/components/parameters/header-etag'
+#      responses:
+#        200:
+#          $ref: '#/components/responses/colormap-representation'
+#        304:
+#          $ref: '#/components/responses/not-modified'
+#        404:
+#          $ref: '#/components/responses/problem-not-found'
   /filters:
     get:
       operationId: pims.api.filters.list_filters
@@ -1986,7 +1986,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/multiple-channel-indexes'
+        $ref: '#/components/schemas/single-channel-index'
     path-channel-selection:
       name: channels
       in: path
@@ -1994,7 +1994,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/multiple-channel-indexes'
+        $ref: '#/components/schemas/single-channel-index'
     query-z-slice-selection:
       name: z_slices
       in: query
@@ -2002,7 +2002,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/multiple-z-slice-indexes'
+        $ref: '#/components/schemas/single-z-slice-index'
     path-z-slice-selection:
       name: z_slices
       in: path
@@ -2010,7 +2010,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/multiple-z-slice-indexes'
+        $ref: '#/components/schemas/single-z-slice-index'
     query-timepoint-selection:
       name: timepoints
       in: query
@@ -2018,7 +2018,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/multiple-timepoint-indexes'
+        $ref: '#/components/schemas/single-timepoint-index'
     path-timepoint-selection:
       name: timepoints
       in: path
@@ -2026,7 +2026,7 @@ components:
       style: form
       explode: false
       schema:
-        $ref: '#/components/schemas/multiple-timepoint-indexes'
+        $ref: '#/components/schemas/single-timepoint-index'
     query-c-reduction:
       name: c_reduction
       in: query
@@ -2201,7 +2201,7 @@ components:
     single-channel-index:
       type: integer
       format: int32
-      description: A single channel index
+      description: A single channel index. **By default**, all channels are considered.
       minimum: 0
     range-channel-indexes:
       type: string
@@ -2218,16 +2218,16 @@ components:
         The reduction operation to merge the channels can be set in `c_reduction` parameter.
       oneOf:
         - $ref: '#/components/schemas/single-channel-index'
-        - $ref: '#/components/schemas/range-channel-indexes'
-        - type: array
-          items:
-            oneOf:
-              - $ref: '#/components/schemas/single-channel-index'
-              - $ref: '#/components/schemas/range-channel-indexes'
+#        - $ref: '#/components/schemas/range-channel-indexes'
+#        - type: array
+#          items:
+#            oneOf:
+#              - $ref: '#/components/schemas/single-channel-index'
+#              - $ref: '#/components/schemas/range-channel-indexes'
     single-z-slice-index:
       type: integer
       format: int32
-      description: A single focal plane index
+      description: A single focal plane index. **By default**, the median focal plane is considered.
       minimum: 0
     range-z-slice-indexes:
       type: string
@@ -2244,16 +2244,16 @@ components:
         The reduction operation to merge the focal planes can be set in `z_reduction` parameter.
       oneOf:
         - $ref: '#/components/schemas/single-z-slice-index'
-        - $ref: '#/components/schemas/range-z-slice-indexes'
-        - type: array
-          items:
-            oneOf:
-              - $ref: '#/components/schemas/single-z-slice-index'
-              - $ref: '#/components/schemas/range-z-slice-indexes'
+#        - $ref: '#/components/schemas/range-z-slice-indexes'
+#        - type: array
+#          items:
+#            oneOf:
+#              - $ref: '#/components/schemas/single-z-slice-index'
+#              - $ref: '#/components/schemas/range-z-slice-indexes'
     single-timepoint-index:
       type: integer
       format: int32
-      description: A single timepoint index
+      description: A single timepoint index. **By default**, the first timepoint considered.
       minimum: 0
     range-timepoint-indexes:
       type: string
@@ -2270,12 +2270,12 @@ components:
         The reduction operation to merge the timepoints can be set in `t_reduction` parameter.
       oneOf:
         - $ref: '#/components/schemas/single-timepoint-index'
-        - $ref: '#/components/schemas/range-timepoint-indexes'
-        - type: array
-          items:
-            oneOf:
-              - $ref: '#/components/schemas/single-timepoint-index'
-              - $ref: '#/components/schemas/range-timepoint-indexes'
+#        - $ref: '#/components/schemas/range-timepoint-indexes'
+#        - type: array
+#          items:
+#            oneOf:
+#              - $ref: '#/components/schemas/single-timepoint-index'
+#              - $ref: '#/components/schemas/range-timepoint-indexes'
 
     # Dimensionality reduction
     channel-reduction:
@@ -2321,17 +2321,17 @@ components:
       type: object
       properties:
         channels:
-          $ref: '#/components/schemas/multiple-channel-indexes'
+          $ref: '#/components/schemas/single-channel-index'
         z_slices:
-          $ref: '#/components/schemas/multiple-z-slice-indexes'
+          $ref: '#/components/schemas/single-z-slice-index'
         timepoints:
-          $ref: '#/components/schemas/multiple-timepoint-indexes'
-        c_reduction:
-          $ref: '#/components/schemas/channel-reduction'
-        z_reduction:
-          $ref: '#/components/schemas/z-slice-reduction'
-        t_reduction:
-          $ref: '#/components/schemas/timepoint-reduction'
+          $ref: '#/components/schemas/single-timepoint-index'
+#        c_reduction:
+#          $ref: '#/components/schemas/channel-reduction'
+#        z_reduction:
+#          $ref: '#/components/schemas/z-slice-reduction'
+#        t_reduction:
+#          $ref: '#/components/schemas/timepoint-reduction'
     spectral-window-plane-selection:
       type: object
       properties:
@@ -2537,22 +2537,22 @@ components:
       description: A unique identifier for an image filter
       example: 'OTSU'
     filter-id-list:
-      x-single-or-array: true
+#      x-single-or-array: true
       description: |
         An image filter is used to change the appareance of an image and helps at understanding the
         source image.
 
         Valid filter names can be found with the endpoint `/filters`.
-      oneOf:
+      allOf:
         - $ref: '#/components/schemas/filter-id'
-        - type: array
-          description: |
-            Expected format is an array of size:
-            * 1 to apply the same filter to all channels
-            * equals to the number of channels used to render the response, in order to apply a filter per channel.
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/filter-id'
+#        - type: array
+#          description: |
+#            Expected format is an array of size:
+#            * 1 to apply the same filter to all channels
+#            * equals to the number of channels used to render the response, in order to apply a filter per channel.
+#          minItems: 1
+#          items:
+#            $ref: '#/components/schemas/filter-id'
     filter:
       type: object
       description: |
@@ -2592,20 +2592,20 @@ components:
 
         If `gamma > 1`, medium-intensity objects become fainter while bright objects do not.
       x-default: 1
-      x-single-or-array: true
-      oneOf:
+#      x-single-or-array: true
+      allOf:
         - allOf:
           - default: 1
           - $ref: '#/components/schemas/gamma'
-        - type: array
-          description: |
-            Expected format is an array of size:
-            * 1 to apply the gamma correction to all channels
-            * equals to the number of channels used to render the response in order to apply the gamma correction
-            per channel.
-          minItems: 1
-          items:
-            $ref: '#/components/schemas/gamma'
+#        - type: array
+#          description: |
+#            Expected format is an array of size:
+#            * 1 to apply the gamma correction to all channels
+#            * equals to the number of channels used to render the response in order to apply the gamma correction
+#            per channel.
+#          minItems: 1
+#          items:
+#            $ref: '#/components/schemas/gamma'
     log:
       type: boolean
       default: false
@@ -2647,8 +2647,8 @@ components:
           $ref: '#/components/schemas/min-intensity-selection-list'
         max_intensities:
           $ref: '#/components/schemas/max-intensity-selection-list'
-        colormaps:
-          $ref: '#/components/schemas/colormap-id-list'
+#        colormaps:
+#          $ref: '#/components/schemas/colormap-id-list'
         filters:
           $ref: '#/components/schemas/filter-id-list'
         gammas:
@@ -2662,8 +2662,8 @@ components:
           $ref: '#/components/schemas/min-intensity-selection-list-default-auto-image'
         max_intensities:
           $ref: '#/components/schemas/max-intensity-selection-list-default-auto-image'
-        colormaps:
-          $ref: '#/components/schemas/colormap-id-list'
+#        colormaps:
+#          $ref: '#/components/schemas/colormap-id-list'
         filters:
           $ref: '#/components/schemas/filter-id-list'
         gammas:

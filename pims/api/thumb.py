@@ -27,7 +27,7 @@ from pims.processing.image_response import ThumbnailResponse
 
 
 def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
-               c_reduction=None, z_reduction=None, t_reduction=None,
+               c_reduction="ADD", z_reduction=None, t_reduction=None,
                width=None, height=None, length=None,
                min_intensities=None, max_intensities=None, colormaps=None, filters=None,
                gammas=None, log=None, use_precomputed=None):
@@ -57,7 +57,9 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
 
     array_parameters = (gammas, filters, colormaps, max_intensities, max_intensities)
     for array_parameter in array_parameters:
-        check_array_size(array_parameter, allowed=[1, len(channels)], nullable=True)
+        # check_array_size(array_parameter, allowed=[1, len(channels)], nullable=True)
+        # Currently, we only allow 1 parameter to be applied to all channels
+        check_array_size(array_parameter, allowed=[1], nullable=True)
 
     # TODO: verify maximum allowed values for min_intensities
     # TODO: verify maximum allowed values for max_intensities
