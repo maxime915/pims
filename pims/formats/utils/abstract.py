@@ -38,6 +38,7 @@ class AbstractFormat(ABC):
         self._path = path
 
         self._imd = None
+        self._channels_stats = None
 
     @classmethod
     def init(cls):
@@ -148,3 +149,12 @@ class AbstractFormat(ABC):
         p.insert_tier(self._imd.width, self._imd.height,
                       (self._imd.width, self._imd.height))
         return p
+
+    @abstractmethod
+    def compute_channels_stats(self):
+        pass
+
+    def get_channels_stats(self):
+        if not self._channels_stats:
+            self.compute_channels_stats()
+        return self._channels_stats

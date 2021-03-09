@@ -68,9 +68,11 @@ class ThumbnailResponse(AdjustedImageResponse):
         c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
         img = self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=self.use_precomputed)
         img = ResizeImgOp(self.out_width, self.out_height)(img)
-        img = GammaImgOp(self.gamma[0])(img)
-        img = LogImgOp(self.log)(img)
-        img = RescaleImgOp()(img)
+        img = CastImgOp('float64')(img)
+        img = GammaImgOp(self.gammas[0])(img)
+
+        img = RescaleImgOp(self.in_image, self.min_intensities, self.max_intensities)(img)
+        img = LogImgOp(self.in_image, self.log)(img)
         return img
 
 

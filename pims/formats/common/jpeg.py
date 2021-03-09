@@ -15,6 +15,7 @@ import logging
 import numpy as np
 
 from PIL import Image as PILImage
+from pims.processing.adapters import vips_to_numpy
 from pyvips import Image as VIPSImage, Size
 from pims.api.exceptions import MetadataParsingProblem
 from pims.app import UNIT_REGISTRY
@@ -110,3 +111,13 @@ class JPEGFormat(AbstractFormat):
 
     def read_thumbnail(self, out_width, out_height, *args, **kwargs):
         return self._vips.thumbnail_image(out_width, height=out_height, size=Size.FORCE)
+
+    def compute_channels_stats(self):
+        vips_stats = self._vips.stats()
+        np_stats = vips_to_numpy(vips_stats)
+        stats = {
+            channel: dict(minimum=np_stats[channel + 1, 0], maximum=np_stats[channel + 1, 1])
+            for channel in range(np_stats.shape[0] - 1)
+        }
+        self._channels_stats = stats
+        return stats

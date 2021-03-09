@@ -117,6 +117,13 @@ class Image(Path):
         except AttributeError:
             return None
 
+    def channel_stats(self, c):
+        return self.channels_stats().get(c)
+
+    def channels_stats(self):
+        # TODO: implement from histograms and use following impl as fallback
+        return self._format.get_channels_stats()
+
     def tile(self, level, tile_index, c=None, z=None, t=None):
         """
         Get tile at specified level and tile index for all (C,Z,T) combinations.

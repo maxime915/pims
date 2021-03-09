@@ -13,8 +13,9 @@
 # * limitations under the License.
 
 from pyvips import Image as VIPSImage, Size as VIPSSize
+import numpy as np
 
-from pims.formats.utils.vips import format_to_vips_suffix
+from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format
 from pims.processing.adapters import imglib_adapters
 
 
@@ -57,6 +58,16 @@ class OutputProcessor(ImageOp):
         pass
 
 
+class CastImgOp(ImageOp):
+    def __init__(self, dtype):
+        super().__init__()
+        self._impl[VIPSImage] = self._vips_impl
+        self.dtype = dtype
+
+    def _vips_impl(self, img, *args, **kwargs):
+        return img.cast(dtype_to_vips_format[str(self.dtype)])
+
+
 class ResizeImgOp(ImageOp):
     def __init__(self, width, height):
         super().__init__()
@@ -71,24 +82,70 @@ class ResizeImgOp(ImageOp):
 
 
 class LogImgOp(ImageOp):
-    def __init__(self, do):
+    """
+    Apply logarithmic scale on image.
+    Formula: out = ln(1+ in) * max_per_channel / ln(1 + max_per_channel)
+
+    References
+    ----------
+    * Icy Logarithmic 2D viewer plugin (http://icy.bioimageanalysis.org/plugin/logarithmic-2d-viewer/)
+    """
+
+    def __init__(self, in_image, do):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
+        self._impl[np.ndarray] = self._numpy_impl
+        self.in_image = in_image
         self.do = do
 
+    def ratio(self):
+        stats = self.in_image.channels_stats()
+        max_per_channel = np.asarray([stats[i]["maximum"] for i in range(self.in_image.n_channels)])
+        ratio = max_per_channel / np.log1p(max_per_channel)
+        return ratio.flatten()
+
     def _vips_impl(self, img, *args, **kwargs):
-        return img.log() if self.do else img
+        if not self.do:
+            return img
+        return img.linear([1], [1]).log().linear(list(self.ratio()), [0])
+
+    def _numpy_impl(self, img, *args, **kwargs):
+        if not self.do:
+            return img
+        return np.log1p(img) * self.ratio()
 
 
 class RescaleImgOp(ImageOp):
-    def __init__(self):
+    def __init__(self, in_image, min_intensities, max_intensities):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
+        self.in_image = in_image
+        self.mins = min_intensities
+        self.maxs = max_intensities
+
+    def do(self):
+        return len(self.mins + self.maxs) > 0
+
+    def same_min(self):
+        return len(set(self.mins)) == 1
+
+    def same_max(self):
+        return len(set(self.maxs)) == 1
+
+    def same_minmax(self):
+        return len(set(self.mins + self.maxs)) == 1
 
     def _vips_impl(self, img):
         # TODO
-        # Rescale to 0-255
-        return img.scaleimage()
+        if not self.do:
+            return img
+
+        if (self.same_minmax() and self.mins[0] == "AUTO_IMAGE" and self.in_image.significant_bits > 8) or \
+                (self.same_minmax() and self.mins[0] == "STRETCH_IMAGE"):
+            # Rescale to 0-255
+            return img.scaleimage()
+
+        return img
 
 
 class GammaImgOp(ImageOp):
