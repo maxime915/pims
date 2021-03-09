@@ -66,7 +66,26 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     # TODO: verify colormap names are valid
     # TODO: verify filter names are valid
 
-    thumb = ThumbnailResponse(in_image, out_width, out_height, out_format, log, use_precomputed, gammas)
+    thumb_args = {
+        "in_image": in_image,
+        "channels": channels,
+        "z_slices": z_slices,
+        "timepoints": timepoints,
+        "c_reduction": c_reduction,
+        "z_reduction": z_reduction,
+        "t_reduction": t_reduction,
+        "out_width": out_width,
+        "out_height": out_height,
+        "out_format": out_format,
+        "gammas": gammas,
+        "filters": filters,
+        "colormaps": colormaps,
+        "min_intensities": min_intensities,
+        "max_intensities": max_intensities,
+        "log": log,
+        "use_precomputed": use_precomputed
+    }
+    thumb = ThumbnailResponse(**thumb_args)
     fp = BytesIO(thumb.get_response_buffer())
     fp.seek(0)
 

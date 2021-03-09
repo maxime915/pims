@@ -12,12 +12,21 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp
+from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp
 
 
 class ImageResponse:
-    def __init__(self, in_image, out_width, out_height, out_format, **kwargs):
+    def __init__(self, in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
+                 c_reduction, z_reduction, t_reduction, **kwargs):
         self.in_image = in_image
+
+        self.channels = channels
+        self.z_slices = z_slices
+        self.timepoints = timepoints
+        self.c_reduction = c_reduction
+        self.z_reduction = z_reduction
+        self.t_reduction = t_reduction
+
         self.out_width = out_width
         self.out_height = out_height
         self.out_format = out_format
@@ -31,15 +40,33 @@ class ImageResponse:
         return OutputProcessor(self.out_format, **self.out_format_params)(self.process())
 
 
-class ThumbnailResponse(ImageResponse):
-    def __init__(self, in_image, out_width, out_height, out_format, log, use_precomputed, gamma, **kwargs):
-        super().__init__(in_image, out_width, out_height, out_format, **kwargs)
+class AdjustedImageResponse(ImageResponse):
+
+    def __init__(self, in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
+                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                 min_intensities, max_intensities, log, **kwargs):
+        super().__init__(in_image, out_width, out_height, out_format, channels, z_slices, timepoints, c_reduction,
+                         z_reduction, t_reduction, **kwargs)
+        self.gammas = gammas
+        self.filters = filters
+        self.colormaps = colormaps
+        self.min_intensities = min_intensities
+        self.max_intensities = max_intensities
         self.log = log
+
+
+class ThumbnailResponse(AdjustedImageResponse):
+    def __init__(self, in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
+                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                 min_intensities, max_intensities, log, use_precomputed, **kwargs):
+        super().__init__(in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
+                         c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                         min_intensities, max_intensities, log, **kwargs)
         self.use_precomputed = use_precomputed
-        self.gamma = gamma
 
     def process(self):
-        img = self.in_image.thumbnail(self.out_width, self.out_height, precomputed=self.use_precomputed)
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        img = self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=self.use_precomputed)
         img = ResizeImgOp(self.out_width, self.out_height)(img)
         img = GammaImgOp(self.gamma[0])(img)
         img = LogImgOp(self.log)(img)
@@ -65,4 +92,5 @@ class AssociatedResponse(ImageResponse):
     def process(self):
         img = self.get_raw_img()
         img = ResizeImgOp(self.out_width, self.out_height)(img)
+        img = RescaleImgOp()(img)
         return img
