@@ -16,7 +16,7 @@ from connexion.exceptions import BadRequestProblem
 
 from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions, parse_planes, \
-    check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions
+    check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds
 from tests.conftest import not_raises
 
 
@@ -47,7 +47,7 @@ def test_parse_planes():
     assert parse_planes([1, 2, 200], 10) == {1, 2}
     assert parse_planes([2, '5:'], 8) == {2, 5, 6, 7}
     assert parse_planes([':'], 3) == {0, 1, 2}
-    assert parse_planes(None, 10, default=[1, 2]) == {1, 2}
+    assert parse_planes([], 10, default=[1, 2]) == {1, 2}
 
     with pytest.raises(BadRequestProblem):
         parse_planes([2, '5:', 'foo'], 10)
@@ -79,7 +79,7 @@ def test_ensure_list():
     assert ensure_list((2, 4)) == [(2, 4)]
     assert ensure_list("a") == ['a']
     assert ensure_list([2]) == [2]
-    assert ensure_list(None) is None
+    assert ensure_list(None) == []
 
 
 def test_safeguard_output_dimensions():
@@ -93,3 +93,38 @@ def test_safeguard_output_dimensions():
 
     with not_raises(TooLargeOutputProblem):
         assert safeguard_output_dimensions('SAFE_REJECT', 100, 10, 99)
+
+
+def test_parse_intensity_bounds():
+    class FakeImage:
+        def __init__(self, significant_bits, n_channels):
+            self.n_channels = n_channels
+            self.significant_bits = significant_bits
+
+        def channel_stats(self, channel):
+            return dict(minimum=channel, maximum=channel + 10)
+
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [], []) == ([0], [255])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0], [255])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [100]) == ([10], [100])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [1000]) == ([10], [255])
+
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [], []) == ([0], [65535])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100]) == ([10], [100])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [1000]) == ([10], [1000])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100000]) == ([10], [65535])
+
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0, 0], [255, 255])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [255, 20])
+
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [1000, 20])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, 5], [100000, 20]) == ([10, 5], [65535, 20])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, "AUTO_IMAGE"], [100000, 20]) == ([10, 1], [65535, 20])

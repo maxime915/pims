@@ -19,7 +19,7 @@ from flask import send_file, current_app
 from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
 from pims.api.utils.image_parameter import get_output_dimensions, get_channel_indexes, \
     get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
-    safeguard_output_dimensions
+    safeguard_output_dimensions, parse_intensity_bounds
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
 from pims.api.utils.header import add_image_size_limit_header
@@ -55,14 +55,16 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     timepoints = get_timepoint_indexes(in_image, timepoints)
     check_reduction_validity(timepoints, t_reduction, 'timepoints')
 
-    array_parameters = (gammas, filters, colormaps, max_intensities, max_intensities)
+    array_parameters = (min_intensities, max_intensities)
     for array_parameter in array_parameters:
-        # check_array_size(array_parameter, allowed=[1, len(channels)], nullable=True)
-        # Currently, we only allow 1 parameter to be applied to all channels
-        check_array_size(array_parameter, allowed=[1], nullable=True)
+        check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
+    min_intensities, max_intensities = parse_intensity_bounds(in_image, channels, min_intensities, max_intensities)
 
-    # TODO: verify maximum allowed values for min_intensities
-    # TODO: verify maximum allowed values for max_intensities
+    array_parameters = (gammas, filters, colormaps)
+    for array_parameter in array_parameters:
+        # Currently, we only allow 1 parameter to be applied to all channels
+        check_array_size(array_parameter, allowed=[0, 1], nullable=False)
+
     # TODO: verify colormap names are valid
     # TODO: verify filter names are valid
 

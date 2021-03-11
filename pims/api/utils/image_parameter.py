@@ -140,7 +140,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
 
     Parameters
     ----------
-    planes_to_parse : list or None
+    planes_to_parse : list
         List of plane indexes and ranges to parse.
     n_planes : int
         Number of planes. It is the maximum output set size.
@@ -162,7 +162,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
     """
     plane_indexes = list()
 
-    if not planes_to_parse:
+    if len(planes_to_parse) == 0:
         return OrderedSet(ensure_list(default))
 
     for plane in planes_to_parse:
@@ -279,4 +279,73 @@ def ensure_list(value):
     """
     if value is not None:
         return value if type(value) is list else [value]
-    return value
+    return []
+
+
+def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities, allow_none=False):
+    """
+    Parse intensity parameters according to a specific image.
+
+    Parameters
+    ----------
+    image : Image
+        Input image used to determine minimum and maximum admissible values per channel.
+    out_channels: list of int
+        Channel indexes expected in the output, used for intensities.
+    min_intensities : list of int (optional) or str (optional)
+        List of minimum intensities. See API spec for admissible string constants.
+    max_intensities : list of int (optional) or str (optional)
+        List of maximum intensities. See API spec for admissible string constants.
+    allow_none : bool
+        Whether the NONE string constant is admissible or not.
+
+    Returns
+    -------
+    parsed_min_intensities : list of int
+        Parsed min intensities. List size is the number of channels in the image output.
+    parsed_max_intensities : list of int
+        Parsed max intensities. List size is the number of channels in the image output.
+    """
+    bit_depth = image.significant_bits
+    max_allowed_intensity = 2 ** bit_depth - 1
+    n_out_channels = len(out_channels)
+
+    if len(min_intensities) == 0:
+        min_intensities = [0] * n_out_channels
+    elif len(min_intensities) == 1:
+        min_intensities = min_intensities * n_out_channels
+
+    if len(max_intensities) == 0:
+        max_intensities = [max_allowed_intensity] * n_out_channels
+    elif len(max_intensities) == 1:
+        max_intensities = max_intensities * n_out_channels
+    
+    def parse_intensity(c, bound_value, bound_default, bound_kind):
+        if type(bound_value) is int:
+            if bound_value < 0:
+                return 0
+            elif bound_value > max_allowed_intensity:
+                return max_allowed_intensity
+            else:
+                return intensity
+        else:
+            if allow_none and bound_value == "NONE":
+                return bound_default
+            elif bound_value == "AUTO_IMAGE":
+                if image.significant_bits <= 8:
+                    return bound_default
+                else:
+                    return image.channel_stats(c)[bound_kind]
+            elif bound_value == "STRETCH_IMAGE":
+                return image.channel_stats(c)[bound_kind]
+            else:
+                # TODO: AUTO_PLANE, STRETCH_PLANE
+                return bound_default
+
+    for idx, (channel, intensity) in enumerate(zip(out_channels, min_intensities)):
+        min_intensities[idx] = parse_intensity(channel, intensity, 0, "minimum")
+
+    for idx, (channel, intensity) in enumerate(zip(out_channels, max_intensities)):
+        max_intensities[idx] = parse_intensity(channel, intensity, max_allowed_intensity, "maximum")
+
+    return min_intensities, max_intensities
