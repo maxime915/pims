@@ -183,7 +183,7 @@ class RescaleImgOp(ImageOp):
     Attributes
     ----------
     bitdepth: int
-        Exponent used to rescale values so that out = in * pow(2, bitdepth)
+        Exponent used to rescale values so that out = in * (pow(2, bitdepth) - 1)
     """
     def __init__(self, bitdepth):
         super().__init__()
@@ -192,7 +192,7 @@ class RescaleImgOp(ImageOp):
         self.bitdepth = bitdepth
 
     def factor(self):
-        return 2 ** self.bitdepth
+        return (2 ** self.bitdepth) - 1
 
     def _vips_impl(self, img):
         return img.linear([self.factor()], [0])

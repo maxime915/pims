@@ -50,7 +50,7 @@ def _test_imgop(np_image, vips_image, op, expected, exact_equal=False, rtol=1e-0
 def test_rescale_img_op(bitdepth, channels):
     np_image, vips_image = fake_normalized_image(50, 100, channels)
     rescale = RescaleImgOp(bitdepth)
-    expected = np_image * 2 ** bitdepth
+    expected = np_image * ((2 ** bitdepth) - 1)
 
     _test_imgop(np_image, vips_image, rescale, expected, exact_equal=True)
 
