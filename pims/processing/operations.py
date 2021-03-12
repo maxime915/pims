@@ -45,11 +45,16 @@ class ImageOp:
         return list(self._impl.keys())
 
     def __call__(self, img, *args, **kwargs):
-        log.info("Apply {} with parameters: {}".format(self.name, self.parameters))
+        start = time.time()
+
         if type(img) not in self.implementations:
             img = imglib_adapters.get((type(img), self.implementations[0]))(img)
 
-        return self._impl[type(img)](img, *args, **kwargs)
+        processed = self._impl[type(img)](img, *args, **kwargs)
+        end = time.time()
+        log.info("Apply {} in {}µs with parameters: {}".format(self.name, round((end - start) / 1e-6, 3),
+                 self.parameters))
+        return processed
 
 
 class OutputProcessor(ImageOp):

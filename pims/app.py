@@ -57,6 +57,14 @@ dictConfig({
         'pyvips.voperation': {
             'level': 'INFO',
             'handlers': ['default'],
+        },
+        'pyvips.vobject': {
+            'level': 'INFO',
+            'handlers': ['default'],
+        },
+        'pyvips.error': {
+            'level': 'INFO',
+            'handlers': ['default'],
         }
     }
 })
