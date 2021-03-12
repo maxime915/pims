@@ -11,25 +11,19 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from pims import PIMS_SLUG_PNG
+from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
+    NormalizeImgOp
 
-from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp
 
-
-class ImageResponse:
-    def __init__(self, in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
-                 c_reduction, z_reduction, t_reduction, **kwargs):
+class View:
+    def __init__(self, in_image, out_format, out_width, out_height, out_bitdepth=8, **kwargs):
         self.in_image = in_image
-
-        self.channels = channels
-        self.z_slices = z_slices
-        self.timepoints = timepoints
-        self.c_reduction = c_reduction
-        self.z_reduction = z_reduction
-        self.t_reduction = t_reduction
 
         self.out_width = out_width
         self.out_height = out_height
         self.out_format = out_format
+        self.out_bitdepth = out_bitdepth
         self.out_format_params = {k.replace('out_format', ''): v
                                   for k, v in kwargs.items() if k.startswith('out_format_')}
 
@@ -37,16 +31,30 @@ class ImageResponse:
         pass
 
     def get_response_buffer(self):
-        return OutputProcessor(self.out_format, **self.out_format_params)(self.process())
+        return OutputProcessor(self.out_format, self.out_bitdepth, **self.out_format_params)(self.process())
 
 
-class AdjustedImageResponse(ImageResponse):
+class MultidimView(View):
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
+                 out_format, out_width, out_height, c_reduction, z_reduction, t_reduction, **kwargs):
+        super().__init__(in_image, out_format, out_width, out_height, **kwargs)
+        self.in_image = in_image
+        self.channels = in_channels
+        self.z_slices = in_z_slices
+        self.timepoints = in_timepoints
 
-    def __init__(self, in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
-                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                 min_intensities, max_intensities, log, **kwargs):
-        super().__init__(in_image, out_width, out_height, out_format, channels, z_slices, timepoints, c_reduction,
-                         z_reduction, t_reduction, **kwargs)
+        self.c_reduction = c_reduction
+        self.z_reduction = z_reduction
+        self.t_reduction = t_reduction
+
+
+class ProcessedView(MultidimView):
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                 out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+                 max_intensities, log, **kwargs):
+        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                         c_reduction, z_reduction, t_reduction, out_bitdepth=out_bitdepth, **kwargs)
+
         self.gammas = gammas
         self.filters = filters
         self.colormaps = colormaps
@@ -54,34 +62,82 @@ class AdjustedImageResponse(ImageResponse):
         self.max_intensities = max_intensities
         self.log = log
 
+    @property
+    def best_effort_bitdepth(self):
+        if self.out_format == PIMS_SLUG_PNG:
+            return min(self.out_bitdepth, 16)
+        return min(self.out_bitdepth, 8)
 
-class ThumbnailResponse(AdjustedImageResponse):
-    def __init__(self, in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
-                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                 min_intensities, max_intensities, log, use_precomputed, **kwargs):
-        super().__init__(in_image, out_width, out_height, out_format, channels, z_slices, timepoints,
-                         c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                         min_intensities, max_intensities, log, **kwargs)
-        self.use_precomputed = use_precomputed
+    @property
+    def gamma_processing(self):
+        return any(gamma != 1.0 for gamma in self.gammas)
+
+    @property
+    def log_processing(self):
+        return self.log
+
+    @property
+    def intensity_processing(self):
+        max_intensity = 2 ** self.best_effort_bitdepth - 1
+        return any(self.min_intensities) or any(i != max_intensity for i in self.max_intensities)
+
+    @property
+    def filter_processing(self):
+        return bool(len(self.filters))
+
+    @property
+    def colormap_processing(self):
+        return bool(len(self.colormaps))
+
+    @property
+    def float_processing(self):
+        return self.intensity_processing or self.gamma_processing \
+               or self.log_processing or self.colormap_processing \
+               or self.filter_processing
+
+    def raw_view(self):
+        pass
 
     def process(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
-        img = self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=self.use_precomputed)
+        img = self.raw_view()
         img = ResizeImgOp(self.out_width, self.out_height)(img)
-        img = CastImgOp('float64')(img)
-        img = GammaImgOp(self.gammas[0])(img)
 
-        img = RescaleImgOp(self.in_image, self.min_intensities, self.max_intensities)(img)
-        img = LogImgOp(self.in_image, self.log)(img)
+        if self.float_processing:
+            img = CastImgOp('float64')(img)
+            img = NormalizeImgOp(self.min_intensities, self.max_intensities)(img)
+
+            if self.gamma_processing:
+                img = GammaImgOp(self.gammas)(img)
+
+            if self.log_processing:
+                img = LogImgOp(self.max_intensities)(img)
+
+            img = RescaleImgOp(self.out_bitdepth)(img)
         return img
 
 
-class AssociatedResponse(ImageResponse):
+class ThumbnailResponse(ProcessedView):
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+                 max_intensities, log, use_precomputed, **kwargs):
+        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                         8, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                         min_intensities, max_intensities, log, **kwargs)
+
+        self.use_precomputed = use_precomputed
+
+    def raw_view(self):
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t,
+                                       precomputed=self.use_precomputed)
+
+
+class AssociatedResponse(View):
     def __init__(self, in_image, associated_key, out_width, out_height, out_format, **kwargs):
-        super().__init__(in_image, out_width, out_height, out_format, **kwargs)
+        super().__init__(in_image, out_format, out_width, out_height, **kwargs)
         self.associated_key = associated_key
 
-    def get_raw_img(self):
+    def raw_view(self):
         if self.associated_key == 'macro':
             associated = self.in_image.macro(self.out_width, self.out_height)
         elif self.associated_key == 'label':
@@ -92,7 +148,6 @@ class AssociatedResponse(ImageResponse):
         return associated
 
     def process(self):
-        img = self.get_raw_img()
+        img = self.raw_view()
         img = ResizeImgOp(self.out_width, self.out_height)(img)
-        img = RescaleImgOp()(img)
         return img

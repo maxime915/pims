@@ -42,7 +42,7 @@ def _test_imgop(np_image, vips_image, op, expected, exact_equal=False, rtol=1e-0
         np.testing.assert_allclose(expected, vips_processed, rtol)
     else:
         np.testing.assert_array_equal(expected, np_processed)
-        np.testing.assert_array_equal(expected, vips_to_numpy(vips_processed))
+        np.testing.assert_array_equal(expected, vips_processed)
 
 
 @pytest.mark.parametrize("bitdepth", (1, 8, 16))
@@ -83,7 +83,7 @@ def test_normalize_img_op(min_intensities, max_intensities, channels):
 @pytest.mark.parametrize("channels", (1, 3))
 def test_log_img_op(channels):
     np_image, vips_image = fake_normalized_image(50, 100, channels)
-    op = LogImgOp(np.amax(np_image, axis=(0, 1)))
+    op = LogImgOp([1] * channels)
 
     expected = np.log1p(np_image) * (op.max_intensities / np.log1p(op.max_intensities))
     _test_imgop(np_image, vips_image, op, expected)

@@ -70,9 +70,9 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
 
     thumb_args = {
         "in_image": in_image,
-        "channels": channels,
-        "z_slices": z_slices,
-        "timepoints": timepoints,
+        "in_channels": channels,
+        "in_z_slices": z_slices,
+        "in_timepoints": timepoints,
         "c_reduction": c_reduction,
         "z_reduction": z_reduction,
         "t_reduction": t_reduction,

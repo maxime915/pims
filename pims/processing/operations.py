@@ -12,6 +12,7 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import logging
+import time
 
 from pyvips import Image as VIPSImage, Size as VIPSSize
 import numpy as np
@@ -52,11 +53,20 @@ class ImageOp:
 
 
 class OutputProcessor(ImageOp):
-    def __init__(self, format, **format_params):
+    def __init__(self, format, bitdepth, **format_params):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
         self.format = format
+        self.bitdepth = bitdepth
         self.format_params = format_params
+
+    def expected_dtype(self):
+        if self.bitdepth <= 8:
+            return 'uint8'
+        elif self.bitdepth <= 16:
+            return 'uint16'
+        else:
+            return 'uint8'
 
     def _vips_impl(self, img, *args, **kwargs):
         suffix = format_to_vips_suffix[self.format]
@@ -68,6 +78,9 @@ class OutputProcessor(ImageOp):
             clean_params['compression'] = params.get('compression', params.get('png_compression', 6))
         elif suffix == '.webp':
             clean_params['lossless'] = params.get('lossless', params.get('webp_lossless', False))
+
+        # Clip by casting image
+        img = img.cast(dtype_to_vips_format[self.expected_dtype()])
 
         return img.write_to_buffer(suffix, **clean_params)
 
@@ -141,7 +154,7 @@ class LogImgOp(ImageOp):
         self.max_intensities = max_intensities
 
     def ratio(self):
-        ratio = self.max_intensities / np.log1p(self.max_intensities)
+        ratio = 1. / np.log1p(1)
         return ratio.flatten()
 
     def _vips_impl(self, img, *args, **kwargs):
