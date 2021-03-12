@@ -11,12 +11,15 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+import logging
 
 from pyvips import Image as VIPSImage, Size as VIPSSize
 import numpy as np
 
 from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format
 from pims.processing.adapters import imglib_adapters
+
+log = logging.getLogger("pims.processing")
 
 
 class ImageOp:
@@ -29,10 +32,19 @@ class ImageOp:
         self._impl = {}
 
     @property
+    def name(self):
+        return self.__class__.__name__
+
+    @property
+    def parameters(self):
+        return {k: v for (k,v) in self.__dict__.items() if not k.startswith("_")}
+
+    @property
     def implementations(self):
         return list(self._impl.keys())
 
     def __call__(self, img, *args, **kwargs):
+        log.info("Apply {} with parameters: {}".format(self.name, self.parameters))
         if type(img) not in self.implementations:
             img = imglib_adapters.get((type(img), self.implementations[0]))(img)
 
@@ -202,6 +214,7 @@ class NormalizeImgOp(ImageOp):
     def __init__(self, min_intensities, max_intensities):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
+        self._impl[np.ndarray] = self._numpy_impl
 
         self.min_intensities = np.array(min_intensities)
         self.max_intensities = np.array(max_intensities)
