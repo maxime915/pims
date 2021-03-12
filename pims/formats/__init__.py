@@ -53,13 +53,16 @@ def _find_formats_in_module(mod):
     formats = list()
     for _, name, _ in iter_modules(mod.__path__):
         submodule_name = "{}.{}".format(mod.__name__, name)
-        for var in vars(import_module(submodule_name)).values():
-            if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var) \
-                    and 'Abstract' not in var.__name__:
-                format = var
-                formats.append(format)
-                format.init()
-                logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))
+        try:
+            for var in vars(import_module(submodule_name)).values():
+                if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var) \
+                        and 'Abstract' not in var.__name__:
+                    format = var
+                    formats.append(format)
+                    format.init()
+                    logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))
+        except ImportError:
+            logger.error("{} submodule cannot be checked for formats !".format(submodule_name))
     return formats
 
 

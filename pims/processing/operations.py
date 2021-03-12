@@ -20,6 +20,11 @@ from pims.processing.adapters import imglib_adapters
 
 
 class ImageOp:
+    """
+    Base class that all image operations derive from.
+
+    Image operations are expected to be called like a function: `MyImgOp(param)(img)`.
+    """
     def __init__(self):
         self._impl = {}
 
@@ -59,16 +64,36 @@ class OutputProcessor(ImageOp):
 
 
 class CastImgOp(ImageOp):
+    """Cast an image to another type.
+
+    Attributes
+    ----------
+    dtype : data-type, optional
+        Desired data-type for the image.
+    """
     def __init__(self, dtype):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
+        self._impl[np.ndarray] = self._numpy_impl
         self.dtype = dtype
 
     def _vips_impl(self, img, *args, **kwargs):
         return img.cast(dtype_to_vips_format[str(self.dtype)])
 
+    def _numpy_impl(self, img, *args, **kwargs):
+        return img.astype(self.dtype)
+
 
 class ResizeImgOp(ImageOp):
+    """Resize a 2D image to expected size.
+
+    Attributes
+    ----------
+    width : int
+        Expected width
+    height: int
+        Expected height
+    """
     def __init__(self, width, height):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
@@ -82,77 +107,110 @@ class ResizeImgOp(ImageOp):
 
 
 class LogImgOp(ImageOp):
-    """
-    Apply logarithmic scale on image.
+    """Apply logarithmic scale on image.
+    Image is expected to be a normalized float array.
+
     Formula: out = ln(1+ in) * max_per_channel / ln(1 + max_per_channel)
+
+    Attributes
+    ----------
+    max_intensities : list of int
+        Maximum intensity per channel in the original image
 
     References
     ----------
     * Icy Logarithmic 2D viewer plugin (http://icy.bioimageanalysis.org/plugin/logarithmic-2d-viewer/)
     """
 
-    def __init__(self, in_image, do):
+    def __init__(self, max_intensities):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
         self._impl[np.ndarray] = self._numpy_impl
-        self.in_image = in_image
-        self.do = do
+        self.max_intensities = max_intensities
 
     def ratio(self):
-        stats = self.in_image.channels_stats()
-        max_per_channel = np.asarray([stats[i]["maximum"] for i in range(self.in_image.n_channels)])
-        ratio = max_per_channel / np.log1p(max_per_channel)
+        ratio = self.max_intensities / np.log1p(self.max_intensities)
         return ratio.flatten()
 
     def _vips_impl(self, img, *args, **kwargs):
-        if not self.do:
-            return img
         return img.linear([1], [1]).log().linear(list(self.ratio()), [0])
 
     def _numpy_impl(self, img, *args, **kwargs):
-        if not self.do:
-            return img
         return np.log1p(img) * self.ratio()
 
 
-class RescaleImgOp(ImageOp):
-    def __init__(self, in_image, min_intensities, max_intensities):
-        super().__init__()
-        self._impl[VIPSImage] = self._vips_impl
-        self.in_image = in_image
-        self.mins = min_intensities
-        self.maxs = max_intensities
-
-    def do(self):
-        return len(self.mins + self.maxs) > 0
-
-    def same_min(self):
-        return len(set(self.mins)) == 1
-
-    def same_max(self):
-        return len(set(self.maxs)) == 1
-
-    def same_minmax(self):
-        return len(set(self.mins + self.maxs)) == 1
-
-    def _vips_impl(self, img):
-        # TODO
-        if not self.do:
-            return img
-
-        if (self.same_minmax() and self.mins[0] == "AUTO_IMAGE" and self.in_image.significant_bits > 8) or \
-                (self.same_minmax() and self.mins[0] == "STRETCH_IMAGE"):
-            # Rescale to 0-255
-            return img.scaleimage()
-
-        return img
-
-
 class GammaImgOp(ImageOp):
-    def __init__(self, exponent):
+    """Apply gamma on an image.
+    Image is expected to be a normalized float array.
+
+    Attributes
+    ----------
+    exponents : list of float
+        Exponents to apply per channel
+    """
+    def __init__(self, exponents):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
-        self.exponent = exponent
+        self._impl[np.ndarray] = self._numpy_impl
+        self.exponents = exponents
 
     def _vips_impl(self, img):
-        return img.gamma(exponent=self.exponent) if self.exponent else img
+        # TODO: apply gamma per channel (split with band join) if needed.
+        # TODO: now first gamma is applied on all channels.
+        # return img.math2_const("pow", self.exponent)
+        exp = self.exponents[0]
+        return img.gamma(exponent=1/exp)
+
+    def _numpy_impl(self, img):
+        return np.power(img, self.exponents)
+
+
+class RescaleImgOp(ImageOp):
+    """Rescale a normalized float array to maximum admissible value for a given bit depth.
+
+    Attributes
+    ----------
+    bitdepth: int
+        Exponent used to rescale values so that out = in * pow(2, bitdepth)
+    """
+    def __init__(self, bitdepth):
+        super().__init__()
+        self._impl[VIPSImage] = self._vips_impl
+        self._impl[np.ndarray] = self._numpy_impl
+        self.bitdepth = bitdepth
+
+    def factor(self):
+        return 2 ** self.bitdepth
+
+    def _vips_impl(self, img):
+        return img.linear([self.factor()], [0])
+
+    def _numpy_impl(self, img):
+        return img * self.factor()
+
+
+class NormalizeImgOp(ImageOp):
+    """Normalize an image according min and max intensities per channel.
+
+    Attributes
+    ----------
+    min_intensities : list of int
+        Minimum intensities per channel
+    max_intensities : list of int
+        Maximum intensities per channel
+    """
+    def __init__(self, min_intensities, max_intensities):
+        super().__init__()
+        self._impl[VIPSImage] = self._vips_impl
+
+        self.min_intensities = np.array(min_intensities)
+        self.max_intensities = np.array(max_intensities)
+
+    def invdiff(self):
+        return 1. / (self.max_intensities - self.min_intensities)
+
+    def _vips_impl(self, img):
+        return img.linear(list(self.invdiff()), list(-self.min_intensities * self.invdiff()))
+
+    def _numpy_impl(self, img):
+        return (img - self.min_intensities) * self.invdiff()
