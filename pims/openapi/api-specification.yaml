@@ -2617,13 +2617,14 @@ components:
         The target bit depth. It is a best-effort parameter as supported bit depths depend on target content type.
         * `AUTO` - Try to set target bit depth equal to the source bit depth.
       default: AUTO
+      x-default: AUTO
       oneOf:
-        - type: integer
-          format: int32
-          example: 8
         - type: string
           enum:
             - AUTO
+        - type: integer
+          format: int32
+          example: 8
     colorspace:
       description: |
         The target colorspace. It is a best-effort parameter as supported colorspaces depend on target content type.

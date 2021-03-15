@@ -92,3 +92,7 @@ class NDPIFormat(AbstractTiffFormat):
 
         page = self.macro_series[0]
         return page.asarray()
+
+    def compute_channels_stats(self):
+        return []
+

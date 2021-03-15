@@ -46,23 +46,31 @@ def get_rationed_resizing(resized, length, other_length):
     return resized, other_resized
 
 
-def get_output_dimensions(in_image, height=None, width=None, length=None):
+def get_output_dimensions(in_image, height=None, width=None, length=None, zoom=None, level=None):
     """
     Get output dimensions according, by order of precedence, either height,
-    either width or the largest image length and such that ratio is preserved.
+    either width, either the largest image length, either zoom or level and such that ratio is preserved.
 
     Parameters
     ----------
     in_image : Image
         Input image with the aspect ratio to preserve.
     height : int or float (optional)
-        Output height absolute size (int) or ratio (float)
+        Output height absolute size (int) or ratio (float).
+        Ignored if `level` or `zoom` is not None.
     width : int or float (optional)
         Output width absolute size (int) or ratio (float).
-        Ignored if `height` is not None.
+        Ignored if `level` or `zoom` or `height` is not None.
     length : int or float (optional)
         Output largest side absolute size (int) or ratio (float).
-        Ignored if `width` or `height` is not None.
+        Ignored if `level` or `zoom` or `width` or `height` is not None.
+    zoom : int (optional)
+        Output zoom tier to consider as size.
+        The zoom tier is expected to be valid for the input image.
+        Ignored if `level` is not None.
+    level : int (optional)
+        Output level tier to consider as size.
+        The level tier is expected to be valid for the input image.
 
     Returns
     -------
@@ -76,7 +84,13 @@ def get_output_dimensions(in_image, height=None, width=None, length=None):
     BadRequestProblem
         If it is impossible to determine output dimensions.
     """
-    if height is not None:
+    if level is not None:
+        tier = in_image.pyramid.get_tier_at_level(level)
+        out_height, out_width = tier.height, tier.width
+    elif zoom is not None:
+        tier = in_image.pyramid.get_tier_at_zoom(zoom)
+        out_height, out_width = tier.height, tier.width
+    elif height is not None:
         out_height, out_width = get_rationed_resizing(height, in_image.height, in_image.width)
     elif width is not None:
         out_width, out_height = get_rationed_resizing(width, in_image.width, in_image.height)
@@ -349,3 +363,47 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
         max_intensities[idx] = parse_intensity(channel, intensity, max_allowed_intensity, "maximum")
 
     return min_intensities, max_intensities
+
+
+def check_level_validity(in_image, level):
+    """ Check the level tier exists in the image pyramid.
+
+    Parameters
+    ----------
+    in_image : Image
+        Image with a pyramid
+    level : int or None
+        Level to be checked for existence in the image pyramid
+
+    Raises
+    ------
+    BadRequestProblem
+        If the given level is not in the image pyramid.
+    """
+
+    if level is not None and not 0 <= level <= in_image.pyramid.max_level:
+        raise BadRequestProblem(detail="Level tier {} does not exist for image {}.".format(level, str(in_image)))
+
+
+def check_zoom_validity(in_image, zoom):
+    """Check the zoom tier exists in the image pyramid.
+
+    Parameters
+    ----------
+    in_image : Image
+        Image with a pyramid
+    zoom : int or None
+        Zoom to be checked for existence in the image pyramid
+
+    Raises
+    ------
+    BadRequestProblem
+        If the given zoom is not in the image pyramid.
+    """
+
+    if zoom is not None and not 0 <= zoom <= in_image.pyramid.max_zoom:
+        raise BadRequestProblem(detail="Zoom tier {} does not exist for image {}.".format(zoom, str(in_image)))
+
+
+def parse_bitdepth(in_image, bits):
+    return in_image.significant_bits if bits == "AUTO" else bits

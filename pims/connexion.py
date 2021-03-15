@@ -208,6 +208,9 @@ def coerce_type(param, value, parameter_type=None, parameter_name=None):
             except TypeError:
                 continue
 
+    if "string" in [param_schema.get('type') for param_schema in params_schemas]:
+        return str(value)
+
     if len(errors) > 0:
         raise errors[-1]
 

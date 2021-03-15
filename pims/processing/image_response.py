@@ -13,7 +13,7 @@
 # * limitations under the License.
 from pims import PIMS_SLUG_PNG
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
-    NormalizeImgOp
+    NormalizeImgOp, ColorspaceImgOp
 
 
 class View:
@@ -27,11 +27,17 @@ class View:
         self.out_format_params = {k.replace('out_format', ''): v
                                   for k, v in kwargs.items() if k.startswith('out_format_')}
 
+    @property
+    def best_effort_bitdepth(self):
+        if self.out_format == PIMS_SLUG_PNG:
+            return min(self.out_bitdepth, 16)
+        return min(self.out_bitdepth, 8)
+
     def process(self):
         pass
 
     def get_response_buffer(self):
-        return OutputProcessor(self.out_format, self.out_bitdepth, **self.out_format_params)(self.process())
+        return OutputProcessor(self.out_format, self.best_effort_bitdepth, **self.out_format_params)(self.process())
 
 
 class MultidimView(View):
@@ -51,7 +57,7 @@ class MultidimView(View):
 class ProcessedView(MultidimView):
     def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
                  out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, **kwargs):
+                 max_intensities, log, colorspace="AUTO", **kwargs):
         super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
                          c_reduction, z_reduction, t_reduction, out_bitdepth=out_bitdepth, **kwargs)
 
@@ -61,12 +67,7 @@ class ProcessedView(MultidimView):
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.log = log
-
-    @property
-    def best_effort_bitdepth(self):
-        if self.out_format == PIMS_SLUG_PNG:
-            return min(self.out_bitdepth, 16)
-        return min(self.out_bitdepth, 8)
+        self.colorspace = colorspace
 
     @property
     def gamma_processing(self):
@@ -88,6 +89,13 @@ class ProcessedView(MultidimView):
     @property
     def colormap_processing(self):
         return bool(len(self.colormaps))
+
+    @property
+    def colorspace_processing(self):
+        if self.colorspace == "AUTO":
+            return False
+        return (self.colorspace == "GRAY" and len(self.channels) > 1) or \
+               (self.colorspace == "COLOR" and len(self.channels) == 1)
 
     @property
     def float_processing(self):
@@ -112,7 +120,10 @@ class ProcessedView(MultidimView):
             if self.log_processing:
                 img = LogImgOp(self.max_intensities)(img)
 
-            img = RescaleImgOp(self.out_bitdepth)(img)
+            img = RescaleImgOp(self.best_effort_bitdepth)(img)
+
+        if self.colorspace_processing:
+            img = ColorspaceImgOp(self.colorspace)(img)
         return img
 
 
@@ -130,6 +141,19 @@ class ThumbnailResponse(ProcessedView):
         c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
         return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t,
                                        precomputed=self.use_precomputed)
+
+
+class ResizedResponse(ProcessedView):
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+                 max_intensities, log, out_bitdepth, colorspace, **kwargs):
+        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                         out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                         min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
+
+    def raw_view(self):
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False)
 
 
 class AssociatedResponse(View):

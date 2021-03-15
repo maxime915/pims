@@ -16,7 +16,9 @@ from connexion.exceptions import BadRequestProblem
 
 from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions, parse_planes, \
-    check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds
+    check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
+    check_level_validity, check_zoom_validity
+from pims.formats.utils.pyramid import Pyramid
 from tests.conftest import not_raises
 
 
@@ -128,3 +130,36 @@ def test_parse_intensity_bounds():
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [1000, 20])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, 5], [100000, 20]) == ([10, 5], [65535, 20])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, "AUTO_IMAGE"], [100000, 20]) == ([10, 1], [65535, 20])
+
+
+class FakeImagePyramid:
+    def __init__(self, width, height, n_tiers):
+        self.pyramid = Pyramid()
+        for i in range(n_tiers):
+            self.pyramid.insert_tier(width / (i+1), height / (i+1), 256)
+
+
+def test_check_level_validity():
+    with not_raises(BadRequestProblem):
+        check_level_validity(FakeImagePyramid(100, 100, 1), 0)
+        check_level_validity(FakeImagePyramid(100, 100, 20), 10)
+        check_level_validity(FakeImagePyramid(100, 100, 20), None)
+
+    with pytest.raises(BadRequestProblem):
+        check_level_validity(FakeImagePyramid(100, 100, 1), 1)
+
+    with pytest.raises(BadRequestProblem):
+        check_level_validity(FakeImagePyramid(100, 100, 20), 25)
+
+
+def test_check_zoom_validity():
+    with not_raises(BadRequestProblem):
+        check_zoom_validity(FakeImagePyramid(100, 100, 1), 0)
+        check_zoom_validity(FakeImagePyramid(100, 100, 20), 10)
+        check_zoom_validity(FakeImagePyramid(100, 100, 20), None)
+
+    with pytest.raises(BadRequestProblem):
+        check_zoom_validity(FakeImagePyramid(100, 100, 1), 1)
+
+    with pytest.raises(BadRequestProblem):
+        check_zoom_validity(FakeImagePyramid(100, 100, 20), 25)

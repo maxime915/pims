@@ -21,6 +21,8 @@ from pims.formats.utils.exiftool import read_raw_metadata
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel, parse_datetime, parse_float
 
 from PIL import Image as PILImage
+from pims.processing.adapters import vips_to_numpy
+from pyvips import Image as VIPSImage, Size
 
 import numpy as np
 from tifffile import lazyattr
@@ -38,9 +40,11 @@ class PNGFormat(AbstractFormat):
         http://www.libpng.org/pub/png/spec/
         https://github.com/ome/bioformats/blob/master/components/formats-bsd/src/loci/formats/in/APNGReader.java
     """
+
     def __init__(self, path, **kwargs):
         super().__init__(path)
         self._pil = PILImage.open(path, formats=["PNG"])
+        self._vips = VIPSImage.new_from_file(str(path))
 
     def init_standard_metadata(self):
         imd = ImageMetadata()
@@ -51,6 +55,7 @@ class PNGFormat(AbstractFormat):
         imd.duration = getattr(self._pil, "n_frames", 1)
 
         mode = self._pil.mode  # Possible values: 1, I, L, LA, RGB, RGBA, P
+        print(self._pil.tile)
         if mode == '1':
             imd.significant_bits = 1
             imd.pixel_type = np.dtype("uint8")
@@ -124,6 +129,20 @@ class PNGFormat(AbstractFormat):
 
         return store
 
+    def read_thumbnail(self, out_width, out_height, precomputed, c, z, t):
+        t = t if t is not None else 0
+
+        if t > 0:
+            self._pil.seek(t)
+            # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.resize
+            return self._pil.resize((out_width, out_height))  # Bicubic interpolation
+
+        if self._imd.significant_bits == 16:
+            # Related to https://github.com/libvips/libvips/issues/1941 ?
+            return VIPSImage.thumbnail(str(self._path), out_width, height=out_height, size=Size.FORCE,
+                                       linear=True).colourspace("grey16")
+        return VIPSImage.thumbnail(str(self._path), out_width, height=out_height, size=Size.FORCE)
+
     @classmethod
     def is_spatial(cls):
         return True
@@ -136,3 +155,13 @@ class PNGFormat(AbstractFormat):
                 buf[1] == 0x50 and
                 buf[2] == 0x4E and
                 buf[3] == 0x47)
+
+    def compute_channels_stats(self):
+        vips_stats = self._vips.stats()
+        np_stats = vips_to_numpy(vips_stats)
+        stats = {
+            channel: dict(minimum=np_stats[channel + 1, 0], maximum=np_stats[channel + 1, 1])
+            for channel in range(np_stats.shape[0] - 1)
+        }
+        self._channels_stats = stats
+        return stats

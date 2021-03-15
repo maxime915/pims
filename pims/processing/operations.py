@@ -14,6 +14,7 @@
 import logging
 import time
 
+import pyvips
 from pyvips import Image as VIPSImage, Size as VIPSSize
 import numpy as np
 
@@ -245,3 +246,24 @@ class NormalizeImgOp(ImageOp):
 
     def _numpy_impl(self, img):
         return (img - self.min_intensities) * self.invdiff()
+
+
+class ColorspaceImgOp(ImageOp):
+    def __init__(self, colorspace):
+        super().__init__()
+        self._impl[VIPSImage] = self._vips_impl
+        self.colorspace = colorspace
+
+    def _vips_impl(self, img):
+        new_colorspace = img.interpretation
+        if self.colorspace == "COLOR":
+            new_colorspace = pyvips.enums.Interpretation.RGB
+        elif self.colorspace == "GRAY":
+            new_colorspace = pyvips.enums.Interpretation.B_W
+
+        if img.interpretation == pyvips.enums.Interpretation.RGB16 and self.colorspace == "GREY":
+            new_colorspace = pyvips.enums.Interpretation.GREY16
+        elif img.interpretation == pyvips.enums.Interpretation.GREY16 and self.colorspace == "COLOR":
+            new_colorspace = pyvips.enums.Interpretation.RGB16
+
+        return img.colourspace(new_colorspace)
