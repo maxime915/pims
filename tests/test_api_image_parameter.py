@@ -17,7 +17,7 @@ from connexion.exceptions import BadRequestProblem
 from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions, parse_planes, \
     check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
-    check_level_validity, check_zoom_validity
+    check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity
 from pims.formats.utils.pyramid import Pyramid
 from tests.conftest import not_raises
 
@@ -163,3 +163,35 @@ def test_check_zoom_validity():
 
     with pytest.raises(BadRequestProblem):
         check_zoom_validity(FakeImagePyramid(100, 100, 20), 25)
+
+
+def test_check_tileindex_validity():
+    img = FakeImagePyramid(1000, 2000, 1)
+
+    with not_raises(BadRequestProblem):
+        check_tileindex_validity(img, 0, 0, "ZOOM")
+        check_tileindex_validity(img, 0, 0, "LEVEL")
+        check_tileindex_validity(img, 31, 0, "ZOOM")
+        check_tileindex_validity(img, 31, 0, "LEVEL")
+
+    with pytest.raises(BadRequestProblem):
+        check_tileindex_validity(img, 32, 0, "ZOOM")
+
+    with pytest.raises(BadRequestProblem):
+        check_tileindex_validity(img, -1, 0, "ZOOM")
+
+
+def test_check_tilecoord_validity():
+    img = FakeImagePyramid(1000, 2000, 1)
+
+    with not_raises(BadRequestProblem):
+        check_tilecoord_validity(img, 0, 0, 0, "ZOOM")
+        check_tilecoord_validity(img, 0, 0, 0, "LEVEL")
+        check_tilecoord_validity(img, 3, 7, 0, "ZOOM")
+        check_tilecoord_validity(img, 3, 7, 0, "LEVEL")
+
+    with pytest.raises(BadRequestProblem):
+        check_tilecoord_validity(img, 3, 8, 0, "ZOOM")
+
+    with pytest.raises(BadRequestProblem):
+        check_tilecoord_validity(img, -1, 0, 0, "ZOOM")

@@ -12,6 +12,7 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 from pims.formats.utils.pyramid import PyramidTier, Pyramid
+from pims.processing.region import Region
 
 
 def test_pyramid_tier():
@@ -42,3 +43,22 @@ def test_pyramid():
     assert p.get_tier_at_level(2).n_pixels == 100 * 200
     assert p.get_tier_at_level(2).level == 2
     assert p.get_tier_at_level(2).zoom == 0
+
+
+def test_pyramid_tier_indexes():
+    tier = PyramidTier(1000, 2000, 256, Pyramid())
+    assert tier.max_tx == 4
+    assert tier.max_ty == 8
+    assert tier.max_ti == 32
+
+    assert tier.txty2ti(0, 0) == 0
+    assert tier.txty2ti(3, 7) == 31
+
+    assert tier.ti2txty(0) == (0, 0)
+    assert tier.ti2txty(31) == (3, 7)
+
+    assert tier.txty2region(0, 0) == Region(0, 0, 256, 256)
+    assert tier.txty2region(3, 7) == Region(1792, 768, 1000 - 768, 2000 - 1792)
+
+    assert tier.ti2region(0) == Region(0, 0, 256, 256)
+    assert tier.ti2region(31) == Region(1792, 768, 1000 - 768, 2000 - 1792)

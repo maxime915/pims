@@ -405,5 +405,72 @@ def check_zoom_validity(in_image, zoom):
         raise BadRequestProblem(detail="Zoom tier {} does not exist for image {}.".format(zoom, str(in_image)))
 
 
+def check_tileindex_validity(in_image, ti, tier_idx, tier_type):
+    """
+    Check the tile index exists in the image pyramid at given tier.
+
+    Parameters
+    ----------
+    in_image : Image
+        Image with a pyramid
+    ti : int
+        Tile index to check
+    tier_idx : int
+        Tier index in the pyramid expected to contain the tile
+    tier_type : str (`LEVEL` or `ZOOM`)
+        Tier type
+
+    Raises
+    ------
+    BadRequestProblem
+        If the tile index is invalid.
+    """
+    if tier_type == "ZOOM":
+        check_zoom_validity(in_image, tier_idx)
+        ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
+    else:
+        check_level_validity(in_image, tier_idx)
+        ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
+
+    if not 0 <= ti < ref_tier.max_ti:
+        raise BadRequestProblem("Tile index {} is invalid for tier {}.".format(ti, ref_tier))
+
+
+def check_tilecoord_validity(in_image, tx, ty, tier_idx, tier_type):
+    """
+    Check the tile index exists in the image pyramid at given tier.
+
+    Parameters
+    ----------
+    in_image : Image
+        Image with a pyramid
+    tx : int
+        Tile coordinate along X axis to check
+    ty : int
+        Tile coordinate along Y axis to check
+    tier_idx : int
+        Tier index in the pyramid expected to contain the tile
+    tier_type : str (`LEVEL` or `ZOOM`)
+        Tier type
+
+    Raises
+    ------
+    BadRequestProblem
+        If the tile index is invalid.
+    """
+    if tier_type == "ZOOM":
+        check_zoom_validity(in_image, tier_idx)
+        ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
+    else:
+        check_level_validity(in_image, tier_idx)
+        ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
+
+    if not 0 <= tx < ref_tier.max_tx:
+        raise BadRequestProblem("Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier))
+
+    if not 0 <= ty < ref_tier.max_ty:
+        raise BadRequestProblem("Tile coordinate {} along Y axis is invalid for tier {}.".format(ty, ref_tier))
+
+
 def parse_bitdepth(in_image, bits):
     return in_image.significant_bits if bits == "AUTO" else bits

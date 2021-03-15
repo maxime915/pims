@@ -11,6 +11,9 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from math import ceil
+
+from pims.processing.region import Region
 
 
 class PyramidTier:
@@ -49,6 +52,36 @@ class PyramidTier:
     def zoom(self):
         return self.pyramid.level_to_zoom(self.level)
 
+    @property
+    def max_tx(self):
+        return ceil(self.width / self.tile_width)
+
+    @property
+    def max_ty(self):
+        return ceil(self.height / self.tile_width)
+
+    @property
+    def max_ti(self):
+        return self.max_tx * self.max_ty
+
+    def ti2txty(self, ti):
+        # ti = ty * max_tx + tx
+        return ti % self.max_tx, ti // self.max_tx
+
+    def txty2ti(self, tx, ty):
+        return ty * self.max_tx + tx
+
+    def ti2region(self, ti):
+        # ti = ty * max_tx + tx
+        return self.txty2region(*self.ti2txty(ti))
+
+    def txty2region(self, tx, ty):
+        left = tx * self.tile_width
+        top = ty * self.tile_height
+        width = min(left + self.tile_width, self.width) - left
+        height = min(top + self.tile_height, self.height) - top
+        return Region(top, left, width, height)
+
 
 class Pyramid:
     def __init__(self):
@@ -79,10 +112,10 @@ class Pyramid:
         return self._tiers[0] if self.n_levels > 0 else None
 
     def zoom_to_level(self, zoom):
-        return self.max_zoom - zoom
+        return self.max_zoom - zoom if zoom > 0 else 0
 
     def level_to_zoom(self, level):
-        return self.max_level - level
+        return self.max_level - level if level > 0 else 0
 
     def insert_tier(self, width, height, tile_size, **tier_data):
         tier = PyramidTier(width, height, tile_size, pyramid=self, data=tier_data)
@@ -95,7 +128,7 @@ class Pyramid:
         return self._tiers[level]
 
     def get_tier_at_zoom(self, zoom):
-        self.get_tier_at_level(self.zoom_to_level(zoom))
+        return self.get_tier_at_level(self.zoom_to_level(zoom))
 
     def __len__(self):
         return len(self._tiers)
