@@ -130,6 +130,12 @@ class Pyramid:
     def get_tier_at_zoom(self, zoom):
         return self.get_tier_at_level(self.zoom_to_level(zoom))
 
+    def get_tier_at(self, tier_idx, tier_type):
+        if tier_type == "ZOOM":
+            return self.get_tier_at_zoom(tier_idx)
+        else:
+            return self.get_tier_at_level(tier_idx)
+
     def __len__(self):
         return len(self._tiers)
 

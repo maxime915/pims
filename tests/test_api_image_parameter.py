@@ -15,10 +15,11 @@ import pytest
 from connexion.exceptions import BadRequestProblem
 
 from pims.api.exceptions import TooLargeOutputProblem
-from pims.api.utils.image_parameter import get_rationed_resizing, get_output_dimensions, parse_planes, \
+from pims.api.utils.image_parameter import get_rationed_resizing, get_thumb_output_dimensions, parse_planes, \
     check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
-    check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity
+    check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity, parse_region
 from pims.formats.utils.pyramid import Pyramid
+from pims.processing.region import Region
 from tests.conftest import not_raises
 
 
@@ -33,14 +34,14 @@ def test_get_output_dimensions():
             self.width = width
             self.height = height
 
-    assert get_output_dimensions(FakeImage(1000, 2000), height=200) == (100, 200)
-    assert get_output_dimensions(FakeImage(1000, 2000), width=100) == (100, 200)
-    assert get_output_dimensions(FakeImage(1000, 2000), length=200) == (100, 200)
-    assert get_output_dimensions(FakeImage(2000, 1000), length=200) == (200, 100)
-    assert get_output_dimensions(FakeImage(1000, 2000), width=20, length=3, height=500) == (250, 500)
+    assert get_thumb_output_dimensions(FakeImage(1000, 2000), height=200) == (100, 200)
+    assert get_thumb_output_dimensions(FakeImage(1000, 2000), width=100) == (100, 200)
+    assert get_thumb_output_dimensions(FakeImage(1000, 2000), length=200) == (100, 200)
+    assert get_thumb_output_dimensions(FakeImage(2000, 1000), length=200) == (200, 100)
+    assert get_thumb_output_dimensions(FakeImage(1000, 2000), width=20, length=3, height=500) == (250, 500)
 
     with pytest.raises(BadRequestProblem):
-        get_output_dimensions(FakeImage(1000, 2000))
+        get_thumb_output_dimensions(FakeImage(1000, 2000))
 
 
 def test_parse_planes():
@@ -136,7 +137,7 @@ class FakeImagePyramid:
     def __init__(self, width, height, n_tiers):
         self.pyramid = Pyramid()
         for i in range(n_tiers):
-            self.pyramid.insert_tier(width / (i+1), height / (i+1), 256)
+            self.pyramid.insert_tier(width / (2**i), height / (2**i), 256)
 
 
 def test_check_level_validity():
@@ -195,3 +196,19 @@ def test_check_tilecoord_validity():
 
     with pytest.raises(BadRequestProblem):
         check_tilecoord_validity(img, -1, 0, 0, "ZOOM")
+
+
+def test_parse_region():
+    img = FakeImagePyramid(1000, 2000, 3)
+
+    region = Region(**{'top': 100, 'left': 50, 'width': 128, 'height': 128})
+    assert parse_region(img, region, 0, "LEVEL") == Region(0.05, 0.05, 0.128, 0.064)
+    assert parse_region(img, region, 1, "LEVEL") == Region(0.1, 0.1, 0.256, 0.128)
+
+    region = Region(**{'top': 0.1, 'left': 0.15, 'width': 0.02, 'height': 0.2})
+    assert parse_region(img, region, 0, "LEVEL") == Region(0.1, 0.15, 0.02, 0.2)
+    assert parse_region(img, region, 1, "LEVEL") == Region(0.05, 0.075, 0.01, 0.1)
+
+    with pytest.raises(BadRequestProblem):
+        region = Region(**{'top': 100, 'left': 900, 'width': 128, 'height': 128})
+        parse_region(img, region, 0, "LEVEL")

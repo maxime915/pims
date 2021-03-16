@@ -112,6 +112,10 @@ class JPEGFormat(AbstractFormat):
     def read_thumbnail(self, out_width, out_height, *args, **kwargs):
         return self._vips.thumbnail_image(out_width, height=out_height, size=Size.FORCE)
 
+    def read_window(self, viewport, out_width, out_height, *args, **kwargs):
+        crop = viewport.toint(width_scale=self._imd.width, height_scale=self._imd.height)
+        return self._vips.crop(crop.left, crop.top, crop.width, crop.height)
+
     def compute_channels_stats(self):
         vips_stats = self._vips.stats()
         np_stats = vips_to_numpy(vips_stats)

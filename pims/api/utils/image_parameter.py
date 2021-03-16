@@ -17,6 +17,7 @@ from ordered_set import OrderedSet
 
 from pims.api.exceptions import TooLargeOutputProblem
 from pims.api.utils.schema_format import parse_range, is_range
+from pims.processing.region import Region
 
 
 def get_rationed_resizing(resized, length, other_length):
@@ -46,7 +47,7 @@ def get_rationed_resizing(resized, length, other_length):
     return resized, other_resized
 
 
-def get_output_dimensions(in_image, height=None, width=None, length=None, zoom=None, level=None):
+def get_thumb_output_dimensions(in_image, height=None, width=None, length=None, zoom=None, level=None):
     """
     Get output dimensions according, by order of precedence, either height,
     either width, either the largest image length, either zoom or level and such that ratio is preserved.
@@ -106,6 +107,68 @@ def get_output_dimensions(in_image, height=None, width=None, length=None, zoom=N
     return out_width, out_height
 
 
+def get_window_output_dimensions(in_image, region, height=None, width=None, length=None, zoom=None, level=None):
+    """
+    Get output dimensions according, by order of precedence, either height,
+    either width, either the largest image length, either zoom or level and such that region ratio is preserved.
+
+    Parameters
+    ----------
+    in_image : Image
+        Input image from which region is extracted.
+    region : Region
+        Input region with aspect ratio to preserve.
+    height : int or float (optional)
+        Output height absolute size (int) or ratio (float).
+        Ignored if `level` or `zoom` is not None.
+    width : int or float (optional)
+        Output width absolute size (int) or ratio (float).
+        Ignored if `level` or `zoom` or `height` is not None.
+    length : int or float (optional)
+        Output largest side absolute size (int) or ratio (float).
+        Ignored if `level` or `zoom` or `width` or `height` is not None.
+    zoom : int (optional)
+        Output zoom tier to consider as size.
+        The zoom tier is expected to be valid for the input image.
+        Ignored if `level` is not None.
+    level : int (optional)
+        Output level tier to consider as size.
+        The level tier is expected to be valid for the input image.
+
+    Returns
+    -------
+    out_width : int
+        Output width preserving aspect ratio.
+    out_height : int
+        Output height preserving aspect ratio.
+
+    Raises
+    ------
+    BadRequestProblem
+        If it is impossible to determine output dimensions.
+    """
+    if level is not None:
+        tier = in_image.pyramid.get_tier_at_level(level)
+        out_height, out_width = round(region.height / tier.height_factor), round(region.width / tier.width_factor)
+    elif zoom is not None:
+        tier = in_image.pyramid.get_tier_at_zoom(zoom)
+        out_height, out_width = round(region.height / tier.height_factor), round(region.width / tier.width_factor)
+    elif height is not None:
+        out_height, out_width = get_rationed_resizing(height, region.height, region.width)
+    elif width is not None:
+        out_width, out_height = get_rationed_resizing(width, region.width, region.height)
+    elif length is not None:
+        if region.width > region.height:
+            out_width, out_height = get_rationed_resizing(length, region.width, region.height)
+        else:
+            out_height, out_width = get_rationed_resizing(length, region.height, region.width)
+    else:
+        raise BadRequestProblem(detail='Impossible to determine output dimensions. '
+                                       'Height, width and length cannot all be unset.')
+
+    return out_width, out_height
+
+
 def safeguard_output_dimensions(safe_mode, max_size, width, height):
     """
     Safeguard image output dimensions according to safe mode and maximum
@@ -146,6 +209,60 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
             return width, height
     else:
         return width, height
+
+
+def parse_region(in_image, region, tier_idx, tier_type):
+    """
+    Parse a region and return normalized region in [0,1]
+
+    Parameters
+    ----------
+    in_image : Image
+        Image in which region is extracted
+    region : Region
+        Region to parse
+    tier_idx : int
+        Tier index to use as reference
+    tier_type: string (`LEVEL` or `ZOOM`)
+        Type of tier index
+
+    Returns
+    -------
+    norm_region: Region
+        The normalized region
+
+    Raises
+    ------
+    BadRequestProblem
+        If a region coordinate is out of bound.
+    """
+    if tier_type == "ZOOM":
+        check_zoom_validity(in_image, tier_idx)
+        ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
+    else:
+        check_level_validity(in_image, tier_idx)
+        ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
+
+    normalized = dict()
+    region_dict = region.asdict()
+    for item in ("left", "width"):
+        if type(region_dict[item]) == int:
+            normalized[item] = region_dict[item] / ref_tier.width
+        else:
+            normalized[item] = region_dict[item] / ref_tier.width_factor
+
+    for item in ("top", "height"):
+        if type(region_dict[item]) == int:
+            normalized[item] = region_dict[item] / ref_tier.height
+        else:
+            normalized[item] = region_dict[item] / ref_tier.height_factor
+
+    normalized = Region(**normalized)
+    for coord in (normalized.top, normalized.bottom, normalized.left, normalized.right):
+        if not 0 <= coord <= 1:
+            raise BadRequestProblem(detail="Some coordinates of region {} are out of bounds.".format(region))
+
+    return normalized
 
 
 def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):

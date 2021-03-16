@@ -19,7 +19,7 @@ from connexion import request
 from pims.api.exceptions import check_path_existence, check_path_is_single, \
     check_representation_existence, NoAppropriateRepresentationProblem
 from pims.api.utils.header import add_image_size_limit_header
-from pims.api.utils.image_parameter import get_output_dimensions, safeguard_output_dimensions
+from pims.api.utils.image_parameter import get_thumb_output_dimensions, safeguard_output_dimensions
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path, path2filepath
 from pims.api.utils.response import response_list, convert_quantity
@@ -230,7 +230,7 @@ def show_associated_image(filepath, associated_key, length=None, width=None, hei
         raise NoAppropriateRepresentationProblem(filepath, associated_key)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    req_width, req_height = get_output_dimensions(associated, height, width, length)
+    req_width, req_height = get_thumb_output_dimensions(associated, height, width, length)
     safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
     out_width, out_height = safeguard_output_dimensions(safe_mode, current_app.config['OUTPUT_SIZE_LIMIT'],
                                                         req_width, req_height)

@@ -146,8 +146,8 @@ class Image(Path):
         window: image-like (PILImage, VIPSImage, numpy array)
             The window (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
         """
-        if hasattr(self._format, "get_window"):
-            return self._format.get_window(viewport, out_width, out_height, c, z, t)
+        if hasattr(self._format, "read_window"):
+            return self._format.read_window(viewport, out_width, out_height, c, z, t)
         else:
             # TODO: implement window from tiles
             raise NotImplementedError

@@ -335,51 +335,98 @@ paths:
           application/json:
             schema:
               oneOf:
-                - title: input-by-zoom-region-target-by-length
+                - title: input-region-target-length
                   allOf:
-                    - $ref: '#/components/schemas/input-zoom-region'
-                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/region-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-length-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: input-by-zoom-region-target-by-zoom
+                - title: input-region-target-width
                   allOf:
-                    - $ref: '#/components/schemas/input-zoom-region'
-                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/region-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-width-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: input-by-zoom-region-target-by-level
+                - title: input-region-target-height
                   allOf:
-                    - $ref: '#/components/schemas/input-zoom-region'
-                    - $ref: '#/components/schemas/target-level-object'
+                    - $ref: '#/components/schemas/region-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-height-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: input-by-level-region-target-by-length
+                - title: input-region-target-zoom
                   allOf:
-                    - $ref: '#/components/schemas/input-level-region'
-                    - $ref: '#/components/schemas/target-length-object'
+                    - $ref: '#/components/schemas/region-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-zoom-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: input-by-level-region-target-by-zoom
+                - title: input-region-target-level
                   allOf:
-                    - $ref: '#/components/schemas/input-level-region'
-                    - $ref: '#/components/schemas/target-zoom-object'
+                    - $ref: '#/components/schemas/region-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-level-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: input-by-level-region-target-by-level
+
+
+                - title: input-tile-index-target-length
                   allOf:
-                    - $ref: '#/components/schemas/input-level-region'
-                    - $ref: '#/components/schemas/target-level-object'
+                    - $ref: '#/components/schemas/tile-index-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-length-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: region-by-zoom-and-tile-index
+                - title: input-tile-index-target-width
                   allOf:
-                    - $ref: '#/components/schemas/target-zoom-tile-index'
+                    - $ref: '#/components/schemas/tile-index-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-width-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: region-by-level-and-tile-index
+                - title: input-tile-index-target-height
                   allOf:
-                    - $ref: '#/components/schemas/target-level-tile-index'
+                    - $ref: '#/components/schemas/tile-index-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-height-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: region-by-zoom-and-tile-coordinates
+                - title: input-tile-index-target-zoom
                   allOf:
-                    - $ref: '#/components/schemas/target-zoom-tile-coordinates'
+                    - $ref: '#/components/schemas/tile-index-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-zoom-object-required'
                     - $ref: '#/components/schemas/window-basis'
-                - title: region-by-level-and-tile-coordinates
+                - title: input-tile-index-target-level
                   allOf:
-                    - $ref: '#/components/schemas/target-level-tile-coordinates'
+                    - $ref: '#/components/schemas/tile-index-object'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-level-object-required'
+                    - $ref: '#/components/schemas/window-basis'
+
+                - title: input-tile-coord-target-length
+                  allOf:
+                    - $ref: '#/components/schemas/tile-coord'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-length-object-required'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-tile-coord-target-width
+                  allOf:
+                    - $ref: '#/components/schemas/tile-coord'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-width-object-required'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-tile-coord-target-height
+                  allOf:
+                    - $ref: '#/components/schemas/tile-coord'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-height-object-required'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-tile-coord-target-zoom
+                  allOf:
+                    - $ref: '#/components/schemas/tile-coord'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-zoom-object-required'
+                    - $ref: '#/components/schemas/window-basis'
+                - title: input-tile-coord-target-level
+                  allOf:
+                    - $ref: '#/components/schemas/tile-coord'
+                    - $ref: '#/components/schemas/tier-index'
+                    - $ref: '#/components/schemas/target-level-object-required'
                     - $ref: '#/components/schemas/window-basis'
       responses:
         200:
@@ -865,7 +912,7 @@ paths:
 #              oneOf:
 #                - title: region-by-zoom-and-region
 #                  allOf:
-#                    - $ref: '#/components/schemas/input-zoom-region'
+#                    - $ref: '#/components/schemas/input-region'
 #                    - $ref: '#/components/schemas/footprint-plane-selection'
 #                - title: region-by-level-and-region
 #                  allOf:
@@ -919,7 +966,7 @@ paths:
 #              oneOf:
 #                - title: region-by-zoom-and-region
 #                  allOf:
-#                    - $ref: '#/components/schemas/input-zoom-region'
+#                    - $ref: '#/components/schemas/input-region'
 #                    - $ref: '#/components/schemas/spectral-window-plane-selection'
 #                - title: region-by-level-and-region
 #                  allOf:
@@ -2768,31 +2815,29 @@ components:
                 The input region height in the reference tier.
             - $ref: '#/components/schemas/region-length'
     region-coordinate:
-      oneOf:
-        - type: integer
-          format: int64
-          description: A coordinate in pixels in the reference tier.
-          minimum: 0
-          example: 256
-        - type: number
-          format: double
-          description: A coordinate expressed in percentage relatively to the reference tier.
-          minimum: 0.0
-          maximum: 1.0
-          example: 0.5
+      type: integer
+      format: int64
+      description: A coordinate in pixels in the reference tier.
+      minimum: 0
+      example: 256
+#        - type: number
+#          format: double
+#          description: A coordinate expressed in percentage relatively to the reference tier.
+#          minimum: 0.0
+#          maximum: 1.0
+#          example: 0.5
     region-length:
-      oneOf:
-        - type: integer
-          format: int64
-          description: A length in pixels in the reference tier.
-          minimum: 0
-          example: 256
-        - type: number
-          format: double
-          description: A length expressed in percentage relatively to the reference tier.
-          minimum: 0.0
-          maximum: 1.0
-          example: 0.5
+      type: integer
+      format: int64
+      description: A length in pixels in the reference tier.
+      minimum: 1
+      example: 256
+#        - type: number
+#          format: double
+#          description: A length expressed in percentage relatively to the reference tier.
+#          minimum: 0.0
+#          maximum: 1.0
+#          example: 0.5
 
     # Output sizes
     target-length:
@@ -2804,7 +2849,7 @@ components:
         - type: integer
           format: int64
           description: A length in pixels.
-          minimum: 0
+          minimum: 1
           example: 256
         - type: number
           format: double
@@ -2945,31 +2990,46 @@ components:
           $ref: '#/components/schemas/tile-x'
         ty:
           $ref: '#/components/schemas/tile-y'
-    input-zoom-region:
+    tile-coord:
+      type: object
+      required:
+        - tx
+        - ty
+      properties:
+        tx:
+          $ref: '#/components/schemas/tile-x'
+        ty:
+          $ref: '#/components/schemas/tile-y'
+    tile-index-object:
+      type: object
+      required:
+        - ti
+      properties:
+        ti:
+          $ref: '#/components/schemas/tile-index'
+    tier-index:
+      type: object
+      properties:
+        reference_tier_index:
+          type: integer
+          description: |
+            The index (zoom or level) denoting the tier to use as reference coordinate system for the input region. By
+            default, best resolution tier (maximum zoom/lowest level) is used.
+        tier_index_type:
+          type: string
+          enum:
+            - LEVEL
+            - ZOOM
+          default: LEVEL
+          description: |
+            How to interprete `reference_tier_index`, either as a zoom index, either as a level index.
+    region-object:
       type: object
       required:
         - region
       properties:
         region:
           $ref: '#/components/schemas/region'
-        reference_zoom:
-          type: integer
-          description: |
-            The zoom denoting the tier to use as reference coordinate system for the input region. By default,
-            maximum zoom is used.
-    input-level-region:
-      type: object
-      required:
-        - region
-      properties:
-        region:
-          $ref: '#/components/schemas/region'
-        reference_level:
-          type: integer
-          default: 0
-          description: |
-            The level denoting the tier to use as reference coordinate system for the input region. By default,
-            level 0 is used.
     thumb-use-precomputed:
       description: Whether the precomputed thumbnail (associated file) has to be used if it is available, or not.
       type: boolean

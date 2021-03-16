@@ -17,7 +17,7 @@ from connexion import request
 from flask import send_file, current_app
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
-from pims.api.utils.image_parameter import get_output_dimensions, get_channel_indexes, \
+from pims.api.utils.image_parameter import get_thumb_output_dimensions, get_channel_indexes, \
     get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
     safeguard_output_dimensions, parse_intensity_bounds
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
@@ -39,7 +39,7 @@ def show_thumb(filepath, channels=None, z_slices=None, timepoints=None,
     check_representation_existence(in_image)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    req_width, req_height = get_output_dimensions(in_image, height, width, length)
+    req_width, req_height = get_thumb_output_dimensions(in_image, height, width, length)
     safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
     out_width, out_height = safeguard_output_dimensions(safe_mode, current_app.config['OUTPUT_SIZE_LIMIT'],
                                                         req_width, req_height)

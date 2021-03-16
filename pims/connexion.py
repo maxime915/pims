@@ -140,14 +140,26 @@ class PIMSOpenAPIURIParser(OpenAPIURIParser):
 def merge_allof(schema):
     if 'allOf' in schema:
         merged = dict()
+        xscope = []
+        required = []
         for item in schema['allOf']:
             merged = deep_merge(merged, merge_allof(item))
+            xscope += item.get('x-scope', [])
+            required += item.get('required', [])
+        if len(xscope) > 0:
+            merged['x-scope'] = xscope
+        if len(required) > 0:
+            merged['required'] = required
         return merged
     elif 'oneOf' in schema:
         schema['oneOf'] = [merge_allof(s) for s in schema['oneOf']]
         return schema
     elif 'items' in schema:
         schema['items'] = merge_allof(schema['items'])
+        return schema
+    elif 'properties' in schema:
+        for k, v in schema['properties'].items():
+            schema['properties'][k] = merge_allof(schema['properties'][k])
         return schema
     else:
         return schema
@@ -156,7 +168,10 @@ def merge_allof(schema):
 def coerce_type(param, value, parameter_type=None, parameter_name=None):
     def make_type(value, type_literal):
         type_func = TYPE_MAP.get(type_literal)
-        return type_func(value)
+        if type_func == dict:
+            return type_func(value)
+        else:
+            return type_func(str(value))
 
     param_schema = merge_allof(copy.deepcopy(param.get("schema", param)))
     if is_nullable(param_schema) and is_null(value):
@@ -186,15 +201,15 @@ def coerce_type(param, value, parameter_type=None, parameter_name=None):
             return converted_params
         elif param_type == 'object':
             if param_schema.get('properties'):
-                def cast_leaves(d, schema):
+                def cast_leaves(d, schema, parameter_name=None):
                     if type(d) is not dict:
                         try:
-                            return make_type(d, schema['type'])
+                            return coerce_type(schema, d, parameter_name=parameter_name)
                         except (ValueError, TypeError):
                             return d
                     for k, v in d.items():
                         if k in schema['properties']:
-                            d[k] = cast_leaves(v, schema['properties'][k])
+                            d[k] = cast_leaves(v, schema['properties'][k], k)
                     return d
 
                 return cast_leaves(value, param_schema)

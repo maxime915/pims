@@ -156,6 +156,22 @@ class ResizedResponse(ProcessedView):
         return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False)
 
 
+class WindowResponse(ProcessedView):
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, region, out_format, out_width, out_height,
+                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+                 max_intensities, log, out_bitdepth, colorspace, **kwargs):
+        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                         out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                         min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
+
+        # Normalized region
+        self.region = region
+
+    def raw_view(self):
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        return self.in_image.window(self.region, self.out_width, self.out_height, c=c, z=z, t=t)
+
+
 class AssociatedResponse(View):
     def __init__(self, in_image, associated_key, out_width, out_height, out_format, **kwargs):
         super().__init__(in_image, out_format, out_width, out_height, **kwargs)
