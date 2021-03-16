@@ -111,7 +111,7 @@ tags:
   - name: Server
   - name: Housekeeping
 paths:
-  /image/{filepath}/tile/zoom/{zoom}/ti/{tile_index}:
+  /image/{filepath}/tile/zoom/{zoom}/ti/{ti}:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/path-zoom'
@@ -183,7 +183,7 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
-  /image/{filepath}/tile/level/{level}/ti/{tile_index}:
+  /image/{filepath}/tile/level/{level}/ti/{ti}:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
       - $ref: '#/components/parameters/path-level'
@@ -1804,7 +1804,7 @@ paths:
           in: query
           description: |
             Full file path.
-            Must be used together with `z`.
+            Must be used together with `z` and `tileIndex`.
           schema:
             type: string
         - name: 'z'
@@ -1814,6 +1814,14 @@ paths:
             type: integer
             format: int64
           required: true
+        - name: 'tileIndex'
+          in: query
+          description: |
+            Tile index.
+            Must be used together with `z` and `fif`.
+          schema:
+            type: integer
+            format: int64
         - name: 'zoomify'
           in: query
           description: |
@@ -2009,7 +2017,7 @@ components:
       schema:
         $ref: '#/components/schemas/zoom-or-level'
     path-tile-index:
-      name: tile_index
+      name: ti
       in: path
       required: true
       schema:

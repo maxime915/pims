@@ -160,7 +160,7 @@ class PNGFormat(AbstractFormat):
         vips_stats = self._vips.stats()
         np_stats = vips_to_numpy(vips_stats)
         stats = {
-            channel: dict(minimum=np_stats[channel + 1, 0], maximum=np_stats[channel + 1, 1])
+            channel: dict(minimum=np_stats[channel + 1, 0].item(), maximum=np_stats[channel + 1, 1].item())
             for channel in range(np_stats.shape[0] - 1)
         }
         self._channels_stats = stats

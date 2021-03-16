@@ -113,14 +113,20 @@ class JPEGFormat(AbstractFormat):
         return self._vips.thumbnail_image(out_width, height=out_height, size=Size.FORCE)
 
     def read_window(self, viewport, out_width, out_height, *args, **kwargs):
-        crop = viewport.toint(width_scale=self._imd.width, height_scale=self._imd.height)
+        if viewport.is_normalized:
+            crop = viewport.toint(width_scale=self._imd.width, height_scale=self._imd.height)
+        else:
+            crop = viewport
         return self._vips.crop(crop.left, crop.top, crop.width, crop.height)
+
+    def read_tile(self, tile_region, *args, **kwargs):
+        return self.read_window(tile_region, *args, **kwargs)
 
     def compute_channels_stats(self):
         vips_stats = self._vips.stats()
         np_stats = vips_to_numpy(vips_stats)
         stats = {
-            channel: dict(minimum=np_stats[channel + 1, 0], maximum=np_stats[channel + 1, 1])
+            channel: dict(minimum=np_stats[channel + 1, 0].item(), maximum=np_stats[channel + 1, 1].item())
             for channel in range(np_stats.shape[0] - 1)
         }
         self._channels_stats = stats

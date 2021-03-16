@@ -172,6 +172,22 @@ class WindowResponse(ProcessedView):
         return self.in_image.window(self.region, self.out_width, self.out_height, c=c, z=z, t=t)
 
 
+class TileResponse(ProcessedView):
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, tile_region, out_format, out_width,
+                 out_height, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+                 max_intensities, log, **kwargs):
+        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+                         8, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+                         min_intensities, max_intensities, log, **kwargs)
+
+        # Tile (region)
+        self.tile_region = tile_region
+
+    def raw_view(self):
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        return self.in_image.tile(self.tile_region, c=c, z=z, t=t)
+
+
 class AssociatedResponse(View):
     def __init__(self, in_image, associated_key, out_width, out_height, out_format, **kwargs):
         super().__init__(in_image, out_format, out_width, out_height, **kwargs)

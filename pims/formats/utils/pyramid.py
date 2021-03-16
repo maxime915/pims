@@ -13,7 +13,7 @@
 # * limitations under the License.
 from math import ceil
 
-from pims.processing.region import Region
+from pims.processing.region import TileRegion
 
 
 class PyramidTier:
@@ -76,11 +76,7 @@ class PyramidTier:
         return self.txty2region(*self.ti2txty(ti))
 
     def txty2region(self, tx, ty):
-        left = tx * self.tile_width
-        top = ty * self.tile_height
-        width = min(left + self.tile_width, self.width) - left
-        height = min(top + self.tile_height, self.height) - top
-        return Region(top, left, width, height)
+        return TileRegion(self, tx, ty)
 
 
 class Pyramid:

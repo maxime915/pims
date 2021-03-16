@@ -59,3 +59,30 @@ class Region:
     def __str__(self) -> str:
         return "Region (Top: {} / Bottom: {} / Left: {} / Right: {} / Width: {} / Height: {})".format(
             self.top, self.bottom, self.left, self.right, self.width,  self.height)
+
+
+class TileRegion(Region):
+    def __init__(self, tier, tx, ty):
+        left = tx * tier.tile_width
+        top = ty * tier.tile_height
+        width = min(left + tier.tile_width, tier.width) - left
+        height = min(top + tier.tile_height, tier.height) - top
+        super().__init__(top, left, width, height)
+        self.tier = tier
+        self.tx = tx
+        self.ty = ty
+
+    @property
+    def zoom(self):
+        return self.tier.zoom
+
+    @property
+    def level(self):
+        return self.tier.level
+
+    @property
+    def ti(self):
+        return self.tier.txty2ti(self.tx, self.ty)
+
+    def toregion(self):
+        return Region(self.top, self.left, self.width, self.height)
