@@ -14,6 +14,8 @@
 
 import webcolors
 from jsonschema import draft4_format_checker
+from shapely.errors import WKTReadingError
+from shapely.wkt import loads as wkt_loads
 
 
 def is_int(value):
@@ -161,3 +163,26 @@ def parse_color(value):
             pass
 
     raise ValueError("Invalid literal for Color: {}".format(value))
+
+
+@draft4_format_checker.checks('wkt')
+def is_wkt(value):
+    """
+    Whether a value is a Well-Known Text string.
+    The underlying geometry validity is not checked.
+
+    Parameters
+    ----------
+    value : str
+        Value expected to be a WKT string.
+
+    Returns
+    -------
+    bool
+        Whether the value is a WKT string or not
+    """
+    try:
+        wkt_loads(str(value))
+        return True
+    except WKTReadingError:
+        return False
