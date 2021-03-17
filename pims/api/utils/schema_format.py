@@ -11,6 +11,8 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+
+import webcolors
 from jsonschema import draft4_format_checker
 
 
@@ -77,3 +79,85 @@ def parse_range(pims_range, mini, maxi):
 
     low, high = min(low, high), max(low, high)
     return range(low, high)
+
+
+@draft4_format_checker.checks('color')
+def is_color(value):
+    """
+    Whether a value is a valid CSS3 color or not.
+    Accepted values are:
+    * hexadecimal (#FFF, #fff, #ffffff, ...)
+    * int-rgb ( rgb(10,10,10), ...)
+    * percent-rgb ( rgb(0%, 27.3%, 10%), ...)
+    * CSS3 color names (red, blue, ...)
+
+    Parameters
+    ----------
+    value : str
+        Value expected to be a color
+
+    Returns
+    -------
+    bool
+        Whether it is a CSS3 color.
+    """
+    if not isinstance(value, str):
+        return False
+    try:
+        parse_color(value)
+        return True
+    except ValueError:
+        return False
+
+
+def parse_color(value):
+    """
+    Parse a string to a valid CSS3 color.
+    Accepted values are:
+    * hexadecimal (#FFF, #fff, #ffffff, ...)
+    * int-rgb ( rgb(10,10,10), ...)
+    * percent-rgb ( rgb(0%, 27.3%, 10%), ...)
+    * CSS3 color names (red, blue, ...)
+
+    Parameters
+    ----------
+    value : str
+        Value to be converted to a color
+
+    Returns
+    -------
+    color : IntegerRGB
+        The RGB color
+
+    Raises
+    ------
+    ValueError
+        If `value` cannot be parsed to a CSS3 color.
+    """
+
+    try:
+        return webcolors.name_to_rgb(value)
+    except ValueError:
+        pass
+
+    try:
+        return webcolors.hex_to_rgb(value)
+    except ValueError:
+        pass
+
+    if value[:4].lower() == 'rgb(' and value[-1] == ')':
+        try:
+            triplet = (int(c) for c in value[4:-1].split(','))
+            return webcolors.normalize_integer_triplet(triplet)
+        except ValueError:
+            # cannot parse values in the triplet
+            pass
+
+        try:
+            triplet = (c for c in value[4:-1].split(','))
+            percent_rgb = webcolors.normalize_percent_triplet(triplet)
+            return webcolors.rgb_percent_to_rgb(percent_rgb)
+        except ValueError:
+            pass
+
+    raise ValueError("Invalid literal for Color: {}".format(value))
