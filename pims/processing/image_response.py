@@ -13,7 +13,7 @@
 # * limitations under the License.
 from pims import PIMS_SLUG_PNG
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
-    NormalizeImgOp, ColorspaceImgOp
+    NormalizeImgOp, ColorspaceImgOp, RasterizeAnnotOp
 
 
 class View:
@@ -207,3 +207,17 @@ class AssociatedResponse(View):
         img = self.raw_view()
         img = ResizeImgOp(self.out_width, self.out_height)(img)
         return img
+
+
+class MaskResponse(View):
+    def __init__(self, in_image, annotations, affine_matrix, out_width, out_height, out_bitdepth, out_format, **kwargs):
+        super().__init__(in_image, out_format, out_width, out_height, out_bitdepth, **kwargs)
+
+        self.annotations = annotations
+        self.affine_matrix = affine_matrix
+
+    def process(self):
+        mask = RasterizeAnnotOp(self.affine_matrix, self.out_width, self.out_height)(self.annotations)
+        if not self.annotations.is_grayscale:
+            pass
+        return mask

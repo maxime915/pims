@@ -3134,6 +3134,7 @@ components:
       description: A width for the annotation stroke
       default: 0
     annotation:
+      type: object
       required:
         - geometry
       properties:

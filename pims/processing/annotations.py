@@ -14,6 +14,8 @@
 from collections.abc import MutableSequence
 import numpy as np
 
+from pims.processing.region import Region
+
 
 def is_grayscale(red, green, blue):
     return red == green == blue
@@ -45,10 +47,15 @@ class Annotation:
         """
         return self.geometry.bounds
 
+    @property
+    def region(self):
+        left, top, right, bottom = self.bounds
+        return Region(top, left, right - left, bottom - top)
+
     def __eq__(self, other):
         return isinstance(other, Annotation) \
                and self.geometry.equals(other.geometry) \
-               and self.fill_color ==  other.fill_color \
+               and self.fill_color == other.fill_color \
                and self.stroke_color == other.stroke_color \
                and self.stroke_width == other.stroke_width
 
@@ -100,3 +107,16 @@ class AnnotationList(MutableSequence):
         mini = np.min(bounds, axis=0)
         maxi = np.max(bounds, axis=0)
         return mini[0], mini[1], maxi[2], maxi[3]
+
+    @property
+    def region(self):
+        left, top, right, bottom = self.bounds
+        return Region(top, left, right - left, bottom - top)
+
+
+def annotation_crop_affine_matrix(annot_region, in_region, out_width, out_height):
+    rx = out_width / in_region.width
+    ry = out_height / in_region.height
+    tx = -annot_region.left * rx + ((in_region.width - annot_region.width) / 2) * rx
+    ty = -annot_region.top * ry + ((in_region.height - annot_region.height) / 2) * ry
+    return [rx, 0, 0, ry, tx, ty]

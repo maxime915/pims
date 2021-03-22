@@ -179,6 +179,10 @@ def coerce_type(param, value, parameter_type=None, parameter_name=None):
 
     errors = []
     params_schemas = param_schema['oneOf'] if 'oneOf' in param_schema else [param_schema]
+
+    if type(value) is list:
+        params_schemas = [schema for schema in params_schemas if schema.get('type') == "array"]
+
     for param_schema in params_schemas:
         param_type = param_schema.get('type')
         parameter_name = parameter_name if parameter_name else param.get('name')

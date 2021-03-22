@@ -17,6 +17,8 @@ import time
 import pyvips
 from pyvips import Image as VIPSImage, Size as VIPSSize
 import numpy as np
+from rasterio.features import rasterize
+from shapely.affinity import affine_transform
 
 from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format
 from pims.processing.adapters import imglib_adapters
@@ -267,3 +269,42 @@ class ColorspaceImgOp(ImageOp):
             new_colorspace = pyvips.enums.Interpretation.RGB16
 
         return img.colourspace(new_colorspace)
+
+
+class AnnotOp(ImageOp):
+    def __call__(self, obj, *args, **kwargs):
+        start = time.time()
+
+        default_impl = ""
+        processed = self._impl[default_impl](obj, *args, **kwargs)
+        end = time.time()
+        log.info("Apply {} in {}µs with parameters: {}".format(self.name, round((end - start) / 1e-6, 3),
+                                                               self.parameters))
+        return processed
+
+
+class RasterizeAnnotOp(AnnotOp):
+    def __init__(self, affine, out_width, out_height):
+        super().__init__()
+        self._impl[""] = self._default_impl
+        self.affine_matrix = affine
+        self.out_width = out_width
+        self.out_height = out_height
+
+    def _default_impl(self, annots):
+        out_shape = (self.out_height, self.out_width)
+        if annots.is_grayscale:
+            def shape_generator():
+                for annot in annots:
+                    geometry = affine_transform(annot.geometry, self.affine_matrix)
+                    value = annot.fill_color[0]
+                    yield geometry, value
+
+            dtype = np.uint8
+        else:
+            def shape_generator():
+                for annot in annots:
+                    yield annot  # TODO
+            dtype = np.uint32
+
+        return rasterize(shape_generator(), out_shape=out_shape, dtype=dtype)

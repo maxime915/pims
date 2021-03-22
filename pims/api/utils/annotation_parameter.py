@@ -17,11 +17,11 @@ from shapely.wkt import loads as wkt_loads
 from shapely.validation import explain_validity, make_valid
 
 from pims.api.utils.schema_format import parse_color
-from pims.processing.annotations import Annotation
+from pims.processing.annotations import Annotation, AnnotationList
 from pims.processing.region import Region
 
 
-def parse_annotations(annotations, ignore_fields=None):
+def parse_annotations(annotations, ignore_fields=None, default=None):
     """
     Parse a list of annotations.
 
@@ -31,6 +31,8 @@ def parse_annotations(annotations, ignore_fields=None):
         List of annotations, as defined in API spec.
     ignore_fields : list of str or None
         List of field names to ignore for parsing.
+    default : dict (optional)
+        Default value for fields. Default value for missing fields is None.
 
     Returns
     -------
@@ -38,9 +40,9 @@ def parse_annotations(annotations, ignore_fields=None):
         A list of parsed annotations
     """
 
-    al = []
+    al = AnnotationList()
     for annotation in annotations:
-        al.append(parse_annotation(**annotation, ignore_fields=ignore_fields))
+        al.append(parse_annotation(**annotation, ignore_fields=ignore_fields, default=default))
 
     return al
 
@@ -138,8 +140,8 @@ def get_annotation_region(in_image, annots, context_factor=1.0, try_square=False
     if context_factor and context_factor != 1.0:
         width *= context_factor
         height *= context_factor
-        left -= width / 2
-        top -= height / 2
+        left -= width * (context_factor - 1) / 2.0
+        top -= height * (context_factor - 1) / 2.0
 
     if try_square:
         if width < height:
