@@ -17,6 +17,7 @@ from connexion import request
 from flask import send_file, current_app
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
+from pims.api.utils.annotation_parameter import parse_annotations
 from pims.api.utils.image_parameter import get_channel_indexes, \
     get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
     safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth, \
@@ -25,7 +26,7 @@ from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
 from pims.api.utils.header import add_image_size_limit_header
 from pims.processing.annotations import AnnotationList, annotation_crop_affine_matrix
-from pims.processing.image_response import WindowResponse
+from pims.processing.image_response import WindowResponse, MaskResponse
 from pims.processing.region import Region
 
 
@@ -95,11 +96,19 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
 
     # TODO: verify colormap names are valid
     # TODO: verify filter names are valid
-    # TODO: handle annotations & annotation_style
 
-    if not isinstance(annotations, AnnotationList):
-        # TODO
-        pass
+    if annotations and annotation_style and not isinstance(annotations, AnnotationList):
+        if annotation_style['mode'] == 'DRAWING':
+            ignore_fields = ['fill_color']
+            default = {'stroke_color': "red", 'stroke_width': 1}
+            point_envelope_length = annotation_style.get('point_envelope_length')
+        else:
+            ignore_fields = ['stroke_width', 'stroke_color']
+            default = {'fill_color': "white"}
+            point_envelope_length = None
+
+        annotations = parse_annotations(ensure_list(annotations), ignore_fields,
+                                        default, point_envelope_length)
 
     affine = None
     if annotations:
@@ -129,7 +138,11 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         "annot_params": annotation_style,
         "affine_matrix": affine
     }
-    window = WindowResponse(**window_args)
+
+    if annotations and annotation_style is not None and annotation_style['mode'] == 'MASK':
+        window = MaskResponse(**window_args)
+    else:
+        window = WindowResponse(**window_args)
     fp = BytesIO(window.get_response_buffer())
     fp.seek(0)
 
