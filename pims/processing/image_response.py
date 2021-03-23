@@ -13,7 +13,7 @@
 # * limitations under the License.
 from pims import PIMS_SLUG_PNG
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
-    NormalizeImgOp, ColorspaceImgOp, RasterizeAnnotOp
+    NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp
 
 
 class View:
@@ -98,6 +98,12 @@ class ProcessedView(MultidimView):
                (self.colorspace == "COLOR" and len(self.channels) == 1)
 
     @property
+    def new_colorspace(self):
+        if self.colorspace == "AUTO":
+            return "GRAY" if len(self.channels) == 1 else "COLOR"
+        return self.colorspace
+
+    @property
     def float_processing(self):
         return self.intensity_processing or self.gamma_processing \
                or self.log_processing or self.colormap_processing \
@@ -123,7 +129,7 @@ class ProcessedView(MultidimView):
             img = RescaleImgOp(self.best_effort_bitdepth)(img)
 
         if self.colorspace_processing:
-            img = ColorspaceImgOp(self.colorspace)(img)
+            img = ColorspaceImgOp(self.new_colorspace)(img)
         return img
 
 
@@ -159,13 +165,52 @@ class ResizedResponse(ProcessedView):
 class WindowResponse(ProcessedView):
     def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, region, out_format, out_width, out_height,
                  c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, out_bitdepth, colorspace, **kwargs):
+                 max_intensities, log, out_bitdepth, colorspace, annotations=None,
+                 affine_matrix=None, annot_params=None, **kwargs):
         super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
                          out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
                          min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
 
         # Normalized region
         self.region = region
+
+        annot_params = annot_params if annot_params else dict()
+        self.annotation_mode = annot_params.get('mode')
+        self.annotations = annotations
+        self.affine_matrix = affine_matrix
+        self.background_transparency = annot_params.get('background_transparency')
+        self.point_style = annot_params.get('point_cross')
+
+    @property
+    def colormap_processing(self):
+        if self.colorspace == "AUTO" and self.annotation_mode == 'DRAWING' \
+                and len(self.channels) == 1 and not self.annotations.is_stroke_grayscale:
+            return True
+        return super(WindowResponse, self).colormap_processing
+
+    @property
+    def new_colorspace(self):
+        if self.colorspace == "AUTO" and self.annotation_mode == "DRAWING" \
+                and len(self.channels) == 1 and not self.annotations.is_stroke_grayscale:
+            return "COLOR"
+        return super(WindowResponse, self).new_colorspace
+
+    def process(self):
+        img = super(WindowResponse, self).process()
+
+        if self.annotations and self.affine_matrix is not None:
+            if self.annotation_mode == 'CROP':
+                mask = MaskRasterOp(self.affine_matrix, self.out_width, self.out_height)(self.annotations)
+                img = TransparencyMaskImgOp(self.background_transparency, mask, self.out_bitdepth)(img)
+            elif self.annotation_mode == 'DRAWING':
+                draw = DrawRasterOp(self.affine_matrix, self.out_width,
+                                    self.out_height, self.point_style)(self.annotations)
+                draw_background = DrawRasterOp.background_color(self.annotations)
+                if self.colorspace_processing:
+                    draw = ColorspaceImgOp(self.new_colorspace)(draw)
+                img = DrawOnImgOp(draw, self.out_bitdepth, draw_background)(img)
+
+        return img
 
     def raw_view(self):
         c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
@@ -217,7 +262,17 @@ class MaskResponse(View):
         self.affine_matrix = affine_matrix
 
     def process(self):
-        mask = RasterizeAnnotOp(self.affine_matrix, self.out_width, self.out_height)(self.annotations)
-        if not self.annotations.is_grayscale:
-            pass
-        return mask
+        return MaskRasterOp(self.affine_matrix, self.out_width, self.out_height)(self.annotations)
+
+
+class DrawingResponse(MaskResponse):
+    def __init__(self, in_image, annotations, affine_matrix, point_style,
+                 out_width, out_height, out_bitdepth, out_format, **kwargs):
+        super().__init__(in_image, annotations, affine_matrix, out_format,
+                         out_width, out_height, out_bitdepth,  **kwargs)
+
+        self.point_style = point_style
+
+    def process(self):
+        return DrawRasterOp(self.affine_matrix, self.out_width,
+                            self.out_height, self.point_style)(self.annotations)

@@ -47,7 +47,7 @@ def test_annotation_region():
     al = AnnotationList()
     al.append(Annotation(box(10, 20, 30, 40)))
     assert get_annotation_region(FakeImage(100, 100), al) == Region(20, 10, 20, 20)
-    assert get_annotation_region(FakeImage(100, 100), al, context_factor=1.5) == Region(5, 0, 30, 30)
+    assert get_annotation_region(FakeImage(100, 100), al, context_factor=1.5) == Region(15, 5, 30, 30)
 
     al = AnnotationList()
     al.append(Annotation(box(10, 20, 30, 30)))

@@ -20,8 +20,11 @@ import numpy as np
 from rasterio.features import rasterize
 from shapely.affinity import affine_transform
 
-from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format
-from pims.processing.adapters import imglib_adapters
+from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format, vips_format_to_dtype
+from pims.processing.adapters import imglib_adapters, numpy_to_vips
+from pims.processing.annotations import AnnotationList, contour, stretch_contour
+from pims.processing.color_utils import rgb2int, int2rgb
+from pims.processing.utils import find_first_available_int
 
 log = logging.getLogger("pims.processing")
 
@@ -47,13 +50,17 @@ class ImageOp:
     def implementations(self):
         return list(self._impl.keys())
 
-    def __call__(self, img, *args, **kwargs):
+    @property
+    def implementation_adapters(self):
+        return imglib_adapters
+
+    def __call__(self, obj, *args, **kwargs):
         start = time.time()
 
-        if type(img) not in self.implementations:
-            img = imglib_adapters.get((type(img), self.implementations[0]))(img)
+        if type(obj) not in self.implementations:
+            obj = self.implementation_adapters.get((type(obj), self.implementations[0]))(obj)
 
-        processed = self._impl[type(img)](img, *args, **kwargs)
+        processed = self._impl[type(obj)](obj, *args, **kwargs)
         end = time.time()
         log.info("Apply {} in {}µs with parameters: {}".format(self.name, round((end - start) / 1e-6, 3),
                  self.parameters))
@@ -271,40 +278,149 @@ class ColorspaceImgOp(ImageOp):
         return img.colourspace(new_colorspace)
 
 
-class AnnotOp(ImageOp):
-    def __call__(self, obj, *args, **kwargs):
-        start = time.time()
+class TransparencyMaskImgOp(ImageOp):
+    def __init__(self, bg_transparency, mask, bitdepth):
+        super(TransparencyMaskImgOp, self).__init__()
+        self._impl[VIPSImage] = self._vips_impl
+        self._impl[np.ndarray] = self._numpy_impl
 
-        default_impl = ""
-        processed = self._impl[default_impl](obj, *args, **kwargs)
-        end = time.time()
-        log.info("Apply {} in {}µs with parameters: {}".format(self.name, round((end - start) / 1e-6, 3),
-                                                               self.parameters))
-        return processed
+        self.bg_transparency = bg_transparency
+        self.mask = mask
+        self.bitdepth = bitdepth
+
+    def factor(self):
+        return (2 ** self.bitdepth) - 1
+
+    def processed_mask(self, dtype):
+        mask = self.mask.astype(dtype)
+        mask[mask > 0] = 1 * self.factor()
+        mask[mask == 0] = (1 - self.bg_transparency / 100) * self.factor()
+        return mask
+
+    def _vips_impl(self, img):
+        mask = numpy_to_vips(self.processed_mask(vips_format_to_dtype[img.format]))
+        return img.bandjoin(mask)
+
+    def _numpy_impl(self, img):
+        return np.dstack((img, self.processed_mask(img.dtype)))
 
 
-class RasterizeAnnotOp(AnnotOp):
+class DrawOnImgOp(ImageOp):
+    def __init__(self, draw, bitdepth, rgb_int_background=0):
+        super(DrawOnImgOp, self).__init__()
+        self._impl[VIPSImage] = self._vips_impl
+        self._impl[np.ndarray] = self._numpy_impl
+
+        self.draw = draw
+        self.bitdepth = bitdepth
+        self.rgb_int_background = rgb_int_background
+
+    def _vips_impl(self, img):
+        draw = numpy_to_vips(self.processed_draw(vips_format_to_dtype[img.format]))
+        cond = numpy_to_vips(self.condition_mask())
+        return cond.ifthenelse(img, draw)
+
+    def _numpy_impl(self, img):
+        draw = np.atleast_3d(self.processed_draw(img.dtype))
+        cond = np.atleast_3d(self.condition_mask())
+        return np.where(cond, img, draw)
+
+    def processed_draw(self, dtype):
+        draw = self.draw
+        if self.bitdepth > 8:
+            draw = draw.astype(np.float)
+            draw /= 255
+            draw *= self.factor()
+
+        draw = draw.astype(dtype)
+        return draw
+
+    def condition_mask(self):
+        """
+        True -> image
+        False -> drawing
+        """
+        if self.draw.ndim == 3:
+            bg = int2rgb(self.rgb_int_background)
+            return np.all(self.draw == np.asarray(bg), axis=-1).astype(np.uint8)
+        else:
+            mask = np.ones_like(self.draw, dtype=np.uint8)
+            mask[self.draw != self.rgb_int_background] = 0
+            return mask
+
+    def factor(self):
+        return (2 ** self.bitdepth) - 1
+
+
+class RasterOp(ImageOp):
+    @property
+    def implementation_adapters(self):
+        return dict()
+
+
+class MaskRasterOp(RasterOp):
     def __init__(self, affine, out_width, out_height):
         super().__init__()
-        self._impl[""] = self._default_impl
+        self._impl[AnnotationList] = self._default_impl
+
         self.affine_matrix = affine
         self.out_width = out_width
         self.out_height = out_height
 
+    def _to_shape(self, annot, is_grayscale=True):
+        geometry = affine_transform(annot.geometry, self.affine_matrix)
+        value = annot.fill_color[0] if is_grayscale else rgb2int(annot.fill_color)
+        return geometry, value
+
     def _default_impl(self, annots):
         out_shape = (self.out_height, self.out_width)
-        if annots.is_grayscale:
-            def shape_generator():
-                for annot in annots:
-                    geometry = affine_transform(annot.geometry, self.affine_matrix)
-                    value = annot.fill_color[0]
-                    yield geometry, value
+        dtype = np.uint8 if annots.is_fill_grayscale else np.uint32
 
-            dtype = np.uint8
+        def shape_generator():
+            for annot in annots:
+                yield self._to_shape(annot, annots.is_fill_grayscale)
+
+        rasterized = rasterize(shape_generator(), out_shape=out_shape, dtype=dtype)
+        if not annots.is_grayscale:
+            return int2rgb(rasterized)
+        return rasterized
+
+
+class DrawRasterOp(RasterOp):
+    def __init__(self, affine, out_width, out_height, point_style):
+        super().__init__()
+        self._impl[AnnotationList] = self._default_impl
+
+        self.affine_matrix = affine
+        self.out_width = out_width
+        self.out_height = out_height
+        self.point_style = point_style
+
+    def _to_shape(self, annot, is_grayscale=True):
+        geometry = stretch_contour(affine_transform(contour(annot.geometry, point_style=self.point_style),
+                                                    self.affine_matrix), width=annot.stroke_width)
+        value = annot.stroke_color[0] if is_grayscale else rgb2int(annot.stroke_color)
+        return geometry, value
+
+    def _default_impl(self, annots):
+        out_shape = (self.out_height, self.out_width)
+        dtype = np.uint8 if annots.is_stroke_grayscale else np.uint32
+
+        def shape_generator():
+            for annot in annots:
+                yield self._to_shape(annot, annots.is_stroke_grayscale)
+
+        bg = self.background_color(annots)
+        rasterized = rasterize(shape_generator(), out_shape=out_shape, dtype=dtype, fill=bg)
+        if not annots.is_grayscale:
+            return int2rgb(rasterized)
+        return rasterized
+
+    @staticmethod
+    def background_color(annots):
+        if annots.is_stroke_grayscale:
+            values = [a.stroke_color[0] for a in annots]
+            return find_first_available_int(values, 0, 256)
         else:
-            def shape_generator():
-                for annot in annots:
-                    yield annot  # TODO
-            dtype = np.uint32
-
-        return rasterize(shape_generator(), out_shape=out_shape, dtype=dtype)
+            values = [rgb2int(a.stroke_color) for a in annots]
+            return find_first_available_int(values, 0, 16777216)

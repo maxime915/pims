@@ -22,6 +22,7 @@ from pims.api.utils.image_parameter import check_zoom_validity, check_level_vali
     safeguard_output_dimensions, ensure_list
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
+from pims.api.window import show_window
 from pims.processing.annotations import annotation_crop_affine_matrix
 from pims.processing.image_response import MaskResponse
 
@@ -73,12 +74,75 @@ def show_mask(filepath, body):
     return _show_mask(filepath, **body)
 
 
+def _show_crop(filepath, annotations, context_factor=None, background_transparency=None,
+               length=None, width=None, height=None, zoom=None, level=None,
+               channels=None, z_slices=None, timepoints=None,
+               c_reduction="ADD", z_reduction=None, t_reduction=None,
+               min_intensities=None, max_intensities=None, colormaps=None, filters=None,
+               gammas=None, log=None):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    in_image = path.get_spatial()
+    check_representation_existence(in_image)
+
+    annots = parse_annotations(ensure_list(annotations), ignore_fields=['stroke_width', 'stroke_color'],
+                               default={'fill_color': "white"})
+    region = get_annotation_region(in_image, annots, context_factor)
+
+    annot_style = {
+        "mode": 'CROP',
+        "background_transparency": background_transparency
+    }
+
+    return show_window(filepath, region, length=length, width=width, height=height, zoom=zoom,
+                       level=level, channels=channels, z_slices=z_slices, timepoints=timepoints,
+                       c_reduction=c_reduction, z_reduction=z_reduction, t_reduction=t_reduction,
+                       min_intensities=min_intensities, max_intensities=max_intensities, colormaps=colormaps,
+                       filters=filters, gammas=gammas, log=log, annotations=annots, annotation_style=annot_style,
+                       bits=8, colorspace='AUTO')
+
+
 def show_crop(filepath, body):
-    pass
+    return _show_crop(filepath, **body)
+
+
+def _show_drawing(filepath, annotations, context_factor=None,
+                  try_square=None, point_cross=None, point_envelope_length=None,
+                  length=None, width=None, height=None, zoom=None, level=None,
+                  channels=None, z_slices=None, timepoints=None,
+                  c_reduction="ADD", z_reduction=None, t_reduction=None,
+                  min_intensities=None, max_intensities=None, colormaps=None, filters=None,
+                  gammas=None, log=None):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    in_image = path.get_spatial()
+    check_representation_existence(in_image)
+
+    annots = parse_annotations(ensure_list(annotations), ignore_fields=['fill_color'],
+                               default={'stroke_color': "red", 'stroke_width': 1},
+                               point_envelope_length=point_envelope_length)
+    region = get_annotation_region(in_image, annots, context_factor, try_square)
+
+    annot_style = {
+        "mode": 'DRAWING',
+        "point_cross": point_cross,
+        "point_envelope_length": point_envelope_length
+    }
+
+    return show_window(filepath, region, length=length, width=width, height=height, zoom=zoom,
+                       level=level, channels=channels, z_slices=z_slices, timepoints=timepoints,
+                       c_reduction=c_reduction, z_reduction=z_reduction, t_reduction=t_reduction,
+                       min_intensities=min_intensities, max_intensities=max_intensities, colormaps=colormaps,
+                       filters=filters, gammas=gammas, log=log, annotations=annots, annotation_style=annot_style,
+                       bits=8, colorspace='AUTO')
 
 
 def show_drawing(filepath, body):
-    pass
+    return _show_drawing(filepath, **body)
 
 
 def show_spectra(filepath, body):
@@ -87,5 +151,3 @@ def show_spectra(filepath, body):
 
 def show_footprint(filepath, body):
     pass
-
-

@@ -12,7 +12,10 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 from collections.abc import MutableSequence
+from math import floor
+
 import numpy as np
+from shapely.geometry import Point, LineString, GeometryCollection
 
 from pims.processing.region import Region
 
@@ -22,11 +25,18 @@ def is_grayscale(red, green, blue):
 
 
 class Annotation:
-    def __init__(self, geometry, fill_color=None, stroke_color=None, stroke_width=None):
+    def __init__(self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
+                 point_envelope_length=None):
         self.geometry = geometry
         self.fill_color = fill_color
         self.stroke_color = stroke_color
         self.stroke_width = stroke_width
+
+        self.custom_bounds = None
+        if self.geometry.type == 'Point' and point_envelope_length is not None:
+            pt = self.geometry
+            length = point_envelope_length / 2
+            self.custom_bounds = (pt.x - length, pt.y - length, pt.x + length, pt.y + length)
 
     @property
     def is_fill_grayscale(self):
@@ -45,7 +55,7 @@ class Annotation:
         """Returns a (minx, miny, maxx, maxy) tuple (float values) that bounds the object.
         Ported from Shapely.
         """
-        return self.geometry.bounds
+        return self.custom_bounds if self.custom_bounds else self.geometry.bounds
 
     @property
     def region(self):
@@ -117,6 +127,57 @@ class AnnotationList(MutableSequence):
 def annotation_crop_affine_matrix(annot_region, in_region, out_width, out_height):
     rx = out_width / in_region.width
     ry = out_height / in_region.height
-    tx = -annot_region.left * rx + ((in_region.width - annot_region.width) / 2) * rx
-    ty = -annot_region.top * ry + ((in_region.height - annot_region.height) / 2) * ry
+    tx = -annot_region.left * rx + (annot_region.left - in_region.left) * rx
+    ty = -annot_region.top * ry + (annot_region.top - in_region.top) * ry
     return [rx, 0, 0, ry, tx, ty]
+
+
+def contour(geom, point_style="CROSS"):
+    """
+    Extract geometry's contour.
+
+    Parameters
+    ----------
+    geom : shapely.geometry.Geometry
+        Geometry which contour is extracted from.
+    point_style : str (`CROSS`, `CROSSHAIR`, `CIRCLE`)
+        Style of contour for points.
+
+    Returns
+    -------
+    contour = shapely.geometry
+        Contour
+    """
+    if isinstance(geom, Point):
+        x, y = geom.x, geom.y
+
+        def center_coord(coord):
+            if coord % 1 < 0.5:
+                return floor(coord) + 0.5
+            return coord
+        x, y = center_coord(x), center_coord(y)
+
+        if point_style == 'CIRCLE':
+            return Point(x, y).buffer(6).boundary
+        elif point_style == 'CROSSHAIR':
+            circle = Point(x, y). buffer(6).boundary
+            left_line = LineString([(x - 10, y), (x - 3, y)])
+            right_line = LineString([(x + 3, y), (x + 10, y)])
+            top_line = LineString([(x, y - 10), (x, y - 3)])
+            bottom_line = LineString([(x, y + 3), (x, y + 10)])
+            return GeometryCollection([circle, left_line, right_line, top_line, bottom_line])
+        elif point_style == 'CROSS':
+            horizontal = LineString([(x - 10, y), (x + 10, y)])
+            vertical = LineString([(x, y - 10), (x, y + 10)])
+            return GeometryCollection([horizontal, vertical])
+    elif isinstance(geom, LineString):
+        return geom
+    else:
+        return geom.boundary
+
+
+def stretch_contour(geom, width=1):
+    if width > 1 and geom:
+        buf = 1 + (width - 1) / 10
+        return geom.buffer(buf)
+    return geom

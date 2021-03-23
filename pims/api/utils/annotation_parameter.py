@@ -21,7 +21,8 @@ from pims.processing.annotations import Annotation, AnnotationList
 from pims.processing.region import Region
 
 
-def parse_annotations(annotations, ignore_fields=None, default=None):
+def parse_annotations(annotations, ignore_fields=None, default=None,
+                      point_envelope_length=None):
     """
     Parse a list of annotations.
 
@@ -33,6 +34,8 @@ def parse_annotations(annotations, ignore_fields=None, default=None):
         List of field names to ignore for parsing.
     default : dict (optional)
         Default value for fields. Default value for missing fields is None.
+    point_envelope_length : int (optional)
+        Envelope length for Point geometries.
 
     Returns
     -------
@@ -42,13 +45,15 @@ def parse_annotations(annotations, ignore_fields=None, default=None):
 
     al = AnnotationList()
     for annotation in annotations:
-        al.append(parse_annotation(**annotation, ignore_fields=ignore_fields, default=default))
+        al.append(parse_annotation(**annotation, ignore_fields=ignore_fields,
+                                   default=default, point_envelope_length=point_envelope_length))
 
     return al
 
 
 def parse_annotation(geometry, fill_color=None, stroke_color=None,
-                     stroke_width=None, ignore_fields=None, default=None):
+                     stroke_width=None, ignore_fields=None, default=None,
+                     point_envelope_length=None):
     """
     Parse an annotation.
 
@@ -66,6 +71,8 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
         List of field names to ignore for parsing.
     default : dict (optional)
         Default value for fields. Default value for missing fields is None.
+    point_envelope_length : int (optional)
+        Envelope length for Point geometries.
 
     Returns
     -------
@@ -92,6 +99,9 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
             geometry, explain_validity(geom)))
     parsed = {'geometry': geom}
 
+    if geom.type == 'Point' and point_envelope_length is not None:
+        parsed['point_envelope_length'] = point_envelope_length
+
     if 'fill_color' not in ignore_fields:
         default_color = default.get('fill_color')
         default_color = parse_color(default_color) if default_color else default_color
@@ -101,7 +111,7 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
     if 'stroke_color' not in ignore_fields:
         default_color = default.get('stroke_color')
         default_color = parse_color(default_color) if default_color else default_color
-        parsed['stroke_color'] = parse_color(fill_color) \
+        parsed['stroke_color'] = parse_color(stroke_color) \
             if stroke_color is not None else default_color
 
     if 'stroke_width' not in ignore_fields:
@@ -138,10 +148,10 @@ def get_annotation_region(in_image, annots, context_factor=1.0, try_square=False
     width = maxx - minx
     height = maxy - miny
     if context_factor and context_factor != 1.0:
-        width *= context_factor
-        height *= context_factor
         left -= width * (context_factor - 1) / 2.0
         top -= height * (context_factor - 1) / 2.0
+        width *= context_factor
+        height *= context_factor
 
     if try_square:
         if width < height:

@@ -24,6 +24,7 @@ from pims.api.utils.image_parameter import get_channel_indexes, \
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 from pims.api.utils.parameter import filepath2path
 from pims.api.utils.header import add_image_size_limit_header
+from pims.processing.annotations import AnnotationList, annotation_crop_affine_matrix
 from pims.processing.image_response import WindowResponse
 from pims.processing.region import Region
 
@@ -46,7 +47,7 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         reference_tier_index = 0 if tier_index_type == "LEVEL" else in_image.pyramid.max_zoom
 
     if region is not None:
-        region = Region(**region)
+        region = Region(**region) if not isinstance(region, Region) else region.toint()
         normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
     elif ti is not None:
         check_tileindex_validity(in_image, ti, reference_tier_index, tier_index_type)
@@ -96,6 +97,14 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
     # TODO: verify filter names are valid
     # TODO: handle annotations & annotation_style
 
+    if not isinstance(annotations, AnnotationList):
+        # TODO
+        pass
+
+    affine = None
+    if annotations:
+        affine = annotation_crop_affine_matrix(annotations.region, region, out_width, out_height)
+
     window_args = {
         "in_image": in_image,
         "in_channels": channels,
@@ -115,7 +124,10 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         "min_intensities": min_intensities,
         "max_intensities": max_intensities,
         "log": log,
-        "colorspace": colorspace
+        "colorspace": colorspace,
+        "annotations": annotations,
+        "annot_params": annotation_style,
+        "affine_matrix": affine
     }
     window = WindowResponse(**window_args)
     fp = BytesIO(window.get_response_buffer())
