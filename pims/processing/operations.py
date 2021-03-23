@@ -270,7 +270,7 @@ class ColorspaceImgOp(ImageOp):
         elif self.colorspace == "GRAY":
             new_colorspace = pyvips.enums.Interpretation.B_W
 
-        if img.interpretation == pyvips.enums.Interpretation.RGB16 and self.colorspace == "GREY":
+        if img.interpretation == pyvips.enums.Interpretation.RGB16 and self.colorspace == "GRAY":
             new_colorspace = pyvips.enums.Interpretation.GREY16
         elif img.interpretation == pyvips.enums.Interpretation.GREY16 and self.colorspace == "COLOR":
             new_colorspace = pyvips.enums.Interpretation.RGB16
