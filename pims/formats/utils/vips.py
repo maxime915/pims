@@ -56,3 +56,10 @@ format_to_vips_suffix = {
     'PNG': '.png',
     'WEBP': '.webp'
 }
+
+
+def dtype_to_bits(dtype):
+    if type(dtype) is str:
+        dtype = np.dtype(dtype)
+    return dtype.type(0).nbytes * 8
+

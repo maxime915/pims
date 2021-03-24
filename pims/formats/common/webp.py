@@ -111,8 +111,8 @@ class WebPFormat(AbstractFormat):
         return True
 
     @classmethod
-    def match(cls, proxypath):
-        buf = proxypath.get("signature", proxypath.path.signature)
+    def match(cls, cached_path):
+        buf = cached_path.get("signature", cached_path.path.signature)
         return (len(buf) > 13 and
                 buf[0] == 0x52 and
                 buf[1] == 0x49 and

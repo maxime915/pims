@@ -32,97 +32,93 @@ class Image(Path):
 
     @property
     def width(self):
-        return self._format.get_image_metadata().width
+        return self._format.main_imd.width
 
     @property
     def physical_size_x(self):
-        return self._format.get_image_metadata(True).physical_size_x
+        return self._format.full_imd.physical_size_x
 
     @property
     def height(self):
-        return self._format.get_image_metadata().height
+        return self._format.main_imd.height
 
     @property
     def physical_size_y(self):
-        return self._format.get_image_metadata(True).physical_size_y
+        return self._format.full_imd.physical_size_y
 
     @property
     def depth(self):
-        return self._format.get_image_metadata().depth
+        return self._format.main_imd.depth
 
     @property
     def physical_size_z(self):
-        return self._format.get_image_metadata(True).physical_size_z
+        return self._format.full_imd.physical_size_z
 
     @property
     def duration(self):
-        return self._format.get_image_metadata().duration
+        return self._format.main_imd.duration
 
     @property
     def frame_rate(self):
-        return self._format.get_image_metadata().frame_rate
+        return self._format.main_imd.frame_rate
 
     @property
     def n_channels(self):
-        return self._format.get_image_metadata().n_channels
+        return self._format.main_imd.n_channels
 
     @property
     def pixel_type(self):
-        return self._format.get_image_metadata().pixel_type
+        return self._format.main_imd.pixel_type
 
     @property
     def significant_bits(self):
-        return self._format.get_image_metadata().significant_bits
+        return self._format.main_imd.significant_bits
 
     @property
     def acquisition_datetime(self):
-        return self._format.get_image_metadata(True).acquisition_datetime
+        return self._format.full_imd.acquisition_datetime
 
     @property
     def description(self):
-        return self._format.get_image_metadata(True).description
+        return self._format.full_imd.description
 
     @property
     def channels(self):
-        return self._format.get_image_metadata(True).channels
+        return self._format.full_imd.channels
 
     @property
     def objective(self):
-        return self._format.get_image_metadata(True).objective
+        return self._format.full_imd.objective
 
     @property
     def microscope(self):
-        return self._format.get_image_metadata(True).microscope
+        return self._format.full_imd.microscope
 
     @property
     def associated_thumb(self):
-        return self._format.get_image_metadata(True).associated_thumb
+        return self._format.full_imd.associated_thumb
     
     @property
     def associated_label(self):
-        return self._format.get_image_metadata(True).associated_label
+        return self._format.full_imd.associated_label
     
     @property
     def associated_macro(self):
-        return self._format.get_image_metadata(True).associated_macro
+        return self._format.full_imd.associated_macro
 
     @property
     def raw_metadata(self):
-        return self._format.get_raw_metadata()
+        return self._format.raw_metadata
 
     @property
     def pyramid(self):
-        try:
-            return self._format.pyramid
-        except AttributeError:
-            return None
+        return self._format.pyramid
 
     def channel_stats(self, c):
         return self.channels_stats().get(c)
 
     def channels_stats(self):
-        # TODO: implement from histograms and use following impl as fallback
-        return self._format.get_channels_stats()
+        return self._format.channels_stats
 
     def tile(self, tile_region, c=None, z=None, t=None):
         """
@@ -133,7 +129,7 @@ class Image(Path):
         tile: image-like (PILImage, VIPSImage, numpy array)
             The tile (dimensions: tile_size x tile_size x len(c) x len(z) x len(t))
         """
-        return self._format.read_tile(tile_region, c, z, t)
+        return self._format.reader.read_tile(tile_region, c, z, t)
 
     def window(self, viewport, out_width, out_height, c=None, z=None, t=None):
         """
@@ -146,8 +142,8 @@ class Image(Path):
         window: image-like (PILImage, VIPSImage, numpy array)
             The window (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
         """
-        if hasattr(self._format, "read_window"):
-            return self._format.read_window(viewport, out_width, out_height, c, z, t)
+        if hasattr(self._format.reader, "read_window"):
+            return self._format.reader.read_window(viewport, out_width, out_height, c=c, z=z, t=t)
         else:
             # TODO: implement window from tiles
             raise NotImplementedError
@@ -163,8 +159,8 @@ class Image(Path):
         thumbnail: image-like (PILImage, VIPSImage, numpy array)
             The thumbnail (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
         """
-        if hasattr(self._format, "read_thumbnail"):
-            return self._format.read_thumbnail(out_width, out_height, precomputed, c, z, t)
+        if hasattr(self._format.reader, "read_thumb"):
+            return self._format.reader.read_thumb(out_width, out_height, precomputed=precomputed, c=c, z=z, t=t)
         else:
             # TODO
             raise NotImplementedError
@@ -173,8 +169,8 @@ class Image(Path):
         """
         Get associated image "label". The output dimensions are best-effort.
         """
-        if self.associated_label.exists and hasattr(self._format, "read_label"):
-            return self._format.read_label(out_width, out_height)
+        if self.associated_label.exists and hasattr(self._format.reader, "read_label"):
+            return self._format.reader.read_label(out_width, out_height)
         else:
             return None
 
@@ -182,7 +178,7 @@ class Image(Path):
         """
         Get associated image "macro". The output dimensions are best-effort.
         """
-        if self.associated_macro.exists and hasattr(self._format, "read_macro"):
-            return self._format.read_macro(out_width, out_height)
+        if self.associated_macro.exists and hasattr(self._format.reader, "read_macro"):
+            return self._format.reader.read_macro(out_width, out_height)
         else:
             return None

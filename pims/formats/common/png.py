@@ -148,8 +148,8 @@ class PNGFormat(AbstractFormat):
         return True
 
     @classmethod
-    def match(cls, proxypath):
-        buf = proxypath.get("signature", proxypath.path.signature)
+    def match(cls, cached_path):
+        buf = cached_path.get("signature", cached_path.path.signature)
         return (len(buf) > 3 and
                 buf[0] == 0x89 and
                 buf[1] == 0x50 and

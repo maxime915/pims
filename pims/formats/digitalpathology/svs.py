@@ -36,9 +36,9 @@ class SVSFormat(AbstractTiffFormat):
         return "Leica Aperio SVS"
 
     @classmethod
-    def match(cls, proxypath):
-        if super().match(proxypath):
-            tf = proxypath.get("tf", read_tifffile, proxypath.path.resolve())
+    def match(cls, cached_path):
+        if super().match(cached_path):
+            tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
             return tf.is_svs
         return False
 

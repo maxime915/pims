@@ -223,6 +223,13 @@ class MetadataStore:
             return metadata.value
         return default
 
+    def get_first_value(self, namespaced_keys, default=None):
+        for namespaced_key in namespaced_keys:
+            metadata = self.get(namespaced_key, None)
+            if metadata is not None:
+                return metadata.value
+        return default
+
     def get_metadata_type(self, namespaced_key, default=None):
         metadata = self.get(namespaced_key, None)
         if metadata:

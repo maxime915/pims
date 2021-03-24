@@ -34,8 +34,8 @@ class AbstractTiffFormat(AbstractFormat):
         return True
 
     @classmethod
-    def match(cls, proxypath):
-        tf = proxypath.get("tf", read_tifffile, proxypath.path.resolve())
+    def match(cls, cached_path):
+        tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
         if not tf:
             return False
         return True
@@ -195,9 +195,9 @@ TIFF_FLAGS = (
 
 class PyrTiffFormat(AbstractTiffFormat):
     @classmethod
-    def match(cls, proxypath):
-        if super().match(proxypath):
-            tf = proxypath.get("tf", read_tifffile, proxypath.path.resolve())
+    def match(cls, cached_path):
+        if super().match(cached_path):
+            tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
             for name in TIFF_FLAGS:
                 if getattr(tf, 'is_' + name, False):
                     return False
@@ -219,9 +219,9 @@ class PyrTiffFormat(AbstractTiffFormat):
 
 class PlanarTiffFormat(AbstractTiffFormat):
     @classmethod
-    def match(cls, proxypath):
-        if super().match(proxypath):
-            tf = proxypath.get("tf", read_tifffile, proxypath.path.resolve())
+    def match(cls, cached_path):
+        if super().match(cached_path):
+            tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
             for name in TIFF_FLAGS:
                 if getattr(tf, 'is_' + name, False):
                     return False

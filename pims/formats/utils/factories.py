@@ -13,7 +13,7 @@
 # * limitations under the License.
 
 from pims.formats import FORMATS
-from pims.formats.utils.abstract import PathMatchProxy
+from pims.formats.utils.abstract import CachedPathData
 
 
 class FormatFactory:
@@ -21,7 +21,7 @@ class FormatFactory:
         self.formats = formats
 
     def match(self, path):
-        proxy = PathMatchProxy(path)
+        proxy = CachedPathData(path)
         for format in self.formats:
             if format.match(proxy):
                 return format.from_proxy(proxy)
