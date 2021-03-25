@@ -12,102 +12,60 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import logging
+from functools import cached_property
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.app import UNIT_REGISTRY
 from pims.formats import AbstractFormat
-from pims.formats.utils.dict_utils import get_first, invert
-from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.metadata import ImageMetadata, ImageChannel, parse_datetime, parse_float
-
-from PIL import Image as PILImage
-from pims.processing.adapters import vips_to_numpy
-from pyvips import Image as VIPSImage, Size
-
-import numpy as np
-from tifffile import lazyattr
+from pims.formats.utils.checker import SignatureChecker
+from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsHistogramManager
+from pims.formats.utils.metadata import parse_datetime, parse_float
 
 log = logging.getLogger("pims.formats")
 
 
-class PNGFormat(AbstractFormat):
-    """PNG Formats. Also supports APNG sequences.
+class PNGChecker(SignatureChecker):
+    @classmethod
+    def match(cls, pathlike):
+        buf = cls.get_signature(pathlike)
+        return (len(buf) > 3 and
+                buf[0] == 0x89 and
+                buf[1] == 0x50 and
+                buf[2] == 0x4E and
+                buf[3] == 0x47)
 
-    References
-        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png
-        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#apng-sequences
-        https://exiftool.org/TagNames/PNG.html
-        http://www.libpng.org/pub/png/spec/
-        https://github.com/ome/bioformats/blob/master/components/formats-bsd/src/loci/formats/in/APNGReader.java
-    """
 
-    def __init__(self, path, **kwargs):
-        super().__init__(path)
-        self._pil = PILImage.open(path, formats=["PNG"])
-        self._vips = VIPSImage.new_from_file(str(path))
+class PNGParser(VipsParser):
+    def parse_main_metadata(self):
+        imd = super().parse_main_metadata()
+        if imd.n_channels not in (1, 3):
+            # We do not support (yet) transparency.
+            log.error("{}: Invalid number of channels: {}".format(self.format.path, imd.n_channels))
+            raise MetadataParsingProblem(self.format.path)
+        return imd
 
-    def init_standard_metadata(self):
-        imd = ImageMetadata()
-        imd.width = self._pil.width
-        imd.height = self._pil.height
-        imd.depth = 1
-        # n_frames not always present
-        imd.duration = getattr(self._pil, "n_frames", 1)
+    def parse_known_metadata(self):
+        imd = super().parse_known_metadata()
+        raw = self.format.raw_metadata
 
-        mode = self._pil.mode  # Possible values: 1, I, L, LA, RGB, RGBA, P
-        print(self._pil.tile)
-        if mode == '1':
-            imd.significant_bits = 1
-            imd.pixel_type = np.dtype("uint8")
-        elif mode.startswith('I'):
-            # Mode should be I;16 but in practice, I is returned.
-            imd.significant_bits = 16
-            imd.pixel_type = np.dtype("uint16")
-        else:
-            imd.significant_bits = 8
-            imd.pixel_type = np.dtype("uint8")
+        desc_fields = ("PNG.Comment", "EXIF.ImageDescription", "EXIF.UserComment")
+        imd.description = raw.get_first_value(desc_fields)
 
-        channel_mode = "L" if mode.startswith("I") or mode == "1" else mode
-        if channel_mode in ("L", "RGB", "RGBA", "LA"):
-            imd.n_channels = len(channel_mode)
-            for i, name in enumerate(channel_mode):
-                imd.set_channel(ImageChannel(index=i, suggested_name=name))
-        else:
-            # Unsupported modes: P
-            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png
-            log.error("{}: Mode {} is not supported.".format(self._path, mode))
-            raise MetadataParsingProblem(self._path)
-        self._imd = imd
+        date_fields = ("PNG.CreationTime", "PNG.ModifyDate", "EXIF.CreationDate",
+                       "EXIF.DateTimeOriginal", "EXIF.ModifyDate")
+        imd.acquisition_datetime = parse_datetime(raw.get_first_value(date_fields))
 
-    @lazyattr
-    def png_raw_metadata(self):
-        return read_raw_metadata(self._path)
-
-    def init_complete_metadata(self):
-        # Tags reference: https://exiftool.org/TagNames/PNG.html
-        imd = self._imd
-
-        raw = self.png_raw_metadata
-        imd.description = get_first(raw, ("PNG.Comment", "EXIF.ImageDescription", "EXIF.UserComment"))
-        imd.acquisition_datetime = parse_datetime(get_first(raw, ("PNG.CreationTime", "PNG.ModifyDate",
-                                                                  "EXIF.CreationDate", "EXIF.DateTimeOriginal",
-                                                                  "EXIF.ModifyDate")))
-
-        imd.physical_size_x = self.parse_physical_size(raw.get("PNG.PixelsPerUnitX"), raw.get(
-            "PNG.PixelUnits"), True)
-        imd.physical_size_y = self.parse_physical_size(raw.get("PNG.PixelsPerUnitY"), raw.get(
-            "PNG.PixelUnits"), True)
+        imd.physical_size_x = self.parse_physical_size(raw.get_value("PNG.PixelsPerUnitX"),
+                                                       raw.get_value("PNG.PixelUnits"), True)
+        imd.physical_size_y = self.parse_physical_size(raw.get_value("PNG.PixelsPerUnitY"),
+                                                       raw.get_value("PNG.PixelUnits"), True)
         if imd.physical_size_x is None and imd.physical_size_y is None:
-            imd.physical_size_x = self.parse_physical_size(raw.get("EXIF.XResolution"), raw.get(
-                "EXIF.ResolutionUnit"), False)
-            imd.physical_size_y = self.parse_physical_size(raw.get("EXIF.YResolution"), raw.get(
-                "EXIF.ResolutionUnit"), False)
-
-        if imd.duration > 1:
-            duration = self._pil.info.get("duration")  # in milliseconds
-            imd.frame_rate = 1 / duration / 1000 * UNIT_REGISTRY("Hz") if duration is not None else None
-
+            imd.physical_size_x = self.parse_physical_size(raw.get_value("EXIF.XResolution"),
+                                                           raw.get_value("EXIF.ResolutionUnit"), False)
+            imd.physical_size_y = self.parse_physical_size(raw.get_value("EXIF.YResolution"),
+                                                           raw.get_value("EXIF.ResolutionUnit"), False)
         imd.is_complete = True
+        return imd
 
     @staticmethod
     def parse_physical_size(physical_size, unit, inverse):
@@ -122,46 +80,36 @@ class PNGFormat(AbstractFormat):
             return physical_size * UNIT_REGISTRY(supported_units[unit])
         return None
 
-    def get_raw_metadata(self):
-        store = super(PNGFormat, self).get_raw_metadata()
-        for key, value in self.png_raw_metadata.items():
-            store.set(key, value)
 
-        return store
+class PNGReader(VipsReader):
+    pass
 
-    def read_thumbnail(self, out_width, out_height, precomputed, c, z, t):
-        t = t if t is not None else 0
 
-        if t > 0:
-            self._pil.seek(t)
-            # https://pillow.readthedocs.io/en/stable/reference/Image.html#PIL.Image.Image.resize
-            return self._pil.resize((out_width, out_height))  # Bicubic interpolation
+class PNGFormat(AbstractFormat):
+    """PNG Formats. Do not support (yet) APNG sequences.
 
-        if self._imd.significant_bits == 16:
-            # Related to https://github.com/libvips/libvips/issues/1941 ?
-            return VIPSImage.thumbnail(str(self._path), out_width, height=out_height, size=Size.FORCE,
-                                       linear=True).colourspace("grey16")
-        return VIPSImage.thumbnail(str(self._path), out_width, height=out_height, size=Size.FORCE)
+    References
+        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#png
+        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#apng-sequences
+        https://exiftool.org/TagNames/PNG.html
+        http://www.libpng.org/pub/png/spec/
+        https://github.com/ome/bioformats/blob/master/components/formats-bsd/src/loci/formats/in/APNGReader.java
+    """
+
+    checker_class = PNGChecker
+    parser_class = PNGParser
+    reader_class = PNGReader
+    histogramer_class = VipsHistogramManager
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled = True
 
     @classmethod
     def is_spatial(cls):
         return True
 
-    @classmethod
-    def match(cls, cached_path):
-        buf = cached_path.get("signature", cached_path.path.signature)
-        return (len(buf) > 3 and
-                buf[0] == 0x89 and
-                buf[1] == 0x50 and
-                buf[2] == 0x4E and
-                buf[3] == 0x47)
-
-    def compute_channels_stats(self):
-        vips_stats = self._vips.stats()
-        np_stats = vips_to_numpy(vips_stats)
-        stats = {
-            channel: dict(minimum=np_stats[channel + 1, 0].item(), maximum=np_stats[channel + 1, 1].item())
-            for channel in range(np_stats.shape[0] - 1)
-        }
-        self._channels_stats = stats
-        return stats
+    @cached_property
+    def need_conversion(self):
+        imd = self.main_imd
+        return not (imd.width < 1024 and imd.height < 1024)

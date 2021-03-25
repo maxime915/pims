@@ -129,7 +129,7 @@ class Image(Path):
         tile: image-like (PILImage, VIPSImage, numpy array)
             The tile (dimensions: tile_size x tile_size x len(c) x len(z) x len(t))
         """
-        return self._format.reader.read_tile(tile_region, c, z, t)
+        return self._format.reader.read_tile(tile_region, c=c, z=z, t=t)
 
     def window(self, viewport, out_width, out_height, c=None, z=None, t=None):
         """

@@ -193,8 +193,8 @@ class AbstractFormat(ABC, CachedData):
         return self.parser.parse_pyramid()
 
     @cached_property
-    def channel_stats(self):
-        return self.histogramer.compute_channel_stats()
+    def channels_stats(self):
+        return self.histogramer.compute_channels_stats()
 
 
 class AbstractChecker(ABC):
