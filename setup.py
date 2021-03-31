@@ -34,7 +34,25 @@ REQUIRES_PYTHON = '>=3.6.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'flask', 'connexion'
+    'flask>=1.1.2',
+    'connexion>=2.7.0',
+    'swagger-ui-bundle>=0.0.8',
+    'ansicolors>=1.1.8',
+    'jsonschema>=3.2.0',
+    'openapi-spec-validator<=0.2.9',
+
+    'Pint>=0.17',
+    'webcolors>=1.11.1',
+    'palettable>=3.3.0',
+    'ordered-set>=4.0.2',
+
+    'numpy>=1.20.1',
+    'Pillow>=8.1.2',
+    'pyvips>=2.1.14',
+    'tifffile>=2021.3.17',
+
+    'Shapely>=1.8a1',
+    'rasterio>=1.2.1',
 ]
 
 # What packages are optional?
