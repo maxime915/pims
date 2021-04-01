@@ -35,10 +35,7 @@ class AbstractTiffFormat(AbstractFormat):
 
     @classmethod
     def match(cls, cached_path):
-        tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
-        if not tf:
-            return False
-        return True
+        return False
 
     @classmethod
     def from_proxy(cls, proxypath):

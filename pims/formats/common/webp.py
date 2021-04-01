@@ -12,107 +12,22 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import logging
+from functools import cached_property
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.app import UNIT_REGISTRY
 from pims.formats import AbstractFormat
-from pims.formats.utils.dict_utils import get_first
-from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.metadata import ImageMetadata, parse_float, parse_datetime, ImageChannel
-
-from PIL import Image as PILImage
-
-import numpy as np
-from tifffile import lazyattr
+from pims.formats.utils.checker import SignatureChecker
+from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsHistogramManager
+from pims.formats.utils.metadata import parse_float, parse_datetime
 
 log = logging.getLogger("pims.formats")
 
 
-class WebPFormat(AbstractFormat):
-    """WebP Format. Also supports WebP sequences.
-
-    References
-        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
-        https://exiftool.org/TagNames/RIFF.html
-    """
-
+class WebPChecker(SignatureChecker):
     @classmethod
-    def init(cls):
-        # https://github.com/python-pillow/Pillow/issues/5036
-        from PIL import WebPImagePlugin
-        assert WebPImagePlugin
-
-    def __init__(self, path, **kwargs):
-        super().__init__(path)
-        self._pil = PILImage.open(path, formats=['WEBP'])
-
-    def init_standard_metadata(self):
-        imd = ImageMetadata()
-        imd.width = self._pil.width
-        imd.height = self._pil.height
-        imd.depth = 1
-        # n_frames not always present
-        imd.duration = getattr(self._pil, "n_frames", 1)
-        imd.significant_bits = 8
-        imd.pixel_type = np.dtype("uint8")
-
-        mode = self._pil.mode  # Possible values: RGB, RGBA
-        if mode in ("RGB", "RGBA"):
-            imd.n_channels = len(mode)
-            for i, name in enumerate(mode):
-                imd.set_channel(ImageChannel(index=i, suggested_name=name))
-        else:
-            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
-            log.error("{}: Mode {} is not supported.".format(self._path, mode))
-            raise MetadataParsingProblem(self._path)
-        self._imd = imd
-
-    @lazyattr
-    def webp_raw_metadata(self):
-        return read_raw_metadata(self._path)
-
-    def init_complete_metadata(self):
-        # Tags reference: https://exiftool.org/TagNames/RIFF.html
-        imd = self._imd
-
-        raw = self.webp_raw_metadata
-        imd.description = get_first(raw, ("RIFF.Comment", "EXIF.ImageDescription", "EXIF.UserComment"))
-        imd.acquisition_datetime = parse_datetime(get_first(raw, ("RIFF.DateTimeOriginal",
-                                                                  "EXIF.CreationDate", "EXIF.DateTimeOriginal",
-                                                                  "EXIF.ModifyDate")))
-
-        imd.physical_size_x = self.parse_physical_size(raw.get("EXIF.XResolution"), raw.get("EXIF.ResolutionUnit"))
-        imd.physical_size_y = self.parse_physical_size(raw.get("EXIF.YResolution"), raw.get("EXIF.ResolutionUnit"))
-
-        if imd.duration > 1:
-            total_time = raw.get("RIFF.Duration")  # String such as "0.84 s" -> all sequence duration
-            if total_time:
-                frame_rate = imd.duration / UNIT_REGISTRY(total_time)
-                imd.frame_rate = frame_rate.to("Hz")
-
-        imd.is_complete = True
-
-    @staticmethod
-    def parse_physical_size(physical_size, unit):
-        supported_units = ("meters", "inches", "cm")
-        if physical_size is not None and parse_float(physical_size) is not None and unit in supported_units:
-            return parse_float(physical_size) * UNIT_REGISTRY(unit)
-        return None
-
-    def get_raw_metadata(self):
-        store = super(WebPFormat, self).get_raw_metadata()
-        for key, value in self.webp_raw_metadata.items():
-            store.set(key, value)
-
-        return store
-
-    @classmethod
-    def is_spatial(cls):
-        return True
-
-    @classmethod
-    def match(cls, cached_path):
-        buf = cached_path.get("signature", cached_path.path.signature)
+    def match(cls, pathlike):
+        buf = cls.get_signature(pathlike)
         return (len(buf) > 13 and
                 buf[0] == 0x52 and
                 buf[1] == 0x49 and
@@ -124,3 +39,73 @@ class WebPFormat(AbstractFormat):
                 buf[11] == 0x50 and
                 buf[12] == 0x56 and
                 buf[13] == 0x50)
+
+
+class WebPParser(VipsParser):
+    def parse_main_metadata(self):
+        imd = super().parse_main_metadata()
+        if imd.n_channels not in (1, 3):
+            # We do not support (yet) transparency.
+            log.error("{}: Invalid number of channels: {}".format(self.format.path, imd.n_channels))
+            raise MetadataParsingProblem(self.format.path)
+        return imd
+
+    def parse_known_metadata(self):
+        imd = super().parse_known_metadata()
+        raw = self.format.raw_metadata
+        # Tags reference: https://exiftool.org/TagNames/RIFF.html
+
+        desc_fields = ("RIFF.Comment", "EXIF.ImageDescription", "EXIF.UserComment")
+        imd.description = raw.get_first_value(desc_fields)
+
+        date_fields = ("RIFF.DateTimeOriginal", "EXIF.CreationDate", "EXIF.DateTimeOriginal", "EXIF.ModifyDate")
+        imd.acquisition_datetime = parse_datetime(raw.get_first_value(date_fields))
+
+        imd.physical_size_x = self.parse_physical_size(raw.get_value("EXIF.XResolution"),
+                                                       raw.get_value("EXIF.ResolutionUnit"))
+        imd.physical_size_y = self.parse_physical_size(raw.get_value("EXIF.YResolution"),
+                                                       raw.get_value("EXIF.ResolutionUnit"))
+
+        if imd.duration > 1:
+            total_time = raw.get_value("RIFF.Duration")  # String such as "0.84 s" -> all sequence duration
+            if total_time:
+                frame_rate = imd.duration / UNIT_REGISTRY(total_time)
+                imd.frame_rate = frame_rate.to("Hz")
+
+        imd.is_complete = True
+        return imd
+
+    @staticmethod
+    def parse_physical_size(physical_size, unit):
+        supported_units = ("meters", "inches", "cm")
+        if physical_size is not None and parse_float(physical_size) is not None and unit in supported_units:
+            return parse_float(physical_size) * UNIT_REGISTRY(unit)
+        return None
+
+
+class WebPFormat(AbstractFormat):
+    """WebP Format. Do not support (yet) WebP sequences.
+
+    References
+        https://libvips.github.io/libvips/API/current/VipsForeignSave.html#vips-webpload
+        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#webp
+        https://exiftool.org/TagNames/RIFF.html
+    """
+
+    checker_class = WebPChecker
+    parser_class = WebPParser
+    reader_class = VipsReader
+    histogramer_class = VipsHistogramManager
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled = True
+
+    @classmethod
+    def is_spatial(cls):
+        return True
+
+    @cached_property
+    def need_conversion(self):
+        imd = self.main_imd
+        return not (imd.width < 1024 and imd.height < 1024)

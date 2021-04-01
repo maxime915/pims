@@ -12,92 +12,41 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import logging
+from functools import cached_property
 
-from pims.api.exceptions import MetadataParsingProblem
 from pims.app import UNIT_REGISTRY
 from pims.formats import AbstractFormat
-from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.metadata import ImageMetadata, parse_float, ImageChannel
-
-from PIL import Image as PILImage
-
-import numpy as np
-from tifffile import lazyattr
+from pims.formats.utils.checker import SignatureChecker
+from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsHistogramManager
+from pims.formats.utils.metadata import parse_float
 
 log = logging.getLogger("pims.formats")
 
-MODES = {
-    ("1", "1;I"): ("uint8", 1),
-    ("L", "L"): ("uint8", 8),
-    ("I", "I;16B"): ("uint16", 16),
-    ("I", "I;32B"): ("uint32", 32),
-    ("RGB", "RGB"): ("uint8", 8),
-    ("CMYK", "CMYK"): ("uint8", 8)
-}
 
-
-class PPMFormat(AbstractFormat):
-    """PPM Format. Only binary variant is supported (P4, P5, P6). ASCII variant is unsupported.
-
-    References
-        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#ppm
-        https://acme.com/software/pbmplus/
-        https://github.com/ome/bioformats/blob/master/components/formats-bsd/src/loci/formats/in/PGMReader.java
-        https://en.wikipedia.org/wiki/Netpbm#File_formats
-    """
-
+class PPMChecker(SignatureChecker):
     @classmethod
-    def init(cls):
-        # https://github.com/python-pillow/Pillow/issues/5036
-        from PIL import PpmImagePlugin
-        assert PpmImagePlugin
+    def match(cls, pathlike):
+        buf = cls.get_signature(pathlike)
+        return (len(buf) > 1 and
+                buf[0] == 0x50 and
+                buf[1] in (0x34, 0x35, 0x36))
 
-    def __init__(self, path, **kwargs):
-        super().__init__(path)
-        self._pil = PILImage.open(path, formats=['PPM'])
 
-    def init_standard_metadata(self):
-        imd = ImageMetadata()
-        imd.width = self._pil.width
-        imd.height = self._pil.height
-        imd.depth = 1
-        imd.duration = 1
+class PPMParser(VipsParser):
+    def parse_main_metadata(self):
+        return super().parse_main_metadata()
 
-        mode = self._pil.mode  # Possible values: 1, L, RGB, CMYK
-        raw_mode = self._pil.tile[0][3][0]  # Possible values: 1;I, L; I;16B, I;32B, RGB, CMYK
-        try:
-            dtype, n_bits = MODES[(mode, raw_mode)]
-            imd.pixel_type = np.dtype(dtype)
-            imd.significant_bits = n_bits
-        except KeyError:
-            log.error("{}: Unsupported mode/raw_mode combination: {}/{}".format(self._path, mode, raw_mode))
-            raise MetadataParsingProblem(self._path)
+    def parse_known_metadata(self):
+        imd = super().parse_known_metadata()
+        raw = self.format.raw_metadata
 
-        channel_mode = "L" if mode in ("1", "I") else mode
-        if channel_mode in ("L", "RGB"):
-            imd.n_channels = len(channel_mode)
-            for i, name in enumerate(channel_mode):
-                imd.set_channel(ImageChannel(index=i, suggested_name=name))
-        else:
-            # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#ppm
-            log.error("{}: Mode {} is not supported.".format(self._path, mode))
-            raise MetadataParsingProblem(self._path)
-        self._imd = imd
+        imd.description = raw.get_value("File.Comment")
+        imd.acquisition_datetime = self.format.path.creation_datetime
 
-    @lazyattr
-    def ppm_raw_metadata(self):
-        return read_raw_metadata(self._path)
-
-    def init_complete_metadata(self):
-        imd = self._imd
-
-        raw = self.ppm_raw_metadata
-        imd.description = raw.get("File.Comment")
-        imd.acquisition_datetime = self._path.creation_datetime
-
-        imd.physical_size_x = self.parse_physical_size(raw.get("File.PixelsPerMeterX"))
-        imd.physical_size_y = self.parse_physical_size(raw.get("File.PixelsPerMeterY"))
+        imd.physical_size_x = self.parse_physical_size(raw.get_value("File.PixelsPerMeterX"))
+        imd.physical_size_y = self.parse_physical_size(raw.get_value("File.PixelsPerMeterY"))
         imd.is_complete = True
+        return imd
 
     @staticmethod
     def parse_physical_size(physical_size):
@@ -105,20 +54,35 @@ class PPMFormat(AbstractFormat):
             return 1 / parse_float(physical_size) * UNIT_REGISTRY("meters")
         return None
 
-    def get_raw_metadata(self):
-        store = super(PPMFormat, self).get_raw_metadata()
-        for key, value in self.ppm_raw_metadata.items():
-            store.set(key, value)
 
-        return store
+class PPMFormat(AbstractFormat):
+    """PPM Format. ASCII and binary variants are supported.
+
+    It can read 1, 8, 16 and 32 bit images, colour or monochrome,
+    stored in binary or in ASCII. One bit images become 8 bit
+    VIPS images, with 0 and 255 for 0 and 1.
+
+    References
+        https://libvips.github.io/libvips/API/current/VipsForeignSave.html#vips-ppmload
+        https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#ppm
+        https://acme.com/software/pbmplus/
+        https://github.com/ome/bioformats/blob/master/components/formats-bsd/src/loci/formats/in/PGMReader.java
+        https://en.wikipedia.org/wiki/Netpbm#File_formats
+    """
+    checker_class = PPMChecker
+    parser_class = PPMParser
+    reader_class = VipsReader
+    histogramer_class = VipsHistogramManager
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled = True
 
     @classmethod
     def is_spatial(cls):
         return True
 
-    @classmethod
-    def match(cls, cached_path):
-        buf = cached_path.get("signature", cached_path.path.signature)
-        return (len(buf) > 1 and
-                buf[0] == 0x50 and
-                buf[1] in (0x34, 0x35, 0x36))
+    @cached_property
+    def need_conversion(self):
+        imd = self.main_imd
+        return not (imd.width < 1024 and imd.height < 1024)
