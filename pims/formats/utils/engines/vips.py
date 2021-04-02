@@ -99,6 +99,14 @@ class VipsHistogramManager(AbstractHistogramManager):
     def compute_channels_stats(self):
         image = cached_vips_file(self.format)
 
+        # TODO: finish implementation of fast histogram and conform to API spec.
+        if image.width > 1024 or image.height > 1024:
+            if image.interpretation in ("grey16", "rgb16"):
+                image = VIPSImage.thumbnail(str(self.format.path), 1024, linear=True)\
+                    .colourspace(image.interpretation)
+            else:
+                image = VIPSImage.thumbnail(str(self.format.path), 1024)
+
         vips_stats = image.stats()
         np_stats = vips_to_numpy(vips_stats)
         stats = {
