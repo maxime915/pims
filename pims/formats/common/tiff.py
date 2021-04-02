@@ -11,220 +11,144 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from datetime import datetime
-from enum import Enum
+from functools import cached_property
 
-from pims.app import UNIT_REGISTRY
+from pyvips import Image as VIPSImage
+
 from pims.formats import AbstractFormat
-from pims.formats.utils.metadata import ImageMetadata, ImageChannel
-from tifffile import tifffile, lazyattr, TiffTag
+from pims.formats.utils.engines.tifffile import TifffileChecker, TIFF_FLAGS, TifffileParser
+from pims.formats.utils.engines.vips import VipsReader, VipsHistogramManager
 
-from pims.formats.utils.pyramid import Pyramid
+# -----------------------------------------------------------------------------
+# PYRAMIDAL TIFF
 
-import numpy as np
+
+class PyrTiffChecker(TifffileChecker):
+    @classmethod
+    def match(cls, pathlike):
+        if not super().match(pathlike):
+            return False
+
+        tf = cls.get_tifffile(pathlike)
+        for name in TIFF_FLAGS:
+            if getattr(tf, 'is_' + name, False):
+                return False
+
+        if len(tf.series) == 1:
+            baseline = tf.series[0]
+            if baseline and baseline.is_pyramidal:
+                for level in baseline.levels:
+                    if level.keyframe.is_tiled is False:
+                        return False
+                return True
+
+        return False
 
 
-class AbstractTiffFormat(AbstractFormat):
-    def __init__(self, path, _tf=None):
-        super().__init__(path)
-        self._tf = _tf if _tf else tifffile.TiffFile(self._path.resolve())
+class PyrTiffVipsReader(VipsReader):
+    # Thumbnail already uses shrink-on-load feature in default VipsReader
+    # (i.e it loads the right pyramid level according the requested dimensions)
+
+    def read_window(self, region, out_width, out_height, **other):
+        if not region.is_normalized:
+            raise ValueError("Region should be normalized.")
+
+        tier = self.format.pyramid.most_appropriate_tier(out_width, out_height)
+        page = tier.data.get('page_index')
+        tiff_page = VIPSImage.new_from_file(str(self.format.path), page=page)
+        region = region.toint(width_scale=tier.width, height_scale=tier.height)
+        return tiff_page.extract_area(region.left, region.top, region.width, region.height)
+
+    def read_tile(self, tile, **other):
+        tier = tile.tier
+        tx, ty = tile.tx, tile.ty
+        tsizex, tsizey = tier.tile_width, tier.tile_height
+
+        page = tier.data.get('page_index')
+        tiff_page = VIPSImage.new_from_file(str(self.format.path), page=page)
+
+        # There is no direct access to underlying tiles in vips
+        # But the following computation match vips implementation so that only the tile
+        # that has to be read is read.
+        # https://github.com/jcupitt/tilesrv/blob/master/tilesrv.c#L461
+        # TODO: is direct tile access significantly faster ?
+        return tiff_page.extract_area(
+            tx * tsizex,
+            ty * tsizey,
+            min(tier.width - tx * tsizex, tsizex),
+            min(tier.height - ty * tsizey, tsizey)
+        )
+
+
+class PyrTiffFormat(AbstractFormat):
+    checker_class = PyrTiffChecker
+    parser_class = TifffileParser
+    reader_class = PyrTiffVipsReader
+    histogramer_class = VipsHistogramManager  # TODO
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled = True
+
+    @classmethod
+    def get_name(cls):
+        return "Pyramidal TIFF"
 
     @classmethod
     def is_spatial(cls):
         return True
 
     @classmethod
-    def match(cls, cached_path):
+    def is_writable(cls):
+        return True
+
+    @cached_property
+    def need_conversion(self):
         return False
 
+
+# -----------------------------------------------------------------------------
+# PLANAR TIFF
+
+
+class PlanarTiffChecker(TifffileChecker):
     @classmethod
-    def from_proxy(cls, proxypath):
-        return cls(path=proxypath.path, _tf=proxypath.tf)
+    def match(cls, pathlike):
+        if not super().match(pathlike):
+            return False
 
-    @lazyattr
-    def baseline(self):
-        return self._tf.pages[0]
+        tf = cls.get_tifffile(pathlike)
+        for name in TIFF_FLAGS:
+            if getattr(tf, 'is_' + name, False):
+                return False
 
-    @lazyattr
-    def baseline_series(self):
-        return self._tf.series[0]
+        if len(tf.series) == 1:
+            baseline = tf.series[0]
+            if baseline and not baseline.is_pyramidal and len(baseline.levels) == 1:
+                return True
 
-    def init_standard_metadata(self):
-        imd = ImageMetadata()
-        imd.width = self.baseline.imagewidth
-        imd.height = self.baseline.imagelength
-        imd.depth = self.baseline.imagedepth
-        imd.duration = 1
-        imd.pixel_type = self.baseline.dtype
-        imd.significant_bits = self.baseline.bitspersample
-        imd.n_channels = self.baseline.samplesperpixel
-        if imd.n_channels == 3:
-            imd.set_channel(ImageChannel(index=0, suggested_name='R'))
-            imd.set_channel(ImageChannel(index=1, suggested_name='G'))
-            imd.set_channel(ImageChannel(index=2, suggested_name='B'))
-        else:
-            imd.set_channel(ImageChannel(index=0, suggested_name='L'))
-
-        self._imd = imd
-
-    def init_complete_metadata(self):
-        tags = self.baseline.tags
-
-        imd = self._imd
-        imd.description = self.baseline.description
-
-        acquisition_datetime = self.parse_acquisition_date(tags.get(306))
-        imd.acquisition_datetime = acquisition_datetime if acquisition_datetime else self._path.creation_datetime
-
-        imd.physical_size_x = self.parse_physical_size(tags.get("XResolution"), tags.get("ResolutionUnit"))
-        imd.physical_size_y = self.parse_physical_size(tags.get("YResolution"), tags.get("ResolutionUnit"))
-
-    @staticmethod
-    def parse_acquisition_date(date):
-        """
-        Parse a date(time) from a TiffTag to datetime.
-
-        Parameters
-        ----------
-        date: str, datetime, TiffTag
-
-        Returns
-        -------
-        datetime: datetime, None
-        """
-        date = get_tag_value(date)
-
-        if isinstance(date, datetime):
-            return date
-        elif not isinstance(date, str) or (len(date) != 19 or date[16] != ':'):
-            return None
-        else:
-            try:
-                return datetime.strptime(date, "%Y:%m:%d %H:%M:%S")
-            except ValueError:
-                return None
-
-    @staticmethod
-    def parse_physical_size(physical_size, unit=None):
-        """
-        Parse a physical size and its unit from a TiffTag to a Quantity.
-
-        Parameters
-        ----------
-        physical_size: tuple, int, TiffTag
-        unit: tifffile.RESUNIT
-
-        Returns
-        -------
-        physical_size: Quantity
-        """
-        physical_size = get_tag_value(physical_size)
-        unit = get_tag_value(unit)
-        if not unit or physical_size is None:
-            return None
-        if type(physical_size) == tuple and len(physical_size) == 1:
-            rational = (physical_size[0], 1)
-        elif type(physical_size) != tuple:
-            rational = (physical_size, 1)
-        else:
-            rational = physical_size
-        return rational[1] / rational[0] * UNIT_REGISTRY(unit.name.lower())
-
-    @lazyattr
-    def pyramid(self):
-        pyramid = Pyramid()
-        baseline = self.baseline_series
-        for level in baseline.levels:
-            page = level[0]
-            pyramid.insert_tier(page.imagewidth, page.imagelength, (page.tilewidth, page.tilelength),
-                                page_index=page.index)
-
-        return pyramid
-
-    def get_raw_metadata(self):
-        skipped_tags = (273, 279, 278, 288, 289, 320, 324, 325, 347, 437, 519, 520, 521, 559, 20624,
-                        20625, 34675) + tuple(range(65420, 65459))
-        store = super(AbstractTiffFormat, self).get_raw_metadata()
-        for tag in self.baseline.tags:
-            if tag.code not in skipped_tags and type(tag.value) not in (bytes, np.ndarray):
-                value = tag.value.name if isinstance(tag.value, Enum) else tag.value
-                store.set(tag.name, value, namespace="TIFF")
-        return store
-
-    def read_thumbnail(self, out_width, out_height, precomputed, c, z, t):
-        tier = self.pyramid.most_appropriate_tier(out_width, out_height)
-        return self._tf.pages[tier.data.get('page_index')].asarray()
-
-
-def read_tifffile(path):
-    try:
-        tf = tifffile.TiffFile(path)
-    except tifffile.TiffFileError:
-        tf = None
-    return tf
-
-
-def get_tag_value(tag):
-    if isinstance(tag, TiffTag):
-        return tag.value
-    else:
-        return tag
-
-
-TIFF_FLAGS = (
-    'geotiff',
-    'philips',
-    'shaped',
-    'lsm',
-    'ome',
-    'imagej',
-    'fluoview',
-    'stk',
-    'sis',
-    'svs',
-    'scn',
-    'qpi',
-    'ndpi',
-    'scanimage',
-    'mdgel',
-)
-
-
-class PyrTiffFormat(AbstractTiffFormat):
-    @classmethod
-    def match(cls, cached_path):
-        if super().match(cached_path):
-            tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
-            for name in TIFF_FLAGS:
-                if getattr(tf, 'is_' + name, False):
-                    return False
-
-            if len(tf.series) == 1:
-                baseline = tf.series[0]
-                if baseline and baseline.is_pyramidal:
-                    for level in baseline.levels:
-                        if level.keyframe.is_tiled is False:
-                            return False
-                    return True
         return False
 
-    def init_complete_metadata(self):
-        super(PyrTiffFormat, self).init_complete_metadata()
-        imd = self._imd
-        imd.is_complete = True
 
+class PlanarTiffFormat(AbstractFormat):
+    checker_class = PlanarTiffChecker
+    parser_class = TifffileParser
+    reader_class = VipsReader
+    histogramer_class = VipsHistogramManager  # TODO
 
-class PlanarTiffFormat(AbstractTiffFormat):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled = True
+
     @classmethod
-    def match(cls, cached_path):
-        if super().match(cached_path):
-            tf = cached_path.get("tf", read_tifffile, cached_path.path.resolve())
-            for name in TIFF_FLAGS:
-                if getattr(tf, 'is_' + name, False):
-                    return False
+    def get_name(cls):
+        return "Planar TIFF"
 
-            if len(tf.series) == 1:
-                baseline = tf.series[0]
-                if baseline and not baseline.is_pyramidal and len(baseline.levels) == 1:
-                    return True
-        return False
+    @classmethod
+    def is_spatial(cls):
+        return True
+
+    @cached_property
+    def need_conversion(self):
+        imd = self.main_imd
+        return not (imd.width < 1024 and imd.height < 1024)
