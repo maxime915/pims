@@ -108,10 +108,10 @@ class Pyramid:
         return self._tiers[0] if self.n_levels > 0 else None
 
     def zoom_to_level(self, zoom):
-        return self.max_zoom - zoom if zoom > 0 else 0
+        return self.max_zoom - zoom if self.max_zoom > 0 else 0
 
     def level_to_zoom(self, level):
-        return self.max_level - level if level > 0 else 0
+        return self.max_level - level if self.max_level > 0 else 0
 
     def insert_tier(self, width, height, tile_size, **tier_data):
         tier = PyramidTier(width, height, tile_size, pyramid=self, data=tier_data)
