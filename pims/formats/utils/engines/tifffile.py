@@ -86,8 +86,12 @@ class TifffileChecker(SignatureChecker):
 
 
 class TifffileParser(AbstractParser):
+    @property
+    def baseline(self):
+        return cached_tifffile_baseline(self.format)
+
     def parse_main_metadata(self):
-        baseline = cached_tifffile_baseline(self.format)
+        baseline = self.baseline
 
         imd = ImageMetadata()
         imd.width = baseline.imagewidth
@@ -110,7 +114,7 @@ class TifffileParser(AbstractParser):
 
     def parse_known_metadata(self):
         imd = super().parse_known_metadata()
-        baseline = cached_tifffile_baseline(self.format)
+        baseline = self.baseline
         tags = baseline.tags
 
         imd.description = baseline.description

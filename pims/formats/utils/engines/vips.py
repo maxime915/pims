@@ -71,16 +71,28 @@ class VipsParser(AbstractParser):
 
 
 class VipsReader(AbstractReader):
-    def read_thumb(self, out_width, out_height, **other):
+    @staticmethod
+    def vips_filename_with_options(filename, **options):
+        if len(options) > 0:
+            opt_string = '[' + ','.join("{}={}".format(k, v) for (k, v) in options.items()) + ']'
+            return filename + opt_string
+        return filename
+
+    def vips_thumbnail(self, width, height, **loader_options):
         image = cached_vips_file(self.format)
 
+        filename = self.vips_filename_with_options(str(self.format.path), **loader_options)
         if image.interpretation in ("grey16", "rgb16"):
             # Related to https://github.com/libvips/libvips/issues/1941 ?
-            return VIPSImage.thumbnail(str(self.format.path), out_width, height=out_height,
-                                       size=VIPSSize.FORCE, linear=True)\
+            return VIPSImage.thumbnail(filename, width, height=height,
+                                       size=VIPSSize.FORCE, linear=True) \
                 .colourspace(image.interpretation)
 
-        return VIPSImage.thumbnail(str(self.format.path), out_width, height=out_height, size=VIPSSize.FORCE)
+        return VIPSImage.thumbnail(filename, width, height=height, size=VIPSSize.FORCE)
+
+    def read_thumb(self, out_width, out_height, **other):
+        return self.vips_thumbnail(out_width, out_height)
+
 
     def read_window(self, region, out_width, out_height, **other):
         image = cached_vips_file(self.format)

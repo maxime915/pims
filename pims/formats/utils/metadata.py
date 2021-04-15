@@ -57,6 +57,15 @@ def parse_float(value, raise_exc=False):
         return None
 
 
+def parse_int(value, raise_exc=False):
+    try:
+        return int(value)
+    except:
+        if raise_exc:
+            raise
+        return None
+
+
 def parse_datetime(value, formats=None, raise_exc=False):
     if formats is None:
         formats = [

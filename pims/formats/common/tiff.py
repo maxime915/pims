@@ -55,7 +55,7 @@ class PyrTiffVipsReader(VipsReader):
 
         tier = self.format.pyramid.most_appropriate_tier(out_width, out_height)
         page = tier.data.get('page_index')
-        tiff_page = VIPSImage.new_from_file(str(self.format.path), page=page)
+        tiff_page = VIPSImage.tiffload(str(self.format.path), page=page)
         region = region.toint(width_scale=tier.width, height_scale=tier.height)
         return tiff_page.extract_area(region.left, region.top, region.width, region.height)
 
@@ -65,7 +65,7 @@ class PyrTiffVipsReader(VipsReader):
         tsizex, tsizey = tier.tile_width, tier.tile_height
 
         page = tier.data.get('page_index')
-        tiff_page = VIPSImage.new_from_file(str(self.format.path), page=page)
+        tiff_page = VIPSImage.tiffload(str(self.format.path), page=page)
 
         # There is no direct access to underlying tiles in vips
         # But the following computation match vips implementation so that only the tile

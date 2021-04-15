@@ -89,10 +89,12 @@ class OutputProcessor(ImageOp):
         clean_params = {}
         if suffix == '.jpeg':
             clean_params['Q'] = params.get('quality', params.get('jpeg_quality', 75))
+            clean_params['strip'] = True
         elif suffix == '.png':
             clean_params['compression'] = params.get('compression', params.get('png_compression', 6))
         elif suffix == '.webp':
             clean_params['lossless'] = params.get('lossless', params.get('webp_lossless', False))
+            clean_params['strip'] = True
 
         # Clip by casting image
         img = img.cast(dtype_to_vips_format[self.expected_dtype()])

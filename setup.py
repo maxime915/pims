@@ -49,7 +49,8 @@ REQUIRED = [
     'numpy>=1.20.1',
     'Pillow>=8.1.2',
     'pyvips>=2.1.14',
-    'tifffile>=2021.3.17',
+    'tifffile>=2021.4.8',
+    'imagecodecs>=2021.3.31',
 
     'Shapely>=1.8a1',
     'rasterio>=1.2.1',
