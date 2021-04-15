@@ -126,7 +126,7 @@ class VipsHistogramManager(AbstractHistogramManager):
             else:
                 image = VIPSImage.thumbnail(str(self.format.path), 1024)
 
-        vips_stats = image.flatten().stats()
+        vips_stats = image.stats()
         np_stats = vips_to_numpy(vips_stats)
         stats = {
             channel: dict(minimum=np_stats[channel + 1, 0].item(), maximum=np_stats[channel + 1, 1].item())
