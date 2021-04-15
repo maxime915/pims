@@ -28,7 +28,7 @@ class OpenslideVipsParser(VipsParser):
         for associated in ('macro', 'thumbnail', 'label'):
             if associated in get_vips_field(image, 'slide-associated-images'):
                 head = VIPSImage.openslideload(str(self.format.path), associated=associated)
-                imd_associated = getattr(imd, 'associated_{}'.format(associated))
+                imd_associated = getattr(imd, 'associated_{}'.format(associated[:5]))
                 imd_associated.width = head.width
                 imd_associated.height = head.height
                 imd_associated.n_channels = head.bands

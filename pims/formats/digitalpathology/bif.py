@@ -20,40 +20,48 @@ from pims.formats.utils.engines.vips import VipsHistogramManager, cached_vips_fi
 from pims.formats.utils.metadata import parse_datetime
 
 
-class SCNChecker(TifffileChecker):
+class BifChecker(TifffileChecker):
     @classmethod
     def match(cls, pathlike):
         if super().match(pathlike):
             tf = cls.get_tifffile(pathlike)
-            return tf.is_scn
+            xmp = tf.pages[0].tags.get('XMP')
+            return xmp and b'<iScan' in xmp.value
         return False
 
 
-class SCNParser(OpenslideVipsParser):
+class BifParser(OpenslideVipsParser):
+    # TODO: parse ourselves ventana xml
     def parse_known_metadata(self):
         image = cached_vips_file(self.format)
 
         imd = super().parse_known_metadata()
-        imd.acquisition_datetime = parse_datetime(get_vips_field(image, 'leica.creation-date'))
-        imd.microscope.model = get_vips_field(image, 'leica.device-model')
+
+        acquisition_date = self.parse_acquisition_date(get_vips_field(image, 'ventana.ScanDate'))
+        imd.acquisition_datetime = acquisition_date if acquisition_date else imd.acquisition_datetime
+
         imd.is_complete = True
         return imd
 
+    @staticmethod
+    def parse_acquisition_date(date):
+        # Have seen: 8/18/2014 09:44:30 | 8/30/2017 12:04:52 PM
+        return parse_datetime(date, ["%m/%d/%Y %H:%M:%S", "%m/%d/%Y %H:%M:%S %p"])
 
-class SCNFormat(AbstractFormat):
+
+class BifFormat(AbstractFormat):
     """
-    Leica SCN format.
-    Only support brightfield, no support for fluorescence.
+    Ventana BIF (TIFF) format.
 
     References
     ----------
-    * https://openslide.org/formats/leica/
-    * https://github.com/ome/bioformats/blob/develop/components/formats-gpl/src/loci/formats/in/LeicaSCNReader.java
-    * https://docs.openmicroscopy.org/bio-formats/6.5.1/formats/leica-scn.html
+    * https://openslide.org/formats/ventana/
+    * https://github.com/openslide/openslide/blob/main/src/openslide-vendor-ventana.c
+    * https://github.com/ome/bioformats/blob/develop/components/formats-gpl/src/loci/formats/in/VentanaReader.java
     """
 
-    checker_class = SCNChecker
-    parser_class = SCNParser
+    checker_class = BifChecker
+    parser_class = BifParser
     reader_class = OpenslideVipsReader
     histogramer_class = VipsHistogramManager
 
@@ -63,7 +71,7 @@ class SCNFormat(AbstractFormat):
 
     @classmethod
     def get_name(cls):
-        return "Leica SCN"
+        return "Ventana BIF"
 
     @classmethod
     def is_spatial(cls):
