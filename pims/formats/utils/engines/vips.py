@@ -15,6 +15,7 @@ import logging
 
 import numpy as np
 from pyvips import Image as VIPSImage, Size as VIPSSize
+from pyvips.error import Error as VIPSError
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractHistogramManager
@@ -28,6 +29,13 @@ log = logging.getLogger("pims.formats")
 
 def cached_vips_file(format):
     return format.get_cached('_vips', VIPSImage.new_from_file, str(format.path))
+
+
+def get_vips_field(vips_image, field, default=None):
+    try:
+        return vips_image.get_value(field)
+    except VIPSError:
+        return default
 
 
 class VipsParser(AbstractParser):
@@ -93,7 +101,6 @@ class VipsReader(AbstractReader):
     def read_thumb(self, out_width, out_height, **other):
         return self.vips_thumbnail(out_width, out_height)
 
-
     def read_window(self, region, out_width, out_height, **other):
         image = cached_vips_file(self.format)
 
@@ -119,7 +126,7 @@ class VipsHistogramManager(AbstractHistogramManager):
             else:
                 image = VIPSImage.thumbnail(str(self.format.path), 1024)
 
-        vips_stats = image.stats()
+        vips_stats = image.flatten().stats()
         np_stats = vips_to_numpy(vips_stats)
         stats = {
             channel: dict(minimum=np_stats[channel + 1, 0].item(), maximum=np_stats[channel + 1, 1].item())
