@@ -52,6 +52,9 @@ class CachedData:
     def is_in_cache(self, key):
         return key in self._cache
 
+    def clear_cache(self):
+        self._cache.clear()
+
 
 class CachedPathData(CachedData):
     def __init__(self, path):

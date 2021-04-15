@@ -168,5 +168,7 @@ class Path(type(_Path()), _Path):
         return not self.is_collection()
 
     def signature(self):
+        if not self.is_file():
+            return []
         with self.resolve().open('rb') as fp:
             return bytearray(fp.read(_NUM_SIGNATURE_BYTES))
