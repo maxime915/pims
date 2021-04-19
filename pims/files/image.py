@@ -17,10 +17,10 @@ from pims.files.file import Path
 
 
 class Image(Path):
-    def __init__(self, *pathsegments, factory=None):
+    def __init__(self, *pathsegments, factory=None, format=None):
         super().__init__(*pathsegments)
 
-        _format = factory.match(self) if factory else None
+        _format = factory.match(self) if factory else format
         if _format is None:
             raise NoMatchingFormatProblem(self)
         else:
