@@ -131,7 +131,7 @@ def _serialize_pyramid(pyramid):
             "zoom": tier.zoom,
             "tile_width": tier.tile_width,
             "tile_height": tier.tile_height,
-            "downsampling_factor": tier.width_factor
+            "downsampling_factor": tier.average_factor
         }
 
     return {

@@ -45,6 +45,10 @@ class PyramidTier:
         return self.factor[1]
 
     @property
+    def average_factor(self):
+        return sum(self.factor) / 2.0
+
+    @property
     def level(self):
         return self.pyramid.tiers.index(self)
 
