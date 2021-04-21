@@ -51,11 +51,11 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         region = Region(**region) if not isinstance(region, Region) else region.toint()
         normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
     elif ti is not None:
-        check_tileindex_validity(in_image, ti, reference_tier_index, tier_index_type)
+        check_tileindex_validity(in_image.pyramid, ti, reference_tier_index, tier_index_type)
         region = in_image.pyramid.get_tier_at(reference_tier_index, tier_index_type).ti2region(ti)
         normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
     elif tx and ty is not None:
-        check_tilecoord_validity(in_image, tx, ty, reference_tier_index, tier_index_type)
+        check_tilecoord_validity(in_image.pyramid, tx, ty, reference_tier_index, tier_index_type)
         region = in_image.pyramid.get_tier_at(reference_tier_index, tier_index_type).txty2region(tx, ty)
         normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
     else:
@@ -63,8 +63,8 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         return
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    check_zoom_validity(in_image, zoom)
-    check_level_validity(in_image, level)
+    check_zoom_validity(in_image.pyramid, zoom)
+    check_level_validity(in_image.pyramid, level)
     req_width, req_height = get_window_output_dimensions(in_image, region, height, width, length, zoom,
                                                          level)
     safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])

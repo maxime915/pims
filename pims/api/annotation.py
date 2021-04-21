@@ -41,8 +41,8 @@ def _show_mask(filepath, annotations, context_factor=None,
     region = get_annotation_region(in_image, annots, context_factor)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    check_zoom_validity(in_image, zoom)
-    check_level_validity(in_image, level)
+    check_zoom_validity(in_image.pyramid, zoom)
+    check_level_validity(in_image.pyramid, level)
     req_width, req_height = get_window_output_dimensions(in_image, region, height, width, length, zoom,
                                                          level)
     safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])

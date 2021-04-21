@@ -237,10 +237,10 @@ def parse_region(in_image, region, tier_idx, tier_type):
         If a region coordinate is out of bound.
     """
     if tier_type == "ZOOM":
-        check_zoom_validity(in_image, tier_idx)
+        check_zoom_validity(in_image.pyramid, tier_idx)
         ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
     else:
-        check_level_validity(in_image, tier_idx)
+        check_level_validity(in_image.pyramid, tier_idx)
         ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
 
     normalized = dict()
@@ -482,13 +482,13 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
     return min_intensities, max_intensities
 
 
-def check_level_validity(in_image, level):
+def check_level_validity(pyramid, level):
     """ Check the level tier exists in the image pyramid.
 
     Parameters
     ----------
-    in_image : Image
-        Image with a pyramid
+    pyramid : Pyramid
+        Image pyramid
     level : int or None
         Level to be checked for existence in the image pyramid
 
@@ -498,17 +498,17 @@ def check_level_validity(in_image, level):
         If the given level is not in the image pyramid.
     """
 
-    if level is not None and not 0 <= level <= in_image.pyramid.max_level:
-        raise BadRequestProblem(detail="Level tier {} does not exist for image {}.".format(level, str(in_image)))
+    if level is not None and not 0 <= level <= pyramid.max_level:
+        raise BadRequestProblem(detail="Level tier {} does not exist.".format(level))
 
 
-def check_zoom_validity(in_image, zoom):
+def check_zoom_validity(pyramid, zoom):
     """Check the zoom tier exists in the image pyramid.
 
     Parameters
     ----------
-    in_image : Image
-        Image with a pyramid
+    pyramid : Pyramid
+        Image pyramid
     zoom : int or None
         Zoom to be checked for existence in the image pyramid
 
@@ -518,18 +518,18 @@ def check_zoom_validity(in_image, zoom):
         If the given zoom is not in the image pyramid.
     """
 
-    if zoom is not None and not 0 <= zoom <= in_image.pyramid.max_zoom:
-        raise BadRequestProblem(detail="Zoom tier {} does not exist for image {}.".format(zoom, str(in_image)))
+    if zoom is not None and not 0 <= zoom <= pyramid.max_zoom:
+        raise BadRequestProblem(detail="Zoom tier {} does not exist.".format(zoom))
 
 
-def check_tileindex_validity(in_image, ti, tier_idx, tier_type):
+def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
     """
     Check the tile index exists in the image pyramid at given tier.
 
     Parameters
     ----------
-    in_image : Image
-        Image with a pyramid
+    pyramid : Pyramid
+        Image pyramid
     ti : int
         Tile index to check
     tier_idx : int
@@ -543,24 +543,24 @@ def check_tileindex_validity(in_image, ti, tier_idx, tier_type):
         If the tile index is invalid.
     """
     if tier_type == "ZOOM":
-        check_zoom_validity(in_image, tier_idx)
-        ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
+        check_zoom_validity(pyramid, tier_idx)
+        ref_tier = pyramid.get_tier_at_zoom(tier_idx)
     else:
-        check_level_validity(in_image, tier_idx)
-        ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
+        check_level_validity(pyramid, tier_idx)
+        ref_tier = pyramid.get_tier_at_level(tier_idx)
 
     if not 0 <= ti < ref_tier.max_ti:
         raise BadRequestProblem("Tile index {} is invalid for tier {}.".format(ti, ref_tier))
 
 
-def check_tilecoord_validity(in_image, tx, ty, tier_idx, tier_type):
+def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
     """
     Check the tile index exists in the image pyramid at given tier.
 
     Parameters
     ----------
-    in_image : Image
-        Image with a pyramid
+    pyramid : Pyramid
+        Image pyramid
     tx : int
         Tile coordinate along X axis to check
     ty : int
@@ -576,11 +576,11 @@ def check_tilecoord_validity(in_image, tx, ty, tier_idx, tier_type):
         If the tile index is invalid.
     """
     if tier_type == "ZOOM":
-        check_zoom_validity(in_image, tier_idx)
-        ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
+        check_zoom_validity(pyramid, tier_idx)
+        ref_tier = pyramid.get_tier_at_zoom(tier_idx)
     else:
-        check_level_validity(in_image, tier_idx)
-        ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
+        check_level_validity(pyramid, tier_idx)
+        ref_tier = pyramid.get_tier_at_level(tier_idx)
 
     if not 0 <= tx < ref_tier.max_tx:
         raise BadRequestProblem("Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier))
