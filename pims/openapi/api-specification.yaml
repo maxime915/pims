@@ -24,8 +24,9 @@ tags:
     description: |
       Tiles are non-overlaping rectangular regions covering an image at given resolution (a tier in a pyramidal image).
 
-      Tile size is fixed except right-most or bottom-most tiles which might be smaller. It very often depends on
-      internal image parameters. Common tile sizes are `256*256` and `512*512`.
+      Tile size is fixed except right-most or bottom-most tiles which might be smaller. **It depends on
+      internal image parameters.** Common tile sizes are `256*256` and `512*512`. Non tiled file formats only have
+      a single tile par tier.
 
       ### Input region
       * Tile index and tier (zoom or level)
@@ -33,6 +34,22 @@ tags:
 
       ### Target size
       Always defined by underlying image tile size.
+  - name: Normalized tiles
+    description: |
+      Normalized tiles are non-overlaping rectangular regions covering an image at given resolution (a tier in a pyramidal image).
+
+      Normalized tiles have a width and height of 256 pixels, except right-most and bottom-most tiles which might be smaller.
+
+      The pyramid of normalized tiles is also normalized. Each tier has half the size of the previous tier, rounded up.
+
+      ### Input region
+      * Tile index and tier (zoom or level)
+      * Tile coordinates and tier (zoom or level)
+
+      ### Target size
+      * Width: 256 pixels, except for right-most tiles that might have size lower than 256.
+      * Height: 256 pixels, except for bottom-most tiles that moghe have size lower than 256.
+
   - name: Windows
     description: |
       Windows are rectangular portions extracted from the underlying image content (input region) and optionnaly
@@ -111,6 +128,204 @@ tags:
   - name: Server
   - name: Housekeeping
 paths:
+  /image/{filepath}/normalized-tile/zoom/{zoom}/ti/{ti}:
+    parameters:
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/path-zoom'
+      - $ref: '#/components/parameters/path-tile-index'
+      - $ref: '#/components/parameters/header-etag'
+    get:
+      operationId: pims.api.tile.show_normalized_tile_by_zoom
+      summary: Get a normalized tile at zoom
+      description: |
+        Get a 8-bit normalized tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+        tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Normalized tiles
+      parameters:
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
+#        - $ref: '#/components/parameters/query-c-reduction'
+#        - $ref: '#/components/parameters/query-z-reduction'
+#        - $ref: '#/components/parameters/query-t-reduction'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+#        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+    post:
+      operationId: pims.api.tile.show_normalized_tile_with_body_by_zoom
+      summary: Get a normalized tile at zoom
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get a 8-bit normalized tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Normalized tiles
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/window-plane-selection'
+                - $ref: '#/components/schemas/image-manipulation-visualisation'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+  /image/{filepath}/normalized-tile/level/{level}/ti/{ti}:
+    parameters:
+      - $ref: '#/components/parameters/path-filepath'
+      - $ref: '#/components/parameters/path-level'
+      - $ref: '#/components/parameters/path-tile-index'
+      - $ref: '#/components/parameters/header-etag'
+    get:
+      operationId: pims.api.tile.show_normalized_tile_by_level
+      summary: Get a normalized tile at level
+      description: |
+        Get a 8-bit normalized tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Normalized tiles
+      parameters:
+        - $ref: '#/components/parameters/query-channel-selection'
+        - $ref: '#/components/parameters/query-z-slice-selection'
+        - $ref: '#/components/parameters/query-timepoint-selection'
+#        - $ref: '#/components/parameters/query-c-reduction'
+#        - $ref: '#/components/parameters/query-z-reduction'
+#        - $ref: '#/components/parameters/query-t-reduction'
+        - $ref: '#/components/parameters/query-min-intensities-visualisation'
+        - $ref: '#/components/parameters/query-max-intensities-visualisation'
+#        - $ref: '#/components/parameters/query-colormaps'
+        - $ref: '#/components/parameters/query-filters'
+        - $ref: '#/components/parameters/query-gammas'
+        - $ref: '#/components/parameters/query-log'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+    post:
+      operationId: pims.api.tile.show_normalized_tile_with_body_by_level
+      summary: Get a normalized tile at level
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get a 8-bit normalized tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Normalized tiles
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/window-plane-selection'
+                - $ref: '#/components/schemas/image-manipulation-visualisation'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
+  /image/{filepath}/normalized-tile:
+    post:
+      operationId: pims.api.tile.show_normalized_tile_with_body
+      summary: Get a normalized tile (generic)
+      description: |
+        **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
+        with body content must be used.**
+
+        Get a 8-bit normalized tile optimized for visualisation, with given channels, focal
+        planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
+        planes or timepoints are given (slice or selection), a reduction function must be provided.
+
+        **By default**, all image channels are used and when the image is multidimensional, the
+         tile is extracted from the median focal plane at first timepoint.
+      tags:
+        - Normalized tiles
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - title: tile-by-zoom-and-index
+                  allOf:
+                    - $ref: '#/components/schemas/target-zoom-tile-index'
+                    - $ref: '#/components/schemas/window-plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+                - title: tile-by-level-and-index
+                  allOf:
+                    - $ref: '#/components/schemas/target-level-tile-index'
+                    - $ref: '#/components/schemas/window-plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+                - title: tile-by-zoom-and-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/target-zoom-tile-coordinates'
+                    - $ref: '#/components/schemas/window-plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+                - title: tile-by-level-and-coordinates
+                  allOf:
+                    - $ref: '#/components/schemas/target-level-tile-coordinates'
+                    - $ref: '#/components/schemas/window-plane-selection'
+                    - $ref: '#/components/schemas/image-manipulation-visualisation'
+      responses:
+        200:
+          $ref: '#/components/responses/tile'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
   /image/{filepath}/tile/zoom/{zoom}/ti/{ti}:
     parameters:
       - $ref: '#/components/parameters/path-filepath'
@@ -1153,6 +1368,39 @@ paths:
           $ref: '#/components/responses/problem-bad-request'
         404:
           $ref: '#/components/responses/problem-not-found'
+  /image/{filepath}/info/normalized-pyramid:
+    get:
+      operationId: pims.api.metadata.show_normalized_pyramid
+      description: Get the normalized pyramid for an image
+      summary: Get image normalized pyramid
+      tags:
+        - Metadata
+      parameters:
+        - $ref: '#/components/parameters/path-filepath'
+        - $ref: '#/components/parameters/header-etag'
+      responses:
+        200:
+          description: OK
+          headers:
+            If-None-Match:
+              $ref: '#/components/headers/If-None-Match'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    $ref: '#/components/schemas/pyramid-info'
+        304:
+          $ref: '#/components/responses/not-modified'
+        400:
+          $ref: '#/components/responses/problem-bad-request'
+        404:
+          $ref: '#/components/responses/problem-not-found'
   /image/{filepath}/info/channels:
     get:
       operationId: pims.api.metadata.show_channels
@@ -1792,7 +2040,7 @@ paths:
       summary: Get a tile (V2.x)
       deprecated: true
       tags:
-        - Tiles
+        - Normalized tiles
       parameters:
         - name: 'mimeType'
           in: query
@@ -1868,7 +2116,7 @@ paths:
       summary: Get a tile (V1.x)
       deprecated: true
       tags:
-        - Tiles
+        - Normalized tiles
       parameters:
         - name: 'mimeType'
           in: query
@@ -3505,6 +3753,18 @@ components:
                 format: double
                 description: The factor by which the tier downsamples the basis of the pyramid.
                 example: 2.0
+              n_tiles:
+                type: integer
+                format: int64
+                description: The number of tiles at this tier
+              n_tx:
+                type: integer
+                format: int64
+                description: The number of tiles along horizontal axis
+              n_ty:
+                type: integer
+                format: int64
+                description: The number of tiles along vertical axis
     instrument-info:
       type: object
       description: |

@@ -184,3 +184,33 @@ class Pyramid:
                and all([a == b for (a, b) in zip(o.tiers, self.tiers)])
 
 
+def normalized_pyramid(width, height):
+    """
+    Build a normalized pyramid, with normalized tiles, i.e.
+    * each pyramid tier is half the size of the previous one, rounded up.
+    * each tile has width of 256 pixels, except for right-most tiles.
+    * each tile has height of 256 pixels, except for bottom-most tiles.
+
+    Parameters
+    ----------
+    width : int
+        Pyramid base width
+    height : int
+        Pyramid base height
+
+    Returns
+    -------
+    pyramid : Pyramid
+        A normalized pyramid.
+    """
+    pyramid = Pyramid()
+    w, h = width, height
+
+    ts = 256
+    pyramid.insert_tier(w, h, (ts, ts))
+    while w > ts or h > ts:
+        w = ceil(w / 2)
+        h = ceil(h / 2)
+        pyramid.insert_tier(w, h, (ts, ts))
+
+    return pyramid

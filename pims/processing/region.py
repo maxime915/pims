@@ -61,31 +61,27 @@ class Region:
         width_scale = self.width_downsample / width_downsample
         height_scale = self.height_downsample / height_downsample
 
-        return Region(
-            top=self.top * height_scale,
-            left=self.left * width_scale,
-            width=self.width * width_scale,
-            height=self.height * height_scale,
-            downsample=downsample
-        )
+        self.top *= height_scale
+        self.left *= width_scale
+        self.width *= width_scale
+        self.height *= height_scale
+        self.width_downsample = width_downsample
+        self.height_downsample = height_downsample
+        return self
 
     def toint(self):
-        return Region(
-            top=math.floor(self.top),
-            left=math.floor(self.left),
-            width=math.ceil(self.width),
-            height=math.ceil(self.height),
-            downsample=self.downsample
-        )
+        self.top = math.floor(self.top)
+        self.left = math.floor(self.left)
+        self.width = math.ceil(self.width)
+        self.height = math.ceil(self.height)
+        return self
 
     def clip(self, width, height):
-        return Region(
-            top=max(0, self.top),
-            left=max(0, self.left),
-            width=min(self.left + self.width, width) - self.left,
-            height=min(self.top + self.height, height) - self.top,
-            downsample=self.downsample
-        )
+        self.top = max(0, self.top)
+        self.left = max(0, self.left)
+        self.width = min(self.left + self.width, width) - self.left
+        self.height = min(self.top + self.height, height) - self.top
+        return self
 
     def scale_to_tier(self, tier):
         return self.scale((tier.width_factor, tier.height_factor))\

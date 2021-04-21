@@ -131,7 +131,10 @@ def _serialize_pyramid(pyramid):
             "zoom": tier.zoom,
             "tile_width": tier.tile_width,
             "tile_height": tier.tile_height,
-            "downsampling_factor": tier.average_factor
+            "downsampling_factor": tier.average_factor,
+            "n_tiles": tier.max_ti,
+            "n_tx": tier.max_tx,
+            "n_ty": tier.max_ty
         }
 
     return {
@@ -192,6 +195,16 @@ def show_channels(filepath):
     original = path.get_original()
     check_representation_existence(original)
     return response_list(_serialize_channels(original))
+
+
+def show_normalized_pyramid(filepath):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    original = path.get_original()
+    check_representation_existence(original)
+    return response_list(_serialize_pyramid(original.normalized_pyramid))
 
 
 def show_instrument(filepath):
