@@ -47,18 +47,15 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
     if reference_tier_index is None:
         reference_tier_index = 0 if tier_index_type == "LEVEL" else in_image.pyramid.max_zoom
 
-    if region is not None:
-        region = Region(**region) if not isinstance(region, Region) else region.toint()
-        normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
+    if region is not None and type(region) == dict:
+        region = parse_region(in_image, region, reference_tier_index, tier_index_type, silent_oob=False)
     elif ti is not None:
         check_tileindex_validity(in_image.pyramid, ti, reference_tier_index, tier_index_type)
         region = in_image.pyramid.get_tier_at(reference_tier_index, tier_index_type).ti2region(ti)
-        normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
     elif tx and ty is not None:
         check_tilecoord_validity(in_image.pyramid, tx, ty, reference_tier_index, tier_index_type)
         region = in_image.pyramid.get_tier_at(reference_tier_index, tier_index_type).txty2region(tx, ty)
-        normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
-    else:
+    elif type(region) != Region:
         # should not happen as this case is already handled by connexion.
         return
 
@@ -119,7 +116,7 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         "in_channels": channels,
         "in_z_slices": z_slices,
         "in_timepoints": timepoints,
-        "region": normalized_region,
+        "region": region,
         "c_reduction": c_reduction,
         "z_reduction": z_reduction,
         "t_reduction": t_reduction,

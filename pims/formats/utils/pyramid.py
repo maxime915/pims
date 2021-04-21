@@ -80,7 +80,12 @@ class PyramidTier:
         return self.txty2region(*self.ti2txty(ti))
 
     def txty2region(self, tx, ty):
-        return TileRegion(self, tx, ty)
+        return TileRegion(self, tx, ty).clip(self.width, self.height)
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, PyramidTier) \
+               and o.width == self.width and o.height == self.height \
+               and o.tile_width == self.tile_width and o.tile_height == self.tile_height
 
 
 class Pyramid:
@@ -142,26 +147,40 @@ class Pyramid:
     def __iter__(self):
         return iter(self._tiers)
 
-    def most_appropriate_tier(self, width, height):
+    def most_appropriate_tier_for_downsample_factor(self, factor):
+        if factor < self.base.average_factor:
+            return self.base
+
+        for i in range(1, self.n_levels):
+            if factor < self.tiers[i].average_factor:
+                return self.tiers[i - 1]
+
+        return self.tiers[self.n_levels - 1]
+
+    def most_appropriate_tier(self, region, out_size):
         """
-        Get the highest pyramid tier with size larger than `width` x `height`.
+        Get the best pyramid tier to get `region` at `out_size`.
 
         Parameters
         ----------
-        width : int
-            Minimum tier width
-        height : int
-            Minimum tier height
+        region : Region
+            Requested region
+        out_size : (int, int)
+            Output size (width, height)
 
         Returns
         -------
         PyramidTier
-            Highest pyramid tier whose size is larger than given lengths.
+            The most appropriate pyramid tier for this downsampling.
         """
-        best = self._tiers[0]
-        for tier in self._tiers:
-            if tier.width >= width and tier.height >= height:
-                best = tier
-            else:
-                break
-        return best
+        width_scale = region.true_width / out_size[0]
+        height_scale = region.true_height / out_size[1]
+        factor = (width_scale + height_scale) / 2.0
+        return self.most_appropriate_tier_for_downsample_factor(factor)
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Pyramid) \
+               and o.n_levels == self.n_levels \
+               and all([a == b for (a, b) in zip(o.tiers, self.tiers)])
+
+

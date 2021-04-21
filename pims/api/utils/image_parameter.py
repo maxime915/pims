@@ -149,19 +149,19 @@ def get_window_output_dimensions(in_image, region, height=None, width=None, leng
     """
     if level is not None:
         tier = in_image.pyramid.get_tier_at_level(level)
-        out_height, out_width = round(region.height / tier.height_factor), round(region.width / tier.width_factor)
+        out_height, out_width = round(region.true_height / tier.height_factor), round(region.true_width / tier.width_factor)
     elif zoom is not None:
         tier = in_image.pyramid.get_tier_at_zoom(zoom)
-        out_height, out_width = round(region.height / tier.height_factor), round(region.width / tier.width_factor)
+        out_height, out_width = round(region.true_height / tier.height_factor), round(region.true_width / tier.width_factor)
     elif height is not None:
-        out_height, out_width = get_rationed_resizing(height, region.height, region.width)
+        out_height, out_width = get_rationed_resizing(height, region.true_height, region.true_width)
     elif width is not None:
-        out_width, out_height = get_rationed_resizing(width, region.width, region.height)
+        out_width, out_height = get_rationed_resizing(width, region.true_width, region.true_height)
     elif length is not None:
-        if region.width > region.height:
-            out_width, out_height = get_rationed_resizing(length, region.width, region.height)
+        if region.true_width > region.true_height:
+            out_width, out_height = get_rationed_resizing(length, region.true_width, region.true_height)
         else:
-            out_height, out_width = get_rationed_resizing(length, region.height, region.width)
+            out_height, out_width = get_rationed_resizing(length, region.true_height, region.true_width)
     else:
         raise BadRequestProblem(detail='Impossible to determine output dimensions. '
                                        'Height, width and length cannot all be unset.')
@@ -211,30 +211,33 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
         return width, height
 
 
-def parse_region(in_image, region, tier_idx, tier_type):
+def parse_region(in_image, region_dict, tier_idx=0, tier_type='LEVEL', silent_oob=False):
     """
-    Parse a region and return normalized region in [0,1]
+    Parse a region
 
     Parameters
     ----------
     in_image : Image
         Image in which region is extracted
-    region : Region
-        Region to parse
+    region_dict : dict
+        Region dict ("top", "left", "width", "height" keys) to parse.
+        Values can be absolute (int) or relative (float)
     tier_idx : int
         Tier index to use as reference
     tier_type: string (`LEVEL` or `ZOOM`)
         Type of tier index
+    silent_oob: bool (default: false)
+        Whether out of bounds region should raise an error or not.
 
     Returns
     -------
-    norm_region: Region
-        The normalized region
+    region: Region
+        The parsed region
 
     Raises
     ------
     BadRequestProblem
-        If a region coordinate is out of bound.
+        If a region coordinate is out of bound and silent_oob is False.
     """
     if tier_type == "ZOOM":
         check_zoom_validity(in_image.pyramid, tier_idx)
@@ -243,26 +246,29 @@ def parse_region(in_image, region, tier_idx, tier_type):
         check_level_validity(in_image.pyramid, tier_idx)
         ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
 
-    normalized = dict()
-    region_dict = region.asdict()
-    for item in ("left", "width"):
-        if type(region_dict[item]) == int:
-            normalized[item] = region_dict[item] / ref_tier.width
-        else:
-            normalized[item] = region_dict[item] / ref_tier.width_factor
+    top = region_dict['top']
+    left = region_dict['left']
+    width = region_dict['width']
+    height = region_dict['height']
 
-    for item in ("top", "height"):
-        if type(region_dict[item]) == int:
-            normalized[item] = region_dict[item] / ref_tier.height
-        else:
-            normalized[item] = region_dict[item] / ref_tier.height_factor
+    if type(top) == float:
+        top *= ref_tier.height
+    if type(left) == float:
+        left *= ref_tier.width
+    if type(width) == float:
+        width *= ref_tier.width
+    if type(height) == float:
+        height *= ref_tier.height
 
-    normalized = Region(**normalized)
-    for coord in (normalized.top, normalized.bottom, normalized.left, normalized.right):
-        if not 0 <= coord <= 1:
+    downsample = (ref_tier.width_factor, ref_tier.height_factor)
+    region = Region(top, left, width, height, downsample)
+
+    if not silent_oob:
+        clipped = region.clip(ref_tier.width, ref_tier.height)
+        if clipped != region:
             raise BadRequestProblem(detail="Some coordinates of region {} are out of bounds.".format(region))
 
-    return normalized
+    return region
 
 
 def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
