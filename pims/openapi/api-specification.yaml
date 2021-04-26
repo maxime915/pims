@@ -1484,7 +1484,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/associated-info'
+                type: object
+                properties:
+                  size:
+                    $ref: '#/components/schemas/collection-size'
+                  items:
+                    $ref: '#/components/schemas/associated-info'
         304:
           $ref: '#/components/responses/not-modified'
         400:
@@ -3820,19 +3825,35 @@ components:
       description: |
         Associated images are metadata image stored in the original image file.
       properties:
-        has_thumbnail:
-          type: boolean
-          description: Whether the image file has a pre-computed thumbnail or not.
-          default: false
-        has_label:
-          type: boolean
-          description: Whether the image file has a label image (generally a barcode) or not.
-          default: false
-        has_macro:
-          type: boolean
-          description: Whether the image file has a macro image (generally, in slide scanners, a low resolution picture
-            of the entire slide) or not.
-          default: false
+        width:
+          type: integer
+          format: int64
+          description: The associated image width. It is the number of pixels along X axis.
+          minimum: 1
+        height:
+          type: integer
+          format: int64
+          description: The associated image height. It is the number of pixels along Y axis.
+          minimum: 1
+        n_channels:
+          type: integer
+          format: int64
+          description: |
+            The number of channels in the associated image.
+            Grayscale images have 1 channel. RGB images have 3 channels.
+          minimum: 1
+        name:
+          type: string
+          enum:
+            - macro
+            - label
+            - thumb
+          description: |
+            The type of associated image.
+
+            `macro` - A macro image (generally, in slide scanners, a low resolution picture of the entire slide)
+            `label` - A label image (generally a barcode)
+            `thumb` - A pre-computed thumbnail
     image-full-info:
       type: object
       properties:
@@ -3843,7 +3864,9 @@ components:
         instrument:
           $ref: '#/components/schemas/instrument-info'
         associated:
-          $ref: '#/components/schemas/associated-info'
+          type: array
+          items:
+            $ref: '#/components/schemas/associated-info'
         representations:
           $ref: '#/components/schemas/representation-info'
     collection-file-type-info:

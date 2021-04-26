@@ -224,7 +224,7 @@ def show_associated(filepath):
 
     original = path.get_original()
     check_representation_existence(original)
-    return _serialize_associated(original)
+    return response_list(_serialize_associated(original))
 
 
 def show_associated_image(filepath, associated_key, length=None, width=None, height=None):
