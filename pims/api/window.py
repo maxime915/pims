@@ -104,8 +104,9 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
             default = {'fill_color': "white"}
             point_envelope_length = None
 
+        origin = request.headers.get('X-Annotation-Origin', current_app.config['DEFAULT_ANNOTATION_ORIGIN'])
         annotations = parse_annotations(ensure_list(annotations), ignore_fields,
-                                        default, point_envelope_length)
+                                        default, point_envelope_length, origin=origin, im_height=in_image.height)
 
     affine = None
     if annotations:

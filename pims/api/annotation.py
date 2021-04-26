@@ -36,8 +36,9 @@ def _show_mask(filepath, annotations, context_factor=None,
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
+    origin = request.headers.get('X-Annotation-Origin', current_app.config['DEFAULT_ANNOTATION_ORIGIN'])
     annots = parse_annotations(ensure_list(annotations), ignore_fields=['stroke_width', 'stroke_color'],
-                               default={'fill_color': "white"})
+                               default={'fill_color': "white"}, origin=origin, im_height=in_image.height)
     region = get_annotation_region(in_image, annots, context_factor)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
@@ -87,8 +88,9 @@ def _show_crop(filepath, annotations, context_factor=None, background_transparen
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
+    origin = request.headers.get('X-Annotation-Origin', current_app.config['DEFAULT_ANNOTATION_ORIGIN'])
     annots = parse_annotations(ensure_list(annotations), ignore_fields=['stroke_width', 'stroke_color'],
-                               default={'fill_color': "white"})
+                               default={'fill_color': "white"}, origin=origin, im_height=in_image.height)
     region = get_annotation_region(in_image, annots, context_factor)
 
     annot_style = {
@@ -122,9 +124,10 @@ def _show_drawing(filepath, annotations, context_factor=None,
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
+    origin = request.headers.get('X-Annotation-Origin', current_app.config['DEFAULT_ANNOTATION_ORIGIN'])
     annots = parse_annotations(ensure_list(annotations), ignore_fields=['fill_color'],
                                default={'stroke_color': "red", 'stroke_width': 1},
-                               point_envelope_length=point_envelope_length)
+                               point_envelope_length=point_envelope_length, origin=origin, im_height=in_image.height)
     region = get_annotation_region(in_image, annots, context_factor, try_square)
 
     annot_style = {

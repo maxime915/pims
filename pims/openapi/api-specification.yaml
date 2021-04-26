@@ -544,6 +544,7 @@ paths:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/header-x-image-size-safety'
+        - $ref: '#/components/parameters/header-x-annotation-origin'
       requestBody:
         required: true
         content:
@@ -870,6 +871,7 @@ paths:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/header-x-image-size-safety'
+        - $ref: '#/components/parameters/header-x-annotation-origin'
       requestBody:
         required: true
         content:
@@ -914,6 +916,7 @@ paths:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/header-x-image-size-safety'
+        - $ref: '#/components/parameters/header-x-annotation-origin'
       requestBody:
         required: true
         content:
@@ -956,6 +959,7 @@ paths:
         - $ref: '#/components/parameters/path-filepath'
         - $ref: '#/components/parameters/header-etag'
         - $ref: '#/components/parameters/header-x-image-size-safety'
+        - $ref: '#/components/parameters/header-x-annotation-origin'
       requestBody:
         required: true
         content:
@@ -2246,6 +2250,18 @@ components:
           - SAFE_REJECT
           - SAFE_RESIZE
           - UNSAFE
+    header-x-annotation-origin:
+      name: X-Annotation-Origin
+      in: header
+      description: |
+        This header give the origin coordinate system in which are described provided annotations.
+      required: false
+      schema:
+        default: LEFT_TOP
+        type: string
+        enum:
+          - LEFT_TOP
+          - LEFT_BOTTOM
     path-filepath:
       name: filepath
       in: path
