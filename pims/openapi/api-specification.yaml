@@ -2105,6 +2105,12 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: gamma
+          in: query
+          description: |
+            Gamma value for all channels
+          schema:
+            type: number
       responses:
         200:
           description: The tile

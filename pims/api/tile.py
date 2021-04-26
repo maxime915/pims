@@ -166,12 +166,17 @@ def show_normalized_tile(filepath, zoom=None, level=None, ti=None, tx=None, ty=N
     else:
         raise BadRequestProblem(detail="Impossible to determine pyramid tier.")
 
+    if in_image.is_pyramid_normalized:
+        pyr = in_image.pyramid
+    else:
+        pyr = in_image.normalized_pyramid
+
     if ti is not None:
-        check_tileindex_validity(in_image.normalized_pyramid, ti, reference_tier_index, tier_index_type)
-        tile_region = in_image.normalized_pyramid.get_tier_at(reference_tier_index, tier_index_type).ti2region(ti)
+        check_tileindex_validity(pyr, ti, reference_tier_index, tier_index_type)
+        tile_region = pyr.get_tier_at(reference_tier_index, tier_index_type).ti2region(ti)
     elif tx and ty is not None:
-        check_tilecoord_validity(in_image.normalized_pyramid, tx, ty, reference_tier_index, tier_index_type)
-        tile_region = in_image.normalized_pyramid.get_tier_at(reference_tier_index, tier_index_type).txty2region(tx, ty)
+        check_tilecoord_validity(pyr, tx, ty, reference_tier_index, tier_index_type)
+        tile_region = pyr.get_tier_at(reference_tier_index, tier_index_type).txty2region(tx, ty)
     else:
         # should not happen as this case is already handled by connexion.
         raise BadRequestProblem(detail="Impossible to determine tile position.")
@@ -277,14 +282,14 @@ def show_normalized_tile_with_body(filepath, body):
     return show_normalized_tile(filepath, **body)
 
 
-def show_tile_v1(zoomify, tileGroup, x, y, z, mimeType):
-    return show_normalized_tile(filepath=zoomify, zoom=z, tx=x, ty=y)
+def show_tile_v1(zoomify, tileGroup, x, y, z, mimeType, gamma=None):
+    return show_normalized_tile(filepath=zoomify, zoom=z, tx=x, ty=y, gammas=gamma)
 
 
-def show_tile_v2(z, mimeType, zoomify=None, fif=None, tileGroup=None, tileIndex=None, x=None, y=None):
+def show_tile_v2(z, mimeType, zoomify=None, fif=None, tileGroup=None, tileIndex=None, x=None, y=None, gamma=None):
     if all(i is not None for i in (zoomify, tileGroup, x, y)):
-        return show_tile_v1(zoomify, tileGroup, x, y, z, mimeType)
+        return show_tile_v1(zoomify, tileGroup, x, y, z, mimeType, gamma=gamma)
     elif all(i is not None for i in (fif, z, tileIndex)):
-        return show_tile(filepath=fif, zoom=z, ti=tileIndex)
+        return show_normalized_tile(filepath=fif, zoom=z, ti=tileIndex, gammas=gamma)
     else:
         raise BadRequestProblem(detail="Incoherent set of parameters.")
