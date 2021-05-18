@@ -50,6 +50,7 @@ class VipsParser(AbstractParser):
         imd.n_channels = image.bands
         imd.depth = 1
         imd.duration = 1
+        imd.n_intrinsic_channels = 1
 
         imd.pixel_type = np.dtype(vips_format_to_dtype[image.format])
         imd.significant_bits = dtype_to_bits(imd.pixel_type)

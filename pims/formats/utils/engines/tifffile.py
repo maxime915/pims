@@ -98,6 +98,7 @@ class TifffileParser(AbstractParser):
         imd.height = baseline.imagelength
         imd.depth = baseline.imagedepth
         imd.duration = 1
+        imd.n_intrinsic_channels = 1
 
         imd.pixel_type = baseline.dtype
         imd.significant_bits = baseline.bitspersample

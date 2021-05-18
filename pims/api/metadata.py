@@ -66,6 +66,8 @@ def _serialize_image_info(image):
         "depth": image.depth,
         "duration": image.duration,
         "n_channels": image.n_channels,
+        "n_intrinsic_channels": image.n_intrinsic_channels,
+        "n_planes": image.n_planes,
         "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
         "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
         "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),

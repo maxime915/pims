@@ -69,6 +69,14 @@ class Image(Path):
         return self._format.main_imd.n_channels
 
     @property
+    def n_intrinsic_channels(self):
+        return self._format.main_imd.n_intrinsic_channels
+
+    @property
+    def n_planes(self):
+        return self._format.main_imd.n_planes
+
+    @property
     def pixel_type(self):
         return self._format.main_imd.pixel_type
 

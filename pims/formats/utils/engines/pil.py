@@ -46,6 +46,7 @@ class PillowParser(AbstractParser):
         imd.pixel_type = np.dtype("uint8")
         imd.significant_bits = 8 if mode != "1" else 1
 
+        imd.n_intrinsic_channels = 1
         channel_mode = "L" if mode == "1" else mode
         if channel_mode in ("L", "RGB"):
             imd.n_channels = len(channel_mode)
