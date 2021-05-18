@@ -47,24 +47,21 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
     if reference_tier_index is None:
         reference_tier_index = 0 if tier_index_type == "LEVEL" else in_image.pyramid.max_zoom
 
-    if region is not None:
-        region = Region(**region) if not isinstance(region, Region) else region.toint()
-        normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
+    if region is not None and type(region) == dict:
+        region = parse_region(in_image, region, reference_tier_index, tier_index_type, silent_oob=False)
     elif ti is not None:
-        check_tileindex_validity(in_image, ti, reference_tier_index, tier_index_type)
+        check_tileindex_validity(in_image.pyramid, ti, reference_tier_index, tier_index_type)
         region = in_image.pyramid.get_tier_at(reference_tier_index, tier_index_type).ti2region(ti)
-        normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
     elif tx and ty is not None:
-        check_tilecoord_validity(in_image, tx, ty, reference_tier_index, tier_index_type)
+        check_tilecoord_validity(in_image.pyramid, tx, ty, reference_tier_index, tier_index_type)
         region = in_image.pyramid.get_tier_at(reference_tier_index, tier_index_type).txty2region(tx, ty)
-        normalized_region = parse_region(in_image, region, reference_tier_index, tier_index_type)
-    else:
+    elif type(region) != Region:
         # should not happen as this case is already handled by connexion.
         return
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    check_zoom_validity(in_image, zoom)
-    check_level_validity(in_image, level)
+    check_zoom_validity(in_image.pyramid, zoom)
+    check_level_validity(in_image.pyramid, level)
     req_width, req_height = get_window_output_dimensions(in_image, region, height, width, length, zoom,
                                                          level)
     safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
@@ -107,8 +104,9 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
             default = {'fill_color': "white"}
             point_envelope_length = None
 
+        origin = request.headers.get('X-Annotation-Origin', current_app.config['DEFAULT_ANNOTATION_ORIGIN'])
         annotations = parse_annotations(ensure_list(annotations), ignore_fields,
-                                        default, point_envelope_length)
+                                        default, point_envelope_length, origin=origin, im_height=in_image.height)
 
     affine = None
     if annotations:
@@ -119,7 +117,7 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         "in_channels": channels,
         "in_z_slices": z_slices,
         "in_timepoints": timepoints,
-        "region": normalized_region,
+        "region": region,
         "c_reduction": c_reduction,
         "z_reduction": z_reduction,
         "t_reduction": t_reduction,

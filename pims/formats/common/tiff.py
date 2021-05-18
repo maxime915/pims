@@ -50,20 +50,15 @@ class PyrTiffVipsReader(VipsReader):
     # (i.e it loads the right pyramid level according the requested dimensions)
 
     def read_window(self, region, out_width, out_height, **other):
-        if not region.is_normalized:
-            raise ValueError("Region should be normalized.")
+        tier = self.format.pyramid.most_appropriate_tier(region, (out_width, out_height))
+        region = region.scale_to_tier(tier)
 
-        tier = self.format.pyramid.most_appropriate_tier(out_width, out_height)
         page = tier.data.get('page_index')
         tiff_page = VIPSImage.tiffload(str(self.format.path), page=page)
-        region = region.toint(width_scale=tier.width, height_scale=tier.height)
         return tiff_page.extract_area(region.left, region.top, region.width, region.height)
 
     def read_tile(self, tile, **other):
         tier = tile.tier
-        tx, ty = tile.tx, tile.ty
-        tsizex, tsizey = tier.tile_width, tier.tile_height
-
         page = tier.data.get('page_index')
         tiff_page = VIPSImage.tiffload(str(self.format.path), page=page)
 
@@ -72,12 +67,7 @@ class PyrTiffVipsReader(VipsReader):
         # that has to be read is read.
         # https://github.com/jcupitt/tilesrv/blob/master/tilesrv.c#L461
         # TODO: is direct tile access significantly faster ?
-        return tiff_page.extract_area(
-            tx * tsizex,
-            ty * tsizey,
-            min(tier.width - tx * tsizex, tsizex),
-            min(tier.height - ty * tsizey, tsizey)
-        )
+        return tiff_page.extract_area(tile.left, tile.top, tile.width, tile.height)
 
 
 class PyrTiffFormat(AbstractFormat):

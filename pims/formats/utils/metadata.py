@@ -359,6 +359,8 @@ class ImageMetadata(_MetadataStorable):
         self.n_channels = None
         self.duration = None
 
+        self._n_intrinsic_channels = None
+
         self.pixel_type = None
         self.significant_bits = None
 
@@ -390,3 +392,15 @@ class ImageMetadata(_MetadataStorable):
     @is_complete.setter
     def is_complete(self, value):
         self._is_complete = value
+
+    @property
+    def n_intrinsic_channels(self):
+        return self._n_intrinsic_channels if self._n_intrinsic_channels is not None else self.n_channels
+
+    @n_intrinsic_channels.setter
+    def n_intrinsic_channels(self, value):
+        self._n_intrinsic_channels = value
+
+    @property
+    def n_planes(self):
+        return self.n_intrinsic_channels * self.depth * self.duration

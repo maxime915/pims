@@ -171,7 +171,6 @@ class WindowResponse(ProcessedView):
                          out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
                          min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
 
-        # Normalized region
         self.region = region
 
         annot_params = annot_params if annot_params else dict()

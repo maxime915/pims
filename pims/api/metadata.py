@@ -66,6 +66,8 @@ def _serialize_image_info(image):
         "depth": image.depth,
         "duration": image.duration,
         "n_channels": image.n_channels,
+        "n_intrinsic_channels": image.n_intrinsic_channels,
+        "n_planes": image.n_planes,
         "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
         "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
         "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),
@@ -131,7 +133,10 @@ def _serialize_pyramid(pyramid):
             "zoom": tier.zoom,
             "tile_width": tier.tile_width,
             "tile_height": tier.tile_height,
-            "downsampling_factor": tier.width_factor
+            "downsampling_factor": tier.average_factor,
+            "n_tiles": tier.max_ti,
+            "n_tx": tier.max_tx,
+            "n_ty": tier.max_ty
         }
 
     return {
@@ -194,6 +199,16 @@ def show_channels(filepath):
     return response_list(_serialize_channels(original))
 
 
+def show_normalized_pyramid(filepath):
+    path = filepath2path(filepath)
+    check_path_existence(path)
+    check_path_is_single(path)
+
+    original = path.get_original()
+    check_representation_existence(original)
+    return response_list(_serialize_pyramid(original.normalized_pyramid))
+
+
 def show_instrument(filepath):
     path = filepath2path(filepath)
     check_path_existence(path)
@@ -211,7 +226,7 @@ def show_associated(filepath):
 
     original = path.get_original()
     check_representation_existence(original)
-    return _serialize_associated(original)
+    return response_list(_serialize_associated(original))
 
 
 def show_associated_image(filepath, associated_key, length=None, width=None, height=None):

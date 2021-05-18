@@ -39,8 +39,8 @@ def show_resized(filepath, channels=None, z_slices=None, timepoints=None,
     check_representation_existence(in_image)
 
     out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    check_zoom_validity(in_image, zoom)
-    check_level_validity(in_image, level)
+    check_zoom_validity(in_image.pyramid, zoom)
+    check_level_validity(in_image.pyramid, level)
     req_width, req_height = get_thumb_output_dimensions(in_image, height, width, length, zoom, level)
     safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
     out_width, out_height = safeguard_output_dimensions(safe_mode, current_app.config['OUTPUT_SIZE_LIMIT'],

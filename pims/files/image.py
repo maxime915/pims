@@ -11,9 +11,11 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from functools import cached_property
 
 from pims.api.exceptions import NoMatchingFormatProblem
 from pims.files.file import Path
+from pims.formats.utils.pyramid import normalized_pyramid
 
 
 class Image(Path):
@@ -67,6 +69,14 @@ class Image(Path):
         return self._format.main_imd.n_channels
 
     @property
+    def n_intrinsic_channels(self):
+        return self._format.main_imd.n_intrinsic_channels
+
+    @property
+    def n_planes(self):
+        return self._format.main_imd.n_planes
+
+    @property
     def pixel_type(self):
         return self._format.main_imd.pixel_type
 
@@ -113,6 +123,14 @@ class Image(Path):
     @property
     def pyramid(self):
         return self._format.pyramid
+
+    @cached_property
+    def normalized_pyramid(self):
+        return normalized_pyramid(self.width, self.height)
+
+    @cached_property
+    def is_pyramid_normalized(self):
+        return self.pyramid == self.normalized_pyramid
 
     def channel_stats(self, c):
         return self.channels_stats().get(c)

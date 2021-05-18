@@ -50,6 +50,7 @@ class VipsParser(AbstractParser):
         imd.n_channels = image.bands
         imd.depth = 1
         imd.duration = 1
+        imd.n_intrinsic_channels = 1
 
         imd.pixel_type = np.dtype(vips_format_to_dtype[image.format])
         imd.significant_bits = dtype_to_bits(imd.pixel_type)
@@ -103,11 +104,7 @@ class VipsReader(AbstractReader):
 
     def read_window(self, region, out_width, out_height, **other):
         image = cached_vips_file(self.format)
-
-        if region.is_normalized:
-            imd = self.format.main_imd
-            region = region.toint(width_scale=imd.width, height_scale=imd.height)
-
+        region = region.scale_to_tier(self.format.pyramid.base)
         return image.crop(region.left, region.top, region.width, region.height)
 
     def read_tile(self, tile, **other):

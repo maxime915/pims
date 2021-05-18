@@ -142,73 +142,73 @@ class FakeImagePyramid:
 
 def test_check_level_validity():
     with not_raises(BadRequestProblem):
-        check_level_validity(FakeImagePyramid(100, 100, 1), 0)
-        check_level_validity(FakeImagePyramid(100, 100, 20), 10)
-        check_level_validity(FakeImagePyramid(100, 100, 20), None)
+        check_level_validity(FakeImagePyramid(100, 100, 1).pyramid, 0)
+        check_level_validity(FakeImagePyramid(100, 100, 20).pyramid, 10)
+        check_level_validity(FakeImagePyramid(100, 100, 20).pyramid, None)
 
     with pytest.raises(BadRequestProblem):
-        check_level_validity(FakeImagePyramid(100, 100, 1), 1)
+        check_level_validity(FakeImagePyramid(100, 100, 1).pyramid, 1)
 
     with pytest.raises(BadRequestProblem):
-        check_level_validity(FakeImagePyramid(100, 100, 20), 25)
+        check_level_validity(FakeImagePyramid(100, 100, 20).pyramid, 25)
 
 
 def test_check_zoom_validity():
     with not_raises(BadRequestProblem):
-        check_zoom_validity(FakeImagePyramid(100, 100, 1), 0)
-        check_zoom_validity(FakeImagePyramid(100, 100, 20), 10)
-        check_zoom_validity(FakeImagePyramid(100, 100, 20), None)
+        check_zoom_validity(FakeImagePyramid(100, 100, 1).pyramid, 0)
+        check_zoom_validity(FakeImagePyramid(100, 100, 20).pyramid, 10)
+        check_zoom_validity(FakeImagePyramid(100, 100, 20).pyramid, None)
 
     with pytest.raises(BadRequestProblem):
-        check_zoom_validity(FakeImagePyramid(100, 100, 1), 1)
+        check_zoom_validity(FakeImagePyramid(100, 100, 1).pyramid, 1)
 
     with pytest.raises(BadRequestProblem):
-        check_zoom_validity(FakeImagePyramid(100, 100, 20), 25)
+        check_zoom_validity(FakeImagePyramid(100, 100, 20).pyramid, 25)
 
 
 def test_check_tileindex_validity():
     img = FakeImagePyramid(1000, 2000, 1)
 
     with not_raises(BadRequestProblem):
-        check_tileindex_validity(img, 0, 0, "ZOOM")
-        check_tileindex_validity(img, 0, 0, "LEVEL")
-        check_tileindex_validity(img, 31, 0, "ZOOM")
-        check_tileindex_validity(img, 31, 0, "LEVEL")
+        check_tileindex_validity(img.pyramid, 0, 0, "ZOOM")
+        check_tileindex_validity(img.pyramid, 0, 0, "LEVEL")
+        check_tileindex_validity(img.pyramid, 31, 0, "ZOOM")
+        check_tileindex_validity(img.pyramid, 31, 0, "LEVEL")
 
     with pytest.raises(BadRequestProblem):
-        check_tileindex_validity(img, 32, 0, "ZOOM")
+        check_tileindex_validity(img.pyramid, 32, 0, "ZOOM")
 
     with pytest.raises(BadRequestProblem):
-        check_tileindex_validity(img, -1, 0, "ZOOM")
+        check_tileindex_validity(img.pyramid, -1, 0, "ZOOM")
 
 
 def test_check_tilecoord_validity():
     img = FakeImagePyramid(1000, 2000, 1)
 
     with not_raises(BadRequestProblem):
-        check_tilecoord_validity(img, 0, 0, 0, "ZOOM")
-        check_tilecoord_validity(img, 0, 0, 0, "LEVEL")
-        check_tilecoord_validity(img, 3, 7, 0, "ZOOM")
-        check_tilecoord_validity(img, 3, 7, 0, "LEVEL")
+        check_tilecoord_validity(img.pyramid, 0, 0, 0, "ZOOM")
+        check_tilecoord_validity(img.pyramid, 0, 0, 0, "LEVEL")
+        check_tilecoord_validity(img.pyramid, 3, 7, 0, "ZOOM")
+        check_tilecoord_validity(img.pyramid, 3, 7, 0, "LEVEL")
 
     with pytest.raises(BadRequestProblem):
-        check_tilecoord_validity(img, 3, 8, 0, "ZOOM")
+        check_tilecoord_validity(img.pyramid, 3, 8, 0, "ZOOM")
 
     with pytest.raises(BadRequestProblem):
-        check_tilecoord_validity(img, -1, 0, 0, "ZOOM")
+        check_tilecoord_validity(img.pyramid, -1, 0, 0, "ZOOM")
 
 
 def test_parse_region():
     img = FakeImagePyramid(1000, 2000, 3)
 
-    region = Region(**{'top': 100, 'left': 50, 'width': 128, 'height': 128})
-    assert parse_region(img, region, 0, "LEVEL") == Region(0.05, 0.05, 0.128, 0.064)
-    assert parse_region(img, region, 1, "LEVEL") == Region(0.1, 0.1, 0.256, 0.128)
+    region = {'top': 100, 'left': 50, 'width': 128, 'height': 128}
+    assert parse_region(img, region, 0, "LEVEL") == Region(100, 50, 128, 128)
+    assert parse_region(img, region, 1, "LEVEL") == Region(100, 50, 128, 128, downsample=2)
 
-    region = Region(**{'top': 0.1, 'left': 0.15, 'width': 0.02, 'height': 0.2})
-    assert parse_region(img, region, 0, "LEVEL") == Region(0.1, 0.15, 0.02, 0.2)
-    assert parse_region(img, region, 1, "LEVEL") == Region(0.05, 0.075, 0.01, 0.1)
+    region = {'top': 0.1, 'left': 0.15, 'width': 0.02, 'height': 0.2}
+    assert parse_region(img, region, 0, "LEVEL") == Region(200, 150, 20, 400)
+    assert parse_region(img, region, 1, "LEVEL") == Region(100, 75, 10, 200, downsample=2)
 
     with pytest.raises(BadRequestProblem):
-        region = Region(**{'top': 100, 'left': 900, 'width': 128, 'height': 128})
+        region = {'top': 100, 'left': 900, 'width': 128, 'height': 128}
         parse_region(img, region, 0, "LEVEL")

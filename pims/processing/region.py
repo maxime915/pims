@@ -13,21 +13,22 @@
 # * limitations under the License.
 import math
 
+from pims.processing.utils import split_tuple
+
 
 class Region:
-    def __init__(self, top, left, width, height):
+    def __init__(self, top, left, width, height, downsample=1.0):
         self.top = top
         self.left = left
         self.width = width
         self.height = height
 
-    def asdict(self):
-        return {
-            'top': self.top,
-            'left': self.left,
-            'width': self.width,
-            'height': self.height
-        }
+        self.width_downsample = split_tuple(downsample, 0)
+        self.height_downsample = split_tuple(downsample, 1)
+
+    @property
+    def downsample(self):
+        return (self.width_downsample + self.height_downsample) / 2.0
 
     @property
     def right(self):
@@ -38,36 +39,85 @@ class Region:
         return self.top + self.height
 
     @property
-    def is_normalized(self):
-        return all(0 <= i <= 1 for i in (self.top, self.left, self.width, self.height))
+    def true_left(self):
+        return self.left * self.width_downsample
+
+    @property
+    def true_top(self):
+        return self.top * self.height_downsample
+
+    @property
+    def true_width(self):
+        return self.width * self.width_downsample
+
+    @property
+    def true_height(self):
+        return self.height * self.height_downsample
+
+    def scale(self, downsample):
+        width_downsample = split_tuple(downsample, 0)
+        height_downsample = split_tuple(downsample, 1)
+
+        width_scale = self.width_downsample / width_downsample
+        height_scale = self.height_downsample / height_downsample
+
+        self.top *= height_scale
+        self.left *= width_scale
+        self.width *= width_scale
+        self.height *= height_scale
+        self.width_downsample = width_downsample
+        self.height_downsample = height_downsample
+        return self
+
+    def toint(self):
+        self.top = math.floor(self.top)
+        self.left = math.floor(self.left)
+        self.width = math.ceil(self.width)
+        self.height = math.ceil(self.height)
+        return self
+
+    def clip(self, width, height):
+        self.top = max(0, self.top)
+        self.left = max(0, self.left)
+        self.width = min(self.left + self.width, width) - self.left
+        self.height = min(self.top + self.height, height) - self.top
+        return self
+
+    def scale_to_tier(self, tier):
+        return self.scale((tier.width_factor, tier.height_factor))\
+            .toint()\
+            .clip(tier.width, tier.height)
+
+    def asdict(self):
+        return {
+            'top': self.top,
+            'left': self.left,
+            'width': self.width,
+            'height': self.height
+        }
 
     def __eq__(self, other) -> bool:
         if isinstance(other, Region):
-            return self.top == other.top and self.left == other.left and \
-                   self.width == other.width and self.height == other.height
+            scaled = other.scale(self.downsample)
+            return self.top == scaled.top and self.left == scaled.left and \
+                   self.width == scaled.width and self.height == scaled.height
 
         return False
 
-    def toint(self, width_scale=1, height_scale=1):
-        return Region(
-            top=math.floor(self.top * height_scale),
-            left=math.floor(self.left * width_scale),
-            width=math.ceil(self.width * width_scale),
-            height=math.ceil(self.height * height_scale)
-        )
-
-    def __str__(self) -> str:
-        return "Region (Top: {} / Bottom: {} / Left: {} / Right: {} / Width: {} / Height: {})".format(
-            self.top, self.bottom, self.left, self.right, self.width,  self.height)
+    def __repr__(self) -> str:
+        return "Region @ downsample ({}/{}) " \
+               "(Top: {} / Bottom: {} / Left: {} / Right: {} / Width: {} / Height: {})".format(
+            self.width_downsample, self.height_downsample,
+            self.top, self.bottom, self.left, self.right, self.width, self.height)
 
 
 class TileRegion(Region):
     def __init__(self, tier, tx, ty):
         left = tx * tier.tile_width
         top = ty * tier.tile_height
-        width = min(left + tier.tile_width, tier.width) - left
-        height = min(top + tier.tile_height, tier.height) - top
-        super().__init__(top, left, width, height)
+        width = tier.tile_width
+        height = tier.tile_height
+        super().__init__(top, left, width, height, downsample=(tier.width_factor, tier.height_factor))
         self.tier = tier
         self.tx = tx
         self.ty = ty
@@ -83,6 +133,3 @@ class TileRegion(Region):
     @property
     def ti(self):
         return self.tier.txty2ti(self.tx, self.ty)
-
-    def toregion(self):
-        return Region(self.top, self.left, self.width, self.height)

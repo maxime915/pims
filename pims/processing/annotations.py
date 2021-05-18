@@ -125,10 +125,10 @@ class AnnotationList(MutableSequence):
 
 
 def annotation_crop_affine_matrix(annot_region, in_region, out_width, out_height):
-    rx = out_width / in_region.width
-    ry = out_height / in_region.height
-    tx = -annot_region.left * rx + (annot_region.left - in_region.left) * rx
-    ty = -annot_region.top * ry + (annot_region.top - in_region.top) * ry
+    rx = out_width / in_region.true_width
+    ry = out_height / in_region.true_height
+    tx = -annot_region.left * rx + (annot_region.left - in_region.true_left) * rx
+    ty = -annot_region.top * ry + (annot_region.top - in_region.true_top) * ry
     return [rx, 0, 0, ry, tx, ty]
 
 

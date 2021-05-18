@@ -46,6 +46,7 @@ class PillowParser(AbstractParser):
         imd.pixel_type = np.dtype("uint8")
         imd.significant_bits = 8 if mode != "1" else 1
 
+        imd.n_intrinsic_channels = 1
         channel_mode = "L" if mode == "1" else mode
         if channel_mode in ("L", "RGB"):
             imd.n_channels = len(channel_mode)
@@ -83,10 +84,7 @@ class SimplePillowReader(AbstractReader):
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
-        if region.is_normalized:
-            imd = self.format.main_imd
-            region = region.toint(width_scale=imd.width, height_scale=imd.height)
-
+        region = region.scale_to_tier(self.format.pyramid.base)
         return image.crop((region.left, region.top, region.right, region.bottom))
 
     def read_tile(self, tile, c=None, z=None, t=None):

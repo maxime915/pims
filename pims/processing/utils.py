@@ -40,3 +40,10 @@ def find_first_available_int(values, mini=0, maxi=100):
             return i
 
     raise ValueError("There is no available integer.")
+
+
+def split_tuple(tuple_, index):
+    if type(tuple_) == tuple:
+        return tuple_[index]
+    else:
+        return tuple_

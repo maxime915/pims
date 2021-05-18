@@ -13,6 +13,7 @@
 # * limitations under the License.
 
 from connexion.exceptions import BadRequestProblem
+from shapely.affinity import affine_transform
 from shapely.wkt import loads as wkt_loads
 from shapely.validation import explain_validity, make_valid
 
@@ -22,7 +23,7 @@ from pims.processing.region import Region
 
 
 def parse_annotations(annotations, ignore_fields=None, default=None,
-                      point_envelope_length=None):
+                      point_envelope_length=None, origin='LEFT_TOP', im_height=None):
     """
     Parse a list of annotations.
 
@@ -36,6 +37,10 @@ def parse_annotations(annotations, ignore_fields=None, default=None,
         Default value for fields. Default value for missing fields is None.
     point_envelope_length : int (optional)
         Envelope length for Point geometries.
+    origin : str (`LEFT_TOP` or `LEFT_BOTTOM`)
+        The origin of coordinate system in which annotations are described
+    im_height : int (optional)
+        The image height for coordinate system transformation
 
     Returns
     -------
@@ -46,14 +51,15 @@ def parse_annotations(annotations, ignore_fields=None, default=None,
     al = AnnotationList()
     for annotation in annotations:
         al.append(parse_annotation(**annotation, ignore_fields=ignore_fields,
-                                   default=default, point_envelope_length=point_envelope_length))
+                                   default=default, point_envelope_length=point_envelope_length,
+                                   origin=origin, im_height=im_height))
 
     return al
 
 
 def parse_annotation(geometry, fill_color=None, stroke_color=None,
                      stroke_width=None, ignore_fields=None, default=None,
-                     point_envelope_length=None):
+                     point_envelope_length=None, origin='LEFT_TOP', im_height=None):
     """
     Parse an annotation.
 
@@ -73,6 +79,10 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
         Default value for fields. Default value for missing fields is None.
     point_envelope_length : int (optional)
         Envelope length for Point geometries.
+    origin : str (`LEFT_TOP` or `LEFT_BOTTOM`)
+        The origin of coordinate system in which annotations are described
+    im_height : int (optional)
+        The image height for coordinate system transformation
 
     Returns
     -------
@@ -91,6 +101,9 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
         default = dict()
 
     geom = wkt_loads(geometry)
+    if origin == 'LEFT_BOTTOM':
+        geom = affine_transform(geom, [1, 0, 0, -1, 0, im_height - 0.5])
+
     if not geom.is_valid:
         geom = make_valid(geom)
 
