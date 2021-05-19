@@ -1,3 +1,4 @@
+from pims.app import UNIT_REGISTRY
 from pims.formats.utils.engines.vips import VipsParser, VipsReader, cached_vips_file, get_vips_field
 
 from pyvips import Image as VIPSImage
@@ -20,8 +21,8 @@ class OpenslideVipsParser(VipsParser):
         image = cached_vips_file(self.format)
 
         imd = super(OpenslideVipsParser, self).parse_known_metadata()
-        imd.physical_size_x = parse_float(get_vips_field(image, 'openslide.mpp-x'))
-        imd.physical_size_y = parse_float(get_vips_field(image, 'openslide.mpp-y'))
+        imd.physical_size_x = parse_float(get_vips_field(image, 'openslide.mpp-x')) * UNIT_REGISTRY("micrometers")
+        imd.physical_size_y = parse_float(get_vips_field(image, 'openslide.mpp-y')) * UNIT_REGISTRY("micrometers")
 
         imd.objective.nominal_magnification = parse_float(get_vips_field(image, 'openslide.objective-power'))
 
