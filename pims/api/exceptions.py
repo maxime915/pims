@@ -97,6 +97,12 @@ class TooLargeOutputProblem(ProblemException):
         super(TooLargeOutputProblem, self).__init__(status=400, title=title, detail=detail, ext=ext)
 
 
+class CytomineProblem(ProblemException):
+    def __init__(self, detail):
+        title = 'Cytomine core communication error'
+        super().__init__(status=400, title=title, detail=detail)
+
+
 def check_path_existence(path):
     if not path.exists():
         raise FilepathNotFoundProblem(path)

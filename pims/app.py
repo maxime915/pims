@@ -22,6 +22,7 @@ from colors import colors
 
 import connexion
 from connexion.apps.flask_app import FlaskJSONEncoder
+from cytomine.models import Model
 from flask import g, request
 from pint import Quantity
 
@@ -140,5 +141,11 @@ class PimsJSONEncoder(FlaskJSONEncoder):
 
         if isinstance(o, Quantity):
             return round(o.magnitude, 6)
+
+        if isinstance(o, Model):
+            d = dict((k, v) for k, v in o.__dict__.items() if v is not None and not k.startswith("_"))
+            if "uri_" in d:
+                d["uri"] = d.pop("uri_")
+            return d
 
         return FlaskJSONEncoder.default(self, o)

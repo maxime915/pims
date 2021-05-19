@@ -200,3 +200,16 @@ class Image(Path):
             return self._format.reader.read_macro(out_width, out_height)
         else:
             return None
+
+    def check_integrity(self, metadata=True, tile=False, thumb=False, window=False, associated=False):
+        if metadata:
+            attributes = ('width', 'height', 'depth', 'duration', 'n_channels', 'pixel_type',
+                          'physical_size_x', 'physical_size_y', 'physical_size_z', 'frame_rate',
+                          'description', 'acquisition_datetime', 'channels', 'objective', 'microscope',
+                          'associated_thumb', 'associated_label', 'associated_macro', 'raw_metadata', 'pyramid')
+            for attr in attributes:
+                try:
+                    getattr(self, attr)
+                except Exception as e:
+                    return False, (attr, e)
+        return True, (None, None)

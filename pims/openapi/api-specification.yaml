@@ -1757,6 +1757,90 @@ paths:
           $ref: '#/components/responses/problem-not-found'
         406:
           $ref: '#/components/responses/problem-not-acceptable'
+  /upload:
+    post:
+      operationId: pims.api.operations.legacy_import
+      description: Import a file (legacy)
+      summary: Import a file (legacy)
+      tags:
+        - Import
+      parameters:
+        - name: core
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: cytomine
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: storage
+          required: false
+          in: query
+          schema:
+            type: integer
+        - name: idStorage
+          required: false
+          in: query
+          schema:
+            type: integer
+        - name: projects
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: idProject
+          required: false
+          in: query
+          schema:
+            type: string
+        - name: sync
+          required: false
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: keys
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: values
+          required: false
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                filesname:
+                  type: string
+                filescontent_type:
+                  type: string
+                filespath:
+                  type: string
+                filessize:
+                  type: string
+                filesmd5:
+                  type: string
+      responses:
+        202:
+          description: |
+            Accepted - The file will be imported.
+        404:
+          $ref: '#/components/responses/problem-not-found'
+        400:
+          $ref: '#/components/responses/problem-conflict'
   /file/{filepath}:
     post:
       operationId: pims.api.operations.import_

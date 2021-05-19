@@ -16,12 +16,13 @@ from datetime import datetime
 
 from connexion import ProblemException
 
-from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem
+from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem
 from pims.files.file import Path
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory
 
-PENDING_PATH = Path("/data/pending")
+# TODO
+PENDING_PATH = Path("/tmp/uploaded")
 FILE_ROOT_PATH = Path("/data/pims")
 
 
@@ -46,17 +47,22 @@ class FileImporter:
     ----------
     pending_file : Path
         A file to import from PENDING_PATH directory
+    pending_name : str (optional)
+        A name to use for the pending file. If not provided, the current pending file name is used.
     loggers : list of ImportLogger (optional)
         A list of import loggers
 
     """
-    def __init__(self, pending_file, loggers=None):
+    def __init__(self, pending_file, pending_name=None, loggers=None):
         self.loggers = loggers if loggers is not None else []
         self.pending_file = pending_file
+        self.pending_name = pending_name
 
         self.upload_dir = None
-        self.upload = None
+        self.upload_path = None
+        self.original_path = None
         self.original = None
+        self.spatial_path = None
         self.spatial = None
 
         self.processed_dir = None
@@ -85,80 +91,84 @@ class FileImporter:
         FilepathNotFoundProblem
             If pending file is not found.
         """
-        self.log('start_import', self.pending_file)
-
-        # Check the file is in pending area.
-        if self.pending_file.parent != PENDING_PATH or not self.pending_file.exists():
-            self.log('file_not_found', self)
-            raise FilepathNotFoundProblem(self.pending_file)
-
-        # Move the file to PIMS root path
         try:
-            self.upload_dir = FILE_ROOT_PATH / Path("{}{}".format("upload", str(unique_name_generator())))
-            self.upload_dir.mkdir()  # TODO: mode
+            self.log('start_import', self.pending_file)
 
-            self.upload = self.upload_dir / self.pending_file.name
+            # Check the file is in pending area.
+            if self.pending_file.parent != PENDING_PATH or not self.pending_file.exists():
+                self.log('file_not_found', self.pending_file)
+                raise FilepathNotFoundProblem(self.pending_file)
 
-            if prefer_copy:
-                shutil.copy(self.pending_file, self.upload)
-            else:
-                self.pending_file.rename(self.upload)
-            self.log('file_moved', self.pending_file, self.upload)
-        except (FileNotFoundError, FileExistsError) as e:
-            self.log('file_not_moved', self.pending_file, exception=e)
-            raise FileErrorProblem(self.pending_file)
-
-        assert self.upload.has_upload_role()
-
-        # Identify format
-        self.log('start_format_detection', self.upload)
-        format_factory = FormatFactory()
-        format = format_factory.match(self.upload)
-        if format is None:
-            self.log('no_matching_format', self.upload)
-            raise NoMatchingFormatProblem(self.upload)
-        self.log('matching_format_found', self.upload, format)
-
-        # Create processed dir
-        self.processed_dir = self.upload_dir / Path('processed')
-        try:
-            self.processed_dir.mkdir()  # TODO: mode
-        except (FileNotFoundError, FileExistsError) as e:
-            self.log('generic_file_error', self, path=self.processed_dir, exception=e)
-            raise FileErrorProblem(self.processed_dir)
-
-        # Create original role
-        self.original = self.processed_dir / Path("{}.{}".format("original", format.get_identifier()))
-        try:
-            self.original.symlink_to(self.upload, target_is_directory=self.upload.is_dir())
-        except (FileNotFoundError, FileExistsError) as e:
-            self.log('generic_file_error', self, path=self.original, exception=e)
-            raise FileErrorProblem(self.original)
-        assert self.original.has_original_role()
-
-        if format.is_spatial():
-            image = self.deploy_spatial(format)
-        else:
-            raise NotImplementedError()
-
-        # Check integrity
-        attributes = ('width', 'height', 'depth', 'duration', 'n_channels', 'pixel_type',
-                      'physical_size_x', 'physical_size_y', 'physical_size_z', 'frame_rate',
-                      'description', 'acquisition_datetime', 'channels', 'objective', 'microscope',
-                      'associated_thumb', 'associated_label', 'associated_macro', 'raw_metadata', 'pyramid')
-        for attr in attributes:
+            # Move the file to PIMS root path
             try:
-                getattr(image, attr)
-            except Exception as e:
-                self.log('integrity_error', self, path=image, attribute=attr, exception=e)
-                raise ImageParsingProblem(image)
+                self.upload_dir = FILE_ROOT_PATH / Path("{}{}".format("upload", str(unique_name_generator())))
+                self.upload_dir.mkdir()  # TODO: mode
 
-        # TODO: do the same with random tiles, windows, thumb
-        self.log('integrity_success', self, path=image)
+                name = self.pending_name if self.pending_name else self.pending_file.name
+                self.upload_path = self.upload_dir / name
 
-        # Finished
-        self.log('import_success', self)
-        return [self.upload]
+                if prefer_copy:
+                    shutil.copy(self.pending_file, self.upload_path)
+                else:
+                    self.pending_file.rename(self.upload_path)
+                self.log('file_moved', self.pending_file, self.upload_path)
+            except (FileNotFoundError, FileExistsError) as e:
+                self.log('file_not_moved', self.pending_file, exception=e)
+                raise FileErrorProblem(self.pending_file)
+
+            assert self.upload_path.has_upload_role()
+
+            # Identify format
+            self.log('start_format_detection', self.upload_path)
+            format_factory = FormatFactory()
+            format = format_factory.match(self.upload_path)
+            if format is None:
+                self.log('no_matching_format', self.upload_path)
+                raise NoMatchingFormatProblem(self.upload_path)
+            self.log('matching_format_found', self.upload_path, format)
+
+            try:
+                format.main_imd
+            except MetadataParsingProblem as e:
+                self.log('integrity_error', self.upload_path, exception=e)
+                raise e
+
+            # Create processed dir
+            self.processed_dir = self.upload_dir / Path('processed')
+            try:
+                self.processed_dir.mkdir()  # TODO: mode
+            except (FileNotFoundError, FileExistsError) as e:
+                self.log('generic_file_error', self.processed_dir, exception=e)
+                raise FileErrorProblem(self.processed_dir)
+
+            # Create original role
+            self.original_path = self.processed_dir / Path("{}.{}".format("original", format.get_identifier()))
+            try:
+                self.original_path.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
+            except (FileNotFoundError, FileExistsError) as e:
+                self.log('generic_file_error', self.original_path, exception=e)
+                raise FileErrorProblem(self.original_path)
+            assert self.original_path.has_original_role()
+
+            # Check original image integrity
+            self.original = Image(self.original_path, format=format)
+            ok, error = self.original.check_integrity(metadata=True)
+            if not ok:
+                attr, e = error
+                self.log('integrity_error', self.original, attribute=attr, exception=e)
+                raise ImageParsingProblem(self.original)
+
+            if format.is_spatial():
+                image = self.deploy_spatial(format)
+            else:
+                raise NotImplementedError()
+
+            # Finished
+            self.log('import_success', self.upload_path, self.original)
+            return [self.upload_path]
+        except Exception as e:
+            self.log('generic_file_error', self.upload_path, exeception=e)
+            raise e
 
     def deploy_spatial(self, format):
         stem = 'visualisation'
@@ -170,11 +180,13 @@ class FileImporter:
             except ValueError as e:  # TODO
                 self.log('conversion_error', self, exception=e)
                 return
+
+            # TODO: check integrity
         else:
             # Create spatial role
             self.spatial = self.processed_dir / Path("{}.{}".format(stem, format.get_identifier()))
             try:
-                self.spatial.symlink_to(self.upload, target_is_directory=self.upload.is_dir())
+                self.spatial.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
                 image = Image(self.spatial, format=format)
             except (FileNotFoundError, FileExistsError) as e:
                 self.log('generic_file_error', path=self.spatial, exception=e)
