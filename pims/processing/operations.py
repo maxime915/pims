@@ -93,7 +93,7 @@ class OutputProcessor(ImageOp):
         elif suffix == '.png':
             clean_params['compression'] = params.get('compression', params.get('png_compression', 6))
         elif suffix == '.webp':
-            clean_params['lossless'] = params.get('lossless', params.get('webp_lossless', False))
+            clean_params['lossless'] = params.get('lossless', params.get('webp_lossless', True))
             clean_params['strip'] = True
 
         # Clip by casting image
