@@ -44,10 +44,9 @@ class WebPChecker(SignatureChecker):
 class WebPParser(VipsParser):
     def parse_main_metadata(self):
         imd = super().parse_main_metadata()
-        if imd.n_channels not in (1, 3):
-            # We do not support (yet) transparency.
-            log.error("{}: Invalid number of channels: {}".format(self.format.path, imd.n_channels))
-            raise MetadataParsingProblem(self.format.path)
+        # Do not count alpha channel if any
+        if imd.n_channels in (2, 4):
+            imd.n_channels = imd.n_channels - 1
         return imd
 
     def parse_known_metadata(self):

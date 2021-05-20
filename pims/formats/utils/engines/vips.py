@@ -101,12 +101,14 @@ class VipsReader(AbstractReader):
         return VIPSImage.thumbnail(filename, width, height=height, size=VIPSSize.FORCE)
 
     def read_thumb(self, out_width, out_height, **other):
-        return self.vips_thumbnail(out_width, out_height)
+        im = self.vips_thumbnail(out_width, out_height)
+        return im.flatten() if im.hasalpha() else im
 
     def read_window(self, region, out_width, out_height, **other):
         image = cached_vips_file(self.format)
         region = region.scale_to_tier(self.format.pyramid.base)
-        return image.crop(region.left, region.top, region.width, region.height)
+        im = image.crop(region.left, region.top, region.width, region.height)
+        return im.flatten() if im.hasalpha() else im
 
     def read_tile(self, tile, **other):
         return self.read_window(tile, tile.width, tile.height)

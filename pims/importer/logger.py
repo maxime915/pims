@@ -154,7 +154,7 @@ class CytomineListener(ImportListener):
 
     def integrity_error(self, path, *args, **kwargs):
         uf = self.path_uf_mapping[str(path)]
-        uf.status = UploadedFile.ERROR_CONVERSION
+        uf.status = UploadedFile.ERROR_EXTRACTION
         uf.update()
         self.propagate_error(uf)
 
