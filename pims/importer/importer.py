@@ -19,7 +19,7 @@ from connexion import ProblemException
 from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem
 from pims.files.file import Path
 from pims.files.image import Image
-from pims.formats.utils.factories import FormatFactory
+from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
 
 # TODO
 PENDING_PATH = Path("/tmp/uploaded")
@@ -35,6 +35,10 @@ class FileErrorProblem(ProblemException):
 
 
 class ImageParsingProblem(ProblemException):
+    pass
+
+
+class FormatConversionProblem(ProblemException):
     pass
 
 
@@ -159,7 +163,7 @@ class FileImporter:
                 raise ImageParsingProblem(self.original)
 
             if format.is_spatial():
-                image = self.deploy_spatial(format)
+                self.deploy_spatial(format)
             else:
                 raise NotImplementedError()
 
@@ -174,25 +178,44 @@ class FileImporter:
         stem = 'visualisation'
         if format.need_conversion:
             try:
-                self.spatial = format.convert(self.processed_dir, stem)
-                image = self.spatial
-                self.log('created_role_file', self.spatial, 'spatial')
-            except ValueError as e:  # TODO
-                self.log('conversion_error', self, exception=e)
-                return
+                ext = format.conversion_format().get_identifier()
+                self.spatial_path = self.processed_dir / Path("{}.{}".format(stem, ext))
+                self.log('start_conversion', self.spatial_path, self.upload_path)
 
-            # TODO: check integrity
+                r = format.convert(self.spatial_path)
+                if not r or not self.spatial_path.exists():
+                    self.log('conversion_error', self.spatial_path)
+                    raise FormatConversionProblem()
+            except Exception as e:
+                self.log('conversion_error', self.spatial_path, exception=e)
+                raise FormatConversionProblem()
+
+            spatial_format = SpatialReadableFormatFactory().match(self.spatial_path)
+            if not spatial_format:
+                self.log('no_matching_format', self.spatial_path)
+                raise NoMatchingFormatProblem(self.spatial_path)
+            self.log('matching_format_found', self.spatial_path, spatial_format)
+
+            self.spatial = Image(self.spatial_path, format=spatial_format)
+            self.log('conversion_success', self.spatial_path, self.spatial)
         else:
             # Create spatial role
-            self.spatial = self.processed_dir / Path("{}.{}".format(stem, format.get_identifier()))
+            self.spatial_path = self.processed_dir / Path("{}.{}".format(stem, format.get_identifier()))
             try:
-                self.spatial.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
-                image = Image(self.spatial, format=format)
+                self.spatial_path.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
+                self.spatial = Image(self.spatial_path, format=format)
             except (FileNotFoundError, FileExistsError) as e:
-                self.log('generic_file_error', path=self.spatial, exception=e)
-                raise FileErrorProblem(self.spatial)
+                self.log('generic_file_error', path=self.spatial_path, exception=e)
+                raise FileErrorProblem(self.spatial_path)
 
         assert self.spatial.has_spatial_role()
-        return image
+
+        ok, error = self.spatial.check_integrity(metadata=True)  # TODO: check also image output
+        if not ok:
+            attr, e = error
+            self.log('integrity_error', self.spatial, attribute=attr, exception=e)
+            raise ImageParsingProblem(self.spatial)
+
+        return self.spatial
 
 

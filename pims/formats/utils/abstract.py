@@ -67,6 +67,7 @@ class AbstractFormat(ABC, CachedData):
     parser_class = None
     reader_class = None
     histogramer_class = None
+    convertor_class = None
 
     def __init__(self, path, existing_cache=None):
         self._path = path
@@ -77,6 +78,7 @@ class AbstractFormat(ABC, CachedData):
         self.parser = self.parser_class(self)
         self.reader = self.reader_class(self)
         self.histogramer = self.histogramer_class(self)
+        self.convertor = self.convertor_class(self) if self.convertor_class else None
 
     @classmethod
     def init(cls):
@@ -179,6 +181,18 @@ class AbstractFormat(ABC, CachedData):
     def need_conversion(self):
         return True
 
+    def convert(self, dest_path):
+        if self.convertor:
+            return self.convertor.convert(dest_path)
+        else:
+            raise NotImplementedError()
+
+    def conversion_format(self):
+        if self.convertor:
+            return self.convertor.conversion_format()
+        else:
+            return None
+
     @cached_property
     def main_imd(self):
         return self.parser.parse_main_metadata()
@@ -251,3 +265,14 @@ class AbstractHistogramManager(ABC):
     @abstractmethod
     def compute_channels_stats(self):
         pass
+
+
+class AbstractConvertor(ABC):
+    def __init__(self, source):
+        self.source = source
+
+    def convert(self, dest_path):
+        raise NotImplementedError()
+
+    def conversion_format(self):
+        raise NotImplementedError()

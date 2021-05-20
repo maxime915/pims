@@ -18,8 +18,10 @@ from PIL import Image as PILImage
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractHistogramManager
+from pims.formats.utils.engines.vips import VipsSpatialConvertor
 from pims.formats.utils.exiftool import read_raw_metadata
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
+from pims.processing.adapters import pil_to_vips
 from pims.processing.region import Region
 
 log = logging.getLogger("pims.formats")
@@ -102,3 +104,8 @@ class PillowHistogramManager(AbstractHistogramManager):
             for channel, extrema in enumerate(image.getextrema())
         }
         return stats
+
+
+class PillowSpatialConvertor(VipsSpatialConvertor):
+    def vips_source(self):
+        return pil_to_vips(cached_pillow_file(self.source, None))

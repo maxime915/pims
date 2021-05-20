@@ -61,8 +61,8 @@ def _find_formats_in_module(mod):
                     formats.append(format)
                     format.init()
                     logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))
-        except ImportError:
-            logger.error("{} submodule cannot be checked for formats !".format(submodule_name))
+        except ImportError as e:
+            logger.error("{} submodule cannot be checked for formats !".format(submodule_name), exc_info=e)
     return formats
 
 

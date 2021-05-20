@@ -14,11 +14,12 @@
 import logging
 
 import numpy as np
+import pyvips.enums
 from pyvips import Image as VIPSImage, Size as VIPSSize
 from pyvips.error import Error as VIPSError
 
 from pims.api.exceptions import MetadataParsingProblem
-from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractHistogramManager
+from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractHistogramManager, AbstractConvertor
 from pims.formats.utils.exiftool import read_raw_metadata
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
 from pims.formats.utils.vips import vips_format_to_dtype, dtype_to_bits, vips_interpretation_to_mode
@@ -130,3 +131,23 @@ class VipsHistogramManager(AbstractHistogramManager):
             for channel in range(np_stats.shape[0] - 1)
         }
         return stats
+
+
+class VipsSpatialConvertor(AbstractConvertor):
+    def vips_source(self):
+        return cached_vips_file(self.source)
+
+    def conversion_format(self):
+        from pims.formats.common.tiff import PyrTiffFormat
+        return PyrTiffFormat
+
+    def convert(self, dest_path):
+        source = self.vips_source()
+
+        result = source.tiffsave(
+            str(dest_path), pyramid=True, tile=True, tile_width=256, tile_height=256, bigtiff=True,
+            properties=False, strip=True, depth=pyvips.enums.ForeignDzDepth.ONETILE,
+            compression=pyvips.enums.ForeignTiffCompression.LZW,
+            region_shrink=pyvips.enums.RegionShrink.MEAN
+        )
+        return not bool(result)

@@ -34,7 +34,10 @@ class ImportListener:
     def matching_format_found(self, path, format, *args, **kwargs):
         pass
 
-    def created_role_file(self, path, role, *args, **kwargs):
+    def start_conversion(self, path, parent_path, *args, **kwargs):
+        pass
+
+    def conversion_success(self, path, image, *args, **kwargs):
         pass
 
     def generic_file_error(self, path, *args, **kwargs):
@@ -67,8 +70,17 @@ class CytomineListener(ImportListener):
 
         self.abstract_images = []
 
+    def _find_uf_by_id(self, id):
+        return next((uf for uf in self.path_uf_mapping.values() if uf.id == id),
+                    UploadedFile().fetch(id))
+
     def propagate_error(self, uf):
-        pass  # TODO: propagate error to parents
+        # Shouldn't be a core responsibility ?
+        if uf.parent:
+            parent = self._find_uf_by_id(uf.parent)
+            parent.status = uf.status
+            parent.update()
+            self.propagate_error(parent)
 
     def start_import(self, path, *args, **kwargs):
         uf = self.path_uf_mapping[str(path)]
@@ -110,26 +122,34 @@ class CytomineListener(ImportListener):
         uf.contentType = format.get_identifier()  # TODO: not the content type
         uf.update()
 
-    def created_role_file(self, path, role, *args, **kwargs):
-        # TODO
+    def start_conversion(self, path, parent_path, *args, **kwargs):
         uf = UploadedFile()
-        uf.originalFilename = path.filename
+        uf.originalFilename = path.name
         uf.filename = str(path.relative_to(FILE_ROOT_PATH))
-        uf.size = path.size
+        uf.size = 0
         uf.ext = ""
         uf.contentType = ""
 
-        parent = self.path_uf_mapping[self.root_path]
+        parent = self.path_uf_mapping[str(parent_path)]
         uf.storage = parent.storage
         uf.user = parent.user
         uf.parent = parent.id
+        uf.imageServer = parent.imageServer
         uf.save()
         self.path_uf_mapping[str(path)] = uf
 
+    def conversion_success(self, path, image, *args, **kwargs):
+        uf = self.path_uf_mapping[str(path)]
+        uf.size = path.size
+        uf.status = UploadedFile.CONVERTED
+        uf.update()
+
     def generic_file_error(self, path, *args, **kwargs):
         uf = self.path_uf_mapping[str(path)]
-        uf.status = UploadedFile.ERROR_DEPLOYMENT
-        uf.update()
+        if uf.status % 2 == 0:
+            # Only update error status if the status is not yet an error (probably more detailed)
+            uf.status = UploadedFile.ERROR_DEPLOYMENT
+            uf.update()
         self.propagate_error(uf)
 
     def integrity_error(self, path, *args, **kwargs):
@@ -205,10 +225,10 @@ class StdoutListener(ImportListener):
         self.log.info("Moved {} to {}".format(old_path, new_path))
 
     def file_not_found(self, path, *args, **kwargs):
-        self.log.error("File {} is not found".format(path), exc_info=kwargs.get('exception'))
+        self.log.error("File {} is not found".format(path), exc_info=True)
 
     def file_not_moved(self, path, *args, **kwargs):
-        self.log.error("Failed to move {}".format(path), exc_info=kwargs.get('exception'))
+        self.log.error("Failed to move {}".format(path), exc_info=True)
 
     def start_format_detection(self, path, *args, **kwargs):
         self.log.info("Start format detection for {}".format(path))
@@ -219,14 +239,17 @@ class StdoutListener(ImportListener):
     def matching_format_found(self, path, format, *args, **kwargs):
         self.log.info("Identified format {} for {}".format(format.get_name(), path))
 
-    def created_role_file(self, path, role, *args, **kwargs):
-        self.log.info("Created {} file for {}".format(role, path))
+    def start_conversion(self, path, parent_path, *args, **kwargs):
+        self.log.info("Start converting {} to {}".format(parent_path, path))
+
+    def conversion_success(self, path, image, *args, **kwargs):
+        self.log.info("Finished {} conversion !".format(path))
 
     def generic_file_error(self, path, *args, **kwargs):
-        self.log.error("Generic file error for {}".format(path), exc_info=kwargs.get('exception'))
+        self.log.error("Generic file error for {}".format(path), exc_info=True)
 
     def integrity_error(self, path, *args, **kwargs):
-        self.log.error("Integrity error for {}".format(path), exc_info=kwargs.get('exception'))
+        self.log.error("Integrity error for {}".format(path), exc_info=True)
 
     def integrity_success(self, path, *args, **kwargs):
         self.log.info("{} passed integrity check".format(path))
@@ -235,4 +258,4 @@ class StdoutListener(ImportListener):
         self.log.info("{} imported !".format(path))
 
     def conversion_error(self, path, *args, **kwargs):
-        self.log.error("Error while converting {}".format(path), exc_info=kwargs.get('exception'))
+        self.log.error("Error while converting {}".format(path), exc_info=True)
