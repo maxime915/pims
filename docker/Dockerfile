@@ -67,8 +67,9 @@ WORKDIR /app
 COPY pims /app/pims
 COPY setup.py /app/setup.py
 
-#COPY deploy.sh /app/deploy.sh
-#RUN chmod +x /app/deploy.sh
+RUN touch /tmp/addHosts.sh
+COPY docker/deploy.sh /app/deploy.sh
+RUN chmod +x /app/deploy.sh
 
 
 # TODO: NOT READY FOR PRODUCTION - ONLY FOR DEV.
@@ -80,4 +81,4 @@ COPY uwsgi.ini /app/uwsgi.ini
 
 EXPOSE 5000
 
-CMD [ "uwsgi", "--ini", "/app/uwsgi.ini" ]
+ENTRYPOINT ["/app/deploy.sh"]
