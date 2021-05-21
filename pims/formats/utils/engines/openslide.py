@@ -70,7 +70,7 @@ class OpenslideVipsReader(VipsReader):
             if imd.associated_thumb.exists:
                 return VIPSImage.openslideload(str(self.format.path), associated='thumbnail').flatten()
 
-        return super().read_thumb(out_width, out_height, **other).flatten()
+        return super().read_thumb(out_width, out_height, **other)
 
     def read_window(self, region, out_width, out_height, **other):
         tier = self.format.pyramid.most_appropriate_tier(region, (out_width, out_height))
