@@ -75,8 +75,9 @@ COPY setup.py /app/setup.py
 COPY app-config.cfg /app/app-config.cfg
 RUN pip3 install setuptools && python3 setup.py install
 
+RUN pip3 install uwsgi
+COPY uwsgi.ini /app/uwsgi.ini
+
 EXPOSE 5000
 
-ENV FLASK_APP=pims/app.py
-ENV FLASK_RUN_HOST=0.0.0.0
-CMD [ "flask", "run" ]
+CMD [ "uwsgi", "--ini", "/app/uwsgi.ini" ]

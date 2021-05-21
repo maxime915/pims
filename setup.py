@@ -47,13 +47,20 @@ REQUIRED = [
     'ordered-set>=4.0.2',
 
     'numpy>=1.20.1',
-    'Pillow>=8.1.2',
+    'Pillow>=8.0.0',
     'pyvips>=2.1.14',
     'tifffile>=2021.4.8',
     'imagecodecs>=2021.3.31',
 
     'Shapely>=1.8a1',
     'rasterio>=1.2.1',
+
+    # Must be at end to work with dependency links
+    'cytomine-python-client>=2.8.2',
+]
+
+DEPENDENCY_LINKS = [
+    'https://packagecloud.io/cytomine-uliege/Cytomine-python-client/pypi/simple/cytomine-python-client/'
 ]
 
 # What packages are optional?
@@ -141,6 +148,7 @@ setup(
     # },
     install_requires=REQUIRED,
     extras_require=EXTRAS,
+    dependency_links=DEPENDENCY_LINKS,
     include_package_data=True,
     license=about['__license__'],
     classifiers=[
