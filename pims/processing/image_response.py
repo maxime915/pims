@@ -24,7 +24,7 @@ class View:
         self.out_height = out_height
         self.out_format = out_format
         self.out_bitdepth = out_bitdepth
-        self.out_format_params = {k.replace('out_format', ''): v
+        self.out_format_params = {k.replace('out_format_', ''): v
                                   for k, v in kwargs.items() if k.startswith('out_format_')}
 
     @property
