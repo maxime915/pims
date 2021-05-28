@@ -11,7 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from pims.connexion import coerce_type
+from pims.connexion_utils import coerce_type
 
 
 def test_coerce_type_simple():

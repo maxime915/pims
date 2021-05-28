@@ -26,7 +26,7 @@ from cytomine.models import Model
 from flask import g, request
 from pint import Quantity
 
-from pims.connexion import PIMSOpenAPIURIParser, PIMSParameterValidator
+from pims.connexion_utils import PIMSOpenAPIURIParser, PIMSParameterValidator
 
 UNIT_REGISTRY = pint.UnitRegistry()
 
