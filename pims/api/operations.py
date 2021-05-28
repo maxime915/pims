@@ -11,6 +11,8 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+import traceback
+
 from connexion.exceptions import AuthenticationProblem
 from cytomine import Cytomine
 from cytomine.models import Storage, ProjectCollection, Project, UploadedFile, ImageInstance
@@ -82,6 +84,7 @@ def legacy_import(body, core=None, cytomine=None, storage=None, idStorage=None, 
                 } for image in images]
             }]
         except Exception as e:
+            traceback.print_exc()
             return [{
                 "status": 500,
                 "error": str(e),

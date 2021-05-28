@@ -114,9 +114,9 @@ class FileImporter:
                 if prefer_copy:
                     shutil.copy(self.pending_file, self.upload_path)
                 else:
-                    self.pending_file.rename(self.upload_path)
+                    shutil.move(self.pending_file, self.upload_path)
                 self.log('file_moved', self.pending_file, self.upload_path)
-            except (FileNotFoundError, FileExistsError) as e:
+            except (FileNotFoundError, FileExistsError, OSError) as e:
                 self.log('file_not_moved', self.pending_file, exception=e)
                 raise FileErrorProblem(self.pending_file)
 
@@ -141,7 +141,7 @@ class FileImporter:
             self.processed_dir = self.upload_dir / Path('processed')
             try:
                 self.processed_dir.mkdir()  # TODO: mode
-            except (FileNotFoundError, FileExistsError) as e:
+            except (FileNotFoundError, FileExistsError, OSError) as e:
                 self.log('generic_file_error', self.processed_dir, exception=e)
                 raise FileErrorProblem(self.processed_dir)
 
@@ -149,7 +149,7 @@ class FileImporter:
             self.original_path = self.processed_dir / Path("{}.{}".format("original", format.get_identifier()))
             try:
                 self.original_path.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
-            except (FileNotFoundError, FileExistsError) as e:
+            except (FileNotFoundError, FileExistsError, OSError) as e:
                 self.log('generic_file_error', self.original_path, exception=e)
                 raise FileErrorProblem(self.original_path)
             assert self.original_path.has_original_role()
