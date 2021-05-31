@@ -12,13 +12,22 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from flask import current_app
+from pydantic import BaseModel, Field
+from fastapi import APIRouter
 
-from pims import __version__
+from pims import __version__, __api_version__
+
+router = APIRouter()
 
 
-def show_status():
-    return {
-        'version': __version__,
-        'api_version': current_app.config['api_version']
-    }
+class ServerInfo(BaseModel):
+    version: str = Field(..., description='PIMS version')
+    api_version: str = Field(..., description='PIMS API specification version')
+
+
+@router.get('/info', response_model=ServerInfo, tags=['Server'])
+def show_status() -> ServerInfo:
+    """
+    PIMS Server status.
+    """
+    return ServerInfo(version=__version__, api_version=__api_version__)

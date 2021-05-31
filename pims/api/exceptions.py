@@ -12,9 +12,34 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from connexion import ProblemException
+from fastapi import Request, FastAPI
+from fastapi.responses import JSONResponse
 
 from pims.api.utils.parameter import path2filepath
+
+
+class ProblemException(Exception):
+    def __init__(self, status=400, title=None, detail=None, ext=None):
+        self.status: int = status
+        self.title: str = title
+        self.detail = detail
+        self.ext = ext
+
+
+def add_problem_exception_handler(app: FastAPI):
+    @app.exception_handler(ProblemException)
+    def problem_exception_handler(request: Request, exc: ProblemException):
+        content = {
+            "title": exc.title,
+            "details": exc.detail
+        }
+        if exc.ext:
+            content.update(exc.ext)
+
+        return JSONResponse(
+            status_code=exc.status,
+            content=content
+        )
 
 
 class FilepathNotFoundProblem(ProblemException):

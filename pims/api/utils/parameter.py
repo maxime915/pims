@@ -11,7 +11,8 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from flask import current_app
+
+from pims.config import get_settings
 
 
 def filepath2path(filepath):
@@ -29,7 +30,8 @@ def filepath2path(filepath):
         Absolute resolved path
     """
     from pims.files.file import Path
-    return Path(current_app.config['FILE_ROOT_PATH'], filepath)
+    config = get_settings()
+    return Path(config.root, filepath)
 
 
 def path2filepath(path):
@@ -46,7 +48,8 @@ def path2filepath(path):
     filepath: str
         Relative filepath
     """
-    root = current_app.config['FILE_ROOT_PATH']
+    config = get_settings()
+    root = config.root
     if root[-1] != "/":
         root += "/"
     return str(path).replace(root, "")

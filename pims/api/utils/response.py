@@ -27,7 +27,7 @@ def response_list(list_):
     }
 
 
-def convert_quantity(quantity, unit):
+def convert_quantity(quantity, unit, ndigits=6):
     """
     Convert a quantity to the unit required by API specification.
 
@@ -37,16 +37,18 @@ def convert_quantity(quantity, unit):
         Quantity to convert
     unit : str
         Pint understandable unit
+    ndigits : int
+        Number of digits to keep for rounding
 
     Returns
     -------
-    Quantity or None or any
+    float
         Converted quantity to given unit if `quantity` is Quantity
     """
     if quantity is None:
         return None
     elif isinstance(quantity, Quantity):
-        return quantity.to(unit)
+        return round(quantity.to(unit).magnitude, ndigits)
 
     log.warning('The quantity {} is not of type Quantity and is thus not converted.'.format(quantity))
-    return quantity
+    return round(quantity, ndigits)
