@@ -17,7 +17,8 @@ from connexion.exceptions import BadRequestProblem
 from ordered_set import OrderedSet
 
 from pims.api.exceptions import TooLargeOutputProblem
-from pims.api.utils.models import IntensitySelectionEnum
+from pims.api.utils.header import SafeMode
+from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, BitDepthEnum
 from pims.api.utils.schema_format import parse_range, is_range
 from pims.processing.region import Region
 
@@ -178,7 +179,7 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
 
     Parameters
     ----------
-    safe_mode : str (SAFE_REJECT, SAFE_RESIZE, UNSAFE)
+    safe_mode : SafeMode
         How to handle too large image response. See API specification for details.
     max_size : int
         Maximum admissible size when mode is SAFE_*
@@ -199,11 +200,11 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
     TooLargeOutputProblem
         If mode is SAFE_REJECT and the expect output size is unsafe.
     """
-    if safe_mode == 'UNSAFE':
+    if safe_mode == SafeMode.UNSAFE:
         return width, height
-    elif safe_mode == 'SAFE_REJECT' and (width > max_size or height > max_size):
+    elif safe_mode == SafeMode.SAFE_REJECT and (width > max_size or height > max_size):
         raise TooLargeOutputProblem(width, height, max_size)
-    elif safe_mode == 'SAFE_RESIZE' and (width > max_size or height > max_size):
+    elif safe_mode == SafeMode.SAFE_RESIZE and (width > max_size or height > max_size):
         if width > height:
             return get_rationed_resizing(max_size, width, height)
         else:
@@ -213,7 +214,7 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
         return width, height
 
 
-def parse_region(in_image, region_dict, tier_idx=0, tier_type='LEVEL', silent_oob=False):
+def parse_region(in_image, region_dict, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False):
     """
     Parse a region
 
@@ -226,7 +227,7 @@ def parse_region(in_image, region_dict, tier_idx=0, tier_type='LEVEL', silent_oo
         Values can be absolute (int) or relative (float)
     tier_idx : int
         Tier index to use as reference
-    tier_type: string (`LEVEL` or `ZOOM`)
+    tier_type: TierIndexType
         Type of tier index
     silent_oob: bool (default: false)
         Whether out of bounds region should raise an error or not.
@@ -241,7 +242,7 @@ def parse_region(in_image, region_dict, tier_idx=0, tier_type='LEVEL', silent_oo
     BadRequestProblem
         If a region coordinate is out of bound and silent_oob is False.
     """
-    if tier_type == "ZOOM":
+    if tier_type == TierIndexType.ZOOM:
         check_zoom_validity(in_image.pyramid, tier_idx)
         ref_tier = in_image.pyramid.get_tier_at_zoom(tier_idx)
     else:
@@ -550,7 +551,7 @@ def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
     BadRequestProblem
         If the tile index is invalid.
     """
-    if tier_type == "ZOOM":
+    if tier_type == TierIndexType.ZOOM:
         check_zoom_validity(pyramid, tier_idx)
         ref_tier = pyramid.get_tier_at_zoom(tier_idx)
     else:
@@ -583,7 +584,7 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
     BadRequestProblem
         If the tile index is invalid.
     """
-    if tier_type == "ZOOM":
+    if tier_type == TierIndexType.ZOOM:
         check_zoom_validity(pyramid, tier_idx)
         ref_tier = pyramid.get_tier_at_zoom(tier_idx)
     else:
@@ -598,4 +599,4 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
 
 
 def parse_bitdepth(in_image, bits):
-    return in_image.significant_bits if bits == "AUTO" else bits
+    return in_image.significant_bits if bits == BitDepthEnum.AUTO else bits

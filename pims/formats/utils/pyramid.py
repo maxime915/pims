@@ -13,6 +13,7 @@
 # * limitations under the License.
 from math import ceil
 
+from pims.api.utils.models import TierIndexType
 from pims.processing.region import TileRegion
 
 
@@ -136,7 +137,7 @@ class Pyramid:
         return self.get_tier_at_level(self.zoom_to_level(zoom))
 
     def get_tier_at(self, tier_idx, tier_type):
-        if tier_type == "ZOOM":
+        if tier_type == TierIndexType.ZOOM:
             return self.get_tier_at_zoom(tier_idx)
         else:
             return self.get_tier_at_level(tier_idx)

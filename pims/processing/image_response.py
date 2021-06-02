@@ -14,6 +14,7 @@
 from starlette.responses import Response
 
 from pims import PIMS_SLUG_PNG
+from pims.api.utils.models import Colorspace, AnnotationStyleMode
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp
 
@@ -66,7 +67,7 @@ class MultidimView(View):
 class ProcessedView(MultidimView):
     def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
                  out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, colorspace="AUTO", **kwargs):
+                 max_intensities, log, colorspace=Colorspace.AUTO, **kwargs):
         super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
                          c_reduction, z_reduction, t_reduction, out_bitdepth=out_bitdepth, **kwargs)
 
@@ -101,15 +102,15 @@ class ProcessedView(MultidimView):
 
     @property
     def colorspace_processing(self):
-        if self.colorspace == "AUTO":
+        if self.colorspace == Colorspace.AUTO:
             return False
-        return (self.colorspace == "GRAY" and len(self.channels) > 1) or \
-               (self.colorspace == "COLOR" and len(self.channels) == 1)
+        return (self.colorspace == Colorspace.GRAY and len(self.channels) > 1) or \
+               (self.colorspace == Colorspace.COLOR and len(self.channels) == 1)
 
     @property
     def new_colorspace(self):
-        if self.colorspace == "AUTO":
-            return "GRAY" if len(self.channels) == 1 else "COLOR"
+        if self.colorspace == Colorspace.AUTO:
+            return Colorspace.GRAY if len(self.channels) == 1 else Colorspace.COLOR
         return self.colorspace
 
     @property
@@ -191,26 +192,26 @@ class WindowResponse(ProcessedView):
 
     @property
     def colormap_processing(self):
-        if self.colorspace == "AUTO" and self.annotation_mode == 'DRAWING' \
+        if self.colorspace == Colorspace.AUTO and self.annotation_mode == AnnotationStyleMode.DRAWING \
                 and len(self.channels) == 1 and not self.annotations.is_stroke_grayscale:
             return True
         return super(WindowResponse, self).colormap_processing
 
     @property
     def new_colorspace(self):
-        if self.colorspace == "AUTO" and self.annotation_mode == "DRAWING" \
+        if self.colorspace == Colorspace.AUTO and self.annotation_mode == AnnotationStyleMode.DRAWING \
                 and len(self.channels) == 1 and not self.annotations.is_stroke_grayscale:
-            return "COLOR"
+            return Colorspace.COLOR
         return super(WindowResponse, self).new_colorspace
 
     def process(self):
         img = super(WindowResponse, self).process()
 
         if self.annotations and self.affine_matrix is not None:
-            if self.annotation_mode == 'CROP':
+            if self.annotation_mode == AnnotationStyleMode.CROP:
                 mask = MaskRasterOp(self.affine_matrix, self.out_width, self.out_height)(self.annotations)
                 img = TransparencyMaskImgOp(self.background_transparency, mask, self.out_bitdepth)(img)
-            elif self.annotation_mode == 'DRAWING':
+            elif self.annotation_mode == AnnotationStyleMode.DRAWING:
                 draw = DrawRasterOp(self.affine_matrix, self.out_width,
                                     self.out_height, self.point_style)(self.annotations)
                 draw_background = DrawRasterOp.background_color(self.annotations)

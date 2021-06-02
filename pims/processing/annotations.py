@@ -17,6 +17,7 @@ from math import floor
 import numpy as np
 from shapely.geometry import Point, LineString, GeometryCollection
 
+from pims.api.utils.models import PointCross
 from pims.processing.region import Region
 
 
@@ -132,7 +133,7 @@ def annotation_crop_affine_matrix(annot_region, in_region, out_width, out_height
     return [rx, 0, 0, ry, tx, ty]
 
 
-def contour(geom, point_style="CROSS"):
+def contour(geom, point_style=PointCross.CROSS):
     """
     Extract geometry's contour.
 
@@ -140,7 +141,7 @@ def contour(geom, point_style="CROSS"):
     ----------
     geom : shapely.geometry.Geometry
         Geometry which contour is extracted from.
-    point_style : str (`CROSS`, `CROSSHAIR`, `CIRCLE`)
+    point_style : PointCross
         Style of contour for points.
 
     Returns
@@ -157,9 +158,9 @@ def contour(geom, point_style="CROSS"):
             return coord
         x, y = center_coord(x), center_coord(y)
 
-        if point_style == 'CIRCLE':
+        if point_style == PointCross.CIRCLE:
             return Point(x, y).buffer(6).boundary
-        elif point_style == 'CROSSHAIR':
+        elif point_style == PointCross.CROSSHAIR:
             circle = Point(x, y). buffer(6).boundary
             left_line = LineString([(x - 10, y), (x - 3, y)])
             right_line = LineString([(x + 3, y), (x + 10, y)])

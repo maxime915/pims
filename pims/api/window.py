@@ -24,7 +24,7 @@ from pims.api.utils.image_parameter import get_channel_indexes, \
     safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth, \
     parse_region, check_tileindex_validity, check_tilecoord_validity, get_window_output_dimensions
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
-from pims.api.utils.models import WindowRequest
+from pims.api.utils.models import WindowRequest, AnnotationStyleMode, TierIndexType
 from pims.api.utils.parameter import filepath2path
 from pims.api.utils.header import add_image_size_limit_header
 from pims.processing.annotations import AnnotationList, annotation_crop_affine_matrix
@@ -49,7 +49,7 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
     check_representation_existence(in_image)
 
     if reference_tier_index is None:
-        reference_tier_index = 0 if tier_index_type == "LEVEL" else in_image.pyramid.max_zoom
+        reference_tier_index = 0 if tier_index_type == TierIndexType.LEVEL else in_image.pyramid.max_zoom
 
     if region is not None and type(region) == dict:
         region = parse_region(in_image, region, reference_tier_index, tier_index_type, silent_oob=False)
@@ -99,7 +99,7 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
     # TODO: verify filter names are valid
 
     if annotations and annotation_style and not isinstance(annotations, AnnotationList):
-        if annotation_style['mode'] == 'DRAWING':
+        if annotation_style['mode'] == AnnotationStyleMode.DRAWING:
             ignore_fields = ['fill_color']
             default = {'stroke_color': "red", 'stroke_width': 1}
             point_envelope_length = annotation_style.get('point_envelope_length')
@@ -141,7 +141,7 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
         "affine_matrix": affine
     }
 
-    if annotations and annotation_style is not None and annotation_style['mode'] == 'MASK':
+    if annotations and annotation_style is not None and annotation_style['mode'] == AnnotationStyleMode.MASK:
         window = MaskResponse(**window_args)
     else:
         window = WindowResponse(**window_args)

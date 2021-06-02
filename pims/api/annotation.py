@@ -21,6 +21,7 @@ from pims.api.utils.header import add_image_size_limit_header
 from pims.api.utils.image_parameter import check_zoom_validity, check_level_validity, get_window_output_dimensions, \
     safeguard_output_dimensions, ensure_list
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
+from pims.api.utils.models import AnnotationStyleMode
 from pims.api.utils.parameter import filepath2path
 from pims.api.window import show_window
 from pims.processing.annotations import annotation_crop_affine_matrix
@@ -94,7 +95,7 @@ def _show_crop(filepath, annotations, context_factor=None, background_transparen
     region = get_annotation_region(in_image, annots, context_factor)
 
     annot_style = {
-        "mode": 'CROP',
+        "mode": AnnotationStyleMode.CROP,
         "background_transparency": background_transparency
     }
 
@@ -131,7 +132,7 @@ def _show_drawing(filepath, annotations, context_factor=None,
     region = get_annotation_region(in_image, annots, context_factor, try_square)
 
     annot_style = {
-        "mode": 'DRAWING',
+        "mode": AnnotationStyleMode.DRAWING,
         "point_cross": point_cross,
         "point_envelope_length": point_envelope_length
     }

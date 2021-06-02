@@ -21,6 +21,7 @@ from pims.api.utils.image_parameter import check_tileindex_validity, check_tilec
     safeguard_output_dimensions, ensure_list, get_channel_indexes, check_reduction_validity, get_zslice_indexes, \
     get_timepoint_indexes, check_array_size, parse_intensity_bounds
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
+from pims.api.utils.models import Colorspace, TierIndexType
 from pims.api.utils.parameter import filepath2path
 from pims.processing.image_response import TileResponse, WindowResponse
 
@@ -39,10 +40,10 @@ def show_tile(filepath, zoom=None, level=None, ti=None, tx=None, ty=None,
 
     if zoom is not None:
         reference_tier_index = zoom
-        tier_index_type = "ZOOM"
+        tier_index_type = TierIndexType.ZOOM
     elif level is not None:
         reference_tier_index = level
-        tier_index_type = "LEVEL"
+        tier_index_type = TierIndexType.LEVEL
     else:
         raise BadRequestProblem(detail="Impossible to determine pyramid tier.")
 
@@ -159,10 +160,10 @@ def show_normalized_tile(filepath, zoom=None, level=None, ti=None, tx=None, ty=N
 
     if zoom is not None:
         reference_tier_index = zoom
-        tier_index_type = "ZOOM"
+        tier_index_type = TierIndexType.ZOOM
     elif level is not None:
         reference_tier_index = level
-        tier_index_type = "LEVEL"
+        tier_index_type = TierIndexType.LEVEL
     else:
         raise BadRequestProblem(detail="Impossible to determine pyramid tier.")
 
@@ -237,7 +238,7 @@ def show_normalized_tile(filepath, zoom=None, level=None, ti=None, tx=None, ty=N
         args.update({
             "region": tile_region,
             "out_bitdepth": 8,
-            "colorspace": 'AUTO'
+            "colorspace": Colorspace.AUTO
         })
         tile = WindowResponse(**args)
 

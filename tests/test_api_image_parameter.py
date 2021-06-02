@@ -15,9 +15,11 @@ import pytest
 from connexion.exceptions import BadRequestProblem
 
 from pims.api.exceptions import TooLargeOutputProblem
+from pims.api.utils.header import SafeMode
 from pims.api.utils.image_parameter import get_rationed_resizing, get_thumb_output_dimensions, parse_planes, \
     check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
     check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity, parse_region
+from pims.api.utils.models import IntensitySelectionEnum, TierIndexType
 from pims.formats.utils.pyramid import Pyramid
 from pims.processing.region import Region
 from tests.conftest import not_raises
@@ -86,16 +88,16 @@ def test_ensure_list():
 
 
 def test_safeguard_output_dimensions():
-    assert safeguard_output_dimensions('UNSAFE', 100, 10000, 10000) == (10000, 10000)
-    assert safeguard_output_dimensions('SAFE_RESIZE', 100, 10, 99) == (10, 99)
-    assert safeguard_output_dimensions('SAFE_RESIZE', 100, 1000, 2000) == (50, 100)
-    assert safeguard_output_dimensions('SAFE_RESIZE', 100, 2000, 1000) == (100, 50)
+    assert safeguard_output_dimensions(SafeMode.UNSAFE, 100, 10000, 10000) == (10000, 10000)
+    assert safeguard_output_dimensions(SafeMode.RESIZE, 100, 10, 99) == (10, 99)
+    assert safeguard_output_dimensions(SafeMode.RESIZE, 100, 1000, 2000) == (50, 100)
+    assert safeguard_output_dimensions(SafeMode.RESIZE, 100, 2000, 1000) == (100, 50)
 
     with pytest.raises(TooLargeOutputProblem):
-        assert safeguard_output_dimensions('SAFE_REJECT', 100, 1000, 2000)
+        assert safeguard_output_dimensions(SafeMode.REJECT, 100, 1000, 2000)
 
     with not_raises(TooLargeOutputProblem):
-        assert safeguard_output_dimensions('SAFE_REJECT', 100, 10, 99)
+        assert safeguard_output_dimensions(SafeMode.REJECT, 100, 10, 99)
 
 
 def test_parse_intensity_bounds():
@@ -108,29 +110,29 @@ def test_parse_intensity_bounds():
             return dict(minimum=channel, maximum=channel + 10)
 
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [], []) == ([0], [255])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0], [255])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [255])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [100]) == ([10], [100])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [1000]) == ([10], [255])
 
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [], []) == ([0], [65535])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0], [10])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100]) == ([10], [100])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [1000]) == ([10], [1000])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100000]) == ([10], [65535])
 
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0, 0], [255, 255])
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 0], [255, 255])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
     assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [255, 20])
 
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], ["AUTO_IMAGE"], ["AUTO_IMAGE"]) == ([0, 1], [10, 11])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], ["STRETCH_IMAGE"], ["STRETCH_IMAGE"]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [1000, 20])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, 5], [100000, 20]) == ([10, 5], [65535, 20])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, "AUTO_IMAGE"], [100000, 20]) == ([10, 1], [65535, 20])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, IntensitySelectionEnum.AUTO_IMAGE], [100000, 20]) == ([10, 1], [65535, 20])
 
 
 class FakeImagePyramid:
@@ -170,45 +172,45 @@ def test_check_tileindex_validity():
     img = FakeImagePyramid(1000, 2000, 1)
 
     with not_raises(BadRequestProblem):
-        check_tileindex_validity(img.pyramid, 0, 0, "ZOOM")
-        check_tileindex_validity(img.pyramid, 0, 0, "LEVEL")
-        check_tileindex_validity(img.pyramid, 31, 0, "ZOOM")
-        check_tileindex_validity(img.pyramid, 31, 0, "LEVEL")
+        check_tileindex_validity(img.pyramid, 0, 0, TierIndexType.ZOOM)
+        check_tileindex_validity(img.pyramid, 0, 0, TierIndexType.LEVEL)
+        check_tileindex_validity(img.pyramid, 31, 0, TierIndexType.ZOOM)
+        check_tileindex_validity(img.pyramid, 31, 0, TierIndexType.LEVEL)
 
     with pytest.raises(BadRequestProblem):
-        check_tileindex_validity(img.pyramid, 32, 0, "ZOOM")
+        check_tileindex_validity(img.pyramid, 32, 0, TierIndexType.ZOOM)
 
     with pytest.raises(BadRequestProblem):
-        check_tileindex_validity(img.pyramid, -1, 0, "ZOOM")
+        check_tileindex_validity(img.pyramid, -1, 0, TierIndexType.ZOOM)
 
 
 def test_check_tilecoord_validity():
     img = FakeImagePyramid(1000, 2000, 1)
 
     with not_raises(BadRequestProblem):
-        check_tilecoord_validity(img.pyramid, 0, 0, 0, "ZOOM")
-        check_tilecoord_validity(img.pyramid, 0, 0, 0, "LEVEL")
-        check_tilecoord_validity(img.pyramid, 3, 7, 0, "ZOOM")
-        check_tilecoord_validity(img.pyramid, 3, 7, 0, "LEVEL")
+        check_tilecoord_validity(img.pyramid, 0, 0, 0, TierIndexType.ZOOM)
+        check_tilecoord_validity(img.pyramid, 0, 0, 0, TierIndexType.LEVEL)
+        check_tilecoord_validity(img.pyramid, 3, 7, 0, TierIndexType.ZOOM)
+        check_tilecoord_validity(img.pyramid, 3, 7, 0, TierIndexType.LEVEL)
 
     with pytest.raises(BadRequestProblem):
-        check_tilecoord_validity(img.pyramid, 3, 8, 0, "ZOOM")
+        check_tilecoord_validity(img.pyramid, 3, 8, 0, TierIndexType.ZOOM)
 
     with pytest.raises(BadRequestProblem):
-        check_tilecoord_validity(img.pyramid, -1, 0, 0, "ZOOM")
+        check_tilecoord_validity(img.pyramid, -1, 0, 0, TierIndexType.ZOOM)
 
 
 def test_parse_region():
     img = FakeImagePyramid(1000, 2000, 3)
 
     region = {'top': 100, 'left': 50, 'width': 128, 'height': 128}
-    assert parse_region(img, region, 0, "LEVEL") == Region(100, 50, 128, 128)
-    assert parse_region(img, region, 1, "LEVEL") == Region(100, 50, 128, 128, downsample=2)
+    assert parse_region(img, region, 0, TierIndexType.LEVEL) == Region(100, 50, 128, 128)
+    assert parse_region(img, region, 1, TierIndexType.LEVEL) == Region(100, 50, 128, 128, downsample=2)
 
     region = {'top': 0.1, 'left': 0.15, 'width': 0.02, 'height': 0.2}
-    assert parse_region(img, region, 0, "LEVEL") == Region(200, 150, 20, 400)
-    assert parse_region(img, region, 1, "LEVEL") == Region(100, 75, 10, 200, downsample=2)
+    assert parse_region(img, region, 0, TierIndexType.LEVEL) == Region(200, 150, 20, 400)
+    assert parse_region(img, region, 1, TierIndexType.LEVEL) == Region(100, 75, 10, 200, downsample=2)
 
     with pytest.raises(BadRequestProblem):
         region = {'top': 100, 'left': 900, 'width': 128, 'height': 128}
-        parse_region(img, region, 0, "LEVEL")
+        parse_region(img, region, 0, TierIndexType.LEVEL)

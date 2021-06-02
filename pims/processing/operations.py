@@ -20,6 +20,7 @@ import numpy as np
 from rasterio.features import rasterize
 from shapely.affinity import affine_transform
 
+from pims.api.utils.models import Colorspace
 from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format, vips_format_to_dtype
 from pims.processing.adapters import imglib_adapters, numpy_to_vips
 from pims.processing.annotations import AnnotationList, contour, stretch_contour
@@ -274,14 +275,14 @@ class ColorspaceImgOp(ImageOp):
 
     def _vips_impl(self, img):
         new_colorspace = img.interpretation
-        if self.colorspace == "COLOR":
+        if self.colorspace == Colorspace.COLOR:
             new_colorspace = pyvips.enums.Interpretation.RGB
-        elif self.colorspace == "GRAY":
+        elif self.colorspace == Colorspace.GRAY:
             new_colorspace = pyvips.enums.Interpretation.B_W
 
-        if img.interpretation == pyvips.enums.Interpretation.RGB16 and self.colorspace == "GRAY":
+        if img.interpretation == pyvips.enums.Interpretation.RGB16 and self.colorspace == Colorspace.GRAY:
             new_colorspace = pyvips.enums.Interpretation.GREY16
-        elif img.interpretation == pyvips.enums.Interpretation.GREY16 and self.colorspace == "COLOR":
+        elif img.interpretation == pyvips.enums.Interpretation.GREY16 and self.colorspace == Colorspace.COLOR:
             new_colorspace = pyvips.enums.Interpretation.RGB16
 
         return img.colourspace(new_colorspace)
