@@ -11,6 +11,11 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from enum import Enum
+
+from fastapi import Header
+
+from pims.config import get_settings
 
 
 def serialize_header(value, style='simple', explode=False):
@@ -74,3 +79,29 @@ def add_image_size_limit_header(headers, request_width, request_height, safe_wid
         headers['X-Image-Size-Limit'] = serialize_header(header, explode=True)
 
     return headers
+
+
+class SafeMode(Enum):
+    SAFE_REJECT = "SAFE_REJECT"
+    SAFE_RESIZE = "SAFE_RESIZE"
+    UNSAFE = "UNSAFE"
+
+
+class ImageRequestHeaders:
+    def __init__(
+            self,
+            accept: str = Header('image/webp', alias='Accept'),
+            safe_mode: SafeMode = Header(
+                get_settings().default_image_size_safety_mode,
+                alias="X-Image-Size-Safety",
+                description="This header provides hints about the way the server has to deal with too large image responses."
+                            "* `SAFE_REJECT` - Reject too large image response and throw a `400 Bad Request`."
+                            "* `SAFE_RESIZE` - Resize the image response to an acceptable image size. Information about the resize are"
+                            "returned in `X-Image-Size-Limit` header."
+                            "* `UNSAFE` - **At your own risk!** Try to fulfill the request but can cause unintended side effects"
+                            "(unreadable response, server slown down, server failure, ...). It should only be used in rare controlled"
+                            "situations."
+            )
+    ):
+        self.accept = accept
+        self.safe_mode = safe_mode

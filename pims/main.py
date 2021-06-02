@@ -2,12 +2,15 @@ import logging
 import time
 
 import pint
+
 from fastapi import FastAPI, Request
 from colors import colors
 
+from pims.docs import get_redoc_html
 from .api.exceptions import add_problem_exception_handler
-from .api import server, housekeeping, formats, metadata
+from .api import server, housekeeping, formats, metadata, thumb, window
 from . import __api_version__
+
 
 logger = logging.getLogger("pims")
 
@@ -19,7 +22,9 @@ app = FastAPI(
                 "While this API is intended to be internal, a lot of the "
                 "following specification can be ported to the "
                 "external (public) Cytomine API.",
-    version=__api_version__
+    version=__api_version__,
+    docs_url=None,
+    redoc_url=None,
 )
 
 
@@ -50,10 +55,20 @@ async def log_requests(request: Request, call_next):
 
     return response
 
+
+@app.get("/docs", include_in_schema=False)
+def docs(req: Request):
+    root_path = req.scope.get("root_path", "").rstrip("/")
+    openapi_url = root_path + app.openapi_url
+    return get_redoc_html(openapi_url=openapi_url, title=app.title)
+
+
 app.include_router(server.router)
 app.include_router(housekeeping.router)
 app.include_router(formats.router)
 app.include_router(metadata.router)
+app.include_router(thumb.router)
+app.include_router(window.router)
 
 add_problem_exception_handler(app)
 

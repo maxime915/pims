@@ -11,11 +11,13 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+
 from connexion.exceptions import BadRequestProblem
 
 from ordered_set import OrderedSet
 
 from pims.api.exceptions import TooLargeOutputProblem
+from pims.api.utils.models import IntensitySelectionEnum
 from pims.api.utils.schema_format import parse_range, is_range
 from pims.processing.region import Region
 
@@ -468,12 +470,12 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
         else:
             if allow_none and bound_value == "NONE":
                 return bound_default
-            elif bound_value == "AUTO_IMAGE":
+            elif bound_value == IntensitySelectionEnum.AUTO_IMAGE:
                 if image.significant_bits <= 8:
                     return bound_default
                 else:
                     return image.channel_stats(c)[bound_kind]
-            elif bound_value == "STRETCH_IMAGE":
+            elif bound_value == IntensitySelectionEnum.STRETCH_IMAGE:
                 return image.channel_stats(c)[bound_kind]
             else:
                 # TODO: AUTO_PLANE, STRETCH_PLANE

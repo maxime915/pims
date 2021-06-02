@@ -11,6 +11,8 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from fastapi.params import Path as PathParam
+
 
 from pims.config import get_settings
 
@@ -53,3 +55,32 @@ def path2filepath(path):
     if root[-1] != "/":
         root += "/"
     return str(path).replace(root, "")
+
+
+def filepath_parameter(
+    filepath: str = PathParam(
+        ..., description="The file path, relative to server base path.",
+        example='123/my-file.ext'
+    )
+):
+    path = filepath2path(filepath)
+    if not path.exists():
+        from pims.api.exceptions import FilepathNotFoundProblem
+        raise FilepathNotFoundProblem(path)
+    return path
+
+
+def imagepath_parameter(
+    filepath: str = PathParam(
+        ..., description="The file path, relative to server base path.",
+        example='123/my-file.ext'
+    )
+):
+    path = filepath2path(filepath)
+    if not path.exists():
+        from pims.api.exceptions import FilepathNotFoundProblem
+        raise FilepathNotFoundProblem(path)
+    if not path.is_single():
+        from pims.api.exceptions import NoAppropriateRepresentationProblem
+        raise NoAppropriateRepresentationProblem(path)
+    return path

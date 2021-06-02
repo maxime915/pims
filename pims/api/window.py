@@ -14,6 +14,7 @@
 from io import BytesIO
 
 from connexion import request
+from fastapi import APIRouter
 from flask import send_file, current_app
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
@@ -23,12 +24,15 @@ from pims.api.utils.image_parameter import get_channel_indexes, \
     safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth, \
     parse_region, check_tileindex_validity, check_tilecoord_validity, get_window_output_dimensions
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
+from pims.api.utils.models import WindowRequest
 from pims.api.utils.parameter import filepath2path
 from pims.api.utils.header import add_image_size_limit_header
 from pims.processing.annotations import AnnotationList, annotation_crop_affine_matrix
 from pims.processing.image_response import WindowResponse, MaskResponse
 from pims.processing.region import Region
 
+
+router = APIRouter()
 
 def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier_index=None, tier_index_type=None,
                 width=None, height=None, length=None, zoom=None, level=None,
@@ -148,6 +152,6 @@ def show_window(filepath, region=None, tx=None, ty=None, ti=None, reference_tier
     add_image_size_limit_header(headers, req_width, req_height, out_width, out_height)
     return send_file(fp, mimetype=mimetype), headers
 
-
-def show_window_with_body(filepath, body):
+@router.post('/image/{filepath:path}/window')
+def show_window_with_body(filepath: str, body: WindowRequest):
     return show_window(filepath, **body)
