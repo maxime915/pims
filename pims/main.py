@@ -8,7 +8,7 @@ from colors import colors
 
 from pims.docs import get_redoc_html
 from .api.exceptions import add_problem_exception_handler
-from .api import server, housekeeping, formats, metadata, thumb, window
+from .api import server, housekeeping, formats, metadata, thumb, window, resized
 from . import __api_version__
 
 
@@ -63,12 +63,13 @@ def docs(req: Request):
     return get_redoc_html(openapi_url=openapi_url, title=app.title)
 
 
-app.include_router(server.router)
-app.include_router(housekeeping.router)
-app.include_router(formats.router)
-app.include_router(metadata.router)
 app.include_router(thumb.router)
+app.include_router(resized.router)
 app.include_router(window.router)
+app.include_router(metadata.router)
+app.include_router(formats.router)
+app.include_router(housekeeping.router)
+app.include_router(server.router)
 
 add_problem_exception_handler(app)
 

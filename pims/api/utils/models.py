@@ -268,9 +268,27 @@ class ImageInProcessing(ImageIn):
     colorspace: Colorspace = Colorspace.AUTO
 
 
+class ImageOpsProcessingQueryParams(BaseDependency):
+    def __init__(
+            self,
+            gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+            min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
+            max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
+            filters: Optional[List[str]] = Query(None),
+            bits: Optional[Union[BitDepthEnum, int]] = Query(BitDepthEnum.AUTO),
+            colorspace: Optional[Colorspace] = Query(Colorspace.AUTO)
+    ):
+        self.gammas = gammas
+        self.min_intensities = min_intensities
+        self.max_intensities = max_intensities
+        self.filters = filters
+        self.bits = bits
+        self.colorspace = colorspace
+
+
 class ImageOutProcessing(ImageOut):
     zoom: Optional[conint(ge=0)] = None
-    level: Optional[conint(ge=0)] = 0
+    level: Optional[conint(ge=0)] = None
 
     class Config:
         fields = {
@@ -285,6 +303,16 @@ class ImageOutProcessing(ImageOut):
                                "**Takes precedence over `zoom`, `height`, `width` and `length`.**"
             }
         }
+
+
+class ImageOutProcessingQueryParams(BaseDependency):
+    def __init__(
+            self,
+            zoom: Optional[conint(ge=0)] = Query(None),
+            level: Optional[conint(ge=0)] = Query(None)
+    ):
+        self.zoom = zoom
+        self.level = level
 
 
 class ResizedRequest(ImageInProcessing, ImageOutProcessing):
