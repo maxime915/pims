@@ -584,4 +584,15 @@ class GenericReduction(Enum):
     MAX = 'MAX'
 
 
+class AssociatedName(Enum):
+    """
+    The type of associated image.
 
+    `macro` - A macro image (generally, in slide scanners, a low resolution picture of the entire slide)
+    `label` - A label image (generally a barcode)
+    `thumb` - A pre-computed thumbnail
+    """
+
+    macro = 'macro'
+    label = 'label'
+    thumb = 'thumb'

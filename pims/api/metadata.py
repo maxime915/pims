@@ -13,25 +13,23 @@
 # * limitations under the License.
 from datetime import datetime
 from enum import Enum
-from io import BytesIO
 from typing import Optional, Union, List
 
-from flask import current_app, send_file
-from connexion import request
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, conint
 
 from pims.api.exceptions import check_path_existence, check_path_is_single, \
     check_representation_existence, NoAppropriateRepresentationProblem
-from pims.api.utils.header import add_image_size_limit_header
+from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, safeguard_output_dimensions
-from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
-from pims.api.utils.models import FormatId, ZoomOrLevel, CollectionSize
-from pims.api.utils.parameter import filepath2path, path2filepath
+from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension
+from pims.api.utils.models import FormatId, ZoomOrLevel, CollectionSize, ImageOutDisplayQueryParams, AssociatedName
+from pims.api.utils.parameter import filepath2path, path2filepath, imagepath_parameter
 from pims.api.utils.response import response_list, convert_quantity
+from pims.config import Settings, get_settings
+from pims.files.file import Path
 from pims.formats.utils.metadata import MetadataType
 from pims.processing.image_response import AssociatedResponse
-
-from fastapi import APIRouter
 
 router = APIRouter()
 api_tags = ['Metadata']
@@ -407,20 +405,6 @@ class ChannelsInfo(BaseModel):
         return [ChannelsInfoItem.from_channel(c) for c in image.channels]
 
 
-class AssociatedName(Enum):
-    """
-    The type of associated image.
-
-    `macro` - A macro image (generally, in slide scanners, a low resolution picture of the entire slide)
-    `label` - A label image (generally a barcode)
-    `thumb` - A pre-computed thumbnail
-    """
-
-    macro = 'macro'
-    label = 'label'
-    thumb = 'thumb'
-
-
 class AssociatedInfoItem(BaseModel):
     """
     Associated images are metadata image stored in the original image file.
@@ -683,35 +667,36 @@ def show_associated(
     return response_list(AssociatedInfo.from_image(original))
 
 
-def show_associated_image(filepath, associated_key, length=None, width=None, height=None):
-    # TODO
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
+@router.get(
+    '/image/{filepath:path}/associated/{associated_key}',
+    tags=api_tags + ['Associated']
+)
+def show_associated_image(
+        path: Path = Depends(imagepath_parameter),
+        extension: OutputExtension = OutputExtension.NONE,
+        output: ImageOutDisplayQueryParams = Depends(),
+        associated_key: AssociatedName = Query(...),
+        headers: ImageRequestHeaders = Depends(),
+        config: Settings = Depends(get_settings)
+):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
-    associated = None
-    if associated_key in ('thumb', 'label', 'macro'):
-        associated = getattr(in_image, 'associated_{}'.format(associated_key))
-
+    associated = getattr(in_image, 'associated_{}'.format(associated_key.value))
     if not associated or not associated.exists:
-        raise NoAppropriateRepresentationProblem(filepath, associated_key)
+        raise NoAppropriateRepresentationProblem(path, associated_key)
 
-    out_format, mimetype = get_output_format(request, VISUALISATION_MIMETYPES)
-    req_width, req_height = get_thumb_output_dimensions(associated, height, width, length)
-    safe_mode = request.headers.get('X-Image-Size-Safety', current_app.config['DEFAULT_IMAGE_SIZE_SAFETY_MODE'])
-    out_width, out_height = safeguard_output_dimensions(safe_mode, current_app.config['OUTPUT_SIZE_LIMIT'],
-                                                        req_width, req_height)
+    out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
+    req_size = get_thumb_output_dimensions(in_image, output.height, output.width, output.length)
+    out_size = safeguard_output_dimensions(headers.safe_mode, config.output_size_limit, *req_size)
+    out_width, out_height = out_size
 
-    thumb = AssociatedResponse(in_image, associated_key, out_width, out_height, out_format)
-    fp = BytesIO(thumb.get_response_buffer())
-    fp.seek(0)
-
-    headers = dict()
-    add_image_size_limit_header(headers, req_width, req_height, out_width, out_height)
-    return send_file(fp, mimetype=mimetype), headers
+    return AssociatedResponse(
+        in_image, associated_key, out_width, out_height, out_format
+    ).http_response(
+        mimetype,
+        extra_headers=add_image_size_limit_header(dict(), *req_size, *out_size)
+    )
 
 
 # METADATA

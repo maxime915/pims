@@ -63,10 +63,10 @@ def docs(req: Request):
     return get_redoc_html(openapi_url=openapi_url, title=app.title)
 
 
+app.include_router(metadata.router)
 app.include_router(thumb.router)
 app.include_router(resized.router)
 app.include_router(window.router)
-app.include_router(metadata.router)
 app.include_router(formats.router)
 app.include_router(housekeeping.router)
 app.include_router(server.router)

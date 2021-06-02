@@ -14,7 +14,7 @@
 from starlette.responses import Response
 
 from pims import PIMS_SLUG_PNG
-from pims.api.utils.models import Colorspace, AnnotationStyleMode
+from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp
 
@@ -248,9 +248,9 @@ class AssociatedResponse(View):
         self.associated_key = associated_key
 
     def raw_view(self):
-        if self.associated_key == 'macro':
+        if self.associated_key == AssociatedName.macro:
             associated = self.in_image.macro(self.out_width, self.out_height)
-        elif self.associated_key == 'label':
+        elif self.associated_key == AssociatedName.label:
             associated = self.in_image.label(self.out_width, self.out_height)
         else:
             associated = self.in_image.thumbnail(self.out_width, self.out_height, precomputed=True)
