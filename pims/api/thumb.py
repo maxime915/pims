@@ -13,15 +13,16 @@
 # * limitations under the License.
 
 from fastapi import APIRouter, Depends, Query
-from starlette.responses import Response
 
-from pims.api.exceptions import check_path_existence, check_path_is_single, check_representation_existence
+from pims.api.exceptions import check_representation_existence
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, get_channel_indexes, \
     get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
     safeguard_output_dimensions, parse_intensity_bounds
-from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
-from pims.api.utils.models import ThumbnailRequest, ImageOutDisplayQueryParams, PlaneSelectionQueryParams, ImageOpsDisplayQueryParams
-from pims.api.utils.parameter import filepath2path, imagepath_parameter
+from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
+    extension_path_parameter
+from pims.api.utils.models import ThumbnailRequest, ImageOutDisplayQueryParams, PlaneSelectionQueryParams, \
+    ImageOpsDisplayQueryParams
+from pims.api.utils.parameter import imagepath_parameter
 from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
 from pims.config import Settings, get_settings
 from pims.files.file import Path
@@ -31,9 +32,10 @@ router = APIRouter()
 api_tags = ['Thumbnails']
 
 
-@router.get('/image/{filepath:path}/thumb')
+@router.get('/image/{filepath:path}/thumb{extension:path}', tags=api_tags)
 def show_thumb(
         path: Path = Depends(imagepath_parameter),
+        extension: OutputExtension = Depends(extension_path_parameter),
         output: ImageOutDisplayQueryParams = Depends(),
         planes: PlaneSelectionQueryParams = Depends(),
         operations: ImageOpsDisplayQueryParams = Depends(),
@@ -52,14 +54,16 @@ def show_thumb(
     """
     return _show_thumb(
         path=path, **output.dict(), **planes.dict(), **operations.dict(),
-        log=log, use_precomputed=use_precomputed, headers=headers, config=config
+        log=log, use_precomputed=use_precomputed, extension=extension,
+        headers=headers, config=config
     )
 
 
-@router.post('/image/{filepath:path}/thumb')
+@router.post('/image/{filepath:path}/thumb{extension:path}', tags=api_tags)
 def show_thumb_with_body(
         body: ThumbnailRequest,
         path: Path = Depends(imagepath_parameter),
+        extension: OutputExtension = Depends(extension_path_parameter),
         headers: ImageRequestHeaders = Depends(),
         config: Settings = Depends(get_settings)
 ):
@@ -74,7 +78,7 @@ def show_thumb_with_body(
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
     """
-    return _show_thumb(path, **body.dict(), headers=headers, config=config)
+    return _show_thumb(path, **body.dict(), extension=extension, headers=headers, config=config)
 
 
 def _show_thumb(
@@ -83,6 +87,7 @@ def _show_thumb(
         channels, z_slices, timepoints,
         min_intensities, max_intensities, filters, gammas,
         log, use_precomputed,
+        extension,
         headers,
         config: Settings,
         colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
@@ -90,7 +95,7 @@ def _show_thumb(
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
-    out_format, mimetype = get_output_format(headers.accept, VISUALISATION_MIMETYPES)
+    out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
     req_size = get_thumb_output_dimensions(in_image, height, width, length)
     out_size = safeguard_output_dimensions(headers.safe_mode, config.output_size_limit, *req_size)
     out_width, out_height = out_size
@@ -126,27 +131,13 @@ def _show_thumb(
     # TODO: verify colormap names are valid
     # TODO: verify filter names are valid
 
-    thumb_args = {
-        "in_image": in_image,
-        "in_channels": channels,
-        "in_z_slices": z_slices,
-        "in_timepoints": timepoints,
-        "c_reduction": c_reduction,
-        "z_reduction": z_reduction,
-        "t_reduction": t_reduction,
-        "out_width": out_width,
-        "out_height": out_height,
-        "out_format": out_format,
-        "gammas": gammas,
-        "filters": filters,
-        "colormaps": colormaps,
-        "min_intensities": min_intensities,
-        "max_intensities": max_intensities,
-        "log": log,
-        "use_precomputed": use_precomputed
-    }
-    thumb = ThumbnailResponse(**thumb_args)
-
-    headers = dict()
-    add_image_size_limit_header(headers, *req_size, *out_size)
-    return Response(content=thumb.get_response_buffer(), headers=headers, media_type=mimetype)
+    return ThumbnailResponse(
+        in_image, channels, z_slices, timepoints,
+        out_format, out_width, out_height,
+        c_reduction, z_reduction, t_reduction,
+        gammas, filters, colormaps, min_intensities, max_intensities,
+        log, use_precomputed
+    ).http_response(
+        mimetype,
+        extra_headers=add_image_size_limit_header(dict(), *req_size, *out_size)
+    )

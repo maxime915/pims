@@ -11,6 +11,8 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from starlette.responses import Response
+
 from pims import PIMS_SLUG_PNG
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp
@@ -38,6 +40,13 @@ class View:
 
     def get_response_buffer(self):
         return OutputProcessor(self.out_format, self.best_effort_bitdepth, **self.out_format_params)(self.process())
+
+    def http_response(self, mimetype, extra_headers=None):
+        return Response(
+            content=self.get_response_buffer(),
+            headers=extra_headers,
+            media_type=mimetype
+        )
 
 
 class MultidimView(View):
