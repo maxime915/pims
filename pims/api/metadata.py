@@ -18,13 +18,12 @@ from typing import Optional, Union, List
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, conint
 
-from pims.api.exceptions import check_path_existence, check_path_is_single, \
-    check_representation_existence, NoAppropriateRepresentationProblem
+from pims.api.exceptions import check_representation_existence, NoAppropriateRepresentationProblem
 from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, safeguard_output_dimensions
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension
 from pims.api.utils.models import FormatId, ZoomOrLevel, CollectionSize, ImageOutDisplayQueryParams, AssociatedName
-from pims.api.utils.parameter import filepath2path, path2filepath, imagepath_parameter
+from pims.api.utils.parameter import path2filepath, imagepath_parameter, filepath_parameter
 from pims.api.utils.response import response_list, convert_quantity
 from pims.config import Settings, get_settings
 from pims.files.file import Path
@@ -515,13 +514,11 @@ class ImageFullInfo(BaseModel):
     tags=api_tags
 )
 def show_file(
-        filepath: str
+        path: Path = Depends(filepath_parameter),
 ):
     """
     Get file info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
     return FileInfo.from_path(path)
 
 
@@ -531,15 +528,11 @@ def show_file(
     tags=api_tags
 )
 def show_info(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get all image info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
     data = dict()
@@ -559,15 +552,11 @@ def show_info(
     tags=api_tags
 )
 def show_image(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get standard image info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
     return ImageInfo.from_image(original)
@@ -584,14 +573,10 @@ class ChannelsInfoCollection(CollectionSize):
     response_model=ChannelsInfoCollection,
     tags=api_tags
 )
-def show_channels(filepath: str):
+def show_channels(path: Path = Depends(imagepath_parameter)):
     """
     Get image channel info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
     return response_list(ChannelsInfo.from_image(original))
@@ -605,15 +590,11 @@ def show_channels(filepath: str):
     tags=api_tags
 )
 def show_normalized_pyramid(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image normalized pyramid
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
     return PyramidInfo.from_pyramid(original.normalized_pyramid)
@@ -627,15 +608,11 @@ def show_normalized_pyramid(
     tags=api_tags
 )
 def show_instrument(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image instrument info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
     return InstrumentInfo.from_image(original)
@@ -653,15 +630,11 @@ class AssociatedInfoCollection(CollectionSize):
     tags=api_tags + ['Associated']
 )
 def show_associated(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get associated file info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
     return response_list(AssociatedInfo.from_image(original))
@@ -673,7 +646,6 @@ def show_associated(
 )
 def show_associated_image(
         path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = OutputExtension.NONE,
         output: ImageOutDisplayQueryParams = Depends(),
         associated_key: AssociatedName = Query(...),
         headers: ImageRequestHeaders = Depends(),
@@ -686,7 +658,7 @@ def show_associated_image(
     if not associated or not associated.exists:
         raise NoAppropriateRepresentationProblem(path, associated_key)
 
-    out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
+    out_format, mimetype = get_output_format(OutputExtension.NONE, headers.accept, VISUALISATION_MIMETYPES)
     req_size = get_thumb_output_dimensions(in_image, output.height, output.width, output.length)
     out_size = safeguard_output_dimensions(headers.safe_mode, config.output_size_limit, *req_size)
     out_width, out_height = out_size
@@ -711,15 +683,11 @@ class MetadataCollection(CollectionSize):
     tags=api_tags
 )
 def show_metadata(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image metadata
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     original = path.get_original()
     check_representation_existence(original)
 
@@ -739,14 +707,11 @@ class RepresentationInfoCollection(CollectionSize):
     tags=api_tags
 )
 def list_representations(
-        filepath: str
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get all image representation info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
     return response_list([RepresentationInfo.from_path(rpr) for rpr in path.get_representations()])
 
 
@@ -756,15 +721,11 @@ def list_representations(
     tags=api_tags
 )
 def show_representation(
-        filepath: str,
         representation: FileRole,
+        path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image representation info
     """
-    path = filepath2path(filepath)
-    check_path_existence(path)
-    check_path_is_single(path)
-
     rpr = path.get_representation(representation)
     return RepresentationInfo.from_path(rpr)

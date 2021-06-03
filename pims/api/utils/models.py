@@ -584,7 +584,7 @@ class GenericReduction(Enum):
     MAX = 'MAX'
 
 
-class AssociatedName(Enum):
+class AssociatedName(str, Enum):
     """
     The type of associated image.
 
