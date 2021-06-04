@@ -12,13 +12,13 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from connexion.exceptions import BadRequestProblem
 from shapely.affinity import affine_transform
+from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 from shapely.validation import explain_validity, make_valid
 
-from pims.api.utils.schema_format import parse_color
-from pims.processing.annotations import Annotation, AnnotationList
+from pims.api.exceptions import InvalidGeometryException
+from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
 from pims.processing.region import Region
 
 
@@ -44,11 +44,11 @@ def parse_annotations(annotations, ignore_fields=None, default=None,
 
     Returns
     -------
-    AnnotationList
+    ParsedAnnotations
         A list of parsed annotations
     """
 
-    al = AnnotationList()
+    al = ParsedAnnotations()
     for annotation in annotations:
         al.append(parse_annotation(**annotation, ignore_fields=ignore_fields,
                                    default=default, point_envelope_length=point_envelope_length,
@@ -66,10 +66,10 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
     Parameters
     ----------
     geometry : str
-        valid WKT string to parse (parsed geometry can be invalid)
-    fill_color : str (optional)
+        WKT string to parse (parsed geometry can be invalid)
+    fill_color : pydantic.Color (optional)
         Fill color to parse
-    stroke_color : str (optional)
+    stroke_color : pydantic.Color (optional)
         Stroke color to parse
     stroke_width : int (optional)
         Stroke width to parse
@@ -86,13 +86,13 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
 
     Returns
     -------
-    Annotation
+    ParsedAnnotation
         A parsed annotation
 
     Raises
     ------
     BadRequestProblem
-        If geometry is invalid, even after trying to make it valid.
+        If geometry is unreadable or invalid, even after trying to make it valid.
     """
     if ignore_fields is None:
         ignore_fields = []
@@ -100,7 +100,11 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
     if default is None:
         default = dict()
 
-    geom = wkt_loads(geometry)
+    try:
+        geom = wkt_loads(geometry)
+    except WKTReadingError:
+        raise InvalidGeometryException(geometry, "WKT reading error")
+
     if origin == 'LEFT_BOTTOM':
         geom = affine_transform(geom, [1, 0, 0, -1, 0, im_height - 0.5])
 
@@ -108,8 +112,7 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
         geom = make_valid(geom)
 
     if not geom.is_valid:
-        raise BadRequestProblem(detail="{} is invalid. Reason: {}".format(
-            geometry, explain_validity(geom)))
+        raise InvalidGeometryException(geometry, explain_validity(geom))
     parsed = {'geometry': geom}
 
     if geom.type == 'Point' and point_envelope_length is not None:
@@ -117,21 +120,19 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
 
     if 'fill_color' not in ignore_fields:
         default_color = default.get('fill_color')
-        default_color = parse_color(default_color) if default_color else default_color
-        parsed['fill_color'] = parse_color(fill_color) \
+        parsed['fill_color'] = fill_color.as_rgb_tuple(alpha=False) \
             if fill_color is not None else default_color
 
     if 'stroke_color' not in ignore_fields:
         default_color = default.get('stroke_color')
-        default_color = parse_color(default_color) if default_color else default_color
-        parsed['stroke_color'] = parse_color(stroke_color) \
+        parsed['stroke_color'] = stroke_color.as_rgb_tuple(alpha=False) \
             if stroke_color is not None else default_color
 
     if 'stroke_width' not in ignore_fields:
         parsed['stroke_width'] = stroke_width \
             if stroke_width is not None else default.get('stroke_width')
 
-    return Annotation(**parsed)
+    return ParsedAnnotation(**parsed)
 
 
 def get_annotation_region(in_image, annots, context_factor=1.0, try_square=False):
@@ -143,7 +144,7 @@ def get_annotation_region(in_image, annots, context_factor=1.0, try_square=False
     ----------
     in_image : Image
         Image in which region is extracted.
-    annots : AnnotationList
+    annots : ParsedAnnotations
         List of parsed annotations
     context_factor : float
         Context factor

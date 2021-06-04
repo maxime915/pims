@@ -13,12 +13,11 @@
 # * limitations under the License.
 import traceback
 
-from connexion.exceptions import AuthenticationProblem
 from cytomine import Cytomine
 from cytomine.models import Storage, ProjectCollection, Project, UploadedFile, ImageInstance
 from flask import current_app
 
-from pims.api.exceptions import CytomineProblem
+from pims.api.exceptions import CytomineProblem, AuthenticationException
 from pims.api.utils.cytomine_auth import parse_authorization_header, parse_request_token, sign_token, \
     get_this_image_server
 from pims.api.utils.image_parameter import ensure_list
@@ -50,7 +49,7 @@ def legacy_import(body, core=None, cytomine=None, storage=None, idStorage=None, 
         private_key = keys["privateKey"]
 
         if sign_token(private_key, parse_request_token()) != signature:
-            raise AuthenticationProblem(401, "Auth failed", "")
+            raise AuthenticationException("Authentication to Cytomine failed")
 
         c.set_credentials(public_key, private_key)
         user = c.current_user

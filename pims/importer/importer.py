@@ -14,9 +14,8 @@
 import shutil
 from datetime import datetime
 
-from connexion import ProblemException
-
-from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem
+from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem, \
+    BadRequestException
 from pims.files.file import Path
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
@@ -30,15 +29,15 @@ def unique_name_generator():
     return int(datetime.now().timestamp() * 1e6)
 
 
-class FileErrorProblem(ProblemException):
+class FileErrorProblem(BadRequestException):
     pass
 
 
-class ImageParsingProblem(ProblemException):
+class ImageParsingProblem(BadRequestException):
     pass
 
 
-class FormatConversionProblem(ProblemException):
+class FormatConversionProblem(BadRequestException):
     pass
 
 

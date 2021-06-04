@@ -14,7 +14,7 @@
 from enum import Enum
 from typing import Optional
 
-from fastapi import Header
+from fastapi import Header, Depends
 
 from pims.config import get_settings
 
@@ -82,28 +82,67 @@ def add_image_size_limit_header(headers, request_width, request_height, safe_wid
     return headers
 
 
-class SafeMode(Enum):
+class SafeMode(str, Enum):
     SAFE_REJECT = "SAFE_REJECT"
     SAFE_RESIZE = "SAFE_RESIZE"
     UNSAFE = "UNSAFE"
 
 
+def accept_header(
+    accept: Optional[str] = Header(None, alias='Accept')
+):
+    return accept
+
+
+def safe_mode_header(
+    safe_mode: SafeMode = Header(
+        get_settings().default_image_size_safety_mode,
+        alias="X-Image-Size-Safety",
+        description="This header provides hints about the way the server has to deal "
+                    "with too large image responses.\n"
+                    "* `SAFE_REJECT` - Reject too large image response and throw a `400 Bad Request`.\n"
+                    "* `SAFE_RESIZE` - Resize the image response to an acceptable image size. "
+                    "Information about the resize are returned in `X-Image-Size-Limit` header.\n"
+                    "* `UNSAFE` - **At your own risk!** Try to fulfill the request but can cause "
+                    "unintended side effects (unreadable response, server slown down, server failure, "
+                    "...). It should only be used in rare controlled situations."
+    )
+):
+    return safe_mode
+
+
+class AnnotationOrigin(str, Enum):
+    LEFT_TOP = "LEFT_TOP"
+    LEFT_BOTTOM = "LEFT_BOTTOM"
+
+
+def annotation_origin_header(
+    annot_origin: AnnotationOrigin = Header(
+        get_settings().default_annotation_origin,
+        alias="X-Annotation-Origin",
+        description="This header give the origin coordinate system "
+                    "in which are described provided annotations."
+    )
+):
+    return annot_origin
+
+
 class ImageRequestHeaders:
     def __init__(
             self,
-            accept: Optional[str] = Header(None, alias='Accept'),
-            safe_mode: SafeMode = Header(
-                get_settings().default_image_size_safety_mode,
-                alias="X-Image-Size-Safety",
-                description="This header provides hints about the way the server has to deal "
-                            "with too large image responses.\n"
-                            "* `SAFE_REJECT` - Reject too large image response and throw a `400 Bad Request`.\n"
-                            "* `SAFE_RESIZE` - Resize the image response to an acceptable image size. "
-                            "Information about the resize are returned in `X-Image-Size-Limit` header.\n"
-                            "* `UNSAFE` - **At your own risk!** Try to fulfill the request but can cause "
-                            "unintended side effects (unreadable response, server slown down, server failure, "
-                            "...). It should only be used in rare controlled situations."
-            )
+            accept: str = Depends(accept_header),
+            safe_mode: SafeMode = Depends(safe_mode_header),
     ):
         self.accept = accept
         self.safe_mode = safe_mode
+
+
+class ImageAnnotationRequestHeaders(ImageRequestHeaders):
+    def __init__(
+            self,
+            accept: str = Depends(accept_header),
+            safe_mode: SafeMode = Depends(safe_mode_header),
+            annot_origin: AnnotationOrigin = Depends(annotation_origin_header)
+    ):
+        super().__init__(accept, safe_mode)
+        self.annot_origin = annot_origin

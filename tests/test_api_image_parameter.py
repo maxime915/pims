@@ -12,9 +12,8 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import pytest
-from connexion.exceptions import BadRequestProblem
 
-from pims.api.exceptions import TooLargeOutputProblem
+from pims.api.exceptions import TooLargeOutputProblem, BadRequestException
 from pims.api.utils.header import SafeMode
 from pims.api.utils.image_parameter import get_rationed_resizing, get_thumb_output_dimensions, parse_planes, \
     check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
@@ -42,7 +41,7 @@ def test_get_output_dimensions():
     assert get_thumb_output_dimensions(FakeImage(2000, 1000), length=200) == (200, 100)
     assert get_thumb_output_dimensions(FakeImage(1000, 2000), width=20, length=3, height=500) == (250, 500)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         get_thumb_output_dimensions(FakeImage(1000, 2000))
 
 
@@ -54,26 +53,26 @@ def test_parse_planes():
     assert parse_planes([':'], 3) == {0, 1, 2}
     assert parse_planes([], 10, default=[1, 2]) == {1, 2}
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         parse_planes([2, '5:', 'foo'], 10)
 
 
 def test_check_reduction_validity():
-    with not_raises(BadRequestProblem):
+    with not_raises(BadRequestException):
         check_reduction_validity([0], None)
         check_reduction_validity([], None)
         check_reduction_validity([1, 2], "SUM")
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_reduction_validity([1, 2], None)
 
 
 def test_check_array_size():
-    with not_raises(BadRequestProblem):
+    with not_raises(BadRequestException):
         check_array_size([1], [1, 2], True)
         check_array_size(None, [1, 2], True)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_array_size([1], [2], True)
         check_array_size(None, [1], False)
         check_array_size([1], [], True)
@@ -143,60 +142,60 @@ class FakeImagePyramid:
 
 
 def test_check_level_validity():
-    with not_raises(BadRequestProblem):
+    with not_raises(BadRequestException):
         check_level_validity(FakeImagePyramid(100, 100, 1).pyramid, 0)
         check_level_validity(FakeImagePyramid(100, 100, 20).pyramid, 10)
         check_level_validity(FakeImagePyramid(100, 100, 20).pyramid, None)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_level_validity(FakeImagePyramid(100, 100, 1).pyramid, 1)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_level_validity(FakeImagePyramid(100, 100, 20).pyramid, 25)
 
 
 def test_check_zoom_validity():
-    with not_raises(BadRequestProblem):
+    with not_raises(BadRequestException):
         check_zoom_validity(FakeImagePyramid(100, 100, 1).pyramid, 0)
         check_zoom_validity(FakeImagePyramid(100, 100, 20).pyramid, 10)
         check_zoom_validity(FakeImagePyramid(100, 100, 20).pyramid, None)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_zoom_validity(FakeImagePyramid(100, 100, 1).pyramid, 1)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_zoom_validity(FakeImagePyramid(100, 100, 20).pyramid, 25)
 
 
 def test_check_tileindex_validity():
     img = FakeImagePyramid(1000, 2000, 1)
 
-    with not_raises(BadRequestProblem):
+    with not_raises(BadRequestException):
         check_tileindex_validity(img.pyramid, 0, 0, TierIndexType.ZOOM)
         check_tileindex_validity(img.pyramid, 0, 0, TierIndexType.LEVEL)
         check_tileindex_validity(img.pyramid, 31, 0, TierIndexType.ZOOM)
         check_tileindex_validity(img.pyramid, 31, 0, TierIndexType.LEVEL)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_tileindex_validity(img.pyramid, 32, 0, TierIndexType.ZOOM)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_tileindex_validity(img.pyramid, -1, 0, TierIndexType.ZOOM)
 
 
 def test_check_tilecoord_validity():
     img = FakeImagePyramid(1000, 2000, 1)
 
-    with not_raises(BadRequestProblem):
+    with not_raises(BadRequestException):
         check_tilecoord_validity(img.pyramid, 0, 0, 0, TierIndexType.ZOOM)
         check_tilecoord_validity(img.pyramid, 0, 0, 0, TierIndexType.LEVEL)
         check_tilecoord_validity(img.pyramid, 3, 7, 0, TierIndexType.ZOOM)
         check_tilecoord_validity(img.pyramid, 3, 7, 0, TierIndexType.LEVEL)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_tilecoord_validity(img.pyramid, 3, 8, 0, TierIndexType.ZOOM)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         check_tilecoord_validity(img.pyramid, -1, 0, 0, TierIndexType.ZOOM)
 
 
@@ -204,13 +203,13 @@ def test_parse_region():
     img = FakeImagePyramid(1000, 2000, 3)
 
     region = {'top': 100, 'left': 50, 'width': 128, 'height': 128}
-    assert parse_region(img, region, 0, TierIndexType.LEVEL) == Region(100, 50, 128, 128)
-    assert parse_region(img, region, 1, TierIndexType.LEVEL) == Region(100, 50, 128, 128, downsample=2)
+    assert parse_region(img, **region, tier_idx=0, tier_type=TierIndexType.LEVEL) == Region(100, 50, 128, 128)
+    assert parse_region(img, **region, tier_idx=1, tier_type=TierIndexType.LEVEL) == Region(100, 50, 128, 128, downsample=2)
 
     region = {'top': 0.1, 'left': 0.15, 'width': 0.02, 'height': 0.2}
-    assert parse_region(img, region, 0, TierIndexType.LEVEL) == Region(200, 150, 20, 400)
-    assert parse_region(img, region, 1, TierIndexType.LEVEL) == Region(100, 75, 10, 200, downsample=2)
+    assert parse_region(img, **region, tier_idx=0, tier_type=TierIndexType.LEVEL) == Region(200, 150, 20, 400)
+    assert parse_region(img, **region, tier_idx=1, tier_type=TierIndexType.LEVEL) == Region(100, 75, 10, 200, downsample=2)
 
-    with pytest.raises(BadRequestProblem):
+    with pytest.raises(BadRequestException):
         region = {'top': 100, 'left': 900, 'width': 128, 'height': 128}
-        parse_region(img, region, 0, TierIndexType.LEVEL)
+        parse_region(img, **region, tier_idx=0, tier_type=TierIndexType.LEVEL)

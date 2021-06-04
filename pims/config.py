@@ -6,6 +6,7 @@ from pydantic import BaseSettings
 class Settings(BaseSettings):
     root: str
     default_image_size_safety_mode: str = "SAFE_REJECT"
+    default_annotation_origin: str = "LEFT_TOP"
     output_size_limit: int = 10000
 
     class Config:

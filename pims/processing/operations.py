@@ -23,7 +23,7 @@ from shapely.affinity import affine_transform
 from pims.api.utils.models import Colorspace
 from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format, vips_format_to_dtype
 from pims.processing.adapters import imglib_adapters, numpy_to_vips
-from pims.processing.annotations import AnnotationList, contour, stretch_contour
+from pims.processing.annotations import ParsedAnnotations, contour, stretch_contour
 from pims.processing.color_utils import rgb2int, int2rgb
 from pims.processing.utils import find_first_available_int
 
@@ -371,7 +371,7 @@ class RasterOp(ImageOp):
 class MaskRasterOp(RasterOp):
     def __init__(self, affine, out_width, out_height):
         super().__init__()
-        self._impl[AnnotationList] = self._default_impl
+        self._impl[ParsedAnnotations] = self._default_impl
 
         self.affine_matrix = affine
         self.out_width = out_width
@@ -399,7 +399,7 @@ class MaskRasterOp(RasterOp):
 class DrawRasterOp(RasterOp):
     def __init__(self, affine, out_width, out_height, point_style):
         super().__init__()
-        self._impl[AnnotationList] = self._default_impl
+        self._impl[ParsedAnnotations] = self._default_impl
 
         self.affine_matrix = affine
         self.out_width = out_width

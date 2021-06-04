@@ -14,24 +14,24 @@
 import webcolors
 from shapely.geometry import box
 
-from pims.processing.annotations import Annotation, AnnotationList
+from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
 
 
 def test_annotation():
     geom = box(10, 20, 30, 40)
-    annot = Annotation(geom)
+    annot = ParsedAnnotation(geom)
     assert annot.is_fill_grayscale is True
     assert annot.is_stroke_grayscale is True
     assert annot.bounds == (10, 20, 30, 40)
 
     grey = webcolors.name_to_rgb("grey")
     red = webcolors.name_to_rgb("red")
-    annot = Annotation(geom, fill_color=red, stroke_color=grey)
+    annot = ParsedAnnotation(geom, fill_color=red, stroke_color=grey)
     assert annot.is_fill_grayscale is False
     assert annot.is_stroke_grayscale is True
     assert annot.is_grayscale is False
 
-    annot = Annotation(geom, fill_color=grey, stroke_color=grey)
+    annot = ParsedAnnotation(geom, fill_color=grey, stroke_color=grey)
     assert annot.is_grayscale is True
 
 
@@ -40,10 +40,10 @@ def test_annotation_list():
     white = webcolors.name_to_rgb("white")
     red = webcolors.name_to_rgb("red")
 
-    annot1 = Annotation(box(10, 20, 30, 40), fill_color=white, stroke_color=red)
-    annot2 = Annotation(box(5, 100, 20, 200), fill_color=grey, stroke_color=white)
+    annot1 = ParsedAnnotation(box(10, 20, 30, 40), fill_color=white, stroke_color=red)
+    annot2 = ParsedAnnotation(box(5, 100, 20, 200), fill_color=grey, stroke_color=white)
 
-    al = AnnotationList()
+    al = ParsedAnnotations()
     al.append(annot1)
     al.append(annot2)
 

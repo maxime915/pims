@@ -12,11 +12,10 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from connexion.exceptions import BadRequestProblem
 
 from ordered_set import OrderedSet
 
-from pims.api.exceptions import TooLargeOutputProblem
+from pims.api.exceptions import TooLargeOutputProblem, BadRequestException
 from pims.api.utils.header import SafeMode
 from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, BitDepthEnum
 from pims.api.utils.schema_format import parse_range, is_range
@@ -85,7 +84,7 @@ def get_thumb_output_dimensions(in_image, height=None, width=None, length=None, 
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If it is impossible to determine output dimensions.
     """
     if level is not None:
@@ -104,8 +103,8 @@ def get_thumb_output_dimensions(in_image, height=None, width=None, length=None, 
         else:
             out_height, out_width = get_rationed_resizing(length, in_image.height, in_image.width)
     else:
-        raise BadRequestProblem(detail='Impossible to determine output dimensions. '
-                                       'Height, width and length cannot all be unset.')
+        raise BadRequestException(detail='Impossible to determine output dimensions. '
+                                         'Height, width and length cannot all be unset.')
 
     return out_width, out_height
 
@@ -147,7 +146,7 @@ def get_window_output_dimensions(in_image, region, height=None, width=None, leng
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If it is impossible to determine output dimensions.
     """
     if level is not None:
@@ -166,8 +165,8 @@ def get_window_output_dimensions(in_image, region, height=None, width=None, leng
         else:
             out_height, out_width = get_rationed_resizing(length, region.true_height, region.true_width)
     else:
-        raise BadRequestProblem(detail='Impossible to determine output dimensions. '
-                                       'Height, width and length cannot all be unset.')
+        raise BadRequestException(detail='Impossible to determine output dimensions. '
+                                         'Height, width and length cannot all be unset.')
 
     return out_width, out_height
 
@@ -214,7 +213,7 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
         return width, height
 
 
-def parse_region(in_image, region_dict, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False):
+def parse_region(in_image, top, left, width, height, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False):
     """
     Parse a region
 
@@ -222,9 +221,10 @@ def parse_region(in_image, region_dict, tier_idx=0, tier_type=TierIndexType.LEVE
     ----------
     in_image : Image
         Image in which region is extracted
-    region_dict : dict
-        Region dict ("top", "left", "width", "height" keys) to parse.
-        Values can be absolute (int) or relative (float)
+    top : int or float
+    left : int or float
+    width : int or float
+    height : int or float
     tier_idx : int
         Tier index to use as reference
     tier_type: TierIndexType
@@ -239,7 +239,7 @@ def parse_region(in_image, region_dict, tier_idx=0, tier_type=TierIndexType.LEVE
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If a region coordinate is out of bound and silent_oob is False.
     """
     if tier_type == TierIndexType.ZOOM:
@@ -248,11 +248,6 @@ def parse_region(in_image, region_dict, tier_idx=0, tier_type=TierIndexType.LEVE
     else:
         check_level_validity(in_image.pyramid, tier_idx)
         ref_tier = in_image.pyramid.get_tier_at_level(tier_idx)
-
-    top = region_dict['top']
-    left = region_dict['left']
-    width = region_dict['width']
-    height = region_dict['height']
 
     if type(top) == float:
         top *= ref_tier.height
@@ -269,7 +264,7 @@ def parse_region(in_image, region_dict, tier_idx=0, tier_type=TierIndexType.LEVE
     if not silent_oob:
         clipped = region.clip(ref_tier.width, ref_tier.height)
         if clipped != region:
-            raise BadRequestProblem(detail="Some coordinates of region {} are out of bounds.".format(region))
+            raise BadRequestException(detail="Some coordinates of region {} are out of bounds.".format(region))
 
     return region
 
@@ -297,7 +292,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If an item of `planes_to_parse´ is invalid.
     """
     plane_indexes = list()
@@ -311,7 +306,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
         elif is_range(plane):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
-            raise BadRequestProblem(detail='{} is not a valid index or range for {}.'.format(plane, name))
+            raise BadRequestException(detail='{} is not a valid index or range for {}.'.format(plane, name))
     return OrderedSet([idx for idx in plane_indexes if 0 <= idx < n_planes])
 
 
@@ -361,11 +356,11 @@ def check_reduction_validity(planes, reduction, name='planes'):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If no reduction function is given while needed.
     """
     if len(planes) > 1 and reduction is None:
-        raise BadRequestProblem(detail='A reduction is required for {}'.format(name))
+        raise BadRequestException(detail='A reduction is required for {}'.format(name))
 
 
 def check_array_size(iterable, allowed, nullable=True, name=None):
@@ -385,7 +380,7 @@ def check_array_size(iterable, allowed, nullable=True, name=None):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If the iterable doesn't have one of the allowed sizes
         or is None if `nullable` is false.
 
@@ -393,14 +388,14 @@ def check_array_size(iterable, allowed, nullable=True, name=None):
     if iterable is None:
         if not nullable:
             name = 'A parameter' if not name else name
-            raise BadRequestProblem(detail="{} is unset while it is not allowed.".format(name))
+            raise BadRequestException(detail="{} is unset while it is not allowed.".format(name))
         return
 
     if not len(iterable) in allowed:
         name = 'A parameter' if not name else name
         allowed_str = ', '.join([str(i) for i in allowed])
-        raise BadRequestProblem("{} has a size of {} while only "
-                                "these sizes are allowed: {}".format(name, len(iterable), allowed_str))
+        raise BadRequestException("{} has a size of {} while only "
+                                  "these sizes are allowed: {}".format(name, len(iterable), allowed_str))
 
 
 def ensure_list(value):
@@ -503,12 +498,12 @@ def check_level_validity(pyramid, level):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If the given level is not in the image pyramid.
     """
 
     if level is not None and not 0 <= level <= pyramid.max_level:
-        raise BadRequestProblem(detail="Level tier {} does not exist.".format(level))
+        raise BadRequestException(detail="Level tier {} does not exist.".format(level))
 
 
 def check_zoom_validity(pyramid, zoom):
@@ -523,12 +518,12 @@ def check_zoom_validity(pyramid, zoom):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If the given zoom is not in the image pyramid.
     """
 
     if zoom is not None and not 0 <= zoom <= pyramid.max_zoom:
-        raise BadRequestProblem(detail="Zoom tier {} does not exist.".format(zoom))
+        raise BadRequestException(detail="Zoom tier {} does not exist.".format(zoom))
 
 
 def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
@@ -548,7 +543,7 @@ def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If the tile index is invalid.
     """
     if tier_type == TierIndexType.ZOOM:
@@ -559,7 +554,7 @@ def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
         ref_tier = pyramid.get_tier_at_level(tier_idx)
 
     if not 0 <= ti < ref_tier.max_ti:
-        raise BadRequestProblem("Tile index {} is invalid for tier {}.".format(ti, ref_tier))
+        raise BadRequestException("Tile index {} is invalid for tier {}.".format(ti, ref_tier))
 
 
 def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
@@ -581,7 +576,7 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
 
     Raises
     ------
-    BadRequestProblem
+    BadRequestException
         If the tile index is invalid.
     """
     if tier_type == TierIndexType.ZOOM:
@@ -592,10 +587,10 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
         ref_tier = pyramid.get_tier_at_level(tier_idx)
 
     if not 0 <= tx < ref_tier.max_tx:
-        raise BadRequestProblem("Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier))
+        raise BadRequestException("Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier))
 
     if not 0 <= ty < ref_tier.max_ty:
-        raise BadRequestProblem("Tile coordinate {} along Y axis is invalid for tier {}.".format(ty, ref_tier))
+        raise BadRequestException("Tile coordinate {} along Y axis is invalid for tier {}.".format(ty, ref_tier))
 
 
 def parse_bitdepth(in_image, bits):

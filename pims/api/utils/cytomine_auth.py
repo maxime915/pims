@@ -15,18 +15,17 @@ import base64
 import hashlib
 import hmac
 
-from connexion.exceptions import AuthenticationProblem
 from cytomine.models import Model, Collection
 from flask import request, current_app
 
-from pims.api.exceptions import CytomineProblem
+from pims.api.exceptions import CytomineProblem, AuthenticationException
 
 
 def parse_authorization_header():
     auth = request.headers.get("authorization")
     if auth is None or not auth.startswith("CYTOMINE") \
             or ' ' not in auth or ':' not in auth:
-        raise AuthenticationProblem(401, "Auth failed", "")
+        raise AuthenticationException("Auth failed")
 
     public_key = auth[(auth.index(" ") + 1):(auth.index(":"))]
     signature = auth[(auth.index(":") + 1):]

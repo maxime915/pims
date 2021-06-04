@@ -25,7 +25,7 @@ def is_grayscale(red, green, blue):
     return red == green == blue
 
 
-class Annotation:
+class ParsedAnnotation:
     def __init__(self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
                  point_envelope_length=None):
         self.geometry = geometry
@@ -64,19 +64,19 @@ class Annotation:
         return Region(top, left, right - left, bottom - top)
 
     def __eq__(self, other):
-        return isinstance(other, Annotation) \
+        return isinstance(other, ParsedAnnotation) \
                and self.geometry.equals(other.geometry) \
                and self.fill_color == other.fill_color \
                and self.stroke_color == other.stroke_color \
                and self.stroke_width == other.stroke_width
 
 
-class AnnotationList(MutableSequence):
+class ParsedAnnotations(MutableSequence):
     def __init__(self):
         self._data = []
 
     def insert(self, index, value):
-        if not isinstance(value, Annotation):
+        if not isinstance(value, ParsedAnnotation):
             raise TypeError("Value of type {} not allowed in {}.".format(
                 value.__class__.__name__, self.__class__.__name__))
         self._data.insert(index, value)
@@ -88,7 +88,7 @@ class AnnotationList(MutableSequence):
         return self._data[index]
 
     def __setitem__(self, index, value):
-        if not isinstance(value, Annotation):
+        if not isinstance(value, ParsedAnnotation):
             raise TypeError("Value of type {} not allowed in {}.".format(
                 value.__class__.__name__, self.__class__.__name__))
         self._data[index] = value

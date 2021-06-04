@@ -209,11 +209,13 @@ class ImageOpsDisplayQueryParams(BaseDependency):
             max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query([
                 IntensitySelectionEnum.AUTO_IMAGE]),
             filters: Optional[List[str]] = Query(None),
+            log: bool = Query(False),
     ):
         self.gammas = gammas
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.filters = filters
+        self.log = log
 
 
 class ImageOutDisplay(ImageOut):
@@ -416,8 +418,8 @@ class Annotation(BaseModel):
         description='A geometry described in Well-known text (WKT)',
         example='POINT(10 10)',
     )
-    fill_color: Optional[str] = Field(
-        '#FFFFFF',
+    fill_color: Optional[Color] = Field(
+        Color("white"),
         description='A color to fill the annotation',
         example='#FF00FF'
     )
@@ -432,7 +434,7 @@ class Annotation(BaseModel):
 
 
 class Annotations(BaseModel):
-    __root__: Union[Annotation, List[Annotation]]
+    __root__: Union[List[Annotation], Annotation]
 
 
 class PointCross(str, Enum):
@@ -506,20 +508,21 @@ class AnnotationTrySquare(BaseModel):
 
 class AnnotationCropRequest(ImageInProcessing, ImageOutProcessing):
     annotations: Annotations
-    context_factor: AnnotationContextFactor
-    background_transparency: AnnotationBgTransparency
-    try_square: AnnotationTrySquare
+    context_factor: Optional[AnnotationContextFactor]
+    background_transparency: Optional[AnnotationBgTransparency]
 
 
 class AnnotationMaskRequest(ImageOutProcessing):
     annotations: Annotations
-    context_factor: AnnotationContextFactor
+    context_factor: Optional[AnnotationContextFactor]
 
 
-class AnnotationDrawingRequest(ImageInProcessing, ImageOutProcessing):
+class AnnotationDrawingRequest(ImageInDisplay, ImageOutProcessing):
     annotations: Annotations
-    context_factor: AnnotationContextFactor
-    try_square: AnnotationTrySquare
+    context_factor: Optional[AnnotationContextFactor]
+    try_square: Optional[AnnotationTrySquare]
+    point_envelope_length: Optional[PointEnvelopeLength]
+    point_cross: Optional[PointCross] = PointCross.CROSS
 
 
 class TargetZoom(BaseModel):

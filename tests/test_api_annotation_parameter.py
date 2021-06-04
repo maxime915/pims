@@ -13,17 +13,16 @@
 # * limitations under the License.
 import pytest
 import webcolors
-from connexion.exceptions import BadRequestProblem
 from shapely.geometry import Point, box
 
 from pims.api.utils.annotation_parameter import parse_annotation, get_annotation_region
-from pims.processing.annotations import Annotation, AnnotationList
+from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
 from pims.processing.region import Region
 
 
 def test_parse_annotation():
     annot = {"geometry": "POINT (10 10)"}
-    assert parse_annotation(**annot) == Annotation(Point(10, 10))
+    assert parse_annotation(**annot) == ParsedAnnotation(Point(10, 10))
 
     annot = {"geometry": "POINT (10 10)", "fill_color": "#fff"}
     default = {"fill_color": "red", "stroke_color": "#fff"}
@@ -31,11 +30,11 @@ def test_parse_annotation():
     red = webcolors.name_to_rgb("red")
     white = webcolors.name_to_rgb("white")
 
-    assert parse_annotation(**annot, default=default) == Annotation(Point(10, 10), white, white)
-    assert parse_annotation(**annot) == Annotation(Point(10, 10), white)
-    assert parse_annotation(**annot, ignore_fields=['fill_color']) == Annotation(Point(10, 10))
+    assert parse_annotation(**annot, default=default) == ParsedAnnotation(Point(10, 10), white, white)
+    assert parse_annotation(**annot) == ParsedAnnotation(Point(10, 10), white)
+    assert parse_annotation(**annot, ignore_fields=['fill_color']) == ParsedAnnotation(Point(10, 10))
     assert parse_annotation(**annot, ignore_fields=['fill_color'],
-                            default=default) == Annotation(Point(10, 10), stroke_color=white)
+                            default=default) == ParsedAnnotation(Point(10, 10), stroke_color=white)
 
 
 def test_annotation_region():
@@ -44,15 +43,15 @@ def test_annotation_region():
             self.width = w
             self.height = h
 
-    al = AnnotationList()
-    al.append(Annotation(box(10, 20, 30, 40)))
+    al = ParsedAnnotations()
+    al.append(ParsedAnnotation(box(10, 20, 30, 40)))
     assert get_annotation_region(FakeImage(100, 100), al) == Region(20, 10, 20, 20)
     assert get_annotation_region(FakeImage(100, 100), al, context_factor=1.5) == Region(15, 5, 30, 30)
 
-    al = AnnotationList()
-    al.append(Annotation(box(10, 20, 30, 30)))
+    al = ParsedAnnotations()
+    al.append(ParsedAnnotation(box(10, 20, 30, 30)))
     assert get_annotation_region(FakeImage(100, 100), al, try_square=True) == Region(15, 10, 20, 20)
 
-    al = AnnotationList()
-    al.append(Annotation(box(20, 10, 30, 30)))
+    al = ParsedAnnotations()
+    al.append(ParsedAnnotation(box(20, 10, 30, 30)))
     assert get_annotation_region(FakeImage(100, 100), al, try_square=True) == Region(10, 15, 20, 20)

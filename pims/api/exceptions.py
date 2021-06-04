@@ -19,11 +19,31 @@ from pims.api.utils.parameter import path2filepath
 
 
 class ProblemException(Exception):
-    def __init__(self, status=400, title=None, detail=None, ext=None):
+    def __init__(self, status, title=None, detail=None, **ext):
         self.status: int = status
         self.title: str = title
         self.detail = detail
         self.ext = ext
+
+
+class BadRequestException(ProblemException):
+    def __init__(self, title="Bad Request", detail=None, **ext):
+        super().__init__(400, title, detail, **ext)
+
+
+class NotFoundException(ProblemException):
+    def __init__(self, title="Not Found", detail=None, **ext):
+        super().__init__(404, title, detail, **ext)
+
+
+class NotAcceptableException(ProblemException):
+    def __init__(self, title="Not Acceptable", detail=None, **ext):
+        super().__init__(406, title, detail, **ext)
+
+
+class AuthenticationException(ProblemException):
+    def __init__(self, title="Unauthorized", detail=None, **ext):
+        super().__init__(401, title, detail, **ext)
 
 
 def add_problem_exception_handler(app: FastAPI):
@@ -42,63 +62,72 @@ def add_problem_exception_handler(app: FastAPI):
         )
 
 
-class FilepathNotFoundProblem(ProblemException):
+class FilepathNotFoundProblem(NotFoundException):
     def __init__(self, filepath):
-        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
         title = 'Filepath not found'
-        detail = 'The filepath {} does not exist.'.format(filepath)
-        super(FilepathNotFoundProblem, self).__init__(status=404, title=title, detail=detail)
+        detail = f'The filepath {filepath} does not exist.'
+        super().__init__(title, detail)
 
 
-class NoAppropriateRepresentationProblem(ProblemException):
+class NoAppropriateRepresentationProblem(NotFoundException):
     def __init__(self, filepath, representation=None):
-        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
+
         title = 'No appropriate representation found'
-        detail = 'The filepath {} does not have an appropriate representation'.format(filepath)
+        detail = f'The filepath {filepath} does not have an appropriate representation'
         if representation:
-            detail += ' (expected {})'.format(representation)
-        super(NoAppropriateRepresentationProblem, self).__init__(status=400, title=title, detail=detail)
+            detail += f' (expected {representation})'
+        super().__init__(title, detail, representation=representation)
 
 
-class NotADirectoryProblem(ProblemException):
+class NotADirectoryProblem(BadRequestException):
     def __init__(self, filepath):
-        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
+
         title = 'Not a directory'
-        detail = 'The filepath {} is not a directory'.format(filepath)
-        super(NotADirectoryProblem, self).__init__(status=400, title=title, detail=detail)
+        detail = f'The filepath {filepath} is not a directory'
+        super().__init__(title, detail)
 
 
-class NoMatchingFormatProblem(ProblemException):
+class NoMatchingFormatProblem(BadRequestException):
     def __init__(self, filepath):
-        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
+
         title = "No matching format found"
-        detail = "The filepath {} is recognized by any of the available formats.".format(filepath)
-        super(NoMatchingFormatProblem, self).__init__(status=400, title=title, detail=detail)
+        detail = f"The filepath {filepath} is recognized by any of the available formats."
+        super().__init__(title, detail)
 
 
-class MetadataParsingProblem(ProblemException):
+class MetadataParsingProblem(BadRequestException):
     def __init__(self, filepath):
-        filepath = path2filepath(filepath) if type(filepath) is not str else filepath
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
+
         title = "Metadata cannot be correctly understood."
-        detail = "The filepath {} has unsupported metadata.".format(filepath)
-        super(MetadataParsingProblem, self).__init__(status=400, title=title, detail=detail)
+        detail = f"The filepath {filepath} has unsupported metadata."
+        super().__init__(title, detail)
 
 
-class FormatNotFoundProblem(ProblemException):
+class FormatNotFoundProblem(NotFoundException):
     def __init__(self, format_id):
         title = 'Format not found'
-        detail = 'The format {} does not exist.'.format(format_id)
-        super(FormatNotFoundProblem, self).__init__(status=404, title=title, detail=detail)
+        detail = f'The format {format_id} does not exist.'
+        super().__init__(title, detail)
 
 
-class ColormapNotFoundProblem(ProblemException):
+class ColormapNotFoundProblem(NotFoundException):
     def __init__(self, colormap_id):
         title = 'Colormap not found'
-        detail = 'The colormap {} does not exist.'.format(colormap_id)
-        super(ColormapNotFoundProblem, self).__init__(status=404, title=title, detail=detail)
+        detail = f'The colormap {colormap_id} does not exist.'
+        super().__init__(title, detail)
 
 
-class NoAcceptableResponseMimetypeProblem(ProblemException):
+class NoAcceptableResponseMimetypeProblem(NotAcceptableException):
     def __init__(self, accept_header, supported_mimetypes):
         title = 'No acceptable response mime type'
         detail = 'There is no acceptable response mime type in Accept header.'
@@ -106,26 +135,37 @@ class NoAcceptableResponseMimetypeProblem(ProblemException):
             'accept_header': accept_header,
             'supported_mimetypes': supported_mimetypes
         }
-        super(NoAcceptableResponseMimetypeProblem, self).__init__(status=406, title=title, detail=detail, ext=ext)
+        super().__init__(title, detail, **ext)
 
 
-class TooLargeOutputProblem(ProblemException):
+class TooLargeOutputProblem(BadRequestException):
     def __init__(self, width, height, max_size):
         title = 'Too large image output dimensions.'
         detail = 'Requested output dimensions exceed maximum admissible size. ' \
                  'The request has been rejected as X-Image-Size-Safety header is set to SAFE_REJECT.'
-        ext ={
+        ext = {
             "request_width": width,
             "request_height": height,
             "max_size": max_size
         }
-        super(TooLargeOutputProblem, self).__init__(status=400, title=title, detail=detail, ext=ext)
+        super().__init__(title, detail, **ext)
 
 
-class CytomineProblem(ProblemException):
+class CytomineProblem(BadRequestException):
     def __init__(self, detail):
         title = 'Cytomine core communication error'
-        super().__init__(status=400, title=title, detail=detail)
+        super().__init__(title, detail)
+
+
+class InvalidGeometryException(BadRequestException):
+    def __init__(self, geometry: str, reason: str):
+        title = 'Invalid geometry'
+        detail = f'Geometry {geometry} is invalid.'
+        ext = {
+            "geometry": geometry,
+            "reason": reason
+        }
+        super().__init__(title, detail, **ext)
 
 
 def check_path_existence(path):

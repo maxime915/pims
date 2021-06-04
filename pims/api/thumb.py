@@ -39,7 +39,6 @@ def show_thumb(
         output: ImageOutDisplayQueryParams = Depends(),
         planes: PlaneSelectionQueryParams = Depends(),
         operations: ImageOpsDisplayQueryParams = Depends(),
-        log: bool = Query(False),
         use_precomputed: bool = Query(True),
         headers: ImageRequestHeaders = Depends(),
         config: Settings = Depends(get_settings)
@@ -54,7 +53,7 @@ def show_thumb(
     """
     return _show_thumb(
         path=path, **output.dict(), **planes.dict(), **operations.dict(),
-        log=log, use_precomputed=use_precomputed, extension=extension,
+        use_precomputed=use_precomputed, extension=extension,
         headers=headers, config=config
     )
 
