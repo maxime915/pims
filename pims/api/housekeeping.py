@@ -18,7 +18,9 @@ from pydantic import BaseModel, Field, conint, confloat
 from pims.api.exceptions import check_path_existence, NotADirectoryProblem
 from pims.api.utils.parameter import filepath2path
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+
+from pims.config import Settings, get_settings
 
 router = APIRouter()
 api_tags = ['Housekeeping']
@@ -71,11 +73,14 @@ def _serialize_usage(path):
 
 
 @router.get('/directory/{directorypath:path}/disk-usage', response_model=DiskUsage, tags=api_tags)
-def show_path_usage(directorypath: str) -> DiskUsage:
+def show_path_usage(
+        directorypath: str,
+        config: Settings = Depends(get_settings)
+) -> DiskUsage:
     """
     Directory disk usage
     """
-    path = filepath2path(directorypath)
+    path = filepath2path(directorypath, config)
     check_path_existence(path)
     if not path.is_dir():
         raise NotADirectoryProblem(directorypath)
@@ -84,11 +89,11 @@ def show_path_usage(directorypath: str) -> DiskUsage:
 
 
 @router.get('/disk-usage', response_model=DiskUsage, tags=api_tags)
-def show_disk_usage() -> DiskUsage:
+def show_disk_usage(config: Settings = Depends(get_settings)) -> DiskUsage:
     """
     PIMS disk usage
     """
-    return _serialize_usage(filepath2path("."))
+    return _serialize_usage(filepath2path(".", config))
 
 
 class DiskUsageLegacy(BaseModel):

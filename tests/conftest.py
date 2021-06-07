@@ -17,11 +17,11 @@ import shutil
 from pathlib import Path
 
 import pytest
-from flask import current_app
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 from contextlib import contextmanager
 
-from pims.app import create_app
-
+from pims import config
 
 with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
     lines = f.read().splitlines()
@@ -38,7 +38,7 @@ with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
 
 
 def create_fake_files(fake_files):
-    root = Path(current_app.config['FILE_ROOT_PATH'])
+    root = Path(".")  #TODO Path(current_app.config['FILE_ROOT_PATH'])
     for ff in fake_files.values():
         path = root / Path(ff['filepath'])
         path.parent.mkdir(exist_ok=True, parents=True)
@@ -58,31 +58,34 @@ def fake_files():
     return _fake_files
 
 
+def test_root():
+    return "/tmp/pims-test"
+
+
+def get_settings():
+    return config.Settings(
+        root=test_root(),
+        cytomine_public_key="TODO",
+        cytomine_private_key="TODO"
+    )
+
+
+@pytest.fixture
+def settings():
+    return get_settings()
+
+
 @pytest.fixture
 def app():
-    root = "/tmp/pims-test"
+    from pims import main
 
-    app = create_app({
-        'TESTING': True,
-        'FILE_ROOT_PATH': root,
-    })
-
-    with app.app_context():
-        create_fake_files(_fake_files)
-
-    yield app
-
-    shutil.rmtree(root, ignore_errors=True)
+    main.app.dependency_overrides[config.get_settings] = get_settings
+    return main.app
 
 
 @pytest.fixture
 def client(app):
-    return app.test_client()
-
-
-@pytest.fixture
-def runner(app):
-    return app.test_cli_runner()
+    return TestClient(app)
 
 
 @contextmanager

@@ -96,7 +96,7 @@ def accept_header(
 
 def safe_mode_header(
     safe_mode: SafeMode = Header(
-        get_settings().default_image_size_safety_mode,
+        SafeMode.SAFE_REJECT,  # TODO get_settings().default_image_size_safety_mode,
         alias="X-Image-Size-Safety",
         description="This header provides hints about the way the server has to deal "
                     "with too large image responses.\n"
@@ -118,7 +118,7 @@ class AnnotationOrigin(str, Enum):
 
 def annotation_origin_header(
     annot_origin: AnnotationOrigin = Header(
-        get_settings().default_annotation_origin,
+        AnnotationOrigin.LEFT_TOP,  # TODO get_settings().default_annotation_origin,
         alias="X-Annotation-Origin",
         description="This header give the origin coordinate system "
                     "in which are described provided annotations."

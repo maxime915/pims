@@ -88,15 +88,15 @@ def test_ensure_list():
 
 def test_safeguard_output_dimensions():
     assert safeguard_output_dimensions(SafeMode.UNSAFE, 100, 10000, 10000) == (10000, 10000)
-    assert safeguard_output_dimensions(SafeMode.RESIZE, 100, 10, 99) == (10, 99)
-    assert safeguard_output_dimensions(SafeMode.RESIZE, 100, 1000, 2000) == (50, 100)
-    assert safeguard_output_dimensions(SafeMode.RESIZE, 100, 2000, 1000) == (100, 50)
+    assert safeguard_output_dimensions(SafeMode.SAFE_RESIZE, 100, 10, 99) == (10, 99)
+    assert safeguard_output_dimensions(SafeMode.SAFE_RESIZE, 100, 1000, 2000) == (50, 100)
+    assert safeguard_output_dimensions(SafeMode.SAFE_RESIZE, 100, 2000, 1000) == (100, 50)
 
     with pytest.raises(TooLargeOutputProblem):
-        assert safeguard_output_dimensions(SafeMode.REJECT, 100, 1000, 2000)
+        assert safeguard_output_dimensions(SafeMode.SAFE_REJECT, 100, 1000, 2000)
 
     with not_raises(TooLargeOutputProblem):
-        assert safeguard_output_dimensions(SafeMode.REJECT, 100, 10, 99)
+        assert safeguard_output_dimensions(SafeMode.SAFE_REJECT, 100, 10, 99)
 
 
 def test_parse_intensity_bounds():
@@ -110,24 +110,28 @@ def test_parse_intensity_bounds():
 
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [], []) == ([0], [255])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [255])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.STRETCH_IMAGE],
+                                  [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0], [10])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [100]) == ([10], [100])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [1000]) == ([10], [255])
 
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [], []) == ([0], [65535])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.STRETCH_IMAGE],
+                                  [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0], [10])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100]) == ([10], [100])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [1000]) == ([10], [1000])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100000]) == ([10], [65535])
 
     assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 0], [255, 255])
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.STRETCH_IMAGE],
+                                  [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
     assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [255, 20])
 
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.STRETCH_IMAGE],
+                                  [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [1000, 20])
     assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, 5], [100000, 20]) == ([10, 5], [65535, 20])
@@ -211,5 +215,5 @@ def test_parse_region():
     assert parse_region(img, **region, tier_idx=1, tier_type=TierIndexType.LEVEL) == Region(100, 75, 10, 200, downsample=2)
 
     with pytest.raises(BadRequestException):
-        region = {'top': 100, 'left': 900, 'width': 128, 'height': 128}
-        parse_region(img, **region, tier_idx=0, tier_type=TierIndexType.LEVEL)
+        region = {'top': 100, 'left': 900, 'width': 1280, 'height': 1280}
+        parse_region(img, **region, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False)

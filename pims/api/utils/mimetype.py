@@ -131,8 +131,8 @@ def get_best_mimetype(header, available_types):
     """
     acceptable_types = parse_accept_header(header)
 
-    for acceptable_type in acceptable_types:
-        for available_type in available_types:
+    for available_type in available_types:
+        for acceptable_type in acceptable_types:
             if acceptable_type.matches(available_type):
                 return available_type
 

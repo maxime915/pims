@@ -11,13 +11,12 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from fastapi.params import Path as PathParam
+from fastapi.params import Path as PathParam, Depends
+
+from pims.config import get_settings, Settings
 
 
-from pims.config import get_settings
-
-
-def filepath2path(filepath):
+def filepath2path(filepath, config):
     """
     Transform a relative filepath to a path.
 
@@ -32,11 +31,10 @@ def filepath2path(filepath):
         Absolute resolved path
     """
     from pims.files.file import Path
-    config = get_settings()
     return Path(config.root, filepath)
 
 
-def path2filepath(path):
+def path2filepath(path, config=None):
     """
     Transform an absolute path to a relative filepath.
 
@@ -50,9 +48,8 @@ def path2filepath(path):
     filepath: str
         Relative filepath
     """
-    config = get_settings()
-    root = config.root
-    if root[-1] != "/":
+    root = config.root if config else ""
+    if len(root) > 0 and root[-1] != "/":
         root += "/"
     return str(path).replace(root, "")
 
@@ -61,9 +58,10 @@ def filepath_parameter(
     filepath: str = PathParam(
         ..., description="The file path, relative to server base path.",
         example='123/my-file.ext'
-    )
+    ),
+    config: Settings = Depends(get_settings)
 ):
-    path = filepath2path(filepath)
+    path = filepath2path(filepath, config)
     if not path.exists():
         from pims.api.exceptions import FilepathNotFoundProblem
         raise FilepathNotFoundProblem(path)
@@ -74,9 +72,10 @@ def imagepath_parameter(
     filepath: str = PathParam(
         ..., description="The file path, relative to server base path.",
         example='123/my-file.ext'
-    )
+    ),
+    config: Settings = Depends(get_settings)
 ):
-    path = filepath2path(filepath)
+    path = filepath2path(filepath, config)
     if not path.exists():
         from pims.api.exceptions import FilepathNotFoundProblem
         raise FilepathNotFoundProblem(path)

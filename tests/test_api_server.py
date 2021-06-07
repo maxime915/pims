@@ -11,14 +11,13 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from pims import __version__
+from pims import __version__, __api_version__
 
 
 def test_status(app, client):
     response = client.get("/info")
     assert response.status_code == 200
-    assert response.content_type == "application/json"
 
-    json = response.get_json()
+    json = response.json()
     assert json["version"] == __version__
-    assert json["api_version"] == app.config["api_version"]
+    assert json["api_version"] == __api_version__

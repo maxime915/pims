@@ -11,7 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
+from copy import copy
 
 from ordered_set import OrderedSet
 
@@ -262,7 +262,7 @@ def parse_region(in_image, top, left, width, height, tier_idx=0, tier_type=TierI
     region = Region(top, left, width, height, downsample)
 
     if not silent_oob:
-        clipped = region.clip(ref_tier.width, ref_tier.height)
+        clipped = copy(region).clip(ref_tier.width, ref_tier.height)
         if clipped != region:
             raise BadRequestException(detail="Some coordinates of region {} are out of bounds.".format(region))
 

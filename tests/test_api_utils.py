@@ -36,20 +36,17 @@ def test_convert_quantity():
     assert convert_quantity(3, 'meters') == 3
 
     ureg = pint.UnitRegistry()
-    assert convert_quantity(3 * ureg('cm'), 'meters').magnitude == 0.03
+    assert convert_quantity(3 * ureg('cm'), 'meters') == 0.03
 
 
 @pytest.mark.parametrize("filepath", ("/abc", "abc", "abc/foo"))
-def test_filepath2path(app, filepath):
-    with app.app_context():
-        assert str(filepath2path(filepath)) == os.path.join(app.config["FILE_ROOT_PATH"], filepath)
+def test_filepath2path(app, settings, filepath):
+    assert str(filepath2path(filepath, settings)) == os.path.join(settings.root, filepath)
 
 
 @pytest.mark.parametrize("rootpath", ("/abc", "abc", "abc/foo/"))
-def test_path2filepath(app, rootpath):
-    with app.app_context():
-        true_root = app.config["FILE_ROOT_PATH"]
-        app.config["FILE_ROOT_PATH"] = rootpath
-        path = Path(rootpath) / "dir/file"
-        assert path2filepath(path) == "dir/file"
-        app.config["FILE_ROOT_PATH"] = true_root
+def test_path2filepath(app, settings, rootpath):
+    fake_settings = settings.copy()
+    fake_settings.root = rootpath
+    path = Path(rootpath) / "dir/file"
+    assert path2filepath(path, fake_settings) == "dir/file"
