@@ -8,7 +8,7 @@ from colors import colors
 
 from pims.docs import get_redoc_html
 from .api.exceptions import add_problem_exception_handler
-from .api import server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile
+from .api import server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile, operations
 from . import __api_version__
 
 
@@ -70,6 +70,7 @@ app.include_router(resized.router)
 app.include_router(window.router)
 app.include_router(annotation.router)
 app.include_router(formats.router)
+app.include_router(operations.router)
 app.include_router(housekeeping.router)
 app.include_router(server.router)
 

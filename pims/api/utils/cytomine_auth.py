@@ -16,13 +16,13 @@ import hashlib
 import hmac
 
 from cytomine.models import Model, Collection
-from flask import request, current_app
+from starlette.requests import Request
 
 from pims.api.exceptions import CytomineProblem, AuthenticationException
 
 
-def parse_authorization_header():
-    auth = request.headers.get("authorization")
+def parse_authorization_header(raw_headers):
+    auth = raw_headers.get("authorization")
     if auth is None or not auth.startswith("CYTOMINE") \
             or ' ' not in auth or ':' not in auth:
         raise AuthenticationException("Auth failed")
@@ -32,7 +32,7 @@ def parse_authorization_header():
     return public_key, signature
 
 
-def parse_request_token():
+def parse_request_token(request: Request):
     headers = request.headers
 
     md5 = headers.get("content-MD5", "")
@@ -43,11 +43,11 @@ def parse_request_token():
                                            headers.get("content-type", "")))
     content_type = "" if content_type == "null" else content_type
 
-    query_string = request.query_string.decode('utf-8')
+    query_string = request.url.query
     query_string = "?" + query_string if query_string is not None else ""
 
     message = "{}\n{}\n{}\n{}\n{}{}".format(request.method, md5, content_type,
-                                            date, request.path, query_string)
+                                            date, request.url.path, query_string)
     return message
 
 
@@ -68,8 +68,7 @@ class ImageServerCollection(Collection):
         self.set_parameters(parameters)
 
 
-def get_this_image_server():
-    host = current_app.config['PIMS_URL']
+def get_this_image_server(host):
     servers = ImageServerCollection().fetch()
     this = servers.find_by_attribute("url", host)
 
