@@ -11,14 +11,20 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
+import os
 
 if __name__ == "__main__":
     import uvicorn
+
+    log_config = "logging.yml"
+    debug = os.getenv('DEBUG', False)
+    if debug:
+        log_config = "logging-debug.yml"
+    log_config = os.getenv('LOG_CONFIG_FILE', log_config)
 
     uvicorn.run(
         "pims.application:app",
         host="0.0.0.0",
         port=5000,
-        log_config="logging.yml"
+        log_config=log_config,
     )

@@ -1,0 +1,34 @@
+version: 1
+
+formatters:
+  basic:
+    format: "[%(threadName)s] %(name)s - %(message)s"
+
+handlers:
+  console:
+    class: pims.logger.PimsHandler
+    level: DEBUG
+    formatter: basic
+    rich_tracebacks: True
+    markup: True
+
+loggers:
+  pims:
+    level: DEBUG
+    handlers: [console]
+    propagate: false
+  pyvips:
+    level: INFO
+    handlers: [console]
+    propagate: false
+  uvicorn:
+    level: DEBUG
+    handlers: [console]
+    propagate: false
+  uvicorn.access:
+    level: CRITICAL
+    handlers:
+
+root:
+  handlers: [console]
+  level: DEBUG

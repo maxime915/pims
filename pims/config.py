@@ -1,6 +1,11 @@
+import os
+import logging
+
 from functools import lru_cache
 
 from pydantic import BaseSettings
+
+logger = logging.getLogger("pims")
 
 
 class Settings(BaseSettings):
@@ -20,4 +25,6 @@ class Settings(BaseSettings):
 
 @lru_cache()
 def get_settings():
-    return Settings()
+    env_file = os.getenv('CONFIG_FILE', 'pims-config.env')
+    logger.info(f"[green]Loading config from {env_file}")
+    return Settings(_env_file=env_file)
