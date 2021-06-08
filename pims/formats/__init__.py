@@ -22,7 +22,8 @@ from pims.formats.utils.abstract import AbstractFormat
 FORMAT_PLUGIN_PREFIX = 'pims_format_'
 NON_PLUGINS_MODULES = ["pims.formats.utils"]
 
-logger = logging.getLogger("pims.formats")
+logger = logging.getLogger("pims")
+logger.info("[green bold]Formats & plugins initialization...")
 
 
 def _discover_format_plugins():
@@ -32,7 +33,7 @@ def _discover_format_plugins():
     plugins += [name for _, name, _ in iter_modules()
                 if name.startswith(FORMAT_PLUGIN_PREFIX)]
 
-    logger.info("Format plugins: found {} plugin(s) ({})".format(len(plugins), ", ".join(plugins)))
+    logger.info(f"[green bold]Format plugins: found {len(plugins)} plugin(s)[/] [yellow]({', '.join(plugins)})", )
     return plugins
 
 
@@ -60,7 +61,7 @@ def _find_formats_in_module(mod):
                     format = var
                     formats.append(format)
                     format.init()
-                    logger.info(" * {} - {} imported.".format(format.get_identifier(), format.get_name()))
+                    logger.info(f"[green] * [yellow]{format.get_identifier()} - {format.get_name()}[/] imported.")
         except ImportError as e:
             logger.error("{} submodule cannot be checked for formats !".format(submodule_name), exc_info=e)
     return formats
@@ -77,7 +78,7 @@ def _get_all_formats():
     """
     formats = list()
     for module_name in FORMAT_PLUGINS:
-        logger.info("Importing formats from {} plugin...".format(module_name))
+        logger.info(f"[green bold]Importing formats from [yellow]{module_name}[/] plugin...")
         formats.extend(_find_formats_in_module(import_module(module_name)))
 
     return formats
