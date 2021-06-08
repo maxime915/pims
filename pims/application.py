@@ -17,7 +17,6 @@ logger = logging.getLogger("pims")
 logger.info("[green bold]PIMS initialization...")
 
 import time
-
 from fastapi import FastAPI, Request
 from pydantic import ValidationError
 
@@ -51,6 +50,19 @@ async def startup():
     except ValidationError as e:
         logger.error("Impossible to read or parse some PIMS settings:")
         logger.error(e)
+
+    # Check optimisation are enabled for external libs
+    from pydantic import compiled as pydantic_compiled
+    if not pydantic_compiled:
+        logger.warning(f"[red]Pydantic is running in non compiled mode.")
+
+    from pyvips import API_mode as pyvips_binary
+    if not pyvips_binary:
+        logger.warning("[red]Pyvips is running in non binary mode.")
+
+    from shapely.speedups import enabled as shapely_speedups
+    if not shapely_speedups:
+        logger.warning("[red]Shapely is running without speedups.")
 
 
 @app.middleware("http")
