@@ -77,7 +77,7 @@ def settings():
 
 @pytest.fixture
 def app():
-    from pims import main
+    from pims import application as main
 
     main.app.dependency_overrides[config.get_settings] = get_settings
     return main.app

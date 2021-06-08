@@ -14,7 +14,7 @@
 import logging
 from functools import cached_property
 
-from pims.app import UNIT_REGISTRY
+from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.pil import PillowParser, SimplePillowReader, PillowHistogramManager, \

@@ -1,4 +1,4 @@
-from pims.app import UNIT_REGISTRY
+from pims import UNIT_REGISTRY
 from pims.formats.utils.engines.vips import VipsParser, VipsReader, cached_vips_file, get_vips_field
 
 from pyvips import Image as VIPSImage

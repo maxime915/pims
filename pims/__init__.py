@@ -11,6 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+import pint
 
 from .__version__ import __title__, __description__, __url__
 from .__version__ import __version__, __api_version__
@@ -21,3 +22,5 @@ from .__version__ import __author__, __email__
 PIMS_SLUG_JPEG = "JPEG"
 PIMS_SLUG_WEBP = "WEBP"
 PIMS_SLUG_PNG = "PNG"
+
+UNIT_REGISTRY = pint.UnitRegistry()

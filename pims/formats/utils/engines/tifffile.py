@@ -17,7 +17,7 @@ from enum import Enum
 from tifffile import tifffile, TiffTag
 import numpy as np
 
-from pims.app import UNIT_REGISTRY
+from pims import UNIT_REGISTRY
 from pims.formats.utils.abstract import AbstractParser
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel, parse_datetime

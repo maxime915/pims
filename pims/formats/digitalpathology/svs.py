@@ -16,7 +16,7 @@ from functools import cached_property
 
 from tifffile import astype
 
-from pims.app import UNIT_REGISTRY
+from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.engines.openslide import OpenslideVipsReader
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
