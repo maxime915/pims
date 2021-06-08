@@ -11,7 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-import webcolors
+from pydantic.color import Color
 from shapely.geometry import box
 
 from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
@@ -24,8 +24,8 @@ def test_annotation():
     assert annot.is_stroke_grayscale is True
     assert annot.bounds == (10, 20, 30, 40)
 
-    grey = webcolors.name_to_rgb("grey")
-    red = webcolors.name_to_rgb("red")
+    grey = Color("grey").as_rgb_tuple(alpha=False)
+    red = Color("red").as_rgb_tuple(alpha=False)
     annot = ParsedAnnotation(geom, fill_color=red, stroke_color=grey)
     assert annot.is_fill_grayscale is False
     assert annot.is_stroke_grayscale is True
@@ -36,9 +36,9 @@ def test_annotation():
 
 
 def test_annotation_list():
-    grey = webcolors.name_to_rgb("grey")
-    white = webcolors.name_to_rgb("white")
-    red = webcolors.name_to_rgb("red")
+    grey = Color("grey").as_rgb_tuple(alpha=False)
+    white = Color("white").as_rgb_tuple(alpha=False)
+    red = Color("red").as_rgb_tuple(alpha=False)
 
     annot1 = ParsedAnnotation(box(10, 20, 30, 40), fill_color=white, stroke_color=red)
     annot2 = ParsedAnnotation(box(5, 100, 20, 200), fill_color=grey, stroke_color=white)

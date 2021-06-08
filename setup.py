@@ -30,19 +30,18 @@ from setuptools import find_packages, setup, Command
 
 # Package meta-data.
 NAME = 'pims'
-REQUIRES_PYTHON = '>=3.6.0'
+REQUIRES_PYTHON = '>=3.8.0'
 
 # What packages are required for this module to be executed?
 REQUIRED = [
-    'flask>=1.1.2',
-    'connexion>=2.7.0',
-    'swagger-ui-bundle>=0.0.8',
-    'ansicolors>=1.1.8',
-    'jsonschema>=3.2.0',
-    'openapi-spec-validator<=0.2.9',
+    'uvicorn[standard]>=0.13.4',
+    'fastapi>=0.65.1',
+    'pydantic>=1.8.2',
+    'rich>=10.2.2',
+    'python-dotenv>=0.17.1',
+    'python-multipart>=0.0.5',
 
     'Pint>=0.17',
-    'webcolors>=1.11.1',
     'palettable>=3.3.0',
     'ordered-set>=4.0.2',
 
@@ -65,7 +64,7 @@ DEPENDENCY_LINKS = [
 
 # What packages are optional?
 EXTRAS = {
-    # 'fancy feature': ['django'],
+    'tests': ['pytest>=6.2.2'],
 }
 
 # The rest you shouldn't have to touch too much :)
@@ -157,7 +156,7 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: Implementation :: CPython',
         'Programming Language :: Python :: Implementation :: PyPy'
     ],
