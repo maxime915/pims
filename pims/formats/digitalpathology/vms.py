@@ -16,7 +16,7 @@ from functools import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import AbstractChecker
 from pims.formats.utils.engines.openslide import OpenslideVipsReader, OpenslideVipsParser
-from pims.formats.utils.engines.vips import VipsHistogramManager
+from pims.formats.utils.engines.vips import VipsOrZarrHistogramReader
 
 
 def get_root_file(path):
@@ -53,7 +53,7 @@ class VMSFormat(AbstractFormat):
     checker_class = VMSChecker
     parser_class = VMSParser
     reader_class = OpenslideVipsReader
-    histogramer_class = VipsHistogramManager
+    histogram_reader_class = VipsOrZarrHistogramReader
 
     def __init__(self, path, *args, **kwargs):
         super().__init__(path, *args, **kwargs)

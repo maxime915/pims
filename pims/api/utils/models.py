@@ -599,3 +599,8 @@ class AssociatedName(str, Enum):
     macro = 'macro'
     label = 'label'
     thumb = 'thumb'
+
+
+class HistogramType(str, Enum):
+    FAST = "FAST"
+    COMPLETE = "COMPLETE"

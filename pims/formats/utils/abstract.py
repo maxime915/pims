@@ -12,12 +12,19 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import copy
+import logging
 import re
 from abc import abstractmethod, ABC
 from functools import cached_property
+from typing import Type
 
+from pims.api.exceptions import BadRequestException
+from pims.api.utils.models import HistogramType
 from pims.formats.utils.metadata import MetadataStore
 from pims.formats.utils.pyramid import Pyramid
+
+
+log = logging.getLogger("pims.formats")
 
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
@@ -62,12 +69,199 @@ class CachedPathData(CachedData):
         self.path = path
 
 
+class AbstractChecker(ABC):
+    @classmethod
+    @abstractmethod
+    def match(cls, pathlike):
+        pass
+
+
+class AbstractParser(ABC):
+    def __init__(self, format):
+        self.format = format
+
+    @abstractmethod
+    def parse_main_metadata(self):
+        pass
+
+    @abstractmethod
+    def parse_known_metadata(self):
+        return self.format.main_imd
+
+    @abstractmethod
+    def parse_raw_metadata(self):
+        return MetadataStore()
+
+    def parse_pyramid(self):
+        imd = self.format.main_imd
+        p = Pyramid()
+        p.insert_tier(imd.width, imd.height, (imd.width, imd.height))
+        return p
+
+
+class AbstractReader(ABC):
+    def __init__(self, format):
+        self.format = format
+
+    def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
+        raise NotImplementedError()
+
+    def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
+        raise NotImplementedError()
+
+    def read_tile(self, tile, c=None, z=None, t=None):
+        raise NotImplementedError()
+
+
+class AbstractHistogramReader(ABC):
+    def __init__(self, format):
+        self.format = format
+
+    @abstractmethod
+    def type(self) -> HistogramType:
+        return HistogramType.FAST
+
+    @abstractmethod
+    def image_bounds(self):
+        """
+        Intensity bounds on the whole image (all planes merged).
+
+        Returns
+        -------
+        mini : int
+            The lowest intensity in all image planes
+        maxi : int
+            The greatest intensity in all image planes
+        """
+        log.warning(f"[orange]Impossible {self.format.path} to compute image histogram bounds. Default values used.")
+        return 0, 2 ** self.format.main_imd.significant_bits
+
+    @abstractmethod
+    def image_histogram(self):
+        """
+        Intensity histogram on the whole image (all planes merged)
+
+        Returns
+        -------
+        histogram : array_like (shape: 2^image.bitdepth)
+        """
+        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
+
+    @abstractmethod
+    def channels_bounds(self):
+        """
+        Intensity bounds for every channels
+
+        Returns
+        -------
+        channels_bounds : list of tuple (int, int)
+        """
+        log.warning(f"[orange]Impossible {self.format.path} to compute channels histogram bounds. Default values used.")
+        return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_channels
+
+    @abstractmethod
+    def channel_bounds(self, c):
+        """
+        Intensity bounds for a channel.
+
+        Parameters
+        ----------
+        c : int
+            The image channel index. Index is expected to be valid.
+
+        Returns
+        -------
+        mini : int
+            The lowest intensity for that channel in all image (Z, T) planes
+        maxi : int
+            The greatest intensity for that channel in all image (Z, T) planes
+        """
+        log.warning(f"[orange]Impossible {self.format.path} to compute channel histogram bounds. Default values used.")
+        return 0, 2 ** self.format.main_imd.significant_bits
+
+    @abstractmethod
+    def channel_histogram(self, c):
+        """
+        Intensity histogram for a channel
+
+        Parameters
+        ----------
+        c : int
+            The image channel index
+
+        Returns
+        -------
+        histogram : array_like (shape: 2^image.bitdepth)
+        """
+        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
+
+    @abstractmethod
+    def planes_bounds(self):
+        """
+        Intensity bounds for every planes
+
+        Returns
+        -------
+        planes_bounds : list of tuple (int, int)
+        """
+        log.warning(f"[orange]Impossible {self.format.path} to compute plane histogram bounds. Default values used.")
+        return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_planes
+
+    @abstractmethod
+    def plane_bounds(self, c, z, t):
+        """
+        Intensity bounds for a plane
+
+        Parameters
+        ----------
+        c : int
+            The image channel index
+        z : int
+            The focal plane index
+        t : int
+            The timepoint index
+
+        Returns
+        -------
+        mini : int
+            The lowest intensity for that plane
+        maxi : int
+            The greatest intensity for that plane
+        """
+        log.warning(f"[orange]Impossible {self.format.path} to compute plane histogram bounds. Default values used.")
+        return 0, 2 ** self.format.main_imd.significant_bits
+
+    @abstractmethod
+    def plane_histogram(self, c, z, t):
+        """
+        Intensity histogram for a plane
+
+        Returns
+        -------
+        histogram : array_like (shape: 2^image.bitdepth)
+        """
+        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
+
+
+class AbstractConvertor(ABC):
+    def __init__(self, source):
+        self.source = source
+
+    def convert(self, dest_path):
+        raise NotImplementedError()
+
+    def conversion_format(self):
+        raise NotImplementedError()
+
+
 class AbstractFormat(ABC, CachedData):
-    checker_class = None
-    parser_class = None
-    reader_class = None
-    histogramer_class = None
-    convertor_class = None
+    checker_class: Type[AbstractChecker] = None
+    parser_class: Type[AbstractParser] = None
+    reader_class: Type[AbstractReader] = None
+    convertor_class: Type[AbstractConvertor] = None
+
+    histogram_reader_class: Type[AbstractHistogramReader] = None
+    #histogram_writer_class = None
 
     def __init__(self, path, existing_cache=None):
         self._path = path
@@ -77,8 +271,10 @@ class AbstractFormat(ABC, CachedData):
 
         self.parser = self.parser_class(self)
         self.reader = self.reader_class(self)
-        self.histogramer = self.histogramer_class(self)
         self.convertor = self.convertor_class(self) if self.convertor_class else None
+
+        self.histogram_reader = self.histogram_reader_class(self)
+        #self.histogram_writer = self.histogram_writer_class(self)
 
     @classmethod
     def init(cls):
@@ -210,69 +406,5 @@ class AbstractFormat(ABC, CachedData):
         return self.parser.parse_pyramid()
 
     @cached_property
-    def channels_stats(self):
-        return self.histogramer.compute_channels_stats()
-
-
-class AbstractChecker(ABC):
-    @classmethod
-    @abstractmethod
-    def match(cls, pathlike):
-        pass
-
-
-class AbstractParser(ABC):
-    def __init__(self, format):
-        self.format = format
-
-    @abstractmethod
-    def parse_main_metadata(self):
-        pass
-
-    @abstractmethod
-    def parse_known_metadata(self):
-        return self.format.main_imd
-
-    @abstractmethod
-    def parse_raw_metadata(self):
-        return MetadataStore()
-
-    def parse_pyramid(self):
-        imd = self.format.main_imd
-        p = Pyramid()
-        p.insert_tier(imd.width, imd.height, (imd.width, imd.height))
-        return p
-
-
-class AbstractReader(ABC):
-    def __init__(self, format):
-        self.format = format
-
-    def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
-        raise NotImplementedError()
-
-    def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
-        raise NotImplementedError()
-
-    def read_tile(self, tile, c=None, z=None, t=None):
-        raise NotImplementedError()
-
-
-class AbstractHistogramManager(ABC):
-    def __init__(self, format):
-        self.format = format
-
-    @abstractmethod
-    def compute_channels_stats(self):
-        pass
-
-
-class AbstractConvertor(ABC):
-    def __init__(self, source):
-        self.source = source
-
-    def convert(self, dest_path):
-        raise NotImplementedError()
-
-    def conversion_format(self):
-        raise NotImplementedError()
+    def histogram(self):
+        return self.histogram_reader

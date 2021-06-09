@@ -17,7 +17,7 @@ from pyvips import Image as VIPSImage
 
 from pims.formats import AbstractFormat
 from pims.formats.utils.engines.tifffile import TifffileChecker, TIFF_FLAGS, TifffileParser
-from pims.formats.utils.engines.vips import VipsReader, VipsHistogramManager, VipsSpatialConvertor
+from pims.formats.utils.engines.vips import VipsReader, VipsOrZarrHistogramReader, VipsSpatialConvertor
 
 
 # -----------------------------------------------------------------------------
@@ -75,7 +75,7 @@ class PyrTiffFormat(AbstractFormat):
     checker_class = PyrTiffChecker
     parser_class = TifffileParser
     reader_class = PyrTiffVipsReader
-    histogramer_class = VipsHistogramManager  # TODO
+    histogram_reader_class = VipsOrZarrHistogramReader  # TODO
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -125,7 +125,7 @@ class PlanarTiffFormat(AbstractFormat):
     checker_class = PlanarTiffChecker
     parser_class = TifffileParser
     reader_class = VipsReader
-    histogramer_class = VipsHistogramManager  # TODO
+    histogram_reader_class = VipsOrZarrHistogramReader  # TODO
     convertor_class = VipsSpatialConvertor
 
     def __init__(self, *args, **kwargs):

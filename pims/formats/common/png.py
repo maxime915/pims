@@ -18,7 +18,7 @@ from pims.api.exceptions import MetadataParsingProblem
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsHistogramManager, VipsSpatialConvertor
+from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsOrZarrHistogramReader, VipsSpatialConvertor
 from pims.formats.utils.metadata import parse_datetime, parse_float
 
 log = logging.getLogger("pims.formats")
@@ -99,7 +99,7 @@ class PNGFormat(AbstractFormat):
     checker_class = PNGChecker
     parser_class = PNGParser
     reader_class = PNGReader
-    histogramer_class = VipsHistogramManager
+    histogram_reader_class = VipsOrZarrHistogramReader
     convertor_class = VipsSpatialConvertor
 
     def __init__(self, *args, **kwargs):

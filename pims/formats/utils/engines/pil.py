@@ -17,11 +17,14 @@ import numpy as np
 from PIL import Image as PILImage
 
 from pims.api.exceptions import MetadataParsingProblem
-from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractHistogramManager
+from pims.api.utils.image_parameter import get_rationed_resizing
+from pims.api.utils.models import HistogramType
+from pims.formats.utils.abstract import AbstractParser, AbstractReader
 from pims.formats.utils.engines.vips import VipsSpatialConvertor
 from pims.formats.utils.exiftool import read_raw_metadata
+from pims.formats.utils.histogram import ZarrHistogramReader
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
-from pims.processing.adapters import pil_to_vips
+from pims.processing.adapters import pil_to_vips, pil_to_numpy
 from pims.processing.region import Region
 
 log = logging.getLogger("pims.formats")
@@ -93,17 +96,89 @@ class SimplePillowReader(AbstractReader):
         return self.read_window(tile, tile.width, tile.height, c, z, t)
 
 
-class PillowHistogramManager(AbstractHistogramManager):
+class PillowOrZarrHistogramReader(ZarrHistogramReader):
     FORMAT_SLUG = None
-
-    def compute_channels_stats(self):
+    
+    def is_complete(self):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
+        return image.width <= 1024 and image.height <= 1024
 
-        stats = {
-            channel: dict(minimum=extrema[0], maximum=extrema[1])
-            for channel, extrema in enumerate(image.getextrema())
-        }
-        return stats
+    def pillow_hist_image(self):
+        if self.is_complete():
+            return cached_pillow_file(self.format, self.FORMAT_SLUG)
+
+        def _thumb(format, fslug):
+            image = cached_pillow_file(format, fslug)
+            if image.width > image.height:
+                w, h = get_rationed_resizing(1024, image.width, image.height)
+            else:
+                h, w = get_rationed_resizing(1024, image.height, image.width)
+            return image.resize((w, h))
+        return self.format.get_cached('_pillow_hist_image', _thumb, self.format, self.FORMAT_SLUG)
+
+    @property
+    def use_pillow(self):
+        return not self.zhf
+
+    def type(self):
+        if self.use_pillow:
+            if self.is_complete():
+                return HistogramType.COMPLETE
+            else:
+                return HistogramType.FAST
+        return super().type()
+
+    def image_bounds(self):
+        if not self.use_pillow:
+            return super().image_bounds()
+        image = self.pillow_hist_image()
+        extrema = np.asarray(image.getextrema())
+        return extrema[:, 0].min(), extrema[:, 1].max()
+
+    def image_histogram(self):
+        if not self.use_pillow:
+            return super().image_histogram()
+        image = self.pillow_hist_image()
+        n_values = 256
+        histogram = pil_to_numpy(image.histogram())
+        histogram = histogram.reshape(-1, n_values)
+        return np.sum(histogram, axis=0)
+
+    def channels_bounds(self):
+        if not self.use_pillow:
+            return super().channels_bounds()
+        image = self.pillow_hist_image()
+        return image.getextrema()
+
+    def channel_bounds(self, c):
+        if not self.use_pillow:
+            return super().channel_bounds(c)
+        image = self.pillow_hist_image()
+        return image.getextrema()[c]
+
+    def channel_histogram(self, c):
+        if not self.use_pillow:
+            return super().channel_histogram(c)
+        image = self.pillow_hist_image()
+        n_values = 256
+        histogram = pil_to_numpy(image.histogram())
+        histogram = histogram.reshape(-1, n_values)
+        return histogram[c]
+
+    def planes_bounds(self):
+        if not self.use_pillow:
+            return super().planes_bounds()
+        return self.channels_bounds()
+
+    def plane_bounds(self, c, z, t):
+        if not self.use_pillow:
+            return super().plane_bounds(c, z, t)
+        return self.channel_bounds(c)
+
+    def plane_histogram(self, c, z, t):
+        if not self.use_pillow:
+            return super().plane_histogram(c, z, t)
+        return self.channel_histogram(c)
 
 
 class PillowSpatialConvertor(VipsSpatialConvertor):

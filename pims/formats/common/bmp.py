@@ -17,7 +17,7 @@ from functools import cached_property
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.engines.pil import PillowParser, SimplePillowReader, PillowHistogramManager, \
+from pims.formats.utils.engines.pil import PillowParser, SimplePillowReader, PillowOrZarrHistogramReader, \
     PillowSpatialConvertor
 from pims.formats.utils.metadata import parse_float
 
@@ -60,7 +60,7 @@ class BMPReader(SimplePillowReader):
     FORMAT_SLUG = 'BMP'
 
 
-class BMPHistogramManager(PillowHistogramManager):
+class BMPHistogramManager(PillowOrZarrHistogramReader):
     FORMAT_SLUG = 'BMP'
 
 
@@ -75,7 +75,7 @@ class BMPFormat(AbstractFormat):
     checker_class = BMPChecker
     parser_class = BMPParser
     reader_class = BMPReader
-    histogramer_class = BMPHistogramManager
+    histogram_reader_class = BMPHistogramManager
     convertor_class = PillowSpatialConvertor
 
     @classmethod

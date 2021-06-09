@@ -132,11 +132,32 @@ class Image(Path):
     def is_pyramid_normalized(self):
         return self.pyramid == self.normalized_pyramid
 
-    def channel_stats(self, c):
-        return self.channels_stats().get(c)
+    def histogram_type(self):
+        return self._format.histogram.type()
 
-    def channels_stats(self):
-        return self._format.channels_stats
+    def image_bounds(self):
+        return self._format.histogram.image_bounds()
+
+    def image_histogram(self):
+        return self._format.histogram.image_histogram()
+
+    def channels_bounds(self):
+        return self._format.histogram.channels_bounds()
+
+    def channel_bounds(self, c):
+        return self._format.histogram.channel_bounds(c)
+
+    def channel_histogram(self, c):
+        return self._format.histogram.channel_histogram(c)
+
+    def planes_bounds(self):
+        return self._format.histogram.planes_bounds()
+
+    def plane_bounds(self, c, z, t):
+        return self._format.histogram.plane_bounds(c, z, t)
+
+    def plane_histogram(self, c, z, t):
+        return self._format.histogram.plane_histogram(c, z, t)
 
     def tile(self, tile_region, c=None, z=None, t=None):
         """

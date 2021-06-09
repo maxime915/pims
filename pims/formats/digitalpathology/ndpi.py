@@ -16,7 +16,7 @@ from functools import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.engines.openslide import OpenslideVipsReader
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
-from pims.formats.utils.engines.vips import VipsHistogramManager
+from pims.formats.utils.engines.vips import VipsOrZarrHistogramReader
 from pims.formats.utils.metadata import parse_float, parse_int
 from tifffile import astype
 from pyvips import Image as VipsImage
@@ -110,7 +110,7 @@ class NDPIFormat(AbstractFormat):
     checker_class = NDPIChecker
     parser_class = NDPIParser
     reader_class = OpenslideVipsReader
-    histogramer_class = VipsHistogramManager
+    histogram_reader_class = VipsOrZarrHistogramReader
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

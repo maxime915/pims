@@ -27,6 +27,7 @@ EXTRACTED_FILE_DIR_PREFIX = "file"
 ORIGINAL_STEM = "original"
 SPATIAL_STEM = "visualisation"
 SPECTRAL_STEM = "spectral"
+HISTOGRAM_STEM = "histogram"
 
 _NUM_SIGNATURE_BYTES = 262
 
@@ -86,6 +87,9 @@ class Path(type(_Path()), _Path):
     def has_spectral_role(self):
         return self.is_processed() and self.true_stem == SPECTRAL_STEM
 
+    def has_histogram_role(self):
+        return self.is_processed() and self.true_stem == HISTOGRAM_STEM
+
     def upload_root(self):
         for parent in self.parents:
             if parent.name.startswith(UPLOAD_DIR_PREFIX):
@@ -130,6 +134,17 @@ class Path(type(_Path()), _Path):
 
         from pims.files.image import Image
         return Image(spectral, factory=SpectralReadableFormatFactory()) if spectral else None
+
+    def get_histogram(self):
+        if not self.processed_root().exists():
+            return None
+
+        histogram = next((child for child in self.processed_root().iterdir() if child.has_histogram_role()), None)
+        if histogram:
+            from pims.formats.utils.histogram import FileHistogram
+            return FileHistogram(histogram)
+        return None
+
 
     def get_representations(self):
         representations = [self.get_upload(), self.get_original(), self.get_spatial(), self.get_spectral()]
