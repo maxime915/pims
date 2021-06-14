@@ -42,6 +42,7 @@ class PNGParser(VipsParser):
         # Do not count alpha channel if any
         if imd.n_channels in (2, 4):
             imd.n_channels = imd.n_channels - 1
+            imd.n_channels_per_read = imd.n_channels
         return imd
 
     def parse_known_metadata(self):

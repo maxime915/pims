@@ -61,6 +61,7 @@ class PillowParser(AbstractParser):
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#bmp
             log.error("{}: Mode {} is not supported.".format(self.format.path, mode))
             raise MetadataParsingProblem(self.format.path)
+        imd.n_channels_per_read = imd.n_channels
 
         return imd
 

@@ -360,6 +360,7 @@ class ImageMetadata(_MetadataStorable):
         self.duration = None
 
         self._n_intrinsic_channels = None
+        self.n_channels_per_read = 1
 
         self.pixel_type = None
         self.significant_bits = None

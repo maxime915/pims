@@ -110,6 +110,7 @@ class TifffileParser(AbstractParser):
             imd.set_channel(ImageChannel(index=2, suggested_name='B'))
         else:
             imd.set_channel(ImageChannel(index=0, suggested_name='L'))
+        imd.n_channels_per_read = imd.n_channels
 
         return imd
 

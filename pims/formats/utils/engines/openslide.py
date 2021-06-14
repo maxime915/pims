@@ -14,6 +14,7 @@ class OpenslideVipsParser(VipsParser):
         # Openslide (always ?) gives image with alpha channel
         if imd.n_channels in (2, 4):
             imd.n_channels -= 1
+            imd.n_channels_per_read = imd.n_channels
 
         return imd
 
