@@ -49,6 +49,10 @@ class Image(Path):
         return self._format.full_imd.physical_size_y
 
     @property
+    def n_pixels(self):
+        return self.width * self.height
+
+    @property
     def depth(self):
         return self._format.main_imd.depth
 
@@ -136,32 +140,40 @@ class Image(Path):
     def is_pyramid_normalized(self):
         return self.pyramid == self.normalized_pyramid
 
+    @cached_property
+    def histogram(self):
+        histogram = self.get_histogram()
+        if histogram:
+            return histogram
+        else:
+            return self._format.histogram
+
     def histogram_type(self):
-        return self._format.histogram.type()
+        return self.histogram.type()
 
     def image_bounds(self):
-        return self._format.histogram.image_bounds()
+        return self.histogram.image_bounds()
 
     def image_histogram(self):
-        return self._format.histogram.image_histogram()
+        return self.histogram.image_histogram()
 
     def channels_bounds(self):
-        return self._format.histogram.channels_bounds()
+        return self.histogram.channels_bounds()
 
     def channel_bounds(self, c):
-        return self._format.histogram.channel_bounds(c)
+        return self.histogram.channel_bounds(c)
 
     def channel_histogram(self, c):
-        return self._format.histogram.channel_histogram(c)
+        return self.histogram.channel_histogram(c)
 
     def planes_bounds(self):
-        return self._format.histogram.planes_bounds()
+        return self.histogram.planes_bounds()
 
     def plane_bounds(self, c, z, t):
-        return self._format.histogram.plane_bounds(c, z, t)
+        return self.histogram.plane_bounds(c, z, t)
 
     def plane_histogram(self, c, z, t):
-        return self._format.histogram.plane_histogram(c, z, t)
+        return self.histogram.plane_histogram(c, z, t)
 
     def tile(self, tile_region, c=None, z=None, t=None):
         """

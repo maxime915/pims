@@ -20,9 +20,8 @@ from pyvips.error import Error as VIPSError
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.api.utils.models import HistogramType
-from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractConvertor
+from pims.formats.utils.abstract import AbstractParser, AbstractReader, AbstractConvertor, NullHistogramReader
 from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.histogram import ZarrHistogramReader
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
 from pims.formats.utils.vips import vips_format_to_dtype, dtype_to_bits, vips_interpretation_to_mode
 from pims.processing.adapters import vips_to_numpy
@@ -117,7 +116,7 @@ class VipsReader(AbstractReader):
         return self.read_window(tile, tile.width, tile.height)
 
 
-class VipsOrZarrHistogramReader(ZarrHistogramReader):
+class VipsHistogramReader(NullHistogramReader):
     def is_complete(self):
         image = cached_vips_file(self.format)
         return image.width <= 1024 and image.height <= 1024
@@ -135,67 +134,45 @@ class VipsOrZarrHistogramReader(ZarrHistogramReader):
                 return VIPSImage.thumbnail(str(format.path), 1024)
         return self.format.get_cached('_vips_hist_image', _thumb, self.format)
 
-    @property
-    def use_vips(self):
-        return not self.zhf
-
     def type(self):
-        if self.use_vips:
-            if self.is_complete():
-                return HistogramType.COMPLETE
-            else:
-                return HistogramType.FAST
-        return super().type()
+        if self.is_complete():
+            return HistogramType.COMPLETE
+        else:
+            return HistogramType.FAST
 
     def image_bounds(self):
-        if not self.use_vips:
-            return super().image_bounds()
         image = self.vips_hist_image()
         vips_stats = image.stats()
         np_stats = vips_to_numpy(vips_stats)
         return tuple(np_stats[0, 0:2, 0])
 
     def image_histogram(self):
-        if not self.use_vips:
-            return super().image_histogram()
         image = self.vips_hist_image()
         return np.sum(vips_to_numpy(image.hist_find()), axis=2).squeeze()
 
     def channels_bounds(self):
-        if not self.use_vips:
-            return super().channels_bounds()
         image = self.vips_hist_image()
         vips_stats = image.stats()
         np_stats = vips_to_numpy(vips_stats)
         return list(map(tuple, np_stats[1:, :2, 0]))
 
     def channel_bounds(self, c):
-        if not self.use_vips:
-            return super().channel_bounds(c)
         image = self.vips_hist_image()
         vips_stats = image.stats()
         np_stats = vips_to_numpy(vips_stats)
         return tuple(np_stats[c + 1, :2, 0])
 
     def channel_histogram(self, c):
-        if not self.use_vips:
-            return super().channel_histogram(c)
         image = self.vips_hist_image()
         return vips_to_numpy(image.hist_find(band=c))[0, :, 0]
 
     def planes_bounds(self):
-        if not self.use_vips:
-            return super().planes_bounds()
         return self.channels_bounds()
 
     def plane_bounds(self, c, z, t):
-        if not self.use_vips:
-            return super().plane_bounds(c, z, t)
         return self.channel_bounds(c)
 
     def plane_histogram(self, c, z, t):
-        if not self.use_vips:
-            return super().plane_histogram(c, z, t)
         return self.channel_histogram(c)
 
 

@@ -49,7 +49,8 @@ def get_rationed_resizing(resized, length, other_length):
     return resized, other_resized
 
 
-def get_thumb_output_dimensions(in_image, height=None, width=None, length=None, zoom=None, level=None):
+def get_thumb_output_dimensions(in_image, height=None, width=None, length=None,
+                                zoom=None, level=None, allow_upscaling=True):
     """
     Get output dimensions according, by order of precedence, either height,
     either width, either the largest image length, either zoom or level and such that ratio is preserved.
@@ -74,6 +75,9 @@ def get_thumb_output_dimensions(in_image, height=None, width=None, length=None, 
     level : int (optional)
         Output level tier to consider as size.
         The level tier is expected to be valid for the input image.
+    allow_upscaling : bool (default: True)
+        Whether the output thumb size can be greater than the input image size.
+        If upscaling is not allowed, maximum thumb size is the input image size.
 
     Returns
     -------
@@ -105,6 +109,9 @@ def get_thumb_output_dimensions(in_image, height=None, width=None, length=None, 
     else:
         raise BadRequestException(detail='Impossible to determine output dimensions. '
                                          'Height, width and length cannot all be unset.')
+
+    if not allow_upscaling and (out_width > in_image.width or out_height > in_image.height):
+        return in_image.width, in_image.height
 
     return out_width, out_height
 
@@ -294,6 +301,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
     ------
     BadRequestException
         If an item of `planes_to_parse´ is invalid.
+        If the set of valid planes is empty
     """
     plane_indexes = list()
 
@@ -307,7 +315,10 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
             raise BadRequestException(detail='{} is not a valid index or range for {}.'.format(plane, name))
-    return OrderedSet([idx for idx in plane_indexes if 0 <= idx < n_planes])
+    plane_set = OrderedSet([idx for idx in plane_indexes if 0 <= idx < n_planes])
+    if len(plane_set) == 0:
+        raise BadRequestException(detail=f"No valid indexes for {name}")
+    return plane_set
 
 
 def get_channel_indexes(image, planes):
@@ -456,6 +467,7 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
         max_intensities = max_intensities * n_out_channels
     
     def parse_intensity(c, bound_value, bound_default, bound_kind):
+        bound_kind_idx = 0 if bound_kind == "minimum" else 1
         if type(bound_value) is int:
             if bound_value < 0:
                 return 0
@@ -470,9 +482,9 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
                 if image.significant_bits <= 8:
                     return bound_default
                 else:
-                    return image.channel_stats(c)[bound_kind]
+                    return image.channel_bounds(c)[bound_kind_idx]
             elif bound_value == IntensitySelectionEnum.STRETCH_IMAGE:
-                return image.channel_stats(c)[bound_kind]
+                return image.channel_bounds(c)[bound_kind_idx]
             else:
                 # TODO: AUTO_PLANE, STRETCH_PLANE
                 return bound_default

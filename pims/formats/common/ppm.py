@@ -17,7 +17,7 @@ from functools import cached_property
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsOrZarrHistogramReader, VipsSpatialConvertor
+from pims.formats.utils.engines.vips import VipsParser, VipsReader, VipsHistogramReader, VipsSpatialConvertor
 from pims.formats.utils.metadata import parse_float
 
 log = logging.getLogger("pims.formats")
@@ -72,7 +72,7 @@ class PPMFormat(AbstractFormat):
     checker_class = PPMChecker
     parser_class = PPMParser
     reader_class = VipsReader
-    histogram_reader_class = VipsOrZarrHistogramReader
+    histogram_reader_class = VipsHistogramReader
     convertor_class = VipsSpatialConvertor
 
     def __init__(self, *args, **kwargs):

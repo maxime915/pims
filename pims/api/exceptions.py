@@ -169,7 +169,7 @@ class InvalidGeometryException(BadRequestException):
 
 
 def check_path_existence(path):
-    if not path.exists():
+    if not path or not path.exists():
         raise FilepathNotFoundProblem(path)
 
 
@@ -179,5 +179,5 @@ def check_path_is_single(path):
 
 
 def check_representation_existence(path):
-    if not path.exists():
+    if not path or not path.exists():
         raise NoAppropriateRepresentationProblem(path)

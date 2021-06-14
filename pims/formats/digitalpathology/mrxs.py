@@ -17,7 +17,7 @@ from pathlib import Path
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import AbstractChecker
 from pims.formats.utils.engines.openslide import OpenslideVipsReader, OpenslideVipsParser
-from pims.formats.utils.engines.vips import VipsOrZarrHistogramReader
+from pims.formats.utils.engines.vips import VipsHistogramReader
 
 
 def get_root_file(path):
@@ -54,7 +54,7 @@ class MRXSFormat(AbstractFormat):
     checker_class = MRXSChecker
     parser_class = MRXSParser
     reader_class = OpenslideVipsReader
-    histogram_reader_class = VipsOrZarrHistogramReader
+    histogram_reader_class = VipsHistogramReader
 
     def __init__(self, path, *args, **kwargs):
         super().__init__(path, *args, **kwargs)

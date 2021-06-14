@@ -19,10 +19,9 @@ from PIL import Image as PILImage
 from pims.api.exceptions import MetadataParsingProblem
 from pims.api.utils.image_parameter import get_rationed_resizing
 from pims.api.utils.models import HistogramType
-from pims.formats.utils.abstract import AbstractParser, AbstractReader
+from pims.formats.utils.abstract import AbstractParser, AbstractReader, NullHistogramReader
 from pims.formats.utils.engines.vips import VipsSpatialConvertor
 from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.histogram import ZarrHistogramReader
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
 from pims.processing.adapters import pil_to_vips, pil_to_numpy
 from pims.processing.region import Region
@@ -97,7 +96,7 @@ class SimplePillowReader(AbstractReader):
         return self.read_window(tile, tile.width, tile.height, c, z, t)
 
 
-class PillowOrZarrHistogramReader(ZarrHistogramReader):
+class PillowHistogramReader(NullHistogramReader):
     FORMAT_SLUG = None
     
     def is_complete(self):

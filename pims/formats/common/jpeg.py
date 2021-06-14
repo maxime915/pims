@@ -17,7 +17,7 @@ from functools import cached_property
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.engines.vips import VipsReader, VipsOrZarrHistogramReader, VipsParser, VipsSpatialConvertor
+from pims.formats.utils.engines.vips import VipsReader, VipsHistogramReader, VipsParser, VipsSpatialConvertor
 from pims.formats.utils.metadata import parse_datetime, parse_float
 
 log = logging.getLogger("pims.formats")
@@ -78,7 +78,7 @@ class JPEGFormat(AbstractFormat):
     checker_class = JPEGChecker
     parser_class = JPEGParser
     reader_class = JPEGReader
-    histogram_reader_class = VipsOrZarrHistogramReader
+    histogram_reader_class = VipsHistogramReader
     convertor_class = VipsSpatialConvertor
 
     def __init__(self, *args, **kwargs):

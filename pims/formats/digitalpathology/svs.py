@@ -20,7 +20,7 @@ from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.engines.openslide import OpenslideVipsReader
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
-from pims.formats.utils.engines.vips import VipsOrZarrHistogramReader
+from pims.formats.utils.engines.vips import VipsHistogramReader
 from pims.formats.utils.metadata import parse_float
 
 
@@ -143,7 +143,7 @@ class SVSFormat(AbstractFormat):
     checker_class = SVSChecker
     parser_class = SVSParser
     reader_class = OpenslideVipsReader
-    histogram_reader_class = VipsOrZarrHistogramReader
+    histogram_reader_class = VipsHistogramReader
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

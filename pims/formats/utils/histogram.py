@@ -1,98 +1,126 @@
-from functools import cached_property
-from typing import Optional
+from abc import ABC, abstractmethod
 
-import zarr as zarr
-
-from pims.formats.utils.abstract import AbstractHistogramReader
-
-ZHF_PER_PLANE = "plane"
-ZHF_PER_CHANNEL = "channel"
-ZHF_PER_IMAGE = "image"
-ZHF_HIST = "hist"
-ZHF_BOUNDS = "bounds"
+from pims.api.utils.models import HistogramType
 
 
-def cached_zarr_histogram(format) -> Optional[zarr.Group]:
-    def _open(image_path):
-        hist_path = image_path.get_histogram()
-        if hist_path:
-            return zarr.open(hist_path, mode='r')
-        return None
-    return format.get_cached('_zh', _open, format.path)
+class HistogramReaderInterface(ABC):
 
+    @abstractmethod
+    def type(self) -> HistogramType:
+        pass
 
-class ZarrHistogramReader(AbstractHistogramReader):
-
-    @property
-    def zhf(self):
-        return cached_zarr_histogram(self.format)
-
-    @cached_property
-    def per_planes(self):
-        return ZHF_PER_PLANE in self.zhf
-
-    @cached_property
-    def per_channels(self):
-        return ZHF_PER_CHANNEL in self.zhf
-
-    @cached_property
-    def per_image(self):
-        return ZHF_PER_IMAGE in self.zhf
-
-    def type(self):
-        if not self.zhf:
-            return super().type()
-        return self.zhf.attrs["type"]
-
+    @abstractmethod
     def image_bounds(self):
-        if not self.zhf:
-            return super().image_bounds()
-        return tuple(self.zhf[f"{ZHF_PER_IMAGE}/{ZHF_BOUNDS}"])
+        """
+        Intensity bounds on the whole image (all planes merged).
 
+        Returns
+        -------
+        mini : int
+            The lowest intensity in all image planes
+        maxi : int
+            The greatest intensity in all image planes
+        """
+        pass
+
+    @abstractmethod
     def image_histogram(self):
-        if not self.zhf:
-            return super().image_histogram()
-        return self.zhf[f"{ZHF_PER_IMAGE}/{ZHF_HIST}"][:]
+        """
+        Intensity histogram on the whole image (all planes merged)
 
+        Returns
+        -------
+        histogram : array_like (shape: 2^image.bitdepth)
+        """
+        pass
+
+    @abstractmethod
     def channels_bounds(self):
-        if not self.zhf:
-            return super().channels_bounds()
-        if not self.per_channels:
-            return [self.image_bounds()]
-        return list(map(tuple, self.zhf[f"{ZHF_PER_CHANNEL}/{ZHF_BOUNDS}"]))
+        """
+        Intensity bounds for every channels
 
+        Returns
+        -------
+        channels_bounds : list of tuple (int, int)
+        """
+        pass
+
+    @abstractmethod
     def channel_bounds(self, c):
-        if not self.zhf:
-            return super().channel_bounds(c)
-        if not self.per_channels:
-            return self.image_bounds()
-        return tuple(self.zhf[f"{ZHF_PER_CHANNEL}/{ZHF_BOUNDS}"][c])
+        """
+        Intensity bounds for a channel.
 
+        Parameters
+        ----------
+        c : int
+            The image channel index. Index is expected to be valid.
+
+        Returns
+        -------
+        mini : int
+            The lowest intensity for that channel in all image (Z, T) planes
+        maxi : int
+            The greatest intensity for that channel in all image (Z, T) planes
+        """
+        pass
+
+    @abstractmethod
     def channel_histogram(self, c):
-        if not self.zhf:
-            return super().channel_histogram(c)
-        if not self.per_channels:
-            return self.image_histogram()
-        return self.zhf[f"{ZHF_PER_IMAGE}/{ZHF_HIST}"][c]
+        """
+        Intensity histogram for a channel
 
+        Parameters
+        ----------
+        c : int
+            The image channel index
+
+        Returns
+        -------
+        histogram : array_like (shape: 2^image.bitdepth)
+        """
+        pass
+
+    @abstractmethod
     def planes_bounds(self):
-        if not self.zhf:
-            return super().planes_bounds()
-        if not self.per_planes:
-            return self.channels_bounds()
-        return list(map(tuple, self.zhf[f"{ZHF_PER_PLANE}/{ZHF_BOUNDS}"].reshape((-1, 2))))
+        """
+        Intensity bounds for every planes
 
+        Returns
+        -------
+        planes_bounds : list of tuple (int, int)
+        """
+        pass
+
+    @abstractmethod
     def plane_bounds(self, c, z, t):
-        if not self.zhf:
-            return super().plane_bounds(c, z, t)
-        if not self.per_planes:
-            return self.channel_bounds(c)
-        return tuple(self.zhf[f"{ZHF_PER_PLANE}/{ZHF_BOUNDS}"][t, z, c])
+        """
+        Intensity bounds for a plane
 
+        Parameters
+        ----------
+        c : int
+            The image channel index
+        z : int
+            The focal plane index
+        t : int
+            The timepoint index
+
+        Returns
+        -------
+        mini : int
+            The lowest intensity for that plane
+        maxi : int
+            The greatest intensity for that plane
+        """
+        pass
+
+    @abstractmethod
     def plane_histogram(self, c, z, t):
-        if not self.zhf:
-            return super().plane_histogram(c, z, t)
-        if not self.per_planes:
-            return self.channel_histogram(c)
-        return self.zhf[f"{ZHF_PER_PLANE}/{ZHF_HIST}"][t, z, c]
+        """
+        Intensity histogram for a plane
 
+        Returns
+        -------
+        histogram : array_like (shape: 2^image.bitdepth)
+        """
+        pass

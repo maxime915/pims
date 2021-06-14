@@ -17,7 +17,7 @@ from functools import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.engines.openslide import OpenslideVipsReader, OpenslideVipsParser
 from pims.formats.utils.engines.tifffile import TifffileChecker
-from pims.formats.utils.engines.vips import VipsOrZarrHistogramReader, cached_vips_file, get_vips_field
+from pims.formats.utils.engines.vips import VipsHistogramReader, cached_vips_file, get_vips_field
 from pims.formats.utils.metadata import parse_datetime
 
 
@@ -64,7 +64,7 @@ class PhilipsFormat(AbstractFormat):
     checker_class = PhilipsChecker
     parser_class = PhilipsParser
     reader_class = OpenslideVipsReader
-    histogram_reader_class = VipsOrZarrHistogramReader
+    histogram_reader_class = VipsHistogramReader
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

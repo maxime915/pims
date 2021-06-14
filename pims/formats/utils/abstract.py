@@ -20,6 +20,7 @@ from typing import Type
 
 from pims.api.exceptions import BadRequestException
 from pims.api.utils.models import HistogramType
+from pims.formats.utils.histogram import HistogramReaderInterface
 from pims.formats.utils.metadata import MetadataStore
 from pims.formats.utils.pyramid import Pyramid
 
@@ -113,133 +114,56 @@ class AbstractReader(ABC):
         raise NotImplementedError()
 
 
-class AbstractHistogramReader(ABC):
+class AbstractHistogramReader(HistogramReaderInterface, ABC):
     def __init__(self, format):
         self.format = format
 
+
+class NullHistogramReader(AbstractHistogramReader):
     @abstractmethod
     def type(self) -> HistogramType:
         return HistogramType.FAST
 
     @abstractmethod
     def image_bounds(self):
-        """
-        Intensity bounds on the whole image (all planes merged).
-
-        Returns
-        -------
-        mini : int
-            The lowest intensity in all image planes
-        maxi : int
-            The greatest intensity in all image planes
-        """
-        log.warning(f"[orange]Impossible {self.format.path} to compute image histogram bounds. Default values used.")
+        log.warning(f"[orange]Impossible {self.format.path} to compute "
+                    f"image histogram bounds. Default values used.")
         return 0, 2 ** self.format.main_imd.significant_bits
 
     @abstractmethod
     def image_histogram(self):
-        """
-        Intensity histogram on the whole image (all planes merged)
-
-        Returns
-        -------
-        histogram : array_like (shape: 2^image.bitdepth)
-        """
         raise BadRequestException(detail=f"No histogram found for {self.format.path}")
 
     @abstractmethod
     def channels_bounds(self):
-        """
-        Intensity bounds for every channels
-
-        Returns
-        -------
-        channels_bounds : list of tuple (int, int)
-        """
-        log.warning(f"[orange]Impossible {self.format.path} to compute channels histogram bounds. Default values used.")
+        log.warning(f"[orange]Impossible {self.format.path} to compute "
+                    f"channels histogram bounds. Default values used.")
         return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_channels
 
     @abstractmethod
     def channel_bounds(self, c):
-        """
-        Intensity bounds for a channel.
-
-        Parameters
-        ----------
-        c : int
-            The image channel index. Index is expected to be valid.
-
-        Returns
-        -------
-        mini : int
-            The lowest intensity for that channel in all image (Z, T) planes
-        maxi : int
-            The greatest intensity for that channel in all image (Z, T) planes
-        """
-        log.warning(f"[orange]Impossible {self.format.path} to compute channel histogram bounds. Default values used.")
+        log.warning(f"[orange]Impossible {self.format.path} to compute "
+                    f"channel histogram bounds. Default values used.")
         return 0, 2 ** self.format.main_imd.significant_bits
 
     @abstractmethod
     def channel_histogram(self, c):
-        """
-        Intensity histogram for a channel
-
-        Parameters
-        ----------
-        c : int
-            The image channel index
-
-        Returns
-        -------
-        histogram : array_like (shape: 2^image.bitdepth)
-        """
         raise BadRequestException(detail=f"No histogram found for {self.format.path}")
 
     @abstractmethod
     def planes_bounds(self):
-        """
-        Intensity bounds for every planes
-
-        Returns
-        -------
-        planes_bounds : list of tuple (int, int)
-        """
-        log.warning(f"[orange]Impossible {self.format.path} to compute plane histogram bounds. Default values used.")
+        log.warning(f"[orange]Impossible {self.format.path} to compute "
+                    f"plane histogram bounds. Default values used.")
         return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_planes
 
     @abstractmethod
     def plane_bounds(self, c, z, t):
-        """
-        Intensity bounds for a plane
-
-        Parameters
-        ----------
-        c : int
-            The image channel index
-        z : int
-            The focal plane index
-        t : int
-            The timepoint index
-
-        Returns
-        -------
-        mini : int
-            The lowest intensity for that plane
-        maxi : int
-            The greatest intensity for that plane
-        """
-        log.warning(f"[orange]Impossible {self.format.path} to compute plane histogram bounds. Default values used.")
+        log.warning(f"[orange]Impossible {self.format.path} to compute "
+                    f"plane histogram bounds. Default values used.")
         return 0, 2 ** self.format.main_imd.significant_bits
 
     @abstractmethod
     def plane_histogram(self, c, z, t):
-        """
-        Intensity histogram for a plane
-
-        Returns
-        -------
-        histogram : array_like (shape: 2^image.bitdepth)
-        """
         raise BadRequestException(detail=f"No histogram found for {self.format.path}")
 
 
@@ -261,7 +185,6 @@ class AbstractFormat(ABC, CachedData):
     convertor_class: Type[AbstractConvertor] = None
 
     histogram_reader_class: Type[AbstractHistogramReader] = None
-    #histogram_writer_class = None
 
     def __init__(self, path, existing_cache=None):
         self._path = path
@@ -274,7 +197,6 @@ class AbstractFormat(ABC, CachedData):
         self.convertor = self.convertor_class(self) if self.convertor_class else None
 
         self.histogram_reader = self.histogram_reader_class(self)
-        #self.histogram_writer = self.histogram_writer_class(self)
 
     @classmethod
     def init(cls):

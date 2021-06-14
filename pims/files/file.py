@@ -93,7 +93,7 @@ class Path(type(_Path()), _Path):
     def upload_root(self):
         for parent in self.parents:
             if parent.name.startswith(UPLOAD_DIR_PREFIX):
-                return parent
+                return Path(parent)
         raise FileNotFoundError("No upload root for {}".format(self))
 
     def processed_root(self):
@@ -140,11 +140,9 @@ class Path(type(_Path()), _Path):
             return None
 
         histogram = next((child for child in self.processed_root().iterdir() if child.has_histogram_role()), None)
-        if histogram:
-            from pims.formats.utils.histogram import FileHistogram
-            return FileHistogram(histogram)
-        return None
 
+        from pims.files.histogram import Histogram
+        return Histogram(histogram) if histogram else None
 
     def get_representations(self):
         representations = [self.get_upload(), self.get_original(), self.get_spatial(), self.get_spectral()]
