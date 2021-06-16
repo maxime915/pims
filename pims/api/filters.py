@@ -11,11 +11,64 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+from typing import Optional, List
 
+from fastapi import APIRouter
+from pydantic import BaseModel, Field
+
+from pims.api.exceptions import FilterNotFoundProblem
+from pims.api.utils.models import FilterId, FilterType, CollectionSize
+from pims.api.utils.response import response_list
+from pims.filters import FILTERS
+
+router = APIRouter()
+api_tags = ['Filters']
+
+
+class Filter(BaseModel):
+    """
+    An image filter is used to change the appareance of an image and helps at understanding the
+    source image.
+    """
+    id: FilterId
+    name: str = Field(
+        ..., description='A human readable name for the image filter.'
+    )
+    type: FilterType = Field(...)
+    description: Optional[str] = Field(
+        None, description='Filter description, explaining how it works, in Markdown.'
+    )
+
+
+class FiltersList(CollectionSize):
+    items: List[Filter] = Field(None, description='Array of filters', title='Filter')
+
+
+def _serialize_filter(imgfilter):
+    return Filter(
+        id=imgfilter.get_identifier(),
+        name=imgfilter.get_name(),
+        type=imgfilter.get_type(),
+        description=imgfilter.get_description()
+    )
+
+
+@router.get('/filters', response_model=FiltersList, tags=api_tags)
 def list_filters():
-    pass
+    """
+    List all filters
+    """
+    filters = [_serialize_filter(imgfilter) for imgfilter in FILTERS.values()]
+    return response_list(filters)
 
 
-def show_filter(filter_id):
-    pass
+@router.get('/filters/{filter_id}', response_model=Filter, tags=api_tags)
+def show_filter(filter_id: str):
+    """
+    Get a filter
+    """
+    filter_id = filter_id.upper()
+    if filter_id not in FILTERS.keys():
+        raise FilterNotFoundProblem(filter_id)
+    return _serialize_filter(FILTERS[filter_id])
 

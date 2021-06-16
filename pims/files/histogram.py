@@ -174,6 +174,15 @@ def argmax_nonzero(arr, axis=-1):
     return arr.shape[axis] - np.argmax(np.flip(arr, axis=axis) != 0, axis=axis) - 1
 
 
+def clamp_histogram(hist, bounds=None):
+    if bounds is None:
+        inf = argmin_nonzero(hist)
+        sup = argmax_nonzero(hist)
+    else:
+        inf, sup = bounds
+    return hist[inf:sup+1], np.arange(inf, sup+1)
+
+
 def build_histogram_file(in_image, dest, hist_type: HistogramType,
                          overwrite: bool = False):
     """

@@ -23,7 +23,8 @@ from pydantic import ValidationError
 from pims.config import get_settings
 from pims.docs import get_redoc_html
 from .api.exceptions import add_problem_exception_handler
-from .api import server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile, operations, histograms
+from .api import server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile, operations, \
+    histograms, filters
 from . import __api_version__
 
 
@@ -107,6 +108,7 @@ app.include_router(window.router)
 app.include_router(annotation.router)
 app.include_router(histograms.router)
 app.include_router(formats.router)
+app.include_router(filters.router)
 app.include_router(operations.router)
 app.include_router(housekeeping.router)
 app.include_router(server.router)

@@ -11,12 +11,13 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+import numpy as np
 from starlette.responses import Response
 
 from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
-    NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp
+    NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp
 
 
 class View:
@@ -97,6 +98,32 @@ class ProcessedView(MultidimView):
         return bool(len(self.filters))
 
     @property
+    def filter_processing_histogram(self):
+        return any([f.require_histogram() for f in self.filters])
+
+    @property
+    def filter_required_colorspace(self):
+        colorspaces = [f.required_colorspace() for f in self.filters]
+        if Colorspace.GRAY in colorspaces:
+            return Colorspace.GRAY
+        if Colorspace.COLOR in colorspaces:
+            return Colorspace.COLOR
+        return None
+
+    @property
+    def filter_colorspace_processing(self):
+        if self.filter_required_colorspace is None:
+            return False
+        return (self.filter_required_colorspace == Colorspace.GRAY and len(self.channels) > 1) or \
+               (self.filter_required_colorspace == Colorspace.COLOR and len(self.channels) == 1)
+
+    @property
+    def filter_colorspace(self):
+        if self.filter_required_colorspace is None:
+            return self.colorspace
+        return self.filter_required_colorspace
+
+    @property
     def colormap_processing(self):
         return bool(len(self.colormaps))
 
@@ -138,9 +165,27 @@ class ProcessedView(MultidimView):
 
             img = RescaleImgOp(self.best_effort_bitdepth)(img)
 
+        if self.filter_processing:
+            filter_params = dict()
+            if self.filter_processing_histogram:
+                filter_params['histogram'] = self.process_histogram()
+
+            if self.filter_colorspace_processing:
+                img = ColorspaceImgOp(self.filter_colorspace)(img)
+
+            for filter_op in self.filters:
+                img = filter_op(**filter_params)(img)
+
         if self.colorspace_processing:
             img = ColorspaceImgOp(self.new_colorspace)(img)
         return img
+    
+    def process_histogram(self):
+        hist = self.in_image.histogram.channel_histogram(np.s_[:])
+
+        if self.filter_colorspace_processing:
+            hist = ColorspaceHistOp(self.filter_colorspace)(hist)
+        return hist
 
 
 class ThumbnailResponse(ProcessedView):

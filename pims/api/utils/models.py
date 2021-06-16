@@ -109,6 +109,16 @@ class FilterIdList(BaseModel):
     __root__: Union[FilterId, List[FilterId]]
 
 
+class FilterType(Enum):
+    """
+    * `LOCAL` - The image filter uses the neighborhood of every pixels.
+    * `GLOBAL` - The image filter uses histogram-derived techniques.
+
+    """
+    LOCAL = 'LOCAL'
+    GLOBAL = 'GLOBAL'
+
+
 class ImageIn(BaseModel):
     channels: Optional[SingleChannelIndex] = None
     z_slices: Optional[SingleZSliceIndex] = None

@@ -288,6 +288,23 @@ class ColorspaceImgOp(ImageOp):
         return img.colourspace(new_colorspace)
 
 
+class ColorspaceHistOp(ImageOp):
+    def __init__(self, colorspace):
+        super().__init__()
+        self._impl[np.ndarray] = self._numpy_impl
+        self.colorspace = colorspace
+
+    def _numpy_impl(self, hist):
+        hist = np.transpose(hist)
+
+        if self.colorspace == Colorspace.GRAY and hist.shape[-1] != 1:
+            return hist @ np.array([0.2125, 0.7154, 0.0721])
+        elif self.colorspace == Colorspace.COLOR and hist.shape[-1] != 3:
+            return np.dstack((hist, hist, hist))
+        else:
+            return hist
+
+
 class TransparencyMaskImgOp(ImageOp):
     def __init__(self, bg_transparency, mask, bitdepth):
         super(TransparencyMaskImgOp, self).__init__()

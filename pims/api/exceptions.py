@@ -120,6 +120,13 @@ class FormatNotFoundProblem(NotFoundException):
         super().__init__(title, detail)
 
 
+class FilterNotFoundProblem(NotFoundException):
+    def __init__(self, format_id):
+        title = 'Filter not found'
+        detail = f'The filter {format_id} does not exist.'
+        super().__init__(title, detail)
+
+
 class ColormapNotFoundProblem(NotFoundException):
     def __init__(self, colormap_id):
         title = 'Colormap not found'
