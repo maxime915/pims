@@ -63,8 +63,7 @@ class ImageOp:
 
         processed = self._impl[type(obj)](obj, *args, **kwargs)
         end = time.time()
-        log.info("Apply {} in {}µs with parameters: {}".format(self.name, round((end - start) / 1e-6, 3),
-                 self.parameters))
+        log.info("Apply {} in {}µs".format(self.name, round((end - start) / 1e-6, 3)))
         return processed
 
 

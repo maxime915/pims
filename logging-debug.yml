@@ -11,9 +11,14 @@ handlers:
     formatter: basic
     rich_tracebacks: True
     markup: True
+    log_time_format: '[%x %H:%M:%S.%f]'
 
 loggers:
   pims:
+    level: DEBUG
+    handlers: [console]
+    propagate: false
+  pims.app:
     level: DEBUG
     handlers: [console]
     propagate: false

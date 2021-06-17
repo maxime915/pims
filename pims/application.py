@@ -13,7 +13,7 @@
 # * limitations under the License.
 
 import logging
-logger = logging.getLogger("pims")
+logger = logging.getLogger("pims.app")
 logger.info("[green bold]PIMS initialization...")
 
 import time

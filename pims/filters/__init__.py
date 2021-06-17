@@ -27,7 +27,7 @@ NON_PLUGINS_MODULES = ["pims.filters.utils"]
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
 logger = logging.getLogger("pims.app")
-logger.info("[green bold]Filters & plugins initialization...")
+logger.info("[green bold]Filters initialization...")
 
 
 class AbstractFilter(ABC, ImageOp):

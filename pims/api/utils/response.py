@@ -15,7 +15,7 @@ import logging
 
 from pint import Quantity
 
-log = logging.getLogger("pims.api")
+log = logging.getLogger("pims")
 
 
 def response_list(list_):

@@ -5,7 +5,7 @@ from functools import lru_cache
 
 from pydantic import BaseSettings
 
-logger = logging.getLogger("pims")
+logger = logging.getLogger("pims.app")
 
 
 class Settings(BaseSettings):

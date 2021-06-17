@@ -22,8 +22,8 @@ from pims.formats.utils.abstract import AbstractFormat
 FORMAT_PLUGIN_PREFIX = 'pims_format_'
 NON_PLUGINS_MODULES = ["pims.formats.utils"]
 
-logger = logging.getLogger("pims")
-logger.info("[green bold]Formats & plugins initialization...")
+logger = logging.getLogger("pims.app")
+logger.info("[green bold]Formats initialization...")
 
 
 def _discover_format_plugins():
