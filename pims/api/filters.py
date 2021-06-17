@@ -31,9 +31,9 @@ class Filter(BaseModel):
     source image.
     """
     id: FilterId
-    aliases: List[Optional[FilterId]] = Field(
-        None, description='List of filter id aliases'
-    ),
+    aliases: List[FilterId] = Field(
+        [], description='List of filter id aliases'
+    )
     name: str = Field(
         ..., description='A human readable name for the image filter.'
     )

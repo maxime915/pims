@@ -92,7 +92,7 @@ class GammaList(BaseModel):
 
 class FilterId(BaseModel):
     """
-    A unique identifier for an image filter
+    A unique case-insensitive identifier for an image filter
     """
     __root__: str = Field(
         ..., example='OTSU'
