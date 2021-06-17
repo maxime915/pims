@@ -31,6 +31,9 @@ class Filter(BaseModel):
     source image.
     """
     id: FilterId
+    aliases: List[Optional[FilterId]] = Field(
+        None, description='List of filter id aliases'
+    ),
     name: str = Field(
         ..., description='A human readable name for the image filter.'
     )
@@ -49,7 +52,8 @@ def _serialize_filter(imgfilter):
         id=imgfilter.get_identifier(),
         name=imgfilter.get_name(),
         type=imgfilter.get_type(),
-        description=imgfilter.get_description()
+        description=imgfilter.get_description(),
+        aliases=imgfilter.get_aliases()
     )
 
 

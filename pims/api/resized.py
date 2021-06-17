@@ -18,7 +18,8 @@ from pims.api.exceptions import check_representation_existence
 from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, get_channel_indexes, \
     get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
-    safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth
+    safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth, \
+    parse_filter_ids
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
     extension_path_parameter
 from pims.api.utils.models import PlaneSelectionQueryParams, ResizedRequest, ImageOutDisplayQueryParams, \
@@ -26,6 +27,7 @@ from pims.api.utils.models import PlaneSelectionQueryParams, ResizedRequest, Ima
 from pims.api.utils.parameter import imagepath_parameter
 from pims.config import Settings, get_settings
 from pims.files.file import Path
+from pims.filters import FILTERS
 from pims.processing.image_response import ResizedResponse
 
 router = APIRouter()
@@ -133,11 +135,11 @@ def _show_resized(
     for array_parameter in array_parameters:
         # Currently, we only allow 1 parameter to be applied to all channels
         check_array_size(array_parameter, allowed=[0, 1], nullable=False)
+    filters = parse_filter_ids(filters, FILTERS)
 
     out_bitdepth = parse_bitdepth(in_image, bits)
 
     # TODO: verify colormap names are valid
-    # TODO: verify filter names are valid
 
     return ResizedResponse(
         in_image, channels, z_slices, timepoints,

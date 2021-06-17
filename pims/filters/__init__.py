@@ -71,6 +71,16 @@ class AbstractFilter(ABC, ImageOp):
         return identifier
 
     @classmethod
+    def aliases(cls):
+        return []
+
+    @classmethod
+    def get_aliases(cls, uppercase=True):
+        if uppercase:
+            return [alias.upper() for alias in cls.aliases()]
+        return cls.aliases()
+
+    @classmethod
     def get_name(cls):
         return re.sub(_CAMEL_TO_SPACE_PATTERN, r' \1', cls.get_identifier(False))
 
@@ -163,3 +173,9 @@ def _get_all_filters():
 
 FILTER_PLUGINS = _discover_filter_plugins()
 FILTERS = {f.get_identifier(): f for f in _get_all_filters()}
+
+# Add aliases
+_aliases = dict()
+for f in FILTERS.values():
+    _aliases.update({alias: f for alias in f.get_aliases()})
+FILTERS.update(_aliases)

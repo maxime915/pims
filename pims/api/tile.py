@@ -20,7 +20,7 @@ from pims.api.exceptions import check_representation_existence, \
 from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders, SafeMode
 from pims.api.utils.image_parameter import check_tileindex_validity, check_tilecoord_validity, \
     safeguard_output_dimensions, ensure_list, get_channel_indexes, check_reduction_validity, get_zslice_indexes, \
-    get_timepoint_indexes, check_array_size, parse_intensity_bounds
+    get_timepoint_indexes, check_array_size, parse_intensity_bounds, parse_filter_ids
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
     extension_path_parameter
 from pims.api.utils.models import Colorspace, TierIndexType, TileRequest, TargetZoomTileIndex, \
@@ -29,6 +29,7 @@ from pims.api.utils.models import Colorspace, TierIndexType, TileRequest, Target
 from pims.api.utils.parameter import imagepath_parameter
 from pims.config import get_settings, Settings
 from pims.files.file import Path
+from pims.filters import FILTERS
 from pims.processing.image_response import TileResponse, WindowResponse
 
 router = APIRouter()
@@ -151,9 +152,9 @@ def _show_tile(
     for array_parameter in array_parameters:
         # Currently, we only allow 1 parameter to be applied to all channels
         check_array_size(array_parameter, allowed=[0, 1], nullable=False)
+    filters = parse_filter_ids(filters, FILTERS)
 
     # TODO: verify colormap names are valid
-    # TODO: verify filter names are valid
 
     if is_window:
         tile = WindowResponse(

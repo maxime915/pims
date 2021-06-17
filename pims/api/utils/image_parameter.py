@@ -15,7 +15,7 @@ from copy import copy
 
 from ordered_set import OrderedSet
 
-from pims.api.exceptions import TooLargeOutputProblem, BadRequestException
+from pims.api.exceptions import TooLargeOutputProblem, BadRequestException, FilterNotFoundProblem
 from pims.api.utils.header import SafeMode
 from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, BitDepthEnum
 from pims.api.utils.schema_format import parse_range, is_range
@@ -607,3 +607,13 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
 
 def parse_bitdepth(in_image, bits):
     return in_image.significant_bits if bits == BitDepthEnum.AUTO else bits
+
+
+def parse_filter_ids(filter_ids, existing_filters):
+    filters = []
+    for filter_id in filter_ids:
+        try:
+            filters.append(existing_filters[filter_id.upper()])
+        except KeyError:
+            raise FilterNotFoundProblem(filter_id)
+    return filters

@@ -41,7 +41,7 @@ class AbstractColorDeconvolutionFilter(AbstractFilter, ABC):
 
 # H&E DAB deconvolution filters
 
-class HEDAB2HDeconvolutionFilter(AbstractColorDeconvolutionFilter):
+class HEDAB2HematoxylinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
         super().__init__()
         self._impl[np.ndarray] = self._numpy_impl
@@ -53,8 +53,12 @@ class HEDAB2HDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def get_name(cls):
         return "H&E DAB -> Hematoxylin"
 
+    @classmethod
+    def aliases(cls):
+        return ["hedab-haematoxylin"]
 
-class HEDAB2EDeconvolutionFilter(AbstractColorDeconvolutionFilter):
+
+class HEDAB2EosinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
         super().__init__()
         self._impl[np.ndarray] = self._numpy_impl
@@ -81,7 +85,6 @@ class HEDAB2DABDeconvolutionFilter(AbstractColorDeconvolutionFilter):
 
 
 # Giemsa
-
 
 class Giemsa2MethylBlueDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -123,6 +126,10 @@ class HDAB2HematoxylinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def get_name(cls):
         return "H DAB -> Hematoxylin"
 
+    @classmethod
+    def aliases(cls):
+        return ["hdab-haematoxylin"]
+
 
 class HDAB2DABDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -135,6 +142,10 @@ class HDAB2DABDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     @classmethod
     def get_name(cls):
         return "H DAB -> DAB"
+
+    @classmethod
+    def aliases(cls):
+        return ["hdab-dab"]
 
 
 # H&E
@@ -159,6 +170,10 @@ class HE2HematoxylinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def get_name(cls):
         return "H&E -> Hematoxylin"
 
+    @classmethod
+    def aliases(cls):
+        return ["he-haematoxylin"]
+
 
 class HE2EosinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -171,6 +186,10 @@ class HE2EosinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     @classmethod
     def get_name(cls):
         return "H&E -> Eosin"
+
+    @classmethod
+    def aliases(cls):
+        return ["he-eosin"]
 
 
 # RGB substractive
@@ -193,6 +212,10 @@ class RGB2RedDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def get_name(cls):
         return "RGB- -> Red"
 
+    @classmethod
+    def aliases(cls):
+        return ["r_rgb"]
+
 
 class RGB2GreenDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -205,6 +228,10 @@ class RGB2GreenDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     @classmethod
     def get_name(cls):
         return "RGB- -> Green"
+
+    @classmethod
+    def aliases(cls):
+        return ["g_rgb"]
     
 
 class RGB2BlueDeconvolutionFilter(AbstractColorDeconvolutionFilter):
@@ -218,6 +245,10 @@ class RGB2BlueDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     @classmethod
     def get_name(cls):
         return "RGB- -> Blue"
+
+    @classmethod
+    def aliases(cls):
+        return ["b_rgb"]
 
 
 # CMY substractive
@@ -240,6 +271,10 @@ class CMY2CyanDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def get_name(cls):
         return "CMY- -> Cyan"
 
+    @classmethod
+    def aliases(cls):
+        return ["c_cmy"]
+
 
 class CMY2MagentaDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -253,6 +288,10 @@ class CMY2MagentaDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def get_name(cls):
         return "CMY- -> Magenta"
 
+    @classmethod
+    def aliases(cls):
+        return ["m_cmy"]
+
 
 class CMY2YellowDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -265,3 +304,7 @@ class CMY2YellowDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     @classmethod
     def get_name(cls):
         return "CMY- -> Yellow"
+
+    @classmethod
+    def aliases(cls):
+        return ["y_cmy"]
