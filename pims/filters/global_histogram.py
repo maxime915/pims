@@ -41,8 +41,16 @@ class AbstractGlobalThresholdFilter(AbstractGlobalFilter, ABC):
         else:
             return img > self.threshold
 
+    @classmethod
+    def get_name(cls):
+        return f"{super().get_name()} Threshold"
 
-class OtsuFilter(AbstractGlobalThresholdFilter):
+
+class OtsuThresholdFilter(AbstractGlobalThresholdFilter):
+    @classmethod
+    def identifier(cls):
+        return "Otsu"
+
     @classmethod
     def get_description(cls):
         return "Otsu global filtering"
@@ -52,7 +60,11 @@ class OtsuFilter(AbstractGlobalThresholdFilter):
         return threshold_otsu(hist=clamp_histogram(self.histogram))
 
 
-class IsodataFilter(AbstractGlobalThresholdFilter):
+class IsodataThresholdFilter(AbstractGlobalThresholdFilter):
+    @classmethod
+    def identifier(cls):
+        return "IsoData"
+
     @cached_property
     def threshold(self):
         return threshold_isodata(hist=clamp_histogram(self.histogram))
@@ -62,7 +74,11 @@ class IsodataFilter(AbstractGlobalThresholdFilter):
         return "Isodata global filtering"
 
 
-class YenFilter(AbstractGlobalThresholdFilter):
+class YenThresholdFilter(AbstractGlobalThresholdFilter):
+    @classmethod
+    def identifier(cls):
+        return "Yen"
+
     @cached_property
     def threshold(self):
         return threshold_yen(hist=clamp_histogram(self.histogram))
@@ -72,7 +88,11 @@ class YenFilter(AbstractGlobalThresholdFilter):
         return "Yen global filtering"
 
 
-class MinimumFilter(AbstractGlobalThresholdFilter):
+class MinimumThresholdFilter(AbstractGlobalThresholdFilter):
+    @classmethod
+    def identifier(cls):
+        return "Minimum"
+
     @cached_property
     def threshold(self):
         return threshold_minimum(hist=clamp_histogram(self.histogram))

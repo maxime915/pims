@@ -26,7 +26,7 @@ FILTER_PLUGIN_PREFIX = 'pims_filter_'
 NON_PLUGINS_MODULES = ["pims.filters.utils"]
 _CAMEL_TO_SPACE_PATTERN = re.compile(r'((?<=[a-z])[A-Z]|(?<!\A)[A-Z](?=[a-z]))')
 
-logger = logging.getLogger("pims")
+logger = logging.getLogger("pims.app")
 logger.info("[green bold]Filters & plugins initialization...")
 
 
@@ -46,6 +46,10 @@ class AbstractFilter(ABC, ImageOp):
         pass
 
     @classmethod
+    def identifier(cls):
+        return cls.__name__.replace('Filter', '')
+
+    @classmethod
     def get_identifier(cls, uppercase=True):
         """
         Get the filter identifier. It must be unique across all filters.
@@ -61,7 +65,7 @@ class AbstractFilter(ABC, ImageOp):
         identifier: str
             The filter identifier
         """
-        identifier = cls.__name__.replace('Filter', '')
+        identifier = cls.identifier()
         if uppercase:
             return identifier.upper()
         return identifier

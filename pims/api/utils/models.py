@@ -109,14 +109,16 @@ class FilterIdList(BaseModel):
     __root__: Union[FilterId, List[FilterId]]
 
 
-class FilterType(Enum):
+class FilterType(str, Enum):
     """
     * `LOCAL` - The image filter uses the neighborhood of every pixels.
     * `GLOBAL` - The image filter uses histogram-derived techniques.
+    * `PIXEL` - The image filter works pixel per pixel.
 
     """
     LOCAL = 'LOCAL'
     GLOBAL = 'GLOBAL'
+    PIXEL = 'PIXEL'
 
 
 class ImageIn(BaseModel):
