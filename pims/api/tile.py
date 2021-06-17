@@ -179,26 +179,26 @@ def _show_tile(
 def zoom_query_parameter(
         zoom: int = PathParam(...)
 ):
-    return TargetZoom(__root__=zoom)
+    return TargetZoom(__root__=zoom).dict()['__root__']
 
 
 def level_query_parameter(
         level: int = PathParam(...)
 ):
-    return TargetLevel(__root__=level)
+    return TargetLevel(__root__=level).dict()['__root__']
 
 
 def ti_query_parameter(
         ti: int = PathParam(...)
 ):
-    return TileIndex(__root__=ti)
+    return TileIndex(__root__=ti).dict()['__root__']
 
 
 @router.get('/image/{filepath:path}/tile/zoom/{zoom}/ti/{ti}{extension:path}', tags=tile_tags)
 def show_tile_by_zoom(
         path: Path = Depends(imagepath_parameter),
-        zoom: TargetZoom = Depends(zoom_query_parameter),
-        ti: TileIndex = Depends(ti_query_parameter),
+        zoom: int = Depends(zoom_query_parameter),
+        ti: int = Depends(ti_query_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
         planes: PlaneSelectionQueryParams = Depends(),
         ops: ImageOpsDisplayQueryParams = Depends(),
@@ -221,8 +221,8 @@ def show_tile_by_zoom(
 @router.get('/image/{filepath:path}/tile/level/{level}/ti/{ti}{extension:path}', tags=tile_tags)
 def show_tile_by_level(
         path: Path = Depends(imagepath_parameter),
-        level: TargetLevel = Depends(level_query_parameter),
-        ti: TileIndex = Depends(ti_query_parameter),
+        level: int = Depends(level_query_parameter),
+        ti: int = Depends(ti_query_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
         planes: PlaneSelectionQueryParams = Depends(),
         ops: ImageOpsDisplayQueryParams = Depends(),
@@ -245,8 +245,8 @@ def show_tile_by_level(
 @router.get('/image/{filepath:path}/normalized-tile/zoom/{zoom}/ti/{ti}{extension:path}', tags=norm_tile_tags)
 def show_normalized_tile_by_zoom(
         path: Path = Depends(imagepath_parameter),
-        zoom: TargetZoom = Depends(zoom_query_parameter),
-        ti: TileIndex = Depends(ti_query_parameter),
+        zoom: int = Depends(zoom_query_parameter),
+        ti: int = Depends(ti_query_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
         planes: PlaneSelectionQueryParams = Depends(),
         ops: ImageOpsDisplayQueryParams = Depends(),
@@ -269,8 +269,8 @@ def show_normalized_tile_by_zoom(
 @router.get('/image/{filepath:path}/normalized-tile/level/{level}/ti/{ti}{extension:path}', tags=norm_tile_tags)
 def show_normalized_tile_by_level(
         path: Path = Depends(imagepath_parameter),
-        level: TargetLevel = Depends(level_query_parameter),
-        ti: TileIndex = Depends(ti_query_parameter),
+        level: int = Depends(level_query_parameter),
+        ti: int = Depends(ti_query_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
         planes: PlaneSelectionQueryParams = Depends(),
         ops: ImageOpsDisplayQueryParams = Depends(),
