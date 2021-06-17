@@ -229,14 +229,22 @@ class RescaleImgOp(ImageOp):
         self._impl[np.ndarray] = self._numpy_impl
         self.bitdepth = bitdepth
 
+    def dtype(self):
+        if self.bitdepth > 16:
+            return 'uint32'
+        elif self.bitdepth > 8:
+            return 'uint16'
+        else:
+            return 'uint8'
+
     def factor(self):
         return (2 ** self.bitdepth) - 1
 
     def _vips_impl(self, img):
-        return img.linear([self.factor()], [0])
+        return img.linear([self.factor()], [0]).cast(dtype_to_vips_format[self.dtype()])
 
     def _numpy_impl(self, img):
-        return img * self.factor()
+        return (img * self.factor()).astype(np.dtype(self.dtype()))
 
 
 class NormalizeImgOp(ImageOp):
