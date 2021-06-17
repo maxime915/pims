@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from functools import cached_property
 
+import numpy as np
 from skimage.filters import threshold_otsu, threshold_isodata, threshold_yen, threshold_li, threshold_minimum
 
 from pims.api.utils.models import FilterType, Colorspace
@@ -73,6 +74,12 @@ class IsodataThresholdFilter(AbstractGlobalThresholdFilter):
     def get_description(cls):
         return "Isodata global filtering"
 
+    @classmethod
+    def aliases(cls):
+        # Default ImageJ auto threshold is a slight variant of Isodata threshold
+        # https://imagej.net/plugins/auto-threshold
+        return ["binary"]
+
 
 class YenThresholdFilter(AbstractGlobalThresholdFilter):
     @classmethod
@@ -101,3 +108,17 @@ class MinimumThresholdFilter(AbstractGlobalThresholdFilter):
     def get_description(cls):
         return "Minimum global filtering"
 
+
+class MeanThresholdFilter(AbstractGlobalThresholdFilter):
+    @cached_property
+    def threshold(self):
+        hist, _ = clamp_histogram(self.histogram)
+        return np.average(np.arange(hist.size), weights=hist)
+
+    @classmethod
+    def identifier(cls):
+        return "Mean"
+
+    @classmethod
+    def get_description(cls):
+        return "Mean global filtering"
