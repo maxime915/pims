@@ -16,6 +16,9 @@ import logging
 logger = logging.getLogger("pims.app")
 logger.info("[green bold]PIMS initialization...")
 
+from .fastapi_tweaks import apply_fastapi_tweaks
+apply_fastapi_tweaks()
+
 import time
 from fastapi import FastAPI, Request
 from pydantic import ValidationError
