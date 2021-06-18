@@ -12,12 +12,13 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 import os
+from distutils.util import strtobool
 
 if __name__ == "__main__":
     import uvicorn
 
     log_config = "logging.yml"
-    debug = os.getenv('DEBUG', False)
+    debug = bool(strtobool(os.getenv('DEBUG', 'false')))
     if debug:
         log_config = "logging-debug.yml"
     log_config = os.getenv('LOG_CONFIG_FILE', log_config)
