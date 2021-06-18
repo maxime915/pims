@@ -430,9 +430,14 @@ class DrawRasterOp(RasterOp):
         self.out_height = out_height
         self.point_style = point_style
 
-    def _to_shape(self, annot, is_grayscale=True):
+    @staticmethod
+    def _contour_width(stroke_width, out_shape):
+        return round(stroke_width * (0.75 + max(out_shape) / 1000))
+
+    def _to_shape(self, annot, out_shape, is_grayscale=True):
+        width = self._contour_width(annot.stroke_width, out_shape)
         geometry = stretch_contour(affine_transform(contour(annot.geometry, point_style=self.point_style),
-                                                    self.affine_matrix), width=annot.stroke_width)
+                                                    self.affine_matrix), width=width)
         value = annot.stroke_color[0] if is_grayscale else rgb2int(annot.stroke_color)
         return geometry, value
 
@@ -444,7 +449,7 @@ class DrawRasterOp(RasterOp):
             for annot in annots:
                 if not annot.stroke_color:
                     continue
-                yield self._to_shape(annot, annots.is_stroke_grayscale)
+                yield self._to_shape(annot, out_shape, annots.is_stroke_grayscale)
 
         bg = self.background_color(annots)
         try:
