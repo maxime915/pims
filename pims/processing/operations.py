@@ -442,10 +442,16 @@ class DrawRasterOp(RasterOp):
 
         def shape_generator():
             for annot in annots:
+                if not annot.stroke_color:
+                    continue
                 yield self._to_shape(annot, annots.is_stroke_grayscale)
 
         bg = self.background_color(annots)
-        rasterized = rasterize(shape_generator(), out_shape=out_shape, dtype=dtype, fill=bg)
+        try:
+            rasterized = rasterize(shape_generator(), out_shape=out_shape, dtype=dtype, fill=bg)
+        except ValueError:
+            # No valid geometry objects found for rasterize
+            rasterized = np.full(out_shape, bg)
         if not annots.is_grayscale:
             return int2rgb(rasterized)
         return rasterized
@@ -453,8 +459,8 @@ class DrawRasterOp(RasterOp):
     @staticmethod
     def background_color(annots):
         if annots.is_stroke_grayscale:
-            values = [a.stroke_color[0] for a in annots]
+            values = [a.stroke_color[0] for a in annots if a.stroke_color]
             return find_first_available_int(values, 0, 256)
         else:
-            values = [rgb2int(a.stroke_color) for a in annots]
+            values = [rgb2int(a.stroke_color) for a in annots if a.stroke_color]
             return find_first_available_int(values, 0, 16777216)

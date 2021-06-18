@@ -204,7 +204,7 @@ def _show_drawing(
     annots = parse_annotations(
         ensure_list(annotations),
         ignore_fields=['fill_color'],
-        default={'stroke_color': (255, 0, 0), 'stroke_width': 1},
+        default={'stroke_width': 1},
         point_envelope_length=point_envelope_length,
         origin=headers.annot_origin, im_height=in_image.height
     )
