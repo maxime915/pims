@@ -533,7 +533,7 @@ class AnnotationDrawingRequest(ImageInDisplay, ImageOutProcessing):
     annotations: Annotations
     context_factor: Optional[AnnotationContextFactor]
     try_square: Optional[AnnotationTrySquare]
-    point_envelope_length: Optional[PointEnvelopeLength]
+    point_envelope_length: Optional[PointEnvelopeLength] = 100
     point_cross: Optional[PointCross] = PointCross.CROSS
 
 

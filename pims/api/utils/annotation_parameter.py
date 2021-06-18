@@ -59,7 +59,7 @@ def parse_annotations(annotations, ignore_fields=None, default=None,
 
 def parse_annotation(geometry, fill_color=None, stroke_color=None,
                      stroke_width=None, ignore_fields=None, default=None,
-                     point_envelope_length=None, origin='LEFT_TOP', im_height=None):
+                     point_envelope_length=1.0, origin='LEFT_TOP', im_height=None):
     """
     Parse an annotation.
 

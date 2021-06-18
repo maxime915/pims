@@ -27,7 +27,7 @@ def is_grayscale(red, green, blue):
 
 class ParsedAnnotation:
     def __init__(self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
-                 point_envelope_length=None):
+                 point_envelope_length=1):
         self.geometry = geometry
         self.fill_color = fill_color
         self.stroke_color = stroke_color
