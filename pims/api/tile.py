@@ -194,7 +194,7 @@ def ti_query_parameter(
     return TileIndex(__root__=ti).dict()['__root__']
 
 
-@router.get('/image/{filepath:path}/tile/zoom/{zoom}/ti/{ti}{extension:path}', tags=tile_tags)
+@router.get('/image/{filepath:path}/tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=tile_tags)
 def show_tile_by_zoom(
         path: Path = Depends(imagepath_parameter),
         zoom: int = Depends(zoom_query_parameter),
@@ -218,7 +218,7 @@ def show_tile_by_zoom(
                       extension=extension, headers=headers, config=config)
 
 
-@router.get('/image/{filepath:path}/tile/level/{level}/ti/{ti}{extension:path}', tags=tile_tags)
+@router.get('/image/{filepath:path}/tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=tile_tags)
 def show_tile_by_level(
         path: Path = Depends(imagepath_parameter),
         level: int = Depends(level_query_parameter),
@@ -242,7 +242,7 @@ def show_tile_by_level(
                       extension=extension, headers=headers, config=config)
 
 
-@router.get('/image/{filepath:path}/normalized-tile/zoom/{zoom}/ti/{ti}{extension:path}', tags=norm_tile_tags)
+@router.get('/image/{filepath:path}/normalized-tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=norm_tile_tags)
 def show_normalized_tile_by_zoom(
         path: Path = Depends(imagepath_parameter),
         zoom: int = Depends(zoom_query_parameter),
@@ -266,7 +266,7 @@ def show_normalized_tile_by_zoom(
                       extension=extension, headers=headers, config=config)
 
 
-@router.get('/image/{filepath:path}/normalized-tile/level/{level}/ti/{ti}{extension:path}', tags=norm_tile_tags)
+@router.get('/image/{filepath:path}/normalized-tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=norm_tile_tags)
 def show_normalized_tile_by_level(
         path: Path = Depends(imagepath_parameter),
         level: int = Depends(level_query_parameter),
