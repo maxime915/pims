@@ -265,7 +265,8 @@ class NormalizeImgOp(ImageOp):
         self.max_intensities = np.array(max_intensities)
 
     def invdiff(self):
-        return 1. / (self.max_intensities - self.min_intensities)
+        diff = (self.max_intensities - self.min_intensities)
+        return 1. / np.where(diff == 0, 1e-30, diff)
 
     def _vips_impl(self, img):
         return img.linear(list(self.invdiff()), list(-self.min_intensities * self.invdiff()))
