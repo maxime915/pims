@@ -392,6 +392,10 @@ class ChannelsInfoItem(BaseModel):
     excitation_wavelength: Optional[float] = Field(
         None, description='Wavelength of excitation for a particular channel.'
     )
+    color: str = Field(
+        None,
+        description='Color for the channel (possibly inferred from other properties).'
+    )
 
     @classmethod
     def from_channel(cls, c):
@@ -399,7 +403,8 @@ class ChannelsInfoItem(BaseModel):
             "index": c.index,
             "emission_wavelength": c.emission_wavelength,
             "excitation_wavelength": c.excitation_wavelength,
-            "suggested_name": c.suggested_name
+            "suggested_name": c.suggested_name,
+            "color": c.color.as_hex() if c.color is not None else None
         })
 
 

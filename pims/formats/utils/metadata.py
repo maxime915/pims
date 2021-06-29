@@ -18,6 +18,8 @@ from datetime import datetime, date, time
 from enum import Enum
 from typing import ValuesView, AbstractSet, Tuple
 
+from pydantic.color import Color
+
 
 def parse_json(value, raise_exc=False):
     try:
@@ -307,11 +309,31 @@ class _MetadataStorable:
 
 class ImageChannel(_MetadataStorable):
     def __init__(self, index=None, emission_wavelength=None,
-                 excitation_wavelength=None, suggested_name=None):
+                 excitation_wavelength=None, suggested_name=None,
+                 color=None):
         self.emission_wavelength = emission_wavelength
         self.excitation_wavelength = excitation_wavelength
         self.index = index
         self.suggested_name = suggested_name
+        self._color = color
+
+    def _guess_color(self):
+        # True green is "lime" in CSS
+        colors = dict(R="red", G="lime", B="blue")
+        c = colors.get(self.suggested_name, None)
+        if c:
+            c = Color(c)
+        return c
+
+    @property
+    def color(self):
+        if self._color:
+            return self._color
+        return self._guess_color()
+
+    @color.setter
+    def color(self, value):
+        self._color = value
 
     def metadata_namespace(self):
         return "channel[{}]".format(self.index)
