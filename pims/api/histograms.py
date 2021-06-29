@@ -30,31 +30,58 @@ router = APIRouter()
 api_tags = ['Histograms']
 
 
-class Histogram(BaseModel):
+class HistogramInfo(BaseModel):
     type: HistogramType = Field(...)
     minimum: int = Field(..., description="Minimum intensity value")
     maximum: int = Field(..., description="Maximum intensity value")
+
+
+class Histogram(HistogramInfo):
     first_bin: int = Field(..., description="Index of first bin returned in histogram")
     last_bin: int = Field(..., description="Index of last bin returned in histogram")
     n_bins: int = Field(..., description="The number of bins in the full range histogram")
     histogram: List[int] = Field(..., description="Histogram")
 
 
-class ChannelHistogram(Histogram):
+class ChannelHistogramInfo(HistogramInfo):
     channel: int = Field(..., description="Image channel index")
 
 
+class ChannelHistogram(ChannelHistogramInfo, Histogram):
+    pass
+
+
 class ChannelsHistogramCollection(CollectionSize):
-    items: List[ChannelHistogram] = Field(None, description='Array of channel histograms', title='Channel histogram')
+    items: List[ChannelHistogram] = Field(
+        None, description='Array of channel histograms', title='Channel histogram'
+    )
 
 
-class PlaneHistogram(ChannelHistogram):
+class ChannelsHistogramInfoCollection(CollectionSize):
+    items: List[ChannelHistogramInfo] = Field(
+        None, description='Array of channel histograms', title='Channel histogram'
+    )
+
+
+class PlaneHistogramInfo(ChannelHistogramInfo):
     z_slice: int = Field(..., description="Image focal point index")
     timepoint: int = Field(..., description="Image timepoint index")
 
 
+class PlaneHistogram(PlaneHistogramInfo, Histogram):
+    pass
+
+
 class PlaneHistogramCollection(CollectionSize):
-    items: List[PlaneHistogram] = Field(None, description='Array of plane histograms', title='Plane histogram')
+    items: List[PlaneHistogram] = Field(
+        None, description='Array of plane histograms', title='Plane histogram'
+    )
+
+
+class PlaneHistogramInfoCollection(CollectionSize):
+    items: List[PlaneHistogramInfo] = Field(
+        None, description='Array of plane histograms', title='Plane histogram'
+    )
 
 
 def parse_n_bins(n_bins, hist_len):
@@ -108,8 +135,10 @@ class HistogramConfig:
             ),
             full_range: bool = Query(
                 False,
-                description="Whether to return full histogram range, including leading and ending zero bins. "
-                            "When set, `first_bin = 0` and `last_bin = 2 ** image.significant_bits - 1`.")
+                description="Whether to return full histogram range, "
+                            "including leading and ending zero bins. "
+                            "When set, `first_bin = 0` and "
+                            "`last_bin = 2 ** image.significant_bits - 1`.")
     ):
         if not is_power_of_2(n_bins):
             raise BadRequestException(detail=f"{n_bins} is not a power of 2.")
@@ -141,12 +170,30 @@ def show_image_histogram(
     )
 
 
+@router.get('/image/{filepath:path}/histogram/per-image/bounds',
+            tags=api_tags, response_model=HistogramInfo)
+def show_image_histogram_bounds(
+        path: Path = Depends(imagepath_parameter)
+):
+    """
+    Get histogram info for full image where all planes (C,Z,T) are merged.
+    """
+    in_image = path.get_spatial()
+    check_representation_existence(in_image)
+
+    htype = in_image.histogram_type()
+    mini, maxi = in_image.image_bounds()
+    return HistogramInfo(type=htype, minimum=mini, maximum=maxi)
+
+
 @router.get('/image/{filepath:path}/histogram/per-channels',
             tags=api_tags, response_model=ChannelsHistogramCollection)
 def show_channels_histogram(
         path: Path = Depends(imagepath_parameter),
         hist_config: HistogramConfig = Depends(),
-        channels: Optional[List[conint(ge=0)]] = Query(None, description="Only return histograms for these channels"),
+        channels: Optional[List[conint(ge=0)]] = Query(
+            None, description="Only return histograms for these channels"
+        ),
 ):
     """
     Get histograms per channel where all planes (Z,T) are merged.
@@ -175,6 +222,37 @@ def show_channels_histogram(
     return response_list(histograms)
 
 
+@router.get('/image/{filepath:path}/histogram/per-channels/bounds',
+            tags=api_tags, response_model=ChannelsHistogramInfoCollection)
+def show_channels_histogram_bounds(
+        path: Path = Depends(imagepath_parameter),
+        channels: Optional[List[conint(ge=0)]] = Query(
+            None, description="Only return histograms for these channels"
+        ),
+):
+    """
+    Get histogram bounds per channel where all planes (Z,T) are merged.
+    """
+    in_image = path.get_spatial()
+    check_representation_existence(in_image)
+
+    channels = ensure_list(channels)
+    channels = get_channel_indexes(in_image, channels)
+
+    hist_info = []
+    htype = in_image.histogram_type()
+    for channel in channels:
+        mini, maxi = in_image.channel_bounds(channel)
+        hist_info.append(
+            ChannelHistogramInfo(
+                channel=channel, type=htype,
+                minimum=mini, maximum=maxi
+            )
+        )
+
+    return response_list(hist_info)
+
+
 @router.get('/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}',
             tags=api_tags, response_model=PlaneHistogramCollection)
 def show_plane_histogram(
@@ -182,7 +260,9 @@ def show_plane_histogram(
         timepoints: conint(ge=0),
         path: Path = Depends(imagepath_parameter),
         hist_config: HistogramConfig = Depends(),
-        channels: Optional[List[conint(ge=0)]] = Query(None, description="Only return histograms for these channels"),
+        channels: Optional[List[conint(ge=0)]] = Query(
+            None, description="Only return histograms for these channels"
+        ),
 ):
     """
     Get histogram per plane.
@@ -214,6 +294,44 @@ def show_plane_histogram(
         )
 
     return response_list(histograms)
+
+
+@router.get('/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}/bounds',
+            tags=api_tags, response_model=PlaneHistogramInfoCollection)
+def show_plane_histogram(
+        z_slices: conint(ge=0),
+        timepoints: conint(ge=0),
+        path: Path = Depends(imagepath_parameter),
+        channels: Optional[List[conint(ge=0)]] = Query(
+            None, description="Only return histograms for these channels"
+        ),
+):
+    """
+    Get histogram per plane.
+    """
+    in_image = path.get_spatial()
+    check_representation_existence(in_image)
+
+    channels = ensure_list(channels)
+    z_slices = ensure_list(z_slices)
+    timepoints = ensure_list(timepoints)
+
+    channels = get_channel_indexes(in_image, channels)
+    z_slices = get_zslice_indexes(in_image, z_slices)
+    timepoints = get_timepoint_indexes(in_image, timepoints)
+
+    hist_info = []
+    htype = in_image.histogram_type()
+    for c, z, t in itertools.product(channels, z_slices, timepoints):
+        mini, maxi = in_image.plane_bounds(c, z, t)
+        hist_info.append(
+            PlaneHistogramInfo(
+                channel=c, z_slice=z, timepoint=t, type=htype,
+                minimum=mini, maximum=maxi
+            )
+        )
+
+    return response_list(hist_info)
 
 
 @router.post('/image/{filepath:path}/histogram', tags=api_tags)
