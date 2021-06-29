@@ -334,6 +334,11 @@ class ImageChannel(_MetadataStorable):
     @color.setter
     def color(self, value):
         self._color = value
+        
+    @property
+    def hex_color(self):
+        c = self.color
+        return c.as_hex() if c else None
 
     def metadata_namespace(self):
         return "channel[{}]".format(self.index)

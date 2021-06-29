@@ -26,6 +26,10 @@ loggers:
     level: INFO
     handlers: [console]
     propagate: false
+  pyvips.vobject:
+    level: ERROR
+    handlers: [ console ]
+    propagate: false
   uvicorn:
     level: DEBUG
     handlers: [console]

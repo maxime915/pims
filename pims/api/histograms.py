@@ -45,6 +45,7 @@ class Histogram(HistogramInfo):
 
 class ChannelHistogramInfo(HistogramInfo):
     channel: int = Field(..., description="Image channel index")
+    color: Optional[str] = Field(None, description="Channel color")
 
 
 class ChannelHistogram(ChannelHistogramInfo, Histogram):
@@ -211,6 +212,7 @@ def show_channels_histogram(
         histograms.append(
             ChannelHistogram(
                 channel=channel, type=htype,
+                color=in_image.channels[channel].hex_color,
                 **histogram_formatter(
                     in_image.channel_histogram(channel),
                     in_image.channel_bounds(channel),
@@ -246,6 +248,7 @@ def show_channels_histogram_bounds(
         hist_info.append(
             ChannelHistogramInfo(
                 channel=channel, type=htype,
+                color=in_image.channels[channel].hex_color,
                 minimum=mini, maximum=maxi
             )
         )
@@ -285,6 +288,7 @@ def show_plane_histogram(
         histograms.append(
             PlaneHistogram(
                 channel=c, z_slice=z, timepoint=t, type=htype,
+                color=in_image.channels[c].hex_color,
                 **histogram_formatter(
                     in_image.plane_histogram(c, z, t),
                     in_image.plane_bounds(c, z, t),
@@ -327,6 +331,7 @@ def show_plane_histogram(
         hist_info.append(
             PlaneHistogramInfo(
                 channel=c, z_slice=z, timepoint=t, type=htype,
+                color=in_image.channels[c].hex_color,
                 minimum=mini, maximum=maxi
             )
         )
