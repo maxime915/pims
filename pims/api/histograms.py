@@ -173,14 +173,14 @@ def show_channels_histogram(
     return response_list(histograms)
 
 
-@router.get('/image/{filepath:path}/histogram/per-plane/c/{channels}/z/{z_slices}/t/{timepoints}',
+@router.get('/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}',
             tags=api_tags, response_model=PlaneHistogramCollection)
 def show_plane_histogram(
-        channels: conint(ge=0),
         z_slices: conint(ge=0),
         timepoints: conint(ge=0),
         path: Path = Depends(imagepath_parameter),
         hist_config: HistogramConfig = Depends(),
+        channels: Optional[List[conint(ge=0)]] = Query(None, description="Only return histograms for these channels"),
 ):
     """
     Get histogram per plane.
