@@ -203,6 +203,12 @@ class ImageInfo(BaseModel):
                     'A RGB image has 3 channels, but they are usually interleaved in a single plane. In such a case,'
                     'there is only 1 intrinsic channel.',
     )
+    n_distinct_channels: int = Field(
+        ...,
+        description='The number of suggested distinct channels for visualisation.'
+                    'RGB or fluorescence images have 1 single distinct channels (all channels are merged). '
+                    'Hyperspectral images can have several distinct channels.'
+    )
     n_planes: int = Field(
         ...,
         description='The number of intrinsic planes in the image.'
@@ -219,6 +225,11 @@ class ImageInfo(BaseModel):
         ...,
         description='The number of bits within the type storing each pixel that are significant.',
     )
+    n_samples_per_intrinsic_channel: int = Field(
+        ...,
+        description='The number of samples per intrinsic channel. There is usually 1 sample per intrinsic channel, '
+                    'except when a RGB image have interleaved RGB values.'
+    )
 
     @classmethod
     def from_image(cls, image):
@@ -230,6 +241,7 @@ class ImageInfo(BaseModel):
             "duration": image.duration,
             "n_channels": image.n_channels,
             "n_intrinsic_channels": image.n_intrinsic_channels,
+            "n_distinct_channels": image.n_distinct_channels,
             "n_planes": image.n_planes,
             "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
             "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
@@ -238,7 +250,8 @@ class ImageInfo(BaseModel):
             "acquired_at": image.acquisition_datetime,
             "description": image.description,
             "pixel_type": PixelType[str(image.pixel_type)],
-            "significant_bits": image.significant_bits
+            "significant_bits": image.significant_bits,
+            "n_samples_per_intrinsic_channel": image.n_channels_per_read
         })
 
 

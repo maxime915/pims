@@ -77,6 +77,10 @@ class Image(Path):
         return self._format.main_imd.n_intrinsic_channels
 
     @property
+    def n_distinct_channels(self):
+        return self._format.main_imd.n_distinct_channels
+
+    @property
     def n_channels_per_read(self):
         return self._format.main_imd.n_channels_per_read
 

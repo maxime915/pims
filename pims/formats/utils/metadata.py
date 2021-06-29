@@ -361,6 +361,7 @@ class ImageMetadata(_MetadataStorable):
 
         self._n_intrinsic_channels = None
         self.n_channels_per_read = 1
+        self.n_distinct_channels = 1
 
         self.pixel_type = None
         self.significant_bits = None
