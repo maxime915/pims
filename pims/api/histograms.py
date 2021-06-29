@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks, Response
 from pydantic import conint, BaseModel, Field
 from starlette import status
 
-from pims.api.exceptions import check_representation_existence
+from pims.api.exceptions import check_representation_existence, BadRequestException
 from pims.api.utils.image_parameter import ensure_list, get_channel_indexes, get_zslice_indexes, get_timepoint_indexes
 from pims.api.utils.models import HistogramType, CollectionSize
 from pims.api.utils.parameter import imagepath_parameter
@@ -36,6 +36,7 @@ class Histogram(BaseModel):
     maximum: int = Field(..., description="Maximum intensity value")
     first_bin: int = Field(..., description="Index of first bin returned in histogram")
     last_bin: int = Field(..., description="Index of last bin returned in histogram")
+    n_bins: int = Field(..., description="The number of bins in the full range histogram")
     histogram: List[int] = Field(..., description="Histogram")
 
 
@@ -56,36 +57,54 @@ class PlaneHistogramCollection(CollectionSize):
     items: List[PlaneHistogram] = Field(None, description='Array of plane histograms', title='Plane histogram')
 
 
-def _256bins_histogram(hist):
-    if hist.shape[-1] % 256 != 0:
-        raise ValueError(f"Cannot make 256 bins from histogram "
-                         f"with shape {hist.shape}")
-    return hist.reshape((256, -1)).sum(axis=1)
+def parse_n_bins(n_bins, hist_len):
+    return n_bins if n_bins <= hist_len else hist_len
 
 
-def histogram_formatter(hist, bounds, config):
-    if not config.bins256:
-        if not config.full_range:
+def _histogram_binning(hist, n_bins):
+    if hist.shape[-1] % n_bins != 0:
+        raise BadRequestException(
+            detail=f"Cannot make {n_bins} bins from histogram "
+            f"with shape {hist.shape}"
+        )
+    return hist.reshape((n_bins, -1)).sum(axis=1)
+
+
+def histogram_formatter(hist, bounds, n_bins, full_range):
+    if n_bins == len(hist):
+        if not full_range:
             hist = hist[bounds[0]:bounds[1] + 1]
         return hist, bounds
     else:
-        hist = _256bins_histogram(hist)
+        hist = _histogram_binning(hist, n_bins)
         bounds = argmin_nonzero(hist), argmax_nonzero(hist)
-        if not config.full_range:
+        if not full_range:
             hist = hist[bounds[0]:bounds[1] + 1]
         return hist, bounds
+
+
+def is_power_of_2(n):
+    return (n & (n - 1) == 0) and n != 0
 
 
 class HistogramConfig:
     def __init__(
             self,
-            bins256: bool = Query(True, description="Return a 256-bin histogram"),
+            n_bins: int = Query(
+                256,
+                description="Number of bins. Must be a power of 2. "
+                            "If `nbins > 2 ** image.significant_bits` then "
+                            "´nbins = 2 ** image.significant_bits` "
+            ),
             full_range: bool = Query(
                 False,
                 description="Whether to return full histogram range, including leading and ending zero bins. "
                             "When set, `first_bin = 0` and `last_bin = 2 ** image.significant_bits - 1`.")
     ):
-        self.bins256 = bins256
+        if not is_power_of_2(n_bins):
+            raise BadRequestException(detail=f"{n_bins} is not a power of 2.")
+
+        self.n_bins = n_bins
         self.full_range = full_range
 
 
@@ -101,13 +120,19 @@ def show_image_histogram(
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
+    n_bins = parse_n_bins(hist_config.n_bins, len(in_image.value_range))
     htype = in_image.histogram_type()
     bounds = in_image.image_bounds()
-    hist, bin_bounds = histogram_formatter(in_image.image_histogram(), bounds, hist_config)
+    hist, bin_bounds = histogram_formatter(
+        in_image.image_histogram(), bounds,
+        n_bins, hist_config.full_range
+    )
     mini, maxi = bounds
     first_bin, last_bin = bin_bounds
-    return Histogram(minimum=mini, maximum=maxi, histogram=list(hist),
-                     type=htype, first_bin=first_bin, last_bin=last_bin)
+    return Histogram(
+        minimum=mini, maximum=maxi, histogram=list(hist),
+        type=htype, first_bin=first_bin, last_bin=last_bin, n_bins=n_bins
+    )
 
 
 @router.get('/image/{filepath:path}/histogram/per-channels',
@@ -127,16 +152,22 @@ def show_channels_histogram(
     channels = get_channel_indexes(in_image, channels)
 
     histograms = []
+    n_bins = parse_n_bins(hist_config.n_bins, len(in_image.value_range))
     htype = in_image.histogram_type()
     for channel in channels:
         bounds = in_image.channel_bounds(channel)
-        hist, bin_bounds = histogram_formatter(in_image.channel_histogram(channel), bounds, hist_config)
+        hist, bin_bounds = histogram_formatter(
+            in_image.channel_histogram(channel), bounds,
+            n_bins, hist_config.full_range
+        )
         mini, maxi = bounds
         first_bin, last_bin = bin_bounds
         histograms.append(
-            ChannelHistogram(channel=channel, minimum=mini, maximum=maxi,
-                             histogram=list(hist), type=htype,
-                             first_bin=first_bin, last_bin=last_bin)
+            ChannelHistogram(
+                channel=channel, minimum=mini, maximum=maxi,
+                histogram=list(hist), type=htype,
+                first_bin=first_bin, last_bin=last_bin, n_bins=n_bins
+            )
         )
 
     return response_list(histograms)
@@ -166,17 +197,22 @@ def show_plane_histogram(
     timepoints = get_timepoint_indexes(in_image, timepoints)
 
     histograms = []
+    n_bins = parse_n_bins(hist_config.n_bins, len(in_image.value_range))
     htype = in_image.histogram_type()
     for c, z, t in itertools.product(channels, z_slices, timepoints):
         bounds = in_image.plane_bounds(c, z, t)
-        hist, bin_bounds = histogram_formatter(in_image.plane_histogram(c, z, t), bounds, hist_config)
+        hist, bin_bounds = histogram_formatter(
+            in_image.plane_histogram(c, z, t), bounds,
+            n_bins, hist_config.full_range
+        )
         mini, maxi = bounds
         first_bin, last_bin = bin_bounds
         histograms.append(
             PlaneHistogram(channel=c, z_slice=z, timepoint=t,
                            minimum=mini, maximum=maxi,
                            histogram=list(hist), type=htype,
-                           first_bin=first_bin, last_bin=last_bin)
+                           first_bin=first_bin, last_bin=last_bin,
+                           n_bins=n_bins)
         )
 
     return response_list(histograms)

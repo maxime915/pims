@@ -93,6 +93,14 @@ class Image(Path):
         return self._format.main_imd.significant_bits
 
     @property
+    def max_value(self):
+        return 2**self.significant_bits - 1
+
+    @property
+    def value_range(self):
+        return range(0, self.max_value + 1)
+
+    @property
     def acquisition_datetime(self):
         return self._format.full_imd.acquisition_datetime
 
