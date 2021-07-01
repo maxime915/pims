@@ -11,7 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-
+import logging
 import traceback
 from typing import Optional
 
@@ -32,6 +32,8 @@ from pims.importer.importer import FileImporter
 from pims.importer.logger import CytomineListener, StdoutListener
 
 router = APIRouter()
+
+cytomine_logger = logging.getLogger("pims.cytomine")
 
 
 @router.post('/upload', tags=['Import'])
@@ -75,7 +77,9 @@ async def legacy_import(
         raise BadRequestException(detail="Invalid projects or idProject parameter.")
 
     public_key, signature = parse_authorization_header(request.headers)
-    with Cytomine.connect(core, config.cytomine_public_key, config.cytomine_private_key) as c:
+    with Cytomine.connect(core, config.cytomine_public_key, config.cytomine_private_key,
+                          verbose=cytomine_logger.level) as c:
+        c._logger = cytomine_logger  # TODO: improve logging management in Python client
         if not c.current_user:
             raise AuthenticationException("PIMS authentication to Cytomine failed.")
 

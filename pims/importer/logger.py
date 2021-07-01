@@ -216,7 +216,7 @@ class CytomineListener(ImportListener):
 
 class StdoutListener(ImportListener):
     def __init__(self, name):
-        self.log = logging.getLogger("Upload {}".format(name))
+        self.log = logging.getLogger("upload.{}".format(name))
 
     def start_import(self, path, *args, **kwargs):
         self.log.info("Start import for {}".format(path))
