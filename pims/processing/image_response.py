@@ -17,7 +17,8 @@ from starlette.responses import Response
 from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
-    NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp
+    NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
+    RescaleHistOp
 
 
 class View:
@@ -182,6 +183,8 @@ class ProcessedView(MultidimView):
     
     def process_histogram(self):
         hist = self.in_image.histogram.channel_histogram(np.s_[:])
+        # TODO: filters are computed on best_effort bitdepth while it should do on image bitdepth
+        hist = RescaleHistOp(self.best_effort_bitdepth)(hist)
 
         if self.filter_colorspace_processing:
             hist = ColorspaceHistOp(self.filter_colorspace)(hist)

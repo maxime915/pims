@@ -275,6 +275,23 @@ class NormalizeImgOp(ImageOp):
         return (img - self.min_intensities) * self.invdiff()
 
 
+class RescaleHistOp(ImageOp):
+    """Rescale an histogram for a given bit depth.
+
+    Attributes
+    ----------
+    bitdepth: int
+        Exponent used to rescale values so that out = in * (pow(2, bitdepth) - 1)
+    """
+    def __init__(self, bitdepth):
+        super().__init__()
+        self._impl[np.ndarray] = self._numpy_impl
+        self.bitdepth = bitdepth
+
+    def _numpy_impl(self, hist):
+        return hist.reshape((2**self.bitdepth, -1)).sum(axis=1)
+
+
 class ColorspaceImgOp(ImageOp):
     def __init__(self, colorspace):
         super().__init__()
