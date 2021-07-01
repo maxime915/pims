@@ -143,7 +143,7 @@ class VipsHistogramReader(NullHistogramReader):
     def image_bounds(self):
         image = self.vips_hist_image()
         vips_stats = image.stats()
-        np_stats = vips_to_numpy(vips_stats)
+        np_stats = vips_to_numpy(vips_stats).astype(np.int)
         return tuple(np_stats[0, 0:2, 0])
 
     def image_histogram(self):
@@ -153,13 +153,13 @@ class VipsHistogramReader(NullHistogramReader):
     def channels_bounds(self):
         image = self.vips_hist_image()
         vips_stats = image.stats()
-        np_stats = vips_to_numpy(vips_stats)
+        np_stats = vips_to_numpy(vips_stats).astype(np.int)
         return list(map(tuple, np_stats[1:, :2, 0]))
 
     def channel_bounds(self, c):
         image = self.vips_hist_image()
         vips_stats = image.stats()
-        np_stats = vips_to_numpy(vips_stats)
+        np_stats = vips_to_numpy(vips_stats).astype(np.int)
         return tuple(np_stats[c + 1, :2, 0])
 
     def channel_histogram(self, c):
