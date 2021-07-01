@@ -17,7 +17,7 @@ from typing import Optional
 
 from cytomine import Cytomine
 from cytomine.models import Storage, ProjectCollection, Project, UploadedFile, ImageInstance
-from fastapi import APIRouter, Query, Depends, Form
+from fastapi import APIRouter, Query, Depends, Form, BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -25,6 +25,7 @@ from pims.api.exceptions import CytomineProblem, AuthenticationException, BadReq
 from pims.api.utils.cytomine_auth import parse_authorization_header, parse_request_token, sign_token, \
     get_this_image_server
 from pims.api.utils.image_parameter import ensure_list
+from pims.api.utils.response import serialize_cytomine_model
 from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.importer.importer import FileImporter
@@ -36,6 +37,7 @@ router = APIRouter()
 @router.post('/upload', tags=['Import'])
 async def legacy_import(
         request: Request,
+        background: BackgroundTasks,
         core: Optional[str] = None,
         cytomine: Optional[str] = None,
         storage: Optional[int] = None,
@@ -99,29 +101,37 @@ async def legacy_import(
         root = UploadedFile(upload_name, upload_path, upload_size, "", upload_content_type,
                             id_projects, id_storage, user.id, this.id, UploadedFile.UPLOADED).save()
 
-        # TODO: async mode
-        try:
-            root, images = _legacy_import(upload_path, upload_name, root, projects)
-            return [{
+        if sync:
+            try:
+                root, images = _legacy_import(upload_path, upload_name, root, projects)
+                return [{
+                    "status": 200,
+                    "name": upload_name,
+                    "uploadedFile": serialize_cytomine_model(root),
+                    "images": [{
+                        "image": serialize_cytomine_model(image[0]),
+                        "imageInstances": serialize_cytomine_model([1])
+                    } for image in images]
+                }]
+            except Exception as e:
+                traceback.print_exc()
+                return JSONResponse(content=[{
+                    "status": 500,
+                    "error": str(e),
+                    "files": [{
+                        "name": upload_name,
+                        "size": 0,
+                        "error": str(e)
+                    }]
+                }], status_code=400)
+        else:
+            background.add_task(_legacy_import, upload_path, upload_name, root, projects)
+            return JSONResponse(content=[{
                 "status": 200,
                 "name": upload_name,
-                "uploadedFile": root,
-                "images": [{
-                    "image": image[0],
-                    "imageInstances": image[1]
-                } for image in images]
-            }]
-        except Exception as e:
-            traceback.print_exc()
-            return JSONResponse(content=[{
-                "status": 500,
-                "error": str(e),
-                "files": [{
-                    "name": upload_name,
-                    "size": 0,
-                    "error": str(e)
-                }]
-            }], status_code=400)
+                "uploadedFile": serialize_cytomine_model(root),
+                "images": []
+            }], status_code=202)
 
 
 def _legacy_import(filepath, name, root_uf, projects):

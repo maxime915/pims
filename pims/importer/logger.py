@@ -173,11 +173,11 @@ class CytomineListener(ImportListener):
         ai.duration = image.duration
         ai.channels = image.n_intrinsic_channels
         if image.physical_size_x:
-            ai.physicalSizeX = round(convert_quantity(image.physical_size_x, "micrometers").m, 6)
+            ai.physicalSizeX = round(convert_quantity(image.physical_size_x, "micrometers"), 6)
         if image.physical_size_y:
-            ai.physicalSizeY = round(convert_quantity(image.physical_size_y, "micrometers").m, 6)
+            ai.physicalSizeY = round(convert_quantity(image.physical_size_y, "micrometers"), 6)
         if image.physical_size_z:
-            ai.physicalSizeZ = round(convert_quantity(image.physical_size_z, "micrometers").m, 6)
+            ai.physicalSizeZ = round(convert_quantity(image.physical_size_z, "micrometers"), 6)
         ai.fps = image.frame_rate
         ai.magnification = image.objective.nominal_magnification
         ai.bitPerSample = dtype_to_bits(image.pixel_type)

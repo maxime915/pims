@@ -13,6 +13,7 @@
 # * limitations under the License.
 import logging
 
+from cytomine.models import Model
 from pint import Quantity
 
 log = logging.getLogger("pims")
@@ -52,3 +53,13 @@ def convert_quantity(quantity, unit, ndigits=6):
 
     log.warning('The quantity {} is not of type Quantity and is thus not converted.'.format(quantity))
     return round(quantity, ndigits)
+
+
+def serialize_cytomine_model(o):
+    if isinstance(o, Model):
+        d = dict((k, v) for k, v in o.__dict__.items() if v is not None and not k.startswith("_"))
+        if "uri_" in d:
+            d["uri"] = d.pop("uri_")
+        return d
+    log.warning(f"The object {o} is not a Cytomine model and is thus not serialized.")
+    return o
