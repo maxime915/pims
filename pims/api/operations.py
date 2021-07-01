@@ -76,6 +76,9 @@ async def legacy_import(
 
     public_key, signature = parse_authorization_header(request.headers)
     with Cytomine.connect(core, config.cytomine_public_key, config.cytomine_private_key) as c:
+        if not c.current_user:
+            raise AuthenticationException("PIMS authentication to Cytomine failed.")
+
         this = get_this_image_server(config.pims_url)
         keys = c.get("userkey/{}/keys.json".format(public_key))
         private_key = keys["privateKey"]
