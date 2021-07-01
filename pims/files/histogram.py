@@ -200,7 +200,7 @@ def build_histogram_file(in_image, dest, hist_type: HistogramType,
 
     Returns
     -------
-    zhf : zarr.Group
+    histogram : Histogram
         The zarr histogram file in read-only mode
     """
     n_values = 2 ** in_image.significant_bits
@@ -276,4 +276,4 @@ def build_histogram_file(in_image, dest, hist_type: HistogramType,
     if overwrite and dest.exists():
         shutil.rmtree(dest)
     tmp_dest.replace(dest)
-    return zarr.open(str(dest), mode='r')
+    return Histogram(dest, format=ZarrHistogramFormat)

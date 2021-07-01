@@ -13,6 +13,9 @@ FILE_ROOT_PATH = Path("/data/pims")
 
 
 class ImportListener:
+    def __repr__(self):
+        return self.__class__.__name__
+
     def start_import(self, path, *args, **kwargs):
         pass
 

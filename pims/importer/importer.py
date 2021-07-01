@@ -11,14 +11,19 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+import logging
 import shutil
 from datetime import datetime
 
 from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem, \
     BadRequestException
-from pims.files.file import Path
+from pims.api.utils.models import HistogramType
+from pims.files.file import Path, HISTOGRAM_STEM
+from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
+
+log = logging.getLogger("pims.app")
 
 # TODO
 PENDING_PATH = Path("/tmp/uploaded")
@@ -67,12 +72,17 @@ class FileImporter:
         self.original = None
         self.spatial_path = None
         self.spatial = None
+        self.histogram_path = None
+        self.histogram = None
 
         self.processed_dir = None
 
     def log(self, method, *args, **kwargs):
         for logger in self.loggers:
-            getattr(logger, method)(*args, **kwargs)
+            try:
+                getattr(logger, method)(*args, **kwargs)
+            except AttributeError:
+                log.warning(f"No method {method} for import logger {logger}")
 
     def run(self, prefer_copy=False):
         """
@@ -166,6 +176,8 @@ class FileImporter:
             else:
                 raise NotImplementedError()
 
+            self.deploy_histogram(self.original.get_spatial())
+
             # Finished
             self.log('import_success', self.upload_path, self.original)
             return [self.upload_path]
@@ -217,4 +229,11 @@ class FileImporter:
 
         return self.spatial
 
-
+    def deploy_histogram(self, image):
+        try:
+            self.histogram_path = self.processed_dir / Path(HISTOGRAM_STEM)
+            self.log('start_build_histogram', self.histogram_path, self.upload_path)
+            self.histogram = build_histogram_file(image, self.histogram_path, HistogramType.FAST)
+        except (FileNotFoundError, FileExistsError) as e:
+            self.log('histogram_file_error', path=self.histogram_path, exception=e)
+            raise FileErrorProblem(self.histogram_path)
