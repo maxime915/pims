@@ -677,7 +677,7 @@ def show_associated_image(
         raise NoAppropriateRepresentationProblem(path, associated_key)
 
     out_format, mimetype = get_output_format(OutputExtension.NONE, headers.accept, VISUALISATION_MIMETYPES)
-    req_size = get_thumb_output_dimensions(in_image, output.height, output.width, output.length)
+    req_size = get_thumb_output_dimensions(associated, output.height, output.width, output.length)
     out_size = safeguard_output_dimensions(headers.safe_mode, config.output_size_limit, *req_size)
     out_width, out_height = out_size
 
