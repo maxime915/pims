@@ -50,6 +50,8 @@ REQUIRED = [
     'pyvips>=2.1.14',
     'tifffile>=2021.4.8',
     'imagecodecs>=2021.3.31',
+    'scikit-image>=0.18',
+    'zarr>=2.8.3',
 
     'Shapely>=1.8a1',
     'rasterio>=1.2.1',

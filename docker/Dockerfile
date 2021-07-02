@@ -1,17 +1,13 @@
-FROM python:3.8-buster
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
 
 RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install-suggests \
         `# Essentials` \
         automake \
         build-essential \
         ca-certificates \
-        git \
         gcc \
-        locate \
         net-tools \
-        unzip \
         wget \
-        gawk \
         software-properties-common \
         `# Vips dependencies` \
         pkg-config \
@@ -60,25 +56,23 @@ RUN cd /tmp && \
     make install && \
     ldconfig
 
-# Install python requirements
-COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
-COPY pims /app/pims
-COPY setup.py /app/setup.py
-
+# Prestart configuration
 RUN touch /tmp/addHosts.sh
-COPY docker/deploy.sh /app/deploy.sh
-RUN chmod +x /app/deploy.sh
+COPY ./docker/prestart.sh /app/prestart.sh
+RUN chmod +x /app/prestart.sh
 
+# Add default config
+COPY ./pims-config.env /app/pims-config.env
+COPY ./logging.yml /app/logging.yml
 
-# TODO: NOT READY FOR PRODUCTION - ONLY FOR DEV.
-COPY app-config.cfg /app/app-config.cfg
-RUN pip3 install setuptools && python3 setup.py install
+# Install python requirements
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
 
-RUN pip3 install uwsgi
-COPY uwsgi.ini /app/uwsgi.ini
+COPY ./pims /app/pims
 
-EXPOSE 5000
-
-ENTRYPOINT ["/app/deploy.sh"]
+ENV MODULE_NAME="pims.application"
+ENV PORT=5000
+EXPOSE ${PORT}
