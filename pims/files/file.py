@@ -115,7 +115,7 @@ class Path(type(_Path()), _Path):
         original = next((child for child in self.processed_root().iterdir() if child.has_original_role()), None)
 
         from pims.files.image import Image
-        return Image(original, factory=FormatFactory()) if original else None
+        return Image(original, factory=FormatFactory(match_on_ext=True)) if original else None
 
     def get_spatial(self):
         if not self.processed_root().exists():
@@ -124,7 +124,7 @@ class Path(type(_Path()), _Path):
         spatial = next((child for child in self.processed_root().iterdir() if child.has_spatial_role()), None)
 
         from pims.files.image import Image
-        return Image(spatial, factory=SpatialReadableFormatFactory()) if spatial else None
+        return Image(spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)) if spatial else None
 
     def get_spectral(self):
         if not self.processed_root().exists():
@@ -133,7 +133,7 @@ class Path(type(_Path()), _Path):
         spectral = next((child for child in self.processed_root().iterdir() if child.has_spectral_role()), None)
 
         from pims.files.image import Image
-        return Image(spectral, factory=SpectralReadableFormatFactory()) if spectral else None
+        return Image(spectral, factory=SpectralReadableFormatFactory(match_on_ext=True)) if spectral else None
 
     def get_histogram(self):
         if not self.processed_root().exists():

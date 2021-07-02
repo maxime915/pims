@@ -17,12 +17,17 @@ from pims.formats.utils.abstract import CachedPathData
 
 
 class FormatFactory:
-    def __init__(self, formats=FORMATS.values()):
+    def __init__(self, match_on_ext=False, formats=FORMATS):
         self.formats = formats
+        self.match_on_ext = match_on_ext
 
     def match(self, path):
+        if self.match_on_ext:
+            format = self.formats.get(path.extension)
+            if format:
+                return format(path)
         proxy = CachedPathData(path)
-        for format in self.formats:
+        for format in self.formats.values():
             if format.match(proxy):
                 return format.from_proxy(proxy)
 
@@ -30,12 +35,12 @@ class FormatFactory:
 
 
 class SpatialReadableFormatFactory(FormatFactory):
-    def __init__(self):
-        formats = [f for f in FORMATS.values() if f.is_spatial()]  # and f.is_readable()]
-        super(SpatialReadableFormatFactory, self).__init__(formats)
+    def __init__(self, match_on_ext=False):
+        formats = {e: f for e, f in FORMATS.items() if f.is_spatial()}  # and f.is_readable()]
+        super(SpatialReadableFormatFactory, self).__init__(match_on_ext, formats)
 
 
 class SpectralReadableFormatFactory(FormatFactory):
-    def __init__(self):
-        formats = [f for f in FORMATS.values() if f.is_spectral()]  # and f.is_readable()]
-        super(SpectralReadableFormatFactory, self).__init__(formats)
+    def __init__(self, match_on_ext=False):
+        formats = {e: f for e, f in FORMATS.items() if f.is_spectral()}  # and f.is_readable()]
+        super(SpectralReadableFormatFactory, self).__init__(match_on_ext, formats)
