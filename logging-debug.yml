@@ -18,6 +18,10 @@ loggers:
     level: DEBUG
   pims.app:
     level: DEBUG
+  pims.cytomine:
+    level: CRITICAL
+    handlers: [console]
+    propagate: false
   pyvips:
     level: INFO
   pyvips.vobject:
