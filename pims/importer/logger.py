@@ -5,6 +5,7 @@ from cytomine.models import UploadedFile, AbstractImage, AbstractSliceCollection
 
 from pims.api.utils.response import convert_quantity
 from pims.files.file import Path
+from pims.formats.utils.metadata import parse_int
 from pims.formats.utils.vips import dtype_to_bits
 
 # TODO
@@ -192,7 +193,7 @@ class CytomineListener(ImportListener):
         if image.physical_size_z:
             ai.physicalSizeZ = round(convert_quantity(image.physical_size_z, "micrometers"), 6)
         ai.fps = image.frame_rate
-        ai.magnification = int(image.objective.nominal_magnification)
+        ai.magnification = parse_int(image.objective.nominal_magnification)
         ai.bitPerSample = dtype_to_bits(image.pixel_type)
         ai.samplePerPixel = image.n_channels
         ai.save()
