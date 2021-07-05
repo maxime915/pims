@@ -58,6 +58,10 @@ RUN cd /tmp && \
 
 WORKDIR /app
 
+# Install python requirements
+COPY ./requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt
+
 # Prestart configuration
 RUN touch /tmp/addHosts.sh
 COPY ./docker/prestart.sh /app/prestart.sh
@@ -65,14 +69,12 @@ RUN chmod +x /app/prestart.sh
 
 # Add default config
 COPY ./pims-config.env /app/pims-config.env
-COPY ./logging.yml /app/logging.yml
+COPY ./logging-prod.yml /app/logging-prod.yml
+COPY ./docker/gunicorn_conf.py /app/gunicorn_conf.py
 
-# Install python requirements
-COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
-
+# Add app
 COPY ./pims /app/pims
-
 ENV MODULE_NAME="pims.application"
+
 ENV PORT=5000
 EXPOSE ${PORT}

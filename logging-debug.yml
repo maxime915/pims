@@ -2,7 +2,7 @@ version: 1
 
 formatters:
   basic:
-    format: "[%(threadName)s] %(name)s - %(message)s"
+    format: "[%(process)s][%(threadName)s] %(name)s - %(message)s"
 
 handlers:
   console:
@@ -16,27 +16,16 @@ handlers:
 loggers:
   pims:
     level: DEBUG
-    handlers: [console]
-    propagate: false
   pims.app:
     level: DEBUG
-    handlers: [console]
-    propagate: false
   pyvips:
     level: INFO
-    handlers: [console]
-    propagate: false
   pyvips.vobject:
     level: ERROR
-    handlers: [ console ]
-    propagate: false
   uvicorn:
     level: DEBUG
-    handlers: [console]
-    propagate: false
   uvicorn.access:
     level: CRITICAL
-    handlers:
 
 root:
   handlers: [console]
