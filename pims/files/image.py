@@ -250,7 +250,17 @@ class Image(Path):
         else:
             return None
 
-    def check_integrity(self, metadata=True, tile=False, thumb=False, window=False, associated=False):
+    def check_integrity(self, lazy_mode=False, metadata=True, tile=False, thumb=False, window=False, associated=False):
+        """
+        Check integrity of the image. In lazy mode, stop at first error.
+
+        Returns
+        -------
+        errors : list of tuple (str, Exception)
+            A list of problematic attributes with the associated exception.
+            Some attributes are inter-dependent, so the same exception can appear for several attributes.
+        """
+        errors = []
         if metadata:
             attributes = ('width', 'height', 'depth', 'duration', 'n_channels', 'pixel_type',
                           'physical_size_x', 'physical_size_y', 'physical_size_z', 'frame_rate',
@@ -260,5 +270,7 @@ class Image(Path):
                 try:
                     getattr(self, attr)
                 except Exception as e:
-                    return False, (attr, e)
-        return True, (None, None)
+                    errors.append((attr, e))
+                    if lazy_mode:
+                        return errors
+        return errors
