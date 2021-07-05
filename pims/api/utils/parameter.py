@@ -12,6 +12,7 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 from fastapi.params import Path as PathParam, Depends
+from pathvalidate import sanitize_filename as _sanitize_filename
 
 from pims.config import get_settings, Settings
 
@@ -83,3 +84,10 @@ def imagepath_parameter(
         from pims.api.exceptions import NoAppropriateRepresentationProblem
         raise NoAppropriateRepresentationProblem(path)
     return path
+
+
+def sanitize_filename(filename: str, replacement="-"):
+    sanitized = _sanitize_filename(filename, replacement_text=replacement)
+    bad_chars = [" ", "(", ")", "+", "*", "/", "@", "'", '"',
+                 '$', '€', '£', '°', '`', '[', ']', '#', '?']
+    return "".join(c if c not in bad_chars else replacement for c in sanitized)

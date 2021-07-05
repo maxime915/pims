@@ -94,6 +94,8 @@ packaging==20.9
     # via pint
 palettable==3.3.0
     # via pims (setup.py)
+pathvalidate==2.4.1
+    # via pims (setup.py)
 pillow==8.2.0
     # via
     #   cytomine-python-client
