@@ -77,6 +77,16 @@ class CytomineListener(ImportListener):
         return next((uf for uf in self.path_uf_mapping.values() if uf.id == id),
                     UploadedFile().fetch(id))
 
+    def get_uf(self, path):
+        uf = self.path_uf_mapping.get(str(path))
+        if not uf:
+            path = path.resolve()
+            uf = self.path_uf_mapping.get(str(path))
+            if not uf:
+                raise KeyError(f"No UploadedFile found for {path}")
+            self.path_uf_mapping[str(path)] = uf
+        return uf
+
     def propagate_error(self, uf):
         # Shouldn't be a core responsibility ?
         if uf.parent:
@@ -86,7 +96,7 @@ class CytomineListener(ImportListener):
             self.propagate_error(parent)
 
     def start_import(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.EXTRACTING_DATA
         uf.update()
 
@@ -97,31 +107,31 @@ class CytomineListener(ImportListener):
         self.path_uf_mapping[str(new_path)] = uf
 
     def file_not_moved(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.ERROR_EXTRACTION
         uf.update()
         self.propagate_error(uf)
 
     def file_not_found(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.ERROR_EXTRACTION
         uf.update()
         self.propagate_error(uf)
 
     def start_format_detection(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.DETECTING_FORMAT
         uf.update()
         self.propagate_error(uf)
 
     def no_matching_format(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.ERROR_FORMAT
         uf.update()
         self.propagate_error(uf)
 
     def matching_format_found(self, path, format, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.contentType = format.get_identifier()  # TODO: not the content type
         uf.update()
 
@@ -142,13 +152,13 @@ class CytomineListener(ImportListener):
         self.path_uf_mapping[str(path)] = uf
 
     def conversion_success(self, path, image, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.size = path.size
         uf.status = UploadedFile.CONVERTED
         uf.update()
 
     def generic_file_error(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         if uf.status % 2 == 0:
             # Only update error status if the status is not yet an error (probably more detailed)
             uf.status = UploadedFile.ERROR_DEPLOYMENT
@@ -156,7 +166,7 @@ class CytomineListener(ImportListener):
         self.propagate_error(uf)
 
     def integrity_error(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.ERROR_EXTRACTION
         uf.update()
         self.propagate_error(uf)
@@ -165,7 +175,7 @@ class CytomineListener(ImportListener):
         super().integrity_success(path, *args, **kwargs)
 
     def import_success(self, path, image, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
 
         ai = AbstractImage()
         ai.uploadedFile = uf.id
@@ -211,7 +221,7 @@ class CytomineListener(ImportListener):
         uf.update()
 
     def conversion_error(self, path, *args, **kwargs):
-        uf = self.path_uf_mapping[str(path)]
+        uf = self.get_uf(path)
         uf.status = UploadedFile.ERROR_CONVERSION
         uf.update()
         self.propagate_error(uf)

@@ -168,7 +168,7 @@ class FileImporter:
             ok, error = self.original.check_integrity(metadata=True)
             if not ok:
                 attr, e = error
-                self.log('integrity_error', self.original, attribute=attr, exception=e)
+                self.log('integrity_error', self.original_path, attribute=attr, exception=e)
                 raise ImageParsingProblem(self.original)
 
             if format.is_spatial():
@@ -224,7 +224,7 @@ class FileImporter:
         ok, error = self.spatial.check_integrity(metadata=True)  # TODO: check also image output
         if not ok:
             attr, e = error
-            self.log('integrity_error', self.spatial, attribute=attr, exception=e)
+            self.log('integrity_error', self.spatial_path, attribute=attr, exception=e)
             raise ImageParsingProblem(self.spatial)
 
         return self.spatial
