@@ -81,7 +81,7 @@ class SVSParser(TifffileParser):
                 return datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
             else:
                 return None
-        except ValueError:
+        except (ValueError, TypeError):
             return None
 
     def parse_known_metadata(self):

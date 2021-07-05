@@ -26,13 +26,17 @@ class OpenslideVipsParser(VipsParser):
         image = cached_vips_openslide_file(self.format)
 
         imd = super(OpenslideVipsParser, self).parse_known_metadata()
-        imd.physical_size_x = parse_float(get_vips_field(image, 'openslide.mpp-x')) * UNIT_REGISTRY("micrometers")
-        imd.physical_size_y = parse_float(get_vips_field(image, 'openslide.mpp-y')) * UNIT_REGISTRY("micrometers")
+        mppx = parse_float(get_vips_field(image, 'openslide.mpp-x'))
+        if mppx is not None:
+            imd.physical_size_x = mppx * UNIT_REGISTRY("micrometers")
+        mppy = parse_float(get_vips_field(image, 'openslide.mpp-y'))
+        if mppy:
+            imd.physical_size_y = mppy * UNIT_REGISTRY("micrometers")
 
         imd.objective.nominal_magnification = parse_float(get_vips_field(image, 'openslide.objective-power'))
 
         for associated in ('macro', 'thumbnail', 'label'):
-            if associated in get_vips_field(image, 'slide-associated-images'):
+            if associated in get_vips_field(image, 'slide-associated-images', []):
                 head = VIPSImage.openslideload(str(self.format.path), associated=associated)
                 imd_associated = getattr(imd, 'associated_{}'.format(associated[:5]))
                 imd_associated.width = head.width

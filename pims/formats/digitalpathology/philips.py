@@ -48,7 +48,7 @@ class PhilipsParser(OpenslideVipsParser):
         # Have seen: 20181019105847.000000
         try:
             return datetime.strptime(date, "%Y%m%d%H%M%S.%f")
-        except ValueError:
+        except (ValueError, TypeError):
             return None
 
 
