@@ -1,10 +1,14 @@
 from pims import UNIT_REGISTRY
-from pims.formats.utils.engines.vips import VipsParser, VipsReader, cached_vips_file, get_vips_field
+from pims.formats.utils.engines.vips import VipsParser, VipsReader, get_vips_field
 
 from pyvips import Image as VIPSImage
 
 from pims.formats.utils.metadata import parse_float, parse_int
 from pims.formats.utils.pyramid import Pyramid
+
+
+def cached_vips_openslide_file(format):
+    return format.get_cached('_vipsos', VIPSImage.openslideload, str(format.path))
 
 
 class OpenslideVipsParser(VipsParser):
@@ -19,7 +23,7 @@ class OpenslideVipsParser(VipsParser):
         return imd
 
     def parse_known_metadata(self):
-        image = cached_vips_file(self.format)
+        image = cached_vips_openslide_file(self.format)
 
         imd = super(OpenslideVipsParser, self).parse_known_metadata()
         imd.physical_size_x = parse_float(get_vips_field(image, 'openslide.mpp-x')) * UNIT_REGISTRY("micrometers")
@@ -37,7 +41,7 @@ class OpenslideVipsParser(VipsParser):
         return imd
 
     def parse_raw_metadata(self):
-        image = cached_vips_file(self.format)
+        image = cached_vips_openslide_file(self.format)
 
         store = super().parse_raw_metadata()
         for key in image.get_fields():
@@ -46,7 +50,7 @@ class OpenslideVipsParser(VipsParser):
         return store
 
     def parse_pyramid(self):
-        image = cached_vips_file(self.format)
+        image = cached_vips_openslide_file(self.format)
 
         pyramid = Pyramid()
         n_levels = parse_int(get_vips_field(image, 'openslide.level-count'))
