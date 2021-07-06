@@ -63,7 +63,7 @@ class PyramidTier:
 
     @property
     def max_ty(self):
-        return ceil(self.height / self.tile_width)
+        return ceil(self.height / self.tile_height)
 
     @property
     def max_ti(self):
