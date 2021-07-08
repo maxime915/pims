@@ -169,7 +169,7 @@ class ProcessedView(MultidimView):
         if self.filter_processing:
             filter_params = dict()
             if self.filter_processing_histogram:
-                filter_params['histogram'] = self.process_histogram()
+                filter_params['histogram'] = self.process_histogram().squeeze()
 
             if self.filter_colorspace_processing:
                 img = ColorspaceImgOp(self.filter_colorspace)(img)
@@ -183,6 +183,9 @@ class ProcessedView(MultidimView):
     
     def process_histogram(self):
         hist = self.in_image.histogram.channel_histogram(np.s_[:])
+        if len(hist.shape) == 1:
+            hist = hist.reshape((1, -1))
+
         # TODO: filters are computed on best_effort bitdepth while it should do on image bitdepth
         hist = RescaleHistOp(self.best_effort_bitdepth)(hist)
 

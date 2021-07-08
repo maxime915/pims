@@ -289,7 +289,7 @@ class RescaleHistOp(ImageOp):
         self.bitdepth = bitdepth
 
     def _numpy_impl(self, hist):
-        return hist.reshape((2**self.bitdepth, -1)).sum(axis=1)
+        return hist.reshape((hist.shape[0], 2**self.bitdepth, -1)).sum(axis=2)
 
 
 class ColorspaceImgOp(ImageOp):
