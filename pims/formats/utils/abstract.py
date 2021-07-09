@@ -281,6 +281,10 @@ class AbstractFormat(ABC, CachedData):
     def from_proxy(cls, cached_path):
         return cls(path=cached_path.path, existing_cache=cached_path.cache)
 
+    @classmethod
+    def from_path(cls, path):
+        return cls(path=path)
+
     @property
     def enabled(self):
         return self._enabled
@@ -330,3 +334,7 @@ class AbstractFormat(ABC, CachedData):
     @cached_property
     def histogram(self):
         return self.histogram_reader
+
+    @cached_property
+    def main_path(self):
+        return self.path

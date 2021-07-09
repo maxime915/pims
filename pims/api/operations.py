@@ -30,7 +30,7 @@ from pims.api.utils.response import serialize_cytomine_model
 from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.importer.importer import FileImporter
-from pims.importer.logger import CytomineListener, StdoutListener
+from pims.importer.listeners import CytomineListener, StdoutListener
 
 router = APIRouter()
 

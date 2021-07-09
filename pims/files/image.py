@@ -26,6 +26,9 @@ class Image(Path):
         if _format is None:
             raise NoMatchingFormatProblem(self)
         else:
+            if _format.path.absolute() != self.absolute():
+                # Paths mismatch: reload format
+                _format = _format.from_path(self)
             self._format = _format
 
     @property
