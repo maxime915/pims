@@ -169,7 +169,7 @@ class OmeTiffParser(TifffileParser):
 
         for i in range(omexml.image_count):
             base = omexml.image(i)
-            name = base.name.lower()
+            name = base.name.lower() if base.name else None
             if name == "thumbnail":
                 associated = imd.associated_thumb
             elif name == "label":

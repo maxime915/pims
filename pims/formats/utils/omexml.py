@@ -278,7 +278,8 @@ class OMEXML(object):
         for i in range(self.image_count):
             image = self.image(i)
             if (case_sensitive and image.name == name) or \
-                    (not case_sensitive and image.name.lower() == name.lower()):
+                    (not case_sensitive and image.name is not None and
+                     image.name.lower() == name.lower()):
                 return image
 
     @property
@@ -287,7 +288,8 @@ class OMEXML(object):
             return self._main_image
         for i in range(self.image_count):
             image = self.image(i)
-            if image.name.lower() in ['label', 'macro', 'thumbnail']:
+            if image.name and \
+                    image.name.lower() in ['label', 'macro', 'thumbnail']:
                 continue
             else:
                 self._main_image = image
