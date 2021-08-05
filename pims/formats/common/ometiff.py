@@ -126,6 +126,8 @@ class OmeTiffParser(TifffileParser):
 
         if imd.n_channels == 3:
             default_names = ['R', 'G', 'B']
+        elif imd.n_channels == 2:
+            default_names = ['R', 'G']
         elif imd.n_channels == 1:
             default_names = ['L']
         else:
