@@ -20,6 +20,8 @@ from typing import ValuesView, AbstractSet, Tuple
 
 from pydantic.color import Color
 
+from pims.formats.utils.dict_utils import flatten_dict
+
 
 def parse_json(value, raise_exc=False):
     try:
@@ -249,14 +251,7 @@ class MetadataStore:
 
     @staticmethod
     def _flatten(d, parent_key='', sep='.'):
-        items = []
-        for k, v in d.items():
-            new_key = parent_key + sep + k if parent_key else k
-            if isinstance(v, collections.MutableMapping):
-                items.extend(MetadataStore._flatten(v, new_key, sep=sep).items())
-            else:
-                items.append((new_key, v))
-        return dict(items)
+        return flatten_dict(d, parent_key, sep)
 
     def flatten(self):
         return self._flatten(self._namedstores)
