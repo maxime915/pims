@@ -13,7 +13,7 @@
 # * limitations under the License.
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, conint
@@ -246,7 +246,7 @@ class ImageInfo(BaseModel):
             "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
             "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
             "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),
-            "frame_rate": image.frame_rate,
+            "frame_rate": convert_quantity(image.frame_rate, "Hz"),
             "acquired_at": image.acquisition_datetime,
             "description": image.description,
             "pixel_type": PixelType[str(image.pixel_type)],
@@ -382,8 +382,8 @@ class InstrumentInfo(BaseModel):
 
 class ChannelsInfoItem(BaseModel):
     index: conint(ge=0) = Field(..., description='Channel index.')
-    suggested_name: str = Field(
-        ...,
+    suggested_name: Optional[str] = Field(
+        None,
         description='Suggested name for the channel inferred from other properties.',
     )
     emission_wavelength: Optional[float] = Field(
@@ -502,7 +502,7 @@ class Metadata(BaseModel):
     """
 
     key: str = Field(..., description='The metadata key')
-    value: str = Field(..., description='The metadata value')
+    value: Any = Field(..., description='The metadata value')
     type: MetadataTypeEnum = Field('STRING', description='The metadata value type')
     namespace: Optional[str] = Field(
         None, description='The metadata namespace to avoid key name conflicts'
