@@ -51,4 +51,53 @@ def int2rgb(color_int):
     r = color_int >> 16 & 255
     g = color_int >> 8 & 255
     b = color_int >> 0 & 255
-    return np.squeeze(np.dstack((r, g, b)))
+    rgb = np.squeeze(np.dstack((r, g, b)))
+    if type(rgb) is int:
+        return rgb.tolist()
+    else:
+        return rgb
+
+
+def rgba2int(rgba):
+    """
+    Convert a quadruplet 8-bit RGBA to a 32-bit integer.
+
+    Parameters
+    ----------
+    rgba : IntegerRGB
+        RGBA quadruplet with values in range 0-255.
+
+    Returns
+    -------
+    color_int : int
+        Color representation as a 32-bit integer.
+    """
+    r, g, b, a = rgba
+    return (r & 255) << 24 | (g & 255) << 16 | (b & 255) << 8 | (a & 255) << 0
+
+
+def int2rgba(color_int):
+    """
+    Convert a 32-bit int color to a 8-bit RGBA quadruplet.
+
+    Parameters
+    ----------
+    color_int : int, array-like
+        Integer value(s) to convert
+
+    Returns
+    -------
+    rgb : array-like, list
+        Color representation as a RGBA quadruplet.
+        Output shape is `color_int.shape + (4,)`.
+    """
+    r = color_int >> 24 & 255
+    g = color_int >> 16 & 255
+    b = color_int >> 8 & 255
+    a = (color_int >> 0 & 255) / 255
+
+    rgba = np.squeeze(np.dstack((r, g, b, a)))
+    if type(color_int) is int:
+        return rgba.tolist()
+    else:
+        return rgba
