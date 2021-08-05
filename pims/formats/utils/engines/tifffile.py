@@ -155,7 +155,7 @@ class TifffileParser(AbstractParser):
 
         Parameters
         ----------
-        physical_size: tuple, int, TiffTag
+        physical_size: tuple, int, float, TiffTag
         unit: tifffile.RESUNIT
 
         Returns
@@ -172,6 +172,8 @@ class TifffileParser(AbstractParser):
             rational = (physical_size, 1)
         else:
             rational = physical_size
+        if rational[0] == 0:
+            return None
         return rational[1] / rational[0] * UNIT_REGISTRY(unit.name.lower())
 
     def parse_raw_metadata(self):
