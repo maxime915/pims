@@ -44,7 +44,7 @@ cytomine-python-client==2.8.2
     # via pims (setup.py)
 decorator==4.4.2
     # via networkx
-fastapi==0.65.1
+fastapi==0.65.2
     # via pims (setup.py)
 fasteners==0.16.3
     # via zarr
