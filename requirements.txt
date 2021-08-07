@@ -20,7 +20,7 @@ certifi==2021.5.30
     # via
     #   rasterio
     #   requests
-cffi==1.14.5
+cffi==1.14.6
     # via pyvips
 chardet==4.0.0
     # via requests
@@ -44,7 +44,7 @@ cytomine-python-client==2.8.2
     # via pims (setup.py)
 decorator==4.4.2
     # via networkx
-fastapi==0.65.1
+fastapi==0.65.2
     # via pims (setup.py)
 fasteners==0.16.3
     # via zarr
@@ -105,6 +105,8 @@ pillow==8.2.0
     #   scikit-image
 pint==0.17
     # via pims (setup.py)
+pkgconfig==1.5.5
+    # via pyvips
 pycparser==2.20
     # via cffi
 pydantic==1.8.2
@@ -126,7 +128,7 @@ python-dotenv==0.17.1
     #   uvicorn
 python-multipart==0.0.5
     # via pims (setup.py)
-pyvips==2.1.14
+pyvips==2.1.15
     # via pims (setup.py)
 pywavelets==1.1.1
     # via scikit-image

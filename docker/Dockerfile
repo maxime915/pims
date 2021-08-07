@@ -5,6 +5,7 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install
         automake \
         build-essential \
         ca-certificates \
+        cmake \
         gcc \
         net-tools \
         wget \
@@ -25,13 +26,25 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install
         `# Openslide dependencies` \
         libcairo2-dev \
         libgdk-pixbuf2.0-dev \
-        libopenjp2-7-dev \
         libxml2-dev \
         libsqlite3-dev \
         libtool \
         `# Other tools` \
         libimage-exiftool-perl && \
     rm -rf /var/lib/apt/lists/*
+
+# openjpeg 2.4 is required by vips (J2000 support)
+ARG OPENJPEG_VERSION=2.4.0
+RUN cd /tmp && \
+    wget https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}/openjpeg-${OPENJPEG_VERSION}.tar.gz && \
+    tar -zxvf ./openjpeg-${OPENJPEG_VERSION}.tar.gz && \
+    cd ./openjpeg-${OPENJPEG_VERSION} && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_STATIC_LIBS=ON .. && \
+    make && \
+    make install && \
+    make clean && \
+    ldconfig
 
 # openslide
 ARG OPENSLIDE_VERSION=3.4.1
@@ -46,7 +59,7 @@ RUN cd /tmp && \
     ldconfig
 
 # vips
-ARG VIPS_VERSION=8.10.6
+ARG VIPS_VERSION=8.11.2
 RUN cd /tmp && \
     wget https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz && \
     tar -zxvf ./vips-${VIPS_VERSION}.tar.gz && \
