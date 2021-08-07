@@ -40,6 +40,7 @@ REQUIRED = [
     'rich>=10.2.2',
     'python-dotenv>=0.17.1',
     'python-multipart>=0.0.5',
+    'pathvalidate>=2.4.1',
 
     'Pint>=0.17',
     'palettable>=3.3.0',

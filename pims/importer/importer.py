@@ -18,10 +18,13 @@ from datetime import datetime
 from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem, \
     BadRequestException
 from pims.api.utils.models import HistogramType
-from pims.files.file import Path, HISTOGRAM_STEM
+from pims.files.archive import Archive, ArchiveError
+from pims.files.file import Path, HISTOGRAM_STEM, UPLOAD_DIR_PREFIX, PROCESSED_DIR, ORIGINAL_STEM, EXTRACTED_DIR, \
+    SPATIAL_STEM
 from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
+from pims.importer.listeners import ImportEventType
 
 log = logging.getLogger("pims.app")
 
@@ -56,7 +59,8 @@ class FileImporter:
     pending_file : Path
         A file to import from PENDING_PATH directory
     pending_name : str (optional)
-        A name to use for the pending file. If not provided, the current pending file name is used.
+        A name to use for the pending file.
+        If not provided, the current pending file name is used.
     loggers : list of ImportLogger (optional)
         A list of import loggers
 
@@ -76,8 +80,9 @@ class FileImporter:
         self.histogram = None
 
         self.processed_dir = None
+        self.extracted_dir = None
 
-    def log(self, method, *args, **kwargs):
+    def notify(self, method, *args, **kwargs):
         for logger in self.loggers:
             try:
                 getattr(logger, method)(*args, **kwargs)
@@ -105,71 +110,107 @@ class FileImporter:
             If pending file is not found.
         """
         try:
-            self.log('start_import', self.pending_file)
+            self.notify(ImportEventType.START_DATA_EXTRACTION, self.pending_file)
 
             # Check the file is in pending area.
-            if self.pending_file.parent != PENDING_PATH or not self.pending_file.exists():
-                self.log('file_not_found', self.pending_file)
+            if self.pending_file.parent != PENDING_PATH or \
+                    not self.pending_file.exists():
+                self.notify(ImportEventType.FILE_NOT_FOUND, self.pending_file)
                 raise FilepathNotFoundProblem(self.pending_file)
 
             # Move the file to PIMS root path
-            try:
-                self.upload_dir = FILE_ROOT_PATH / Path("{}{}".format("upload", str(unique_name_generator())))
-                self.upload_dir.mkdir()  # TODO: mode
+            upload_dir_name = Path(f"{UPLOAD_DIR_PREFIX}"
+                                   f"{str(unique_name_generator())}")
+            self.upload_dir = FILE_ROOT_PATH / upload_dir_name
+            self.mkdir(self.upload_dir)
 
-                name = self.pending_name if self.pending_name else self.pending_file.name
-                self.upload_path = self.upload_dir / name
+            if self.pending_name:
+                name = self.pending_name
+            else:
+                name = self.pending_file.name
+            self.upload_path = self.upload_dir / name
 
-                if prefer_copy:
-                    shutil.copy(self.pending_file, self.upload_path)
-                else:
-                    shutil.move(self.pending_file, self.upload_path)
-                self.log('file_moved', self.pending_file, self.upload_path)
-            except (FileNotFoundError, FileExistsError, OSError) as e:
-                self.log('file_not_moved', self.pending_file, exception=e)
-                raise FileErrorProblem(self.pending_file)
-
-            assert self.upload_path.has_upload_role()
+            self.move(self.pending_file, self.upload_path, prefer_copy)
+            self.notify(ImportEventType.MOVED_PENDING_FILE,
+                        self.pending_file, self.upload_path)
+            self.notify(ImportEventType.END_DATA_EXTRACTION, self.upload_path)
 
             # Identify format
-            self.log('start_format_detection', self.upload_path)
+            self.notify(ImportEventType.START_FORMAT_DETECTION, self.upload_path)
+
             format_factory = FormatFactory()
             format = format_factory.match(self.upload_path)
+            archive = None
             if format is None:
-                self.log('no_matching_format', self.upload_path)
-                raise NoMatchingFormatProblem(self.upload_path)
-            self.log('matching_format_found', self.upload_path, format)
+                archive = Archive.from_path(self.upload_path)
+                if archive:
+                    format = archive.format
 
-            try:
-                format.main_imd
-            except MetadataParsingProblem as e:
-                self.log('integrity_error', self.upload_path, exception=e)
-                raise e
+            if format is None:
+                self.notify(ImportEventType.ERROR_NO_FORMAT, self.upload_path)
+                raise NoMatchingFormatProblem(self.upload_path)
+            self.notify(ImportEventType.END_FORMAT_DETECTION,
+                        self.upload_path, format)
 
             # Create processed dir
-            self.processed_dir = self.upload_dir / Path('processed')
-            try:
-                self.processed_dir.mkdir()  # TODO: mode
-            except (FileNotFoundError, FileExistsError, OSError) as e:
-                self.log('generic_file_error', self.processed_dir, exception=e)
-                raise FileErrorProblem(self.processed_dir)
+            self.processed_dir = self.upload_dir / Path(PROCESSED_DIR)
+            self.mkdir(self.processed_dir)
 
             # Create original role
-            self.original_path = self.processed_dir / Path("{}.{}".format("original", format.get_identifier()))
-            try:
-                self.original_path.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
-            except (FileNotFoundError, FileExistsError, OSError) as e:
-                self.log('generic_file_error', self.original_path, exception=e)
-                raise FileErrorProblem(self.original_path)
-            assert self.original_path.has_original_role()
+            original_filename = Path(
+                f"{ORIGINAL_STEM}.{format.get_identifier()}"
+            )
+            self.original_path = self.processed_dir / original_filename
+            if archive:
+                try:
+                    self.notify(
+                        ImportEventType.START_UNPACKING, self.upload_path
+                    )
+                    archive.extract(self.original_path)
+                except ArchiveError as e:
+                    self.notify(
+                        ImportEventType.ERROR_UNPACKING, self.upload_path,
+                        exception=e
+                    )
+                    raise FileErrorProblem(self.upload_path)
+                
+                # Now the archive is extracted, check if it's a multi-file format
+                format = format_factory.match(self.original_path)
+                if format:
+                    # It is a multi-file format
+                    original_filename = Path(
+                        f"{ORIGINAL_STEM}.{format.get_identifier()}"
+                    )
+                    new_original_path = self.processed_dir / original_filename
+                    self.move(self.original_path, new_original_path)
+                    self.original_path = new_original_path
+
+                    self.notify(
+                        ImportEventType.END_UNPACKING, self.upload_path,
+                        self.original_path, format=format, is_collection=False
+                    )
+                else:
+                    # TODO: add bg tasks for every file
+                    self.notify(
+                        ImportEventType.END_UNPACKING, self.upload_path,
+                        self.original_path, is_collection=True
+                    )
+                    raise NotImplementedError
+            else:
+                self.mksymlink(self.original_path, self.upload_path)
+                assert self.original_path.has_original_role()
 
             # Check original image integrity
+            self.notify(ImportEventType.START_INTEGRITY_CHECK, self.original_path)
             self.original = Image(self.original_path, format=format)
             errors = self.original.check_integrity(metadata=True)
             if len(errors) > 0:
-                attr, e = errors[0]
-                self.log('integrity_error', self.original_path, attribute=attr, exception=e)
+                self.notify(
+                    ImportEventType.ERROR_INTEGRITY_CHECK, self.original_path,
+                    integrity_errors=errors
+                )
                 raise ImageParsingProblem(self.original)
+            self.notify(ImportEventType.END_INTEGRITY_CHECK, self.original)
 
             if format.is_spatial():
                 self.deploy_spatial(format)
@@ -179,61 +220,114 @@ class FileImporter:
             self.deploy_histogram(self.original.get_spatial())
 
             # Finished
-            self.log('import_success', self.upload_path, self.original)
+            self.notify(ImportEventType.END_SUCCESSFUL_IMPORT,
+                        self.upload_path, self.original)
             return [self.upload_path]
         except Exception as e:
-            self.log('generic_file_error', self.upload_path, exeception=e)
+            self.notify(ImportEventType.FILE_ERROR,
+                        self.upload_path, exeception=e)
             raise e
 
     def deploy_spatial(self, format):
-        stem = 'visualisation'
+        self.notify(ImportEventType.START_SPATIAL_DEPLOY, self.original_path)
         if format.need_conversion:
+            # Do the spatial conversion
             try:
                 ext = format.conversion_format().get_identifier()
-                self.spatial_path = self.processed_dir / Path("{}.{}".format(stem, ext))
-                self.log('start_conversion', self.spatial_path, self.upload_path)
+                spatial_filename = Path(f"{SPATIAL_STEM}.{ext}")
+                self.spatial_path = self.processed_dir / spatial_filename
+                self.notify(ImportEventType.START_CONVERSION,
+                            self.spatial_path, self.upload_path)
 
                 r = format.convert(self.spatial_path)
                 if not r or not self.spatial_path.exists():
-                    self.log('conversion_error', self.spatial_path)
+                    self.notify(ImportEventType.ERROR_CONVERSION,
+                                self.spatial_path)
                     raise FormatConversionProblem()
             except Exception as e:
-                self.log('conversion_error', self.spatial_path, exception=e)
+                self.notify(ImportEventType.ERROR_CONVERSION,
+                            self.spatial_path, exception=e)
                 raise FormatConversionProblem()
+            
+            self.notify(ImportEventType.END_CONVERSION, self.spatial_path)
 
+            # Check format of converted file
+            self.notify(ImportEventType.START_FORMAT_DETECTION, self.spatial_path)
             spatial_format = SpatialReadableFormatFactory().match(self.spatial_path)
             if not spatial_format:
-                self.log('no_matching_format', self.spatial_path)
+                self.notify(ImportEventType.ERROR_NO_FORMAT, self.spatial_path)
                 raise NoMatchingFormatProblem(self.spatial_path)
-            self.log('matching_format_found', self.spatial_path, spatial_format)
+            self.notify(ImportEventType.END_FORMAT_DETECTION, 
+                        self.spatial_path, spatial_format)
 
             self.spatial = Image(self.spatial_path, format=spatial_format)
-            self.log('conversion_success', self.spatial_path, self.spatial)
+
+            # Check spatial image integrity
+            self.notify(ImportEventType.START_INTEGRITY_CHECK, self.spatial_path)
+            errors = self.spatial.check_integrity(metadata=True)
+            if len(errors) > 0:
+                self.notify(
+                    ImportEventType.ERROR_INTEGRITY_CHECK, self.spatial_path,
+                    integrity_errors=errors
+                )
+                raise ImageParsingProblem(self.spatial)
+            self.notify(ImportEventType.END_INTEGRITY_CHECK, self.spatial)
+            
         else:
             # Create spatial role
-            self.spatial_path = self.processed_dir / Path("{}.{}".format(stem, format.get_identifier()))
-            try:
-                self.spatial_path.symlink_to(self.upload_path, target_is_directory=self.upload_path.is_dir())
-                self.spatial = Image(self.spatial_path, format=format)
-            except (FileNotFoundError, FileExistsError) as e:
-                self.log('generic_file_error', path=self.spatial_path, exception=e)
-                raise FileErrorProblem(self.spatial_path)
+            spatial_filename = Path(f"{SPATIAL_STEM}.{format.get_identifier()}")
+            self.spatial_path = self.processed_dir / spatial_filename
+            self.mksymlink(self.spatial_path, self.original_path)
+            self.spatial = Image(self.spatial_path, format=format)
 
         assert self.spatial.has_spatial_role()
-
-        errors = self.spatial.check_integrity(metadata=True)  # TODO: check also image output
-        if len(errors) > 0:
-            attr, e = errors[0]
-            self.log('integrity_error', self.spatial_path, attribute=attr, exception=e)
-            raise ImageParsingProblem(self.spatial)
-
+        self.notify(ImportEventType.END_SPATIAL_DEPLOY, self.spatial)
         return self.spatial
 
     def deploy_histogram(self, image):
+        self.histogram_path = self.processed_dir / Path(HISTOGRAM_STEM)
+        self.notify(ImportEventType.START_HISTOGRAM_DEPLOY,
+                    self.histogram_path, image)
         try:
-            self.histogram_path = self.processed_dir / Path(HISTOGRAM_STEM)
-            self.log('start_build_histogram', self.histogram_path, self.upload_path)
-            self.histogram = build_histogram_file(image, self.histogram_path, HistogramType.FAST)
+            self.histogram = build_histogram_file(
+                image, self.histogram_path, HistogramType.FAST
+            )
         except (FileNotFoundError, FileExistsError) as e:
-            self.log('histogram_file_error', path=self.histogram_path, exception=e)
+            self.notify(
+                ImportEventType.ERROR_HISTOGRAM, self.histogram_path, image,
+                exception=e
+            )
             raise FileErrorProblem(self.histogram_path)
+
+        assert self.histogram.has_histogram_role()
+        self.notify(
+            ImportEventType.END_HISTOGRAM_DEPLOY, self.histogram_path, image
+        )
+        return self.histogram
+
+    def mkdir(self, directory: Path):
+        try:
+            directory.mkdir()  # TODO: mode
+        except (FileNotFoundError, FileExistsError, OSError) as e:
+            self.notify(ImportEventType.FILE_ERROR, directory, exception=e)
+            raise FileErrorProblem(directory)
+
+    def move(self, origin: Path, dest: Path, prefer_copy: bool = False):
+        try:
+            if prefer_copy:
+                shutil.copy(origin, dest)
+            else:
+                shutil.move(origin, dest)
+        except (FileNotFoundError, FileExistsError, OSError) as e:
+            self.notify(ImportEventType.FILE_NOT_MOVED, origin, exception=e)
+            raise FileErrorProblem(origin)
+
+    def mksymlink(self, path: Path, target: Path):
+        try:
+            path.symlink_to(
+                target,
+                target_is_directory=target.is_dir()
+            )
+        except (FileNotFoundError, FileExistsError, OSError) as e:
+            self.notify(ImportEventType.FILE_ERROR, path, exception=e)
+            raise FileErrorProblem(path)

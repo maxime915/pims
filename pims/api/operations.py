@@ -25,11 +25,12 @@ from pims.api.exceptions import CytomineProblem, AuthenticationException, BadReq
 from pims.api.utils.cytomine_auth import parse_authorization_header, parse_request_token, sign_token, \
     get_this_image_server
 from pims.api.utils.image_parameter import ensure_list
+from pims.api.utils.parameter import sanitize_filename
 from pims.api.utils.response import serialize_cytomine_model
 from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.importer.importer import FileImporter
-from pims.importer.logger import CytomineListener, StdoutListener
+from pims.importer.listeners import CytomineListener, StdoutListener
 
 router = APIRouter()
 
@@ -104,6 +105,7 @@ async def legacy_import(
 
         # TODO: keys/values
 
+        upload_name = sanitize_filename(upload_name)
         root = UploadedFile(upload_name, upload_path, upload_size, "", upload_content_type,
                             id_projects, id_storage, user.id, this.id, UploadedFile.UPLOADED).save()
 
