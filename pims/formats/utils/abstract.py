@@ -22,6 +22,7 @@ from pims.api.exceptions import BadRequestException
 from pims.api.utils.models import HistogramType
 from pims.formats.utils.histogram import HistogramReaderInterface
 from pims.formats.utils.metadata import MetadataStore
+from pims.formats.utils.planes import PlanesInfo
 from pims.formats.utils.pyramid import Pyramid
 
 
@@ -98,6 +99,11 @@ class AbstractParser(ABC):
         p = Pyramid()
         p.insert_tier(imd.width, imd.height, (imd.width, imd.height))
         return p
+
+    def parse_planes(self):
+        imd = self.format.main_imd
+        pi = PlanesInfo(imd.n_channels, imd.depth, imd.duration)
+        return pi
 
 
 class AbstractReader(ABC):
@@ -330,6 +336,10 @@ class AbstractFormat(ABC, CachedData):
     @cached_property
     def pyramid(self):
         return self.parser.parse_pyramid()
+
+    @cached_property
+    def planes_info(self):
+        return self.parser.parse_planes()
 
     @cached_property
     def histogram(self):

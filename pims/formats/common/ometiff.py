@@ -17,6 +17,7 @@ from functools import cached_property
 import numpy as np
 from pydantic.color import Color
 from tifffile import xml2dict
+from pyvips import Image as VIPSImage
 
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
@@ -25,6 +26,7 @@ from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser,
 from pims.formats.utils.engines.vips import VipsReader, VipsHistogramReader
 from pims.formats.utils.metadata import ImageMetadata, ImageChannel
 from pims.formats.utils.omexml import OMEXML
+from pims.formats.utils.planes import PlanesInfo
 from pims.formats.utils.pyramid import Pyramid
 from pims.formats.utils.vips import dtype_to_bits
 from pims.processing.color_utils import int2rgba
@@ -219,15 +221,60 @@ class OmeTiffParser(TifffileParser):
         base_series = cached_tifffile_baseseries(self.format)
 
         pyramid = Pyramid()
-        for level in base_series.levels:
+        for i, level in enumerate(base_series.levels):
             page = level[0]
             tilewidth = page.tilewidth if page.tilewidth != 0 else page.imagewidth
             tilelength = page.tilelength if page.tilelength != 0 else page.imagelength
             pyramid.insert_tier(page.imagewidth, page.imagelength,
                                 (tilewidth, tilelength),
-                                page_index=page.index)
+                                subifd=i)
 
         return pyramid
+
+    def parse_planes(self):
+        omexml = cached_omexml(self.format)
+        base = omexml.main_image
+
+        imd = self.format.main_imd
+        pi = PlanesInfo(
+            imd.n_intrinsic_channels, imd.depth, imd.duration,
+            ['page_index'], [np.int]
+        )
+
+        for i in range(base.pixels.tiff_data_count):
+            td = base.pixels.tiff_data(i)
+            pi.set(td.first_c, td.first_z, td.first_t, page_index=td.ifd)
+
+        return pi
+
+
+class OmeTiffReader(VipsReader):
+    def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
+        # TODO: precomputed ?
+        # Thumbnail already uses shrink-on-load feature in default VipsReader
+        # (i.e it loads the right pyramid level according the requested dimensions)
+        page = self.format.planes_info.get(c, z, t, 'page_index')
+        im = self.vips_thumbnail(out_width, out_height, page=page)
+        return im.flatten() if im.hasalpha() else im
+
+    def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
+        tier = self.format.pyramid.most_appropriate_tier(region, (out_width, out_height))
+        region = region.scale_to_tier(tier)
+
+        page = self.format.planes_info.get(c, z, t, 'page_index')
+        subifd = tier.data.get('subifd')
+        opts = dict(page=page)
+        if subifd > 0:
+            opts['subifd'] = subifd
+        tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
+        return tiff_page.extract_area(region.left, region.top, region.width, region.height)
+
+    def read_tile(self, tile, c=None, z=None, t=None):
+        tier = tile.tier
+        page = self.format.planes_info.get(c, z, t, 'page_index')
+        subifd = tier.data.get('subifd')
+        tiff_page = VIPSImage.tiffload(str(self.format.path), page=page, subifd=subifd)
+        return tiff_page.extract_area(tile.left, tile.top, tile.width, tile.height)
 
 
 class OmeTiffFormat(AbstractFormat):
@@ -242,7 +289,7 @@ class OmeTiffFormat(AbstractFormat):
     """
     checker_class = OmeTiffChecker
     parser_class = OmeTiffParser
-    reader_class = VipsReader  # TODO
+    reader_class = OmeTiffReader
     histogram_reader_class = VipsHistogramReader  # TODO
 
     def __init__(self, *args, **kwargs):

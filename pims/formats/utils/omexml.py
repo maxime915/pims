@@ -337,7 +337,7 @@ class OMEXML(object):
             return get_int_attr(self.node, "FirstT")
 
         @property
-        def IFD(self):
+        def ifd(self):
             """plane index within tiff file"""
             return get_int_attr(self.node, "IFD")
 
@@ -529,7 +529,11 @@ class OMEXML(object):
             plane = self.node.findall(qn(self.ns['ome'], "Plane"))[index]
             return OMEXML.Plane(plane, self.root_node)
 
-        def TiffData(self, index=0):
+        @property
+        def tiff_data_count(self):
+            return len(self.node.findall(qn(self.ns['ome'], "TiffData")))
+
+        def tiff_data(self, index=0):
             """Get the indexed TiffData from the Pixels element"""
             tiff_data = self.node.findall(qn(self.ns['ome'], "TiffData"))[index]
             return OMEXML.TiffData(tiff_data, self.root_node)
