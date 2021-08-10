@@ -18,7 +18,7 @@ from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
-    RescaleHistOp
+    RescaleHistOp, ApplyLutImgOp
 
 
 class View:
@@ -38,11 +38,17 @@ class View:
             return min(self.out_bitdepth, 16)
         return min(self.out_bitdepth, 8)
 
+    @property
+    def max_intensity(self):
+        return 2 ** self.best_effort_bitdepth - 1
+
     def process(self):
         pass
 
     def get_response_buffer(self):
-        return OutputProcessor(self.out_format, self.best_effort_bitdepth, **self.out_format_params)(self.process())
+        return OutputProcessor(
+            self.out_format, self.best_effort_bitdepth,
+            **self.out_format_params)(self.process())
 
     def http_response(self, mimetype, extra_headers=None):
         return Response(
@@ -54,7 +60,8 @@ class View:
 
 class MultidimView(View):
     def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
-                 out_format, out_width, out_height, c_reduction, z_reduction, t_reduction, **kwargs):
+                 out_format, out_width, out_height, c_reduction, z_reduction,
+                 t_reduction, **kwargs):
         super().__init__(in_image, out_format, out_width, out_height, **kwargs)
         self.in_image = in_image
         self.channels = in_channels
@@ -67,11 +74,15 @@ class MultidimView(View):
 
 
 class ProcessedView(MultidimView):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                 out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, colorspace=Colorspace.AUTO, **kwargs):
-        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                         c_reduction, z_reduction, t_reduction, out_bitdepth=out_bitdepth, **kwargs)
+    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
+                 out_format, out_width, out_height, out_bitdepth,
+                 c_reduction, z_reduction, t_reduction, gammas,
+                 filters, colormaps, min_intensities, max_intensities, log,
+                 colorspace=Colorspace.AUTO, **kwargs):
+        super().__init__(in_image, in_channels, in_z_slices, in_timepoints,
+                         out_format, out_width, out_height,
+                         c_reduction, z_reduction, t_reduction,
+                         out_bitdepth=out_bitdepth, **kwargs)
 
         self.gammas = gammas
         self.filters = filters
@@ -91,8 +102,8 @@ class ProcessedView(MultidimView):
 
     @property
     def intensity_processing(self):
-        max_intensity = 2 ** self.best_effort_bitdepth - 1
-        return any(self.min_intensities) or any(i != max_intensity for i in self.max_intensities)
+        return any(self.min_intensities) or \
+               any(i != self.max_intensity for i in self.max_intensities)
 
     @property
     def filter_processing(self):
@@ -115,8 +126,10 @@ class ProcessedView(MultidimView):
     def filter_colorspace_processing(self):
         if self.filter_required_colorspace is None:
             return False
-        return (self.filter_required_colorspace == Colorspace.GRAY and len(self.channels) > 1) or \
-               (self.filter_required_colorspace == Colorspace.COLOR and len(self.channels) == 1)
+        return (self.filter_required_colorspace == Colorspace.GRAY and
+                len(self.channels) > 1) or \
+               (self.filter_required_colorspace == Colorspace.COLOR and
+                len(self.channels) == 1)
 
     @property
     def filter_colorspace(self):
@@ -132,8 +145,10 @@ class ProcessedView(MultidimView):
     def colorspace_processing(self):
         if self.colorspace == Colorspace.AUTO:
             return False
-        return (self.colorspace == Colorspace.GRAY and len(self.channels) > 1) or \
-               (self.colorspace == Colorspace.COLOR and len(self.channels) == 1)
+        return (self.colorspace == Colorspace.GRAY and
+                len(self.channels) > 1) or \
+               (self.colorspace == Colorspace.COLOR and
+                len(self.channels) == 1)
 
     @property
     def new_colorspace(self):
@@ -147,6 +162,39 @@ class ProcessedView(MultidimView):
                or self.log_processing or self.colormap_processing \
                or self.filter_processing
 
+    def math_lut(self):
+        def dtype(bitdepth):
+            if bitdepth > 16:
+                return np.uint32
+            elif bitdepth > 8:
+                return np.uint16
+            else:
+                return np.uint8
+
+        n_channels = len(self.channels)
+        lut = np.zeros((self.in_image.max_value + 1, n_channels))
+        if self.intensity_processing:
+            for c in range(n_channels):
+                mini = self.min_intensities[c]
+                maxi = self.max_intensities[c]
+                diff = maxi - mini
+                lut[maxi:, c] = 1
+                lut[mini:maxi, c] = np.linspace(0, 1, num=diff)
+        else:
+            lut = np.linspace(
+                (0,) * n_channels, (1,) * n_channels,
+                num=self.in_image.max_value + 1
+            )
+
+        if self.gamma_processing:
+            lut = np.power(lut, self.gammas)
+
+        if self.log_processing:
+            lut = np.log1p(lut) * 1. / np.log1p(1)
+
+        lut *= self.max_intensity
+        return lut.astype(dtype(self.best_effort_bitdepth))
+
     def raw_view(self):
         pass
 
@@ -155,16 +203,7 @@ class ProcessedView(MultidimView):
         img = ResizeImgOp(self.out_width, self.out_height)(img)
 
         if self.float_processing:
-            img = CastImgOp('float64')(img)
-            img = NormalizeImgOp(self.min_intensities, self.max_intensities)(img)
-
-            if self.gamma_processing:
-                img = GammaImgOp(self.gammas)(img)
-
-            if self.log_processing:
-                img = LogImgOp(self.max_intensities)(img)
-
-            img = RescaleImgOp(self.best_effort_bitdepth)(img)
+            img = ApplyLutImgOp(self.math_lut())(img)
 
         if self.filter_processing:
             filter_params = dict()
@@ -180,7 +219,7 @@ class ProcessedView(MultidimView):
         if self.colorspace_processing:
             img = ColorspaceImgOp(self.new_colorspace)(img)
         return img
-    
+
     def process_histogram(self):
         hist = self.in_image.histogram.channel_histogram(np.s_[:])
         if len(hist.shape) == 1:
@@ -205,7 +244,7 @@ class ThumbnailResponse(ProcessedView):
         self.use_precomputed = use_precomputed
 
     def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
         return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t,
                                        precomputed=self.use_precomputed)
 
@@ -219,7 +258,7 @@ class ResizedResponse(ProcessedView):
                          min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
 
     def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
         return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False)
 
 
@@ -273,7 +312,7 @@ class WindowResponse(ProcessedView):
         return img
 
     def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
         return self.in_image.window(self.region, self.out_width, self.out_height, c=c, z=z, t=t)
 
 
@@ -289,7 +328,7 @@ class TileResponse(ProcessedView):
         self.tile_region = tile_region
 
     def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]
+        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
         return self.in_image.tile(self.tile_region, c=c, z=z, t=t)
 
 
@@ -329,7 +368,7 @@ class DrawingResponse(MaskResponse):
     def __init__(self, in_image, annotations, affine_matrix, point_style,
                  out_width, out_height, out_bitdepth, out_format, **kwargs):
         super().__init__(in_image, annotations, affine_matrix, out_format,
-                         out_width, out_height, out_bitdepth,  **kwargs)
+                         out_width, out_height, out_bitdepth, **kwargs)
 
         self.point_style = point_style
 

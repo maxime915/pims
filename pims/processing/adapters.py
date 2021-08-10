@@ -30,11 +30,11 @@ def numpy_to_vips(np_array, *args, width=None, height=None, n_channels=None, **k
         Numpy array to convert. If 1D, it is expected it contains flattened image data.
     args
     width : int (optional)
-        If `np_array` is 1D, width of the image.
+        Width of the image, must be given if `np_array` is 1D, otherwise inferred from shape.
     height : int (optional)
-        If `np_array` is 1D, height of the image.
+        Height of the image, must be given if `np_array` is 1D, otherwise inferred from shape.
     n_channels : int (optional)
-        If `np_array` is 1D, number of channels in the image.
+        n_channels of the image, must be given if `np_array` is 1D, otherwise inferred from shape.
     kwargs
 
     Returns
@@ -47,20 +47,24 @@ def numpy_to_vips(np_array, *args, width=None, height=None, n_channels=None, **k
     ValueError
         If it is impossible to convert provided array.
     """
-    vips_format = dtype_to_vips_format[str(np_array.dtype)]
-    if np_array.ndim == 1:
-        if width * height * n_channels == np_array.size:
-            return VIPSImage.new_from_memory(np_array.data, width, height, n_channels, vips_format)
-        raise ValueError("Cannot convert {} to VIPS image".format(np_array))
-    elif np_array.ndim == 2:
-        height, width = np_array.shape
-        n_channels = 1
-    elif np_array.ndim == 3:
-        height, width, n_channels = np_array.shape
-    else:
+    if np_array.ndim > 3:
         raise NotImplementedError
+    elif np_array.ndim > 1:
+        if np_array.ndim == 2:
+            height_, width_ = np_array.shape
+            n_channels_ = 1
+        else:
+            height_, width_, n_channels_ = np_array.shape
+
+        width = width if width is not None else width_
+        height = height if height is not None else height_
+        n_channels = n_channels if n_channels is not None else n_channels_
+
+    if width * height * n_channels != np_array.size:
+        raise ValueError("Cannot convert {} to VIPS image".format(np_array))
 
     flat = np_array.reshape(np_array.size)
+    vips_format = dtype_to_vips_format[str(np_array.dtype)]
     return VIPSImage.new_from_memory(flat.data, width, height, n_channels, vips_format)
 
 

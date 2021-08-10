@@ -45,7 +45,7 @@ class ImageOp:
 
     @property
     def parameters(self):
-        return {k: v for (k,v) in self.__dict__.items() if not k.startswith("_")}
+        return {k: v for (k, v) in self.__dict__.items() if not k.startswith("_")}
 
     @property
     def implementations(self):
@@ -150,7 +150,7 @@ class ResizeImgOp(ImageOp):
                 # Related to https://github.com/libvips/libvips/issues/1941 ?
                 return img.thumbnail_image(self.width, height=self.height, size=VIPSSize.FORCE, linear=True) \
                     .colourspace(img.interpretation)
-            
+
             img = img.thumbnail_image(self.width, height=self.height, size=VIPSSize.FORCE)
         return img
 
@@ -208,10 +208,22 @@ class GammaImgOp(ImageOp):
         # TODO: now first gamma is applied on all channels.
         # return img.math2_const("pow", self.exponent)
         exp = self.exponents[0]
-        return img.gamma(exponent=1/exp)
+        return img.gamma(exponent=1 / exp)
 
     def _numpy_impl(self, img):
         return np.power(img, self.exponents)
+
+
+class ApplyLutImgOp(ImageOp):
+    def __init__(self, lut):
+        super().__init__()
+        self._impl[VIPSImage] = self._vips_impl
+        self.lut = lut
+
+    def _vips_impl(self, img):
+
+        lut = imglib_adapters.get((type(self.lut), VIPSImage))(self.lut[np.newaxis, :, :])
+        return img.maplut(lut)
 
 
 class RescaleImgOp(ImageOp):
@@ -289,7 +301,7 @@ class RescaleHistOp(ImageOp):
         self.bitdepth = bitdepth
 
     def _numpy_impl(self, hist):
-        return hist.reshape((hist.shape[0], 2**self.bitdepth, -1)).sum(axis=2)
+        return hist.reshape((hist.shape[0], 2 ** self.bitdepth, -1)).sum(axis=2)
 
 
 class ColorspaceImgOp(ImageOp):
