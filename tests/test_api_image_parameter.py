@@ -46,12 +46,12 @@ def test_get_output_dimensions():
 
 
 def test_parse_planes():
-    assert parse_planes([], 10) == {0}
-    assert parse_planes([1, 2], 10) == {1, 2}
-    assert parse_planes([1, 2, 200], 10) == {1, 2}
-    assert parse_planes([2, '5:'], 8) == {2, 5, 6, 7}
-    assert parse_planes([':'], 3) == {0, 1, 2}
-    assert parse_planes([], 10, default=[1, 2]) == {1, 2}
+    assert parse_planes([], 10) == [0]
+    assert parse_planes([1, 2], 10) == [1, 2]
+    assert parse_planes([1, 2, 200], 10) == [1, 2]
+    assert parse_planes([2, '5:'], 8) == [2, 5, 6, 7]
+    assert parse_planes([':'], 3) == [0, 1, 2]
+    assert parse_planes([], 10, default=[1, 2]) == [1, 2]
 
     with pytest.raises(BadRequestException):
         parse_planes([2, '5:', 'foo'], 10)

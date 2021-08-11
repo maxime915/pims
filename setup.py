@@ -44,7 +44,6 @@ REQUIRED = [
 
     'Pint>=0.17',
     'palettable>=3.3.0',
-    'ordered-set>=4.0.2',
 
     'numpy>=1.20.1',
     'Pillow>=8.0.0',

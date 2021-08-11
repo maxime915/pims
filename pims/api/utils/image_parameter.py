@@ -13,8 +13,6 @@
 # * limitations under the License.
 from copy import copy
 
-from ordered_set import OrderedSet
-
 from pims.api.exceptions import TooLargeOutputProblem, BadRequestException, FilterNotFoundProblem
 from pims.api.utils.header import SafeMode
 from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, BitDepthEnum
@@ -294,8 +292,8 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
 
     Returns
     -------
-    set
-        Set of valid plane indexes.
+    plane_set
+        Ordered list of valid plane indexes (where duplicates have been removed).
 
     Raises
     ------
@@ -306,7 +304,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
     plane_indexes = list()
 
     if len(planes_to_parse) == 0:
-        return OrderedSet(ensure_list(default))
+        return sorted(set((ensure_list(default))))
 
     for plane in planes_to_parse:
         if type(plane) is int:
@@ -315,7 +313,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
             raise BadRequestException(detail='{} is not a valid index or range for {}.'.format(plane, name))
-    plane_set = OrderedSet([idx for idx in plane_indexes if 0 <= idx < n_planes])
+    plane_set = sorted(set([idx for idx in plane_indexes if 0 <= idx < n_planes]))
     if len(plane_set) == 0:
         raise BadRequestException(detail=f"No valid indexes for {name}")
     return plane_set

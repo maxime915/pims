@@ -88,8 +88,6 @@ numpy==1.20.3
     #   zarr
 opencv-python-headless==4.5.2.54
     # via cytomine-python-client
-ordered-set==4.0.2
-    # via pims (setup.py)
 packaging==20.9
     # via pint
 palettable==3.3.0
