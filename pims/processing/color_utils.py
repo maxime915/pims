@@ -101,3 +101,12 @@ def int2rgba(color_int):
         return rgba.tolist()
     else:
         return rgba
+
+
+def rgb_channels(channels_idx, image):
+    if len(channels_idx) != 3:
+        return False
+
+    image_colors = [image.channel(c).hex_color for c in channels_idx]
+    rgb = ["#f00", "#0f0", "#00f"]
+    return image_colors == rgb

@@ -325,6 +325,40 @@ class ColorspaceImgOp(ImageOp):
         return img.colourspace(new_colorspace)
 
 
+class ExtractChannelOp(ImageOp):
+    def __init__(self, channel):
+        super().__init__()
+        self._impl[VIPSImage] = self._numpy_impl
+        self.channel = channel
+
+    def _numpy_impl(self, img):
+        return img.extract_band(self.channel)
+
+
+class ChannelReductionOp(ImageOp):
+    def __init__(self, reduction):
+        super().__init__()
+        self._impl[VIPSImage] = self._numpy_impl
+        self.reduction = reduction
+
+    def __call__(self, obj, *args, **kwargs):
+        if type(obj) is list and len(obj) > 0:
+            type_obj = type(obj[0])
+        else:
+            type_obj = type(obj)
+
+        if type_obj not in self.implementations:
+            obj = self.implementation_adapters.get((type_obj, self.implementations[0]))(obj)
+
+        return self._impl[type_obj](obj, *args, **kwargs)
+
+    def _numpy_impl(self, imgs):
+        if len(imgs) == 1:
+            return imgs[0]
+        format = imgs[0].format
+        return VIPSImage.sum(imgs).cast(format)
+
+
 class ColorspaceHistOp(ImageOp):
     def __init__(self, colorspace):
         super().__init__()

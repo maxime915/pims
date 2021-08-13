@@ -14,6 +14,7 @@
 
 from importlib import import_module
 
+import numpy as np
 from palettable.palette import Palette
 
 COLORMAPS = {}
@@ -51,3 +52,22 @@ def find_palettes(mod):
 for mod in MODULES:
     palettes = find_palettes(import_module(mod))
     COLORMAPS.update(palettes)
+
+
+def combine_lut(lut_a, lut_b):
+    return np.take_along_axis(lut_b, lut_a, axis=0)
+
+
+def build_lut_from_color(color, max_intensity):
+    r, g, b = color.as_rgb_tuple(alpha=False)
+    n_colors = 1 if r == g == b else 3
+    colors = (r,) if n_colors == 1 else (r, g, b)
+
+    lut = np.zeros((max_intensity + 1, n_colors))
+    x = [0, max_intensity]
+    xvals = np.arange(max_intensity + 1)
+    for i, color in enumerate(colors):
+        y = [0, color]
+        lut[:, i] = np.interp(xvals, x, y)
+
+    return lut

@@ -11,14 +11,18 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
+import math
+
 import numpy as np
 from starlette.responses import Response
 
 from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
+from pims.processing.color_utils import rgb_channels
+from pims.processing.colormaps import combine_lut, build_lut_from_color
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
-    RescaleHistOp, ApplyLutImgOp
+    RescaleHistOp, ApplyLutImgOp, ExtractChannelOp, ChannelReductionOp
 
 
 class View:
@@ -162,6 +166,17 @@ class ProcessedView(MultidimView):
                or self.log_processing or self.colormap_processing \
                or self.filter_processing
 
+    def raw_view_planes(self):
+        # TODO: generalize
+        # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
+        return self.channels, self.z_slices[0], self.timepoints[0]
+
+    def raw_view_reads(self):
+        # TODO: generalize
+        # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
+        n_c_reads = math.ceil(len(self.channels) / self.in_image.n_channels_per_read)
+        return n_c_reads, 1, 1
+
     def math_lut(self):
         def dtype(bitdepth):
             if bitdepth > 16:
@@ -195,15 +210,63 @@ class ProcessedView(MultidimView):
         lut *= self.max_intensity
         return lut.astype(dtype(self.best_effort_bitdepth))
 
-    def raw_view(self):
+    def raw_view(self, c, z, t):
         pass
 
     def process(self):
-        img = self.raw_view()
-        img = ResizeImgOp(self.out_width, self.out_height)(img)
+        def channels_for_read(read, in_image):
+            first = read * in_image.n_channels_per_read
+            last = min(in_image.n_channels, first + in_image.n_channels_per_read)
+            return range(first, last)
 
+        response_channels, z, t = self.raw_view_planes()
+        c_reads, z_reads, t_reads = self.raw_view_reads()
+
+        response_channel_images = list()
+        for read in range(c_reads):
+            read_channels = channels_for_read(read, self.in_image)
+            needed = list(set(read_channels) & set(response_channels))
+
+            channel_image = self.raw_view(read_channels[0], z, t) #TODO
+
+            if len(read_channels) == 3:
+                if needed == (0, 1, 2) and rgb_channels(read_channels, self.in_image):
+                    # RGB image, and no tinting required
+                    response_channel_images.append((channel_image, read_channels))
+                else:
+                    # If len(needed) = 3 and RGB image, but channels need tinting
+                    # If len(needed) = 1 and RGB image, but we want a single channel
+                    for needed_channel in needed:
+                        channel_idx = needed_channel % self.in_image.n_channels_per_read
+                        image = ExtractChannelOp(channel_idx)(channel_image)
+                        response_channel_images.append((image, needed_channel))
+            else:
+                read_channel = read_channels[0]
+                response_channel_images.append((channel_image, read_channel))
+
+        math_lut = None
         if self.float_processing:
-            img = ApplyLutImgOp(self.math_lut())(img)
+            math_lut = self.math_lut()
+
+        processed_channel_images = list()
+        for img, channel in response_channel_images:
+            if type(channel) is tuple:
+                img = ApplyLutImgOp(math_lut)(img)
+            else:
+                channel_color = self.in_image.channels[channel].color
+                if channel_color:
+                    tinting_lut = build_lut_from_color(channel_color, self.max_intensity)
+                    lut = combine_lut(math_lut[:, channel], tinting_lut) if math_lut is not None else tinting_lut
+                else:
+                    lut = math_lut
+
+                if lut is not None:
+                    img = ApplyLutImgOp(lut)(img)
+
+            processed_channel_images.append(img)
+
+        img = ChannelReductionOp(self.c_reduction)(processed_channel_images)
+        img = ResizeImgOp(self.out_width, self.out_height)(img)
 
         if self.filter_processing:
             filter_params = dict()
@@ -243,8 +306,7 @@ class ThumbnailResponse(ProcessedView):
 
         self.use_precomputed = use_precomputed
 
-    def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
+    def raw_view(self, c, z, t):
         return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t,
                                        precomputed=self.use_precomputed)
 
@@ -257,8 +319,7 @@ class ResizedResponse(ProcessedView):
                          out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
                          min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
 
-    def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
+    def raw_view(self, c, z, t):
         return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False)
 
 
@@ -311,8 +372,7 @@ class WindowResponse(ProcessedView):
 
         return img
 
-    def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
+    def raw_view(self, c, z, t):
         return self.in_image.window(self.region, self.out_width, self.out_height, c=c, z=z, t=t)
 
 
@@ -327,8 +387,7 @@ class TileResponse(ProcessedView):
         # Tile (region)
         self.tile_region = tile_region
 
-    def raw_view(self):
-        c, z, t = self.channels, self.z_slices[0], self.timepoints[0]  # TODO
+    def raw_view(self, c, z, t):
         return self.in_image.tile(self.tile_region, c=c, z=z, t=t)
 
 
