@@ -225,9 +225,10 @@ class OmeTiffParser(TifffileParser):
             page = level[0]
             tilewidth = page.tilewidth if page.tilewidth != 0 else page.imagewidth
             tilelength = page.tilelength if page.tilelength != 0 else page.imagelength
+            subifd = i - 1 if i > 0 else None
             pyramid.insert_tier(page.imagewidth, page.imagelength,
                                 (tilewidth, tilelength),
-                                subifd=i)
+                                subifd=subifd)
 
         return pyramid
 
@@ -264,7 +265,7 @@ class OmeTiffReader(VipsReader):
         page = self.format.planes_info.get(c, z, t, 'page_index')
         subifd = tier.data.get('subifd')
         opts = dict(page=page)
-        if subifd > 0:
+        if subifd and subifd > 0:
             opts['subifd'] = subifd
         tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
         return tiff_page.extract_area(region.left, region.top, region.width, region.height)
@@ -273,7 +274,10 @@ class OmeTiffReader(VipsReader):
         tier = tile.tier
         page = self.format.planes_info.get(c, z, t, 'page_index')
         subifd = tier.data.get('subifd')
-        tiff_page = VIPSImage.tiffload(str(self.format.path), page=page, subifd=subifd)
+        opts = dict(page=page)
+        if subifd and subifd > 0:
+            opts['subifd'] = subifd
+        tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
         return tiff_page.extract_area(tile.left, tile.top, tile.width, tile.height)
 
 
