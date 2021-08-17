@@ -55,6 +55,8 @@ for mod in MODULES:
 
 
 def combine_lut(lut_a, lut_b):
+    if lut_a.ndim == 1:
+        lut_a = lut_a[:, np.newaxis]
     return np.take_along_axis(lut_b, lut_a, axis=0)
 
 
