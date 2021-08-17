@@ -220,12 +220,18 @@ class ProcessedView(MultidimView):
             return range(first, last)
 
         response_channels, z, t = self.raw_view_planes()
-        c_reads, z_reads, t_reads = self.raw_view_reads()
+
+        reads = dict()
+        for response_channel in response_channels:
+            read = response_channel // self.in_image.n_channels_per_read
+            if read in reads:
+                reads[read].append(response_channel)
+            else:
+                reads[read] = [response_channel]
 
         response_channel_images = list()
-        for read in range(c_reads):
+        for read, needed in reads.items():
             read_channels = channels_for_read(read, self.in_image)
-            needed = list(set(read_channels) & set(response_channels))
 
             channel_image = self.raw_view(read_channels[0], z, t) #TODO
 
