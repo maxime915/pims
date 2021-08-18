@@ -155,15 +155,28 @@ MAX_PIXELS_COMPLETE_HISTOGRAM = 1024 * 1024
 
 def _extract_np_thumb(image):
     tw, th = get_thumb_output_dimensions(image, length=1024, allow_upscaling=False)
-    tnpixels = tw * th
-    ratio = image.n_pixels / tnpixels
+    ratio = image.n_pixels / (tw * th)
 
-    thumb = image.thumbnail(tw, th, precomputed=False)
-    npthumb = imglib_adapters.get((type(thumb), np.ndarray))(thumb)
-    shape = npthumb.shape
-    if len(shape) == 2:
-        shape += (1,)
-    return npthumb, npthumb.shape, ratio
+    def channels_for_read(read, in_image):
+        first = read * in_image.n_channels_per_read
+        last = min(in_image.n_channels, first + in_image.n_channels_per_read)
+        return range(first, last)
+
+    n_c_reads = int(np.ceil(image.n_channels / image.n_channels_per_read))
+    for t in range(image.duration):
+        for z in range(image.depth):
+            for c_read in range(n_c_reads):
+                c_range = channels_for_read(c_read, image)
+                c = c_range[0]  # TODO
+                thumb = image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
+                npthumb = imglib_adapters.get((type(thumb), np.ndarray))(thumb)
+                if npthumb.shape[2] != len(c_range):
+                    # TODO: improve palette support!
+                    # !! if we get more channels than expected, we have a color palette image
+                    # For now, try to discard the palette by only keeping the expected channel in the response
+                    mod_range = [c % npthumb.shape[2] for c in c_range]
+                    npthumb = npthumb[:, :, mod_range]
+                yield npthumb, c_range, z, t, ratio
 
 
 def argmin_nonzero(arr, axis=-1):
@@ -224,22 +237,17 @@ def build_histogram_file(in_image, dest, hist_type: HistogramType,
     zroot.attrs[ZHF_ATTR_TYPE] = hist_type
     zroot.attrs[ZHF_ATTR_FORMAT] = "PIMS-1.0"
 
-    # TODO: support histogram extraction for 5D images
-    if (in_image.n_channels_per_read != in_image.n_channels) or\
-            in_image.depth * in_image.duration > 1:
-        raise NotImplementedError()
-
     # Create the group for plane histogram
     # TODO: usa Dask to manipulate Zarr arrays (for bounds)
     #  so that we can fill the zarr array incrementally
     # https://github.com/zarr-developers/zarr-python/issues/446
     shape = (in_image.duration, in_image.depth, in_image.n_channels)
     zplane = zroot.create_group(ZHF_PER_PLANE)
-    data, dshape, ratio = extract_fn(in_image)
     npplane_hist = np.zeros(shape=shape + (n_values,), dtype=np.uint64)
-    for c in range(dshape[2]):
-        h, _ = histogram(data[:, :, c], source_range='dtype')
-        npplane_hist[0, 0, c, :] = np.rint(h * ratio).astype(np.uint64)
+    for data, c_range, z, t, ratio in extract_fn(in_image):
+        for read, c in enumerate(c_range):
+            h, _ = histogram(data[:, :, read], source_range='dtype')
+            npplane_hist[t, z, c, :] += np.rint(h * ratio).astype(np.uint64)
     zplane.array(ZHF_HIST, npplane_hist)
     zplane.array(
         ZHF_BOUNDS,
