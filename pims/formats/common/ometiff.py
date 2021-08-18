@@ -265,7 +265,7 @@ class OmeTiffReader(VipsReader):
         page = self.format.planes_info.get(c, z, t, 'page_index')
         subifd = tier.data.get('subifd')
         opts = dict(page=page)
-        if subifd and subifd > 0:
+        if subifd is not None:
             opts['subifd'] = subifd
         tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
         return tiff_page.extract_area(region.left, region.top, region.width, region.height)
@@ -275,7 +275,7 @@ class OmeTiffReader(VipsReader):
         page = self.format.planes_info.get(c, z, t, 'page_index')
         subifd = tier.data.get('subifd')
         opts = dict(page=page)
-        if subifd and subifd > 0:
+        if subifd is not None:
             opts['subifd'] = subifd
         tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
         return tiff_page.extract_area(tile.left, tile.top, tile.width, tile.height)
