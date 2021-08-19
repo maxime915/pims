@@ -41,11 +41,11 @@ class ParsedAnnotation:
 
     @property
     def is_fill_grayscale(self):
-        return is_grayscale(*self.fill_color) if self.fill_color else True
+        return self.fill_color.is_grayscale() if self.fill_color else True
 
     @property
     def is_stroke_grayscale(self):
-        return is_grayscale(*self.stroke_color) if self.stroke_color else True
+        return self.stroke_color.is_grayscale() if self.stroke_color else True
 
     @property
     def is_grayscale(self):

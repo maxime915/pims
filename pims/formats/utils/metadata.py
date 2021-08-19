@@ -11,16 +11,16 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-import collections
+
 import json
 
 from datetime import datetime, date, time
 from enum import Enum
 from typing import ValuesView, AbstractSet, Tuple
 
-from pydantic.color import Color
 
 from pims.formats.utils.dict_utils import flatten_dict
+from pims.processing.color_utils import Color
 
 
 def parse_json(value, raise_exc=False):

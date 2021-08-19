@@ -28,6 +28,7 @@ from pims.api.window import _show_window
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.processing.annotations import annotation_crop_affine_matrix
+from pims.processing.color_utils import WHITE
 from pims.processing.image_response import MaskResponse
 
 router = APIRouter()
@@ -74,7 +75,7 @@ def _show_mask(
     annots = parse_annotations(
         ensure_list(annotations),
         ignore_fields=['stroke_width', 'stroke_color'],
-        default={'fill_color': (255, 255, 255)},
+        default={'fill_color': WHITE},
         origin=headers.annot_origin, im_height=in_image.height
     )
 
@@ -142,7 +143,7 @@ def _show_crop(
     annots = parse_annotations(
         ensure_list(annotations),
         ignore_fields=['stroke_width', 'stroke_color'],
-        default={'fill_color': (255, 255, 255)},
+        default={'fill_color': WHITE},
         origin=headers.annot_origin, im_height=in_image.height
     )
 

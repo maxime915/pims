@@ -13,7 +13,7 @@
 # * limitations under the License.
 import pytest
 
-from pims.api.utils.schema_format import is_range, parse_range, is_color, parse_color, is_wkt
+from pims.api.utils.schema_format import is_range, parse_range, is_wkt
 
 
 def test_is_range():
@@ -38,37 +38,6 @@ def test_parse_range():
 
     with pytest.raises(ValueError):
         parse_range("2:3:4", 0, 100)
-
-
-def test_is_color():
-    assert is_color("red") is True
-    assert is_color("foo") is False
-    assert is_color("#fff") is True
-    assert is_color("#ffffff") is True
-    assert is_color("#ff") is False
-    assert is_color("#ggg") is False
-    assert is_color("rgb(10, 20, 30)") is True
-    assert is_color("rgb (10, 20, 30)") is False
-    assert is_color("rgb(10,20,c)") is False
-    assert is_color("rgb(10%, 5.3%, 2)") is True
-
-
-def test_parse_color():
-    assert parse_color("red") == (255, 0, 0)
-    assert parse_color("#fff") == (255, 255, 255)
-    assert parse_color("#ffffff") == (255, 255, 255)
-    assert parse_color("rgb(10, 20, 30)") == (10, 20, 30)
-    assert parse_color("RGB(10, 20, 30)") == (10, 20, 30)
-    assert parse_color("rgb(10%, 5.3%, 2)") == (26, 14, 5)
-
-    with pytest.raises(ValueError):
-        parse_color("#ggg")
-
-    with pytest.raises(ValueError):
-        parse_color("foo")
-
-    with pytest.raises(ValueError):
-        parse_color("rgb (10, 20, 30)")
 
 
 def test_is_wkt():

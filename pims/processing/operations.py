@@ -24,7 +24,7 @@ from pims.api.utils.models import Colorspace
 from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format, vips_format_to_dtype
 from pims.processing.adapters import imglib_adapters, numpy_to_vips
 from pims.processing.annotations import ParsedAnnotations, contour, stretch_contour
-from pims.processing.color_utils import rgb2int, int2rgb
+from pims.processing.color_utils import np_int2rgb
 from pims.processing.utils import find_first_available_int
 
 log = logging.getLogger("pims.processing")
@@ -439,7 +439,7 @@ class DrawOnImgOp(ImageOp):
         False -> drawing
         """
         if self.draw.ndim == 3:
-            bg = int2rgb(self.rgb_int_background)
+            bg = np_int2rgb(self.rgb_int_background)
             return np.all(self.draw == np.asarray(bg), axis=-1).astype(np.uint8)
         else:
             mask = np.ones_like(self.draw, dtype=np.uint8)
@@ -467,7 +467,7 @@ class MaskRasterOp(RasterOp):
 
     def _to_shape(self, annot, is_grayscale=True):
         geometry = affine_transform(annot.geometry, self.affine_matrix)
-        value = annot.fill_color[0] if is_grayscale else rgb2int(annot.fill_color)
+        value = annot.fill_color.as_rgb_tuple()[0] if is_grayscale else annot.fill_color.as_int()
         return geometry, value
 
     def _default_impl(self, annots):
@@ -480,7 +480,7 @@ class MaskRasterOp(RasterOp):
 
         rasterized = rasterize(shape_generator(), out_shape=out_shape, dtype=dtype)
         if not annots.is_grayscale:
-            return int2rgb(rasterized)
+            return np_int2rgb(rasterized)
         return rasterized
 
 
@@ -502,7 +502,7 @@ class DrawRasterOp(RasterOp):
         width = self._contour_width(annot.stroke_width, out_shape)
         geometry = stretch_contour(affine_transform(contour(annot.geometry, point_style=self.point_style),
                                                     self.affine_matrix), width=width)
-        value = annot.stroke_color[0] if is_grayscale else rgb2int(annot.stroke_color)
+        value = annot.stroke_color.as_rgb_tuple()[0] if is_grayscale else annot.stroke_color.as_int()
         return geometry, value
 
     def _default_impl(self, annots):
@@ -522,14 +522,14 @@ class DrawRasterOp(RasterOp):
             # No valid geometry objects found for rasterize
             rasterized = np.full(out_shape, bg)
         if not annots.is_grayscale:
-            return int2rgb(rasterized)
+            return np_int2rgb(rasterized)
         return rasterized
 
     @staticmethod
     def background_color(annots):
         if annots.is_stroke_grayscale:
-            values = [a.stroke_color[0] for a in annots if a.stroke_color]
-            return find_first_available_int(values, 0, 256)
+            values = [a.stroke_color.as_rgb_tuple()[0] for a in annots if a.stroke_color]
+            return find_first_available_int(values, 0, 65536)
         else:
-            values = [rgb2int(a.stroke_color) for a in annots if a.stroke_color]
-            return find_first_available_int(values, 0, 16777216)
+            values = [a.stroke_color.as_int() for a in annots if a.stroke_color]
+            return find_first_available_int(values, 0, 4294967296)

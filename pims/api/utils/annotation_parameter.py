@@ -120,12 +120,12 @@ def parse_annotation(geometry, fill_color=None, stroke_color=None,
 
     if 'fill_color' not in ignore_fields:
         default_color = default.get('fill_color')
-        parsed['fill_color'] = fill_color.as_rgb_tuple(alpha=False) \
+        parsed['fill_color'] = fill_color \
             if fill_color is not None else default_color
 
     if 'stroke_color' not in ignore_fields:
         default_color = default.get('stroke_color')
-        parsed['stroke_color'] = stroke_color.as_rgb_tuple(alpha=False) \
+        parsed['stroke_color'] = stroke_color \
             if stroke_color is not None else default_color
 
     if 'stroke_width' not in ignore_fields:

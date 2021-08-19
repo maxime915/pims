@@ -12,11 +12,11 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
-from pydantic.color import Color
 from shapely.geometry import Point, box
 
 from pims.api.utils.annotation_parameter import parse_annotation, get_annotation_region
 from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
+from pims.processing.color_utils import Color
 from pims.processing.region import Region
 
 
@@ -25,18 +25,16 @@ def test_parse_annotation():
     assert parse_annotation(**annot) == ParsedAnnotation(Point(10, 10))
 
     red = Color("red")
-    red_rgb = red.as_rgb_tuple(alpha=False)
     white = Color("white")
-    white_rgb = white.as_rgb_tuple(alpha=False)
 
     annot = {"geometry": "POINT (10 10)", "fill_color": white}
-    default = {"fill_color": red_rgb, "stroke_color": white_rgb}
+    default = {"fill_color": red, "stroke_color": white}
 
-    assert parse_annotation(**annot, default=default) == ParsedAnnotation(Point(10, 10), white_rgb, white_rgb)
-    assert parse_annotation(**annot) == ParsedAnnotation(Point(10, 10), white_rgb)
+    assert parse_annotation(**annot, default=default) == ParsedAnnotation(Point(10, 10), white, white)
+    assert parse_annotation(**annot) == ParsedAnnotation(Point(10, 10), white)
     assert parse_annotation(**annot, ignore_fields=['fill_color']) == ParsedAnnotation(Point(10, 10))
     assert parse_annotation(**annot, ignore_fields=['fill_color'],
-                            default=default) == ParsedAnnotation(Point(10, 10), stroke_color=white_rgb)
+                            default=default) == ParsedAnnotation(Point(10, 10), stroke_color=white)
 
 
 def test_annotation_region():

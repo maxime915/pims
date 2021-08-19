@@ -3,7 +3,8 @@ from typing import Optional, Union, List
 
 from fastapi import Query
 from pydantic import BaseModel, conint, Field, confloat
-from pydantic.color import Color
+
+from pims.processing.color_utils import Color
 
 
 class BaseDependency:

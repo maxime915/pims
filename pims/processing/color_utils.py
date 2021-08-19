@@ -12,95 +12,138 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
+from typing import Union, Optional
+
 import numpy as np
 
+from pydantic.color import Color as PydanticColor, ColorType as PydanticColorType, ColorError, RGBA, parse_tuple, \
+    parse_str, ints_to_rgba, float_to_255
 
-def rgb2int(rgb):
-    """
-    Convert a triplet 8-bit RGB to a 32-bit integer.
-
-    Parameters
-    ----------
-    rgb : IntegerRGB
-        RGB triplet with values in range 0-255.
-
-    Returns
-    -------
-    color_int : int
-        Color representation as a 32-bit integer.
-    """
-    r, g, b = rgb
-    return (r & 255) << 16 | (g & 255) << 8 | (b & 255) << 0
+ColorType = Union[PydanticColorType, int]
 
 
-def int2rgb(color_int):
-    """
-    Convert a 32-bit int color to a 8-bit RGB triplet.
+class Color(PydanticColor):
+    def __init__(self, value: ColorType) -> None:
+        self._rgba: RGBA
+        self._original: ColorType
+        if isinstance(value, (tuple, list)):
+            self._rgba = parse_tuple(value)
+        elif isinstance(value, int):
+            self._rgba = parse_int(value)
+        elif isinstance(value, str):
+            self._rgba = parse_str(value)
+        elif isinstance(value, Color):
+            self._rgba = value._rgba
+            value = value._original
+        else:
+            raise ColorError(reason='value must be a tuple, list, int or string')
 
-    Parameters
-    ----------
-    color_int : int, array-like
-        Integer value(s) to convert
+        # if we've got here value must be a valid color
+        self._original = value
 
-    Returns
-    -------
-    rgb : array-like
-        Color representation as a RGB triplet.
-        Output shape is `color_int.shape + (3,)`.
-    """
-    r = color_int >> 16 & 255
-    g = color_int >> 8 & 255
-    b = color_int >> 0 & 255
-    rgb = np.squeeze(np.dstack((r, g, b)))
-    if type(rgb) is int:
-        return rgb.tolist()
-    else:
-        return rgb
+    def as_int(self, alpha: Optional[bool] = None) -> int:
+        """
+        Return color as an integer.
 
+        Parameters
+        ----------
+        alpha
+            Whether to include the alpha channel, options are
+              None - (default) include alpha only if it's set (e.g. not None)
+              True - always include alpha,
+              False - always omit alpha
+        """
+        r, g, b = [float_to_255(c) for c in self._rgba[:3]]
 
-def rgba2int(rgba):
-    """
-    Convert a quadruplet 8-bit RGBA to a 32-bit integer.
+        if alpha is None:
+            if self._rgba.alpha is None:
+                a = 0
+            else:
+                a = float_to_255(self._rgba[3])
+        elif alpha:
+            a = float_to_255(self._rgba[3])
+        else:
+            a = 0
 
-    Parameters
-    ----------
-    rgba : IntegerRGB
-        RGBA quadruplet with values in range 0-255.
+        return (r & 255) << 24 | (g & 255) << 16 | (b & 255) << 8 | (a & 255) << 0
 
-    Returns
-    -------
-    color_int : int
-        Color representation as a 32-bit integer.
-    """
-    r, g, b, a = rgba
-    return (r & 255) << 24 | (g & 255) << 16 | (b & 255) << 8 | (a & 255) << 0
+    def is_grayscale(self) -> bool:
+        r, g, b = self._rgba[:3]
+        return r == g == b
+
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Color) and o.as_rgb_tuple() == self.as_rgb_tuple()
 
 
-def int2rgba(color_int):
+def parse_int(value: int) -> RGBA:
     """
     Convert a 32-bit int color to a 8-bit RGBA quadruplet.
 
     Parameters
     ----------
-    color_int : int, array-like
-        Integer value(s) to convert
+    value : int
+        Integer value to convert
 
     Returns
     -------
-    rgb : array-like, list
+    rgba : RGBA
         Color representation as a RGBA quadruplet.
-        Output shape is `color_int.shape + (4,)`.
+    """
+    r = value >> 24 & 255
+    g = value >> 16 & 255
+    b = value >> 8 & 255
+    a = (value >> 0 & 255) / 255
+
+    return ints_to_rgba(r, g, b, a)
+
+
+def np_int2rgb(color_int, alpha: bool = False):
+    """
+    Convert a 32-bit int color to a 8-bit RGB triplet.
+
+    Parameters
+    ----------
+    color_int : array-like
+        Integer values to convert
+    alpha : boolean
+        Whether to include the alpha channel, options are
+          True - always include alpha,
+          False - always omit alpha,
+
+    Returns
+    -------
+    rgb : array-like
+        Color representation as a RGB triplet.
+        Output shape is `color_int.shape + (3,)` if alpha is omitted,
+        `color_int.shape + (4,)` otherwise.
     """
     r = color_int >> 24 & 255
     g = color_int >> 16 & 255
     b = color_int >> 8 & 255
-    a = (color_int >> 0 & 255) / 255
+    stack = (r, g, b)
 
-    rgba = np.squeeze(np.dstack((r, g, b, a)))
-    if type(color_int) is int:
-        return rgba.tolist()
-    else:
-        return rgba
+    if alpha:
+        a = (color_int >> 0 & 255) / 255
+        stack += (a,)
+
+    return np.squeeze(np.dstack(stack))
+
+
+WHITE = Color((255, 255, 255))
+RED = Color((255, 0, 0))
+GREEN = Color((0, 255, 0))
+BLUE = Color((0, 0, 255))
+RGB = [RED, GREEN, BLUE]
+
+
+def is_rgb(colors):
+    if len(colors) != 3:
+        return False
+
+    for c1, c2 in zip(RGB, colors):
+        if c1 != c2:
+            return False
+    return True
 
 
 def rgb_channels(channels_idx, image):

@@ -15,7 +15,6 @@ from datetime import datetime
 from functools import cached_property
 
 import numpy as np
-from pydantic.color import Color
 from tifffile import xml2dict
 from pyvips import Image as VIPSImage
 
@@ -29,7 +28,7 @@ from pims.formats.utils.omexml import OMEXML
 from pims.formats.utils.planes import PlanesInfo
 from pims.formats.utils.pyramid import Pyramid
 from pims.formats.utils.vips import dtype_to_bits
-from pims.processing.color_utils import int2rgba
+from pims.processing.color_utils import Color
 
 
 def clean_ome_dict(d):
@@ -141,7 +140,7 @@ class OmeTiffParser(TifffileParser):
             name = channel.name
             if not name and default_names is not None:
                 name = default_names[c]
-            color = Color(int2rgba(channel.color)) if channel.color else None
+            color = Color(channel.color) if channel.color else None
             imd.set_channel(ImageChannel(
                 index=c, emission_wavelength=channel.emission_wavelength,
                 excitation_wavelength=channel.excitation_wavelength,

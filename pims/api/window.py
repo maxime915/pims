@@ -30,6 +30,7 @@ from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.filters import FILTERS
 from pims.processing.annotations import annotation_crop_affine_matrix, ParsedAnnotations
+from pims.processing.color_utils import WHITE, RED
 from pims.processing.image_response import WindowResponse, MaskResponse
 from pims.processing.region import Region
 
@@ -147,11 +148,11 @@ def _show_window(
     if annotations and annotation_style and not isinstance(annotations, ParsedAnnotations):
         if annotation_style['mode'] == AnnotationStyleMode.DRAWING:
             ignore_fields = ['fill_color']
-            default = {'stroke_color': (255, 0, 0), 'stroke_width': 1}
+            default = {'stroke_color': RED, 'stroke_width': 1}
             point_envelope_length = annotation_style['point_envelope_length']
         else:
             ignore_fields = ['stroke_width', 'stroke_color']
-            default = {'fill_color': (255, 255, 255)}
+            default = {'fill_color': WHITE}
             point_envelope_length = None
 
         annotations = parse_annotations(
