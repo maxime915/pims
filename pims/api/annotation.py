@@ -28,7 +28,7 @@ from pims.api.window import _show_window
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.processing.annotations import annotation_crop_affine_matrix
-from pims.processing.color_utils import WHITE
+from pims.processing.color import WHITE
 from pims.processing.image_response import MaskResponse
 
 router = APIRouter()

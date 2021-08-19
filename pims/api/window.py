@@ -30,7 +30,7 @@ from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.filters import FILTERS
 from pims.processing.annotations import annotation_crop_affine_matrix, ParsedAnnotations
-from pims.processing.color_utils import WHITE, RED
+from pims.processing.color import WHITE, RED
 from pims.processing.image_response import WindowResponse, MaskResponse
 from pims.processing.region import Region
 

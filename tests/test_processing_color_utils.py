@@ -11,7 +11,7 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-from pims.processing.color_utils import Color, np_int2rgb
+from pims.processing.color import Color, np_int2rgb
 import numpy as np
 
 

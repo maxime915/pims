@@ -144,12 +144,3 @@ def is_rgb(colors):
         if c1 != c2:
             return False
     return True
-
-
-def rgb_channels(channels_idx, image):
-    if len(channels_idx) != 3:
-        return False
-
-    image_colors = [image.channel(c).hex_color for c in channels_idx]
-    rgb = ["#f00", "#0f0", "#00f"]
-    return image_colors == rgb

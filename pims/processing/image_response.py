@@ -18,7 +18,7 @@ from starlette.responses import Response
 
 from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
-from pims.processing.color_utils import rgb_channels
+from pims.processing.color import is_rgb
 from pims.processing.colormaps import combine_lut, build_lut_from_color
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
@@ -236,7 +236,8 @@ class ProcessedView(MultidimView):
             channel_image = self.raw_view(read_channels[0], z, t) #TODO
 
             if len(read_channels) == 3:
-                if needed == (0, 1, 2) and rgb_channels(read_channels, self.in_image):
+                if needed == (0, 1, 2) and \
+                        is_rgb([self.in_image.channel(rc).color for rc in read_channels]):
                     # RGB image, and no tinting required
                     response_channel_images.append((channel_image, read_channels))
                 else:

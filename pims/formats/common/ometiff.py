@@ -28,7 +28,7 @@ from pims.formats.utils.omexml import OMEXML
 from pims.formats.utils.planes import PlanesInfo
 from pims.formats.utils.pyramid import Pyramid
 from pims.formats.utils.vips import dtype_to_bits
-from pims.processing.color_utils import Color
+from pims.processing.color import Color
 
 
 def clean_ome_dict(d):

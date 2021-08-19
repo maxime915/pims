@@ -24,7 +24,7 @@ from pims.api.utils.models import Colorspace
 from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format, vips_format_to_dtype
 from pims.processing.adapters import imglib_adapters, numpy_to_vips
 from pims.processing.annotations import ParsedAnnotations, contour, stretch_contour
-from pims.processing.color_utils import np_int2rgb
+from pims.processing.color import np_int2rgb
 from pims.processing.utils import find_first_available_int
 
 log = logging.getLogger("pims.processing")

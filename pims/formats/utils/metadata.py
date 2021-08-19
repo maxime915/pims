@@ -20,7 +20,7 @@ from typing import ValuesView, AbstractSet, Tuple
 
 
 from pims.formats.utils.dict_utils import flatten_dict
-from pims.processing.color_utils import Color
+from pims.processing.color import Color
 
 
 def parse_json(value, raise_exc=False):

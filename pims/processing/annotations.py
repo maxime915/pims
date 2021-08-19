@@ -21,10 +21,6 @@ from pims.api.utils.models import PointCross
 from pims.processing.region import Region
 
 
-def is_grayscale(red, green, blue):
-    return red == green == blue
-
-
 class ParsedAnnotation:
     def __init__(self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
                  point_envelope_length=1):
