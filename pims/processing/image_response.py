@@ -19,7 +19,7 @@ from starlette.responses import Response
 from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
 from pims.processing.color import is_rgb
-from pims.processing.colormaps import combine_lut, build_lut_from_color
+from pims.processing.colormaps import combine_lut, ColorColormap
 from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
     NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
     RescaleHistOp, ApplyLutImgOp, ExtractChannelOp, ChannelReductionOp
@@ -262,7 +262,7 @@ class ProcessedView(MultidimView):
             else:
                 channel_color = self.in_image.channels[channel].color
                 if channel_color:
-                    tinting_lut = build_lut_from_color(channel_color, self.max_intensity)
+                    tinting_lut = ColorColormap(channel_color).lut(self.max_intensity + 1)  # TODO
                     lut = combine_lut(math_lut[:, channel], tinting_lut) if math_lut is not None else tinting_lut
                 else:
                     lut = math_lut
@@ -441,3 +441,15 @@ class DrawingResponse(MaskResponse):
     def process(self):
         return DrawRasterOp(self.affine_matrix, self.out_width,
                             self.out_height, self.point_style)(self.annotations)
+
+
+class ColormapRepresentationResponse(View):
+    def __init__(self, colormap, out_width, out_height, out_format, **kwargs):
+        super().__init__(None, out_format, out_width, out_height, **kwargs)
+        self.colormap = colormap
+
+    def raw_view(self):
+        return self.colormap.as_image(self.out_width, self.out_height)
+
+    def process(self):
+        return self.raw_view()

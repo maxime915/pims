@@ -12,66 +12,90 @@
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
 
+from typing import List
 
-# from enum import Enum
-# from io import BytesIO
-#
-# from connexion import request
-# from flask import send_file
-#
-# from pims.api.exceptions import ColormapNotFoundProblem
-# from pims.api.utils.mimetype import JPEG_MIMETYPES, PNG_MIMETYPES, build_mimetype_dict, get_output_format
-# from pims.api.utils.response import response_list
-# from pims.processing.colormaps import COLORMAPS
-#
-#
-# class ColormapType(Enum):
-#     SEQUENTIAL = "SEQUENTIAL"
-#     DIVERGING = "DIVERGING"
-#     QUALITATIVE = "QUALITATIVE"
-#
-#
-# def _serialize_colormap(colormap, colormap_id):
-#     return {
-#         'id': colormap_id,
-#         'n_colors': colormap.number,
-#         'name': colormap.name,
-#         'type': ColormapType[colormap.type.upper()].value
-#     }
-#
-#
-# def list_colormaps():
-#     colormaps = [_serialize_colormap(c, cid) for cid, c in COLORMAPS.items()]
-#     return response_list(colormaps)
-#
-#
-# def show_colormap(colormap_id):
-#     if colormap_id not in COLORMAPS.keys():
-#         raise ColormapNotFoundProblem(colormap_id)
-#
-#     return _serialize_colormap(COLORMAPS[colormap_id], colormap_id)
-#
-#
-# def show_colormap_representation(colormap_id, width, height):
-#     # TODO: handle request and response headers
-#
-#     if colormap_id not in COLORMAPS.keys():
-#         raise ColormapNotFoundProblem(colormap_id)
-#
-#     supported_mimetypes = build_mimetype_dict(JPEG_MIMETYPES, PNG_MIMETYPES)
-#     format_slug, response_mimetype = get_output_format(request, supported_mimetypes)
-#
-#     fp = BytesIO()
-#
-#     # Palette._write_image uses Matplotlib size in inches.
-#     width = round(width / 100, 2)
-#     height = round(height / 100, 2)
-#
-#     # Matplotlib format slugs are: png, jpg, jpeg, ...
-#     # See https://matplotlib.org/3.1.1/api/_as_gen/matplotlib.pyplot.savefig.html
-#     format_slug = format_slug.lower()
-#     colormap = COLORMAPS[colormap_id]
-#     colormap._write_image(fp, 'discrete', format=format_slug, size=(width, height))
-#
-#     fp.seek(0)
-#     return send_file(fp, mimetype=response_mimetype)
+from fastapi import APIRouter, Query, Depends
+from pydantic import BaseModel, Field, conint
+
+from pims.api.exceptions import ColormapNotFoundProblem
+from pims.api.utils.header import ImageRequestHeaders
+from pims.api.utils.mimetype import get_output_format, \
+    OutputExtension, extension_path_parameter, PROCESSING_MIMETYPES
+from pims.api.utils.models import CollectionSize, ColormapType, ColormapId
+from pims.api.utils.response import response_list
+from pims.processing.colormaps import COLORMAPS
+from pims.processing.image_response import ColormapRepresentationResponse
+
+router = APIRouter()
+api_tags = ['Colormaps']
+
+
+class Colormap(BaseModel):
+    """
+    A colormap is a function that maps colors of an input image to the colors of a target image.
+    """
+    id: ColormapId
+    name: str = Field(
+        ..., description='A human readable name for the colormap.'
+    )
+    type: ColormapType = Field(...)
+
+
+class ColormapsList(CollectionSize):
+    items: List[Colormap] = Field(None, description='Array of colormaps', title='Colormap')
+
+
+def _serialize_colormap(cmap):
+    return Colormap(
+        id=cmap.identifier,
+        name=cmap.name,
+        type=cmap.ctype,
+    )
+
+
+@router.get('/colormaps', response_model=ColormapsList, tags=api_tags)
+def list_colormaps():
+    """
+    List all colormaps
+    """
+    colormaps = [_serialize_colormap(cmap) for cmap in COLORMAPS.values()]
+    return response_list(colormaps)
+
+
+@router.get('/colormaps/{colormap_id}', response_model=Colormap, tags=api_tags)
+def show_colormap(colormap_id: str):
+    """
+    Get a colormap
+    """
+    colormap_id = colormap_id.upper()
+    if colormap_id not in COLORMAPS.keys():
+        raise ColormapNotFoundProblem(colormap_id)
+    return _serialize_colormap(COLORMAPS[colormap_id])
+
+
+@router.get('/colormaps/{colormap_id}/representation{extension:path}', tags=api_tags)
+def show_colormap_representation(
+        colormap_id: str,
+        width: conint(gt=10, le=512) = Query(
+            100, description="Width of the graphic representation, in pixels."
+        ),
+        height: conint(gt=0, le=512) = Query(
+            10, description="Height of the graphic representation, in pixels."
+        ),
+        headers: ImageRequestHeaders = Depends(),
+        extension: OutputExtension = Depends(extension_path_parameter),
+):
+    """
+    Get a graphic representation of a colormap
+    """
+
+    if colormap_id not in COLORMAPS.keys():
+        raise ColormapNotFoundProblem(colormap_id)
+
+    out_format, mimetype = get_output_format(
+        extension, headers.accept, PROCESSING_MIMETYPES
+    )
+
+    return ColormapRepresentationResponse(
+        COLORMAPS[colormap_id], width, height, out_format
+    ).http_response(mimetype)

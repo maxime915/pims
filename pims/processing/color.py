@@ -41,6 +41,30 @@ class Color(PydanticColor):
         # if we've got here value must be a valid color
         self._original = value
 
+    def as_float_tuple(self, alpha: Optional[bool] = None) -> tuple:
+        """
+        Return color as a tuple of float in [0, 1].
+
+        Parameters
+        ----------
+        alpha
+            Whether to include the alpha channel, options are
+              None - (default) include alpha only if it's set (e.g. not None)
+              True - always include alpha,
+              False - always omit alpha,
+        """
+        r, g, b = self._rgba[:3]
+        if alpha is None:
+            if self._rgba.alpha is None:
+                return r, g, b
+            else:
+                return r, g, b, self._alpha_float()
+        elif alpha:
+            return r, g, b, self._alpha_float()
+        else:
+            # alpha is False
+            return r, g, b
+
     def as_int(self, alpha: Optional[bool] = None) -> int:
         """
         Return color as an integer.
