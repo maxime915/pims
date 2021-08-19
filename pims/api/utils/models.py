@@ -481,7 +481,7 @@ class AnnotationBgTransparency(BaseModel):
     When transparency is used, the target content type must be 
     an image format supporting transparency.
     """
-    __root__: conint(ge=0, le=100) = 100
+    __root__: conint(ge=0, le=100) = 0
 
 
 class AnnotationStyleMode(str, Enum):
@@ -521,19 +521,19 @@ class AnnotationTrySquare(BaseModel):
 
 class AnnotationCropRequest(ImageInProcessing, ImageOutProcessing):
     annotations: Annotations
-    context_factor: Optional[AnnotationContextFactor]
-    background_transparency: Optional[AnnotationBgTransparency]
+    context_factor: Optional[AnnotationContextFactor] = 1.0
+    background_transparency: Optional[AnnotationBgTransparency] = 0
 
 
 class AnnotationMaskRequest(ImageOutProcessing):
     annotations: Annotations
-    context_factor: Optional[AnnotationContextFactor]
+    context_factor: Optional[AnnotationContextFactor] = 1.0
 
 
 class AnnotationDrawingRequest(ImageInDisplay, ImageOutProcessing):
     annotations: Annotations
-    context_factor: Optional[AnnotationContextFactor]
-    try_square: Optional[AnnotationTrySquare]
+    context_factor: Optional[AnnotationContextFactor] = 1.0
+    try_square: Optional[AnnotationTrySquare] = False
     point_envelope_length: Optional[PointEnvelopeLength] = 100
     point_cross: Optional[PointCross] = PointCross.CROSS
 
