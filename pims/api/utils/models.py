@@ -136,7 +136,7 @@ class ColormapId(BaseModel):
     """
     A unique case-insensitive identifier for a colormap.
     Pre-defined colormap names can be found with the endpoint `/colormaps`.
-    CSS colors are valid colormap names (monotonic linear colormap).
+    CSS named and hexadecimal colors are valid colormap names (monotonic linear colormap).
     Colormaps can be inverted by prepending the colormap name with `!`.
     """
     __root__: Union[str, ColormapEnum] = Field(
@@ -160,7 +160,7 @@ class ExistingColormapId(BaseModel):
     """
     A unique case-insensitive identifier for a colormap.
     Pre-defined colormap names can be found with the endpoint `/colormaps`.
-    CSS colors are valid colormap names (monotonic linear colormap).
+    CSS named and hexadecimal colors are valid colormap names (monotonic linear colormap).
     Colormaps can be inverted by prepending the colormap name with `!`.
     """
     __root__: str = Field(
@@ -193,6 +193,7 @@ class ImageIn(BaseModel):
     timepoints: Optional[SingleTimepointIndex] = None
     min_intensities: Optional[IntensitySelection] = None
     max_intensities: Optional[IntensitySelection] = None
+    colormaps: Optional[ColormapIdList] = ColormapEnum.DEFAULT
     filters: Optional[FilterIdList] = None
     gammas: GammaList = 1.0
 
@@ -286,12 +287,14 @@ class ImageOpsDisplayQueryParams(BaseDependency):
                 IntensitySelectionEnum.AUTO_IMAGE]),
             max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query([
                 IntensitySelectionEnum.AUTO_IMAGE]),
+            colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
             filters: Optional[List[str]] = Query(None),
             log: bool = Query(False),
     ):
         self.gammas = gammas
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
+        self.colormaps = colormaps
         self.filters = filters
         self.log = log
 
@@ -354,6 +357,7 @@ class ImageOpsProcessingQueryParams(BaseDependency):
             gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
             min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
             max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
+            colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
             filters: Optional[List[str]] = Query(None),
             bits: Optional[Union[BitDepthEnum, int]] = Query(BitDepthEnum.AUTO),
             colorspace: Optional[Colorspace] = Query(Colorspace.AUTO)
@@ -361,6 +365,7 @@ class ImageOpsProcessingQueryParams(BaseDependency):
         self.gammas = gammas
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
+        self.colormaps = colormaps
         self.filters = filters
         self.bits = bits
         self.colorspace = colorspace

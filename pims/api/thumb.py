@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends, Query
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, get_channel_indexes, \
     get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
-    safeguard_output_dimensions, parse_intensity_bounds, parse_filter_ids
+    safeguard_output_dimensions, parse_intensity_bounds, parse_filter_ids, parse_colormap_ids
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
     extension_path_parameter
 from pims.api.utils.models import ThumbnailRequest, ImageOutDisplayQueryParams, PlaneSelectionQueryParams, \
@@ -27,6 +27,7 @@ from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeade
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.filters import FILTERS
+from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import ThumbnailResponse
 
 router = APIRouter()
@@ -90,7 +91,7 @@ def _show_thumb(
         extension,
         headers,
         config: Settings,
-        colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
+        colormaps, c_reduction="ADD", z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -117,13 +118,14 @@ def _show_thumb(
     filters = ensure_list(filters)
     gammas = ensure_list(gammas)
 
-    array_parameters = (min_intensities, max_intensities)
+    array_parameters = (min_intensities, max_intensities, colormaps)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
     intensities = parse_intensity_bounds(in_image, channels, min_intensities, max_intensities)
     min_intensities, max_intensities = intensities
+    colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 
-    array_parameters = (gammas, filters, colormaps)
+    array_parameters = (gammas, filters)
     for array_parameter in array_parameters:
         # Currently, we only allow 1 parameter to be applied to all channels
         check_array_size(array_parameter, allowed=[0, 1], nullable=False)

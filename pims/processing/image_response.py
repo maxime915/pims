@@ -143,7 +143,7 @@ class ProcessedView(MultidimView):
 
     @property
     def colormap_processing(self):
-        return bool(len(self.colormaps))
+        return any(self.colormaps)
 
     @property
     def colorspace_processing(self):
@@ -163,8 +163,7 @@ class ProcessedView(MultidimView):
     @property
     def float_processing(self):
         return self.intensity_processing or self.gamma_processing \
-               or self.log_processing or self.colormap_processing \
-               or self.filter_processing
+               or self.log_processing
 
     def raw_view_planes(self):
         # TODO: generalize
@@ -230,26 +229,30 @@ class ProcessedView(MultidimView):
                 reads[read] = [response_channel]
 
         response_channel_images = list()
+        c_idx = 0
         for read, needed in reads.items():
             read_channels = channels_for_read(read, self.in_image)
 
             channel_image = self.raw_view(read_channels[0], z, t) #TODO
 
             if len(read_channels) == 3:
+                idxs = (c_idx, c_idx + 1, c_idx + 2)
                 if needed == (0, 1, 2) and \
-                        is_rgb([self.in_image.channel(rc).color for rc in read_channels]):
+                        is_rgb([self.colormaps[idx].color for idx in idxs]):
                     # RGB image, and no tinting required
-                    response_channel_images.append((channel_image, read_channels))
+                    c_idx = idxs[-1]
+                    response_channel_images.append((channel_image, idxs))
                 else:
                     # If len(needed) = 3 and RGB image, but channels need tinting
                     # If len(needed) = 1 and RGB image, but we want a single channel
                     for needed_channel in needed:
                         channel_idx = needed_channel % self.in_image.n_channels_per_read
                         image = ExtractChannelOp(channel_idx)(channel_image)
-                        response_channel_images.append((image, needed_channel))
+                        response_channel_images.append((image, c_idx))
+                        c_idx += 1
             else:
-                read_channel = read_channels[0]
-                response_channel_images.append((channel_image, read_channel))
+                response_channel_images.append((channel_image, c_idx))
+                c_idx += 1
 
         math_lut = None
         if self.float_processing:
@@ -257,12 +260,12 @@ class ProcessedView(MultidimView):
 
         processed_channel_images = list()
         for img, channel in response_channel_images:
-            if type(channel) is tuple:
+            if type(channel) is tuple and math_lut is not None:
                 img = ApplyLutImgOp(math_lut)(img)
             else:
-                channel_color = self.in_image.channels[channel].color
-                if channel_color:
-                    tinting_lut = ColorColormap(channel_color).lut(self.max_intensity + 1)  # TODO
+                colormap = self.colormaps[channel]
+                if colormap is not None:
+                    tinting_lut = colormap.lut(size=self.max_intensity + 1, bitdepth=self.best_effort_bitdepth)
                     lut = combine_lut(math_lut[:, channel], tinting_lut) if math_lut is not None else tinting_lut
                 else:
                     lut = math_lut
@@ -349,11 +352,11 @@ class WindowResponse(ProcessedView):
         self.point_style = annot_params.get('point_cross')
 
     @property
-    def colormap_processing(self):
+    def colorspace_processing(self):
         if self.colorspace == Colorspace.AUTO and self.annotation_mode == AnnotationStyleMode.DRAWING \
                 and len(self.channels) == 1 and not self.annotations.is_stroke_grayscale:
             return True
-        return super(WindowResponse, self).colormap_processing
+        return super(WindowResponse, self).colorspace_processing
 
     @property
     def new_colorspace(self):

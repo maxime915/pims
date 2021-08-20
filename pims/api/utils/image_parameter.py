@@ -620,9 +620,12 @@ def parse_filter_ids(filter_ids, existing_filters):
     return filters
 
 
-def parse_colormap_ids(colormap_ids, existing_colormaps, img_channels):
+def parse_colormap_ids(colormap_ids, existing_colormaps, channel_idxs, img_channels):
     colormaps = []
-    for i, colormap_id in enumerate(colormap_ids):
+    if len(colormap_ids) != len(channel_idxs):
+        colormap_ids = [colormap_ids[0]] * len(channel_idxs)
+
+    for i, colormap_id in zip(channel_idxs, colormap_ids):
         colormaps.append(parse_colormap_id(
             colormap_id, existing_colormaps, img_channels[i].color
         ))
