@@ -658,26 +658,23 @@ def parse_colormap_id(colormap_id, existing_colormaps, default_color):
     """
     if colormap_id == ColormapEnum.NONE:
         return None
-    elif colormap_id == ColormapEnum.DEFAULT:
+    elif colormap_id in (ColormapEnum.DEFAULT, ColormapEnum.DEFAULT_INVERTED):
         if default_color is None:
             return None
-        colormap_id = default_color
+        inv = '!' if colormap_id == ColormapEnum.DEFAULT_INVERTED else ''
+        colormap_id = inv + str(default_color).upper()
     else:
         colormap_id = colormap_id.upper()
 
     colormap = existing_colormaps.get(str(colormap_id))
     if colormap is None:
-        if isinstance(colormap_id, Color):
-            inverted = False
-            parsed_color = colormap_id
-        else:
-            inverted = colormap_id[0] == "!"
-            color = colormap_id[1:] if inverted else colormap_id
+        inverted = colormap_id[0] == "!"
+        color = colormap_id[1:] if inverted else colormap_id
 
-            try:
-                parsed_color = Color(color)
-            except ValueError:
-                raise ColormapNotFoundProblem(colormap_id)
+        try:
+            parsed_color = Color(color)
+        except ValueError:
+            raise ColormapNotFoundProblem(colormap_id)
 
         colormap = ColorColormap(parsed_color, inverted=inverted)
         existing_colormaps[colormap.identifier] = colormap

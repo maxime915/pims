@@ -129,6 +129,7 @@ class ColormapEnum(str, Enum):
     """
     NONE = 'NONE'
     DEFAULT = 'DEFAULT'
+    DEFAULT_INVERTED = '!DEFAULT'
 
 
 class ColormapId(BaseModel):

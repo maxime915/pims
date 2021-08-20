@@ -226,6 +226,7 @@ def test_parse_colormap_id():
     red = Color("red")
     assert parse_colormap_id(ColormapEnum.NONE, ALL_COLORMAPS, red) is None
     assert parse_colormap_id(ColormapEnum.DEFAULT, ALL_COLORMAPS, red).identifier == 'RED'
+    assert parse_colormap_id(ColormapEnum.DEFAULT_INVERTED, ALL_COLORMAPS, red).identifier == '!RED'
 
     assert parse_colormap_id('JET', ALL_COLORMAPS, red).identifier == 'JET'
     assert parse_colormap_id('!JET', ALL_COLORMAPS, red).identifier == '!JET'
@@ -233,7 +234,7 @@ def test_parse_colormap_id():
     assert parse_colormap_id('blue', ALL_COLORMAPS, red).identifier == 'BLUE'
     assert parse_colormap_id('!blue', ALL_COLORMAPS, red).identifier == '!BLUE'
 
-    assert parse_colormap_id('!rgb(0, 255, 0)', ALL_COLORMAPS, red).identifier == '!LIME'
+    assert parse_colormap_id('!0x0f0', ALL_COLORMAPS, red).identifier == '!LIME'
 
     assert '#ABCDEF' not in ALL_COLORMAPS
     assert parse_colormap_id('#abcdef', ALL_COLORMAPS, red).identifier == '#ABCDEF'
