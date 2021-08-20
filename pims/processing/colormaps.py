@@ -16,8 +16,10 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 from matplotlib.cm import get_cmap
+from pydantic.color import COLORS_BY_NAME
 
 from pims.api.utils.models import ColormapType
+from pims.processing.color import Color
 
 
 class Colormap(ABC):
@@ -78,6 +80,10 @@ class ColorColormap(Colormap):
         super().__init__(str(color), ColormapType.SEQUENTIAL, inverted)
         self._color = color
 
+    @property
+    def color(self):
+        return self._color
+
     def lut(self, size=256, bitdepth=8):
         r, g, b = self._color.as_float_tuple(alpha=False)
         n_colors = 1 if r == g == b else 3
@@ -134,6 +140,7 @@ mpl_cmaps[ColormapType.MISCELLANEOUS] = [
             'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
             'gist_ncar']
 
+# Non-trivial colormaps
 COLORMAPS = {}
 
 for ctype, cmaps in mpl_cmaps.items():
@@ -141,3 +148,27 @@ for ctype, cmaps in mpl_cmaps.items():
         for inv in (False, True):
             colormap = MatplotlibColormap(cmap, ctype=ctype, inverted=inv)
             COLORMAPS[colormap.identifier] = colormap
+
+
+# Pre-load colormaps for named colors
+COLOR_COLORMAPS = {}
+
+for name in COLORS_BY_NAME:
+    for inv in (False, True):
+        colormap = ColorColormap(Color(name), inverted=inv)
+        COLOR_COLORMAPS[colormap.identifier] = colormap
+
+
+# All pre-loaded colormaps
+ALL_COLORMAPS = {**COLORMAPS, **COLOR_COLORMAPS}
+
+
+# Default colormaps per channel index
+DEFAULT_CHANNEL_COLORMAPS = {
+    0: ALL_COLORMAPS['RED'],
+    1: ALL_COLORMAPS['LIME'],
+    2: ALL_COLORMAPS['BLUE'],
+    3: ALL_COLORMAPS['CYAN'],
+    4: ALL_COLORMAPS['MAGENTA'],
+    5: ALL_COLORMAPS['YELLOW']
+}

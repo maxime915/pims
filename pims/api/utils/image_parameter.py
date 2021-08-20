@@ -13,10 +13,13 @@
 # * limitations under the License.
 from copy import copy
 
-from pims.api.exceptions import TooLargeOutputProblem, BadRequestException, FilterNotFoundProblem
+from pims.api.exceptions import TooLargeOutputProblem, BadRequestException, FilterNotFoundProblem, \
+    ColormapNotFoundProblem
 from pims.api.utils.header import SafeMode
-from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, BitDepthEnum
+from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, BitDepthEnum, ColormapEnum
 from pims.api.utils.schema_format import parse_range, is_range
+from pims.processing.color import Color
+from pims.processing.colormaps import ColorColormap
 from pims.processing.region import Region
 
 
@@ -615,3 +618,67 @@ def parse_filter_ids(filter_ids, existing_filters):
         except KeyError:
             raise FilterNotFoundProblem(filter_id)
     return filters
+
+
+def parse_colormap_ids(colormap_ids, existing_colormaps, img_channels):
+    colormaps = []
+    for i, colormap_id in enumerate(colormap_ids):
+        colormaps.append(parse_colormap_id(
+            colormap_id, existing_colormaps, img_channels[i].color
+        ))
+    return colormaps
+
+
+def parse_colormap_id(colormap_id, existing_colormaps, default_color):
+    """
+    Parse a colormap ID to a valid colormap (or None).
+
+    If the parsed ID is a valid colormap which is not registered in the
+    existing colormaps, the valid colormap is added to the set of existing ones
+    as a side effect.
+
+    Parameters
+    ----------
+    colormap_id : ColormapId
+    existing_colormaps : dict
+        Existing colormaps
+    default_color : Color (optional)
+        The color for a monotonic linear colormap if the colormap ID is
+        `ColormapEnum.DEFAULT`.
+
+    Returns
+    -------
+    colormap : Colormap or None
+        The parsed colormap. If None, no colormap has to be applied.
+
+    Raises
+    ------
+    ColormapNotFoundProblem
+        If the colormap ID cannot be associated to any colormap.
+    """
+    if colormap_id == ColormapEnum.NONE:
+        return None
+    elif colormap_id == ColormapEnum.DEFAULT:
+        if default_color is None:
+            return None
+        colormap_id = default_color
+    else:
+        colormap_id = colormap_id.upper()
+
+    colormap = existing_colormaps.get(str(colormap_id))
+    if colormap is None:
+        if isinstance(colormap_id, Color):
+            inverted = False
+            parsed_color = colormap_id
+        else:
+            inverted = colormap_id[0] == "!"
+            color = colormap_id[1:] if inverted else colormap_id
+
+            try:
+                parsed_color = Color(color)
+            except ValueError:
+                raise ColormapNotFoundProblem(colormap_id)
+
+        colormap = ColorColormap(parsed_color, inverted=inverted)
+        existing_colormaps[colormap.identifier] = colormap
+    return colormap

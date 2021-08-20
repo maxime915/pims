@@ -122,12 +122,24 @@ class FilterType(str, Enum):
     PIXEL = 'PIXEL'
 
 
+class ColormapEnum(str, Enum):
+    """
+    * `NONE` - No colormap is applied, all channels are grayscale.
+    * `DEFAULT` - The colormap(s) determined by image metadata and/or format.
+    """
+    NONE = 'NONE'
+    DEFAULT = 'DEFAULT'
+
+
 class ColormapId(BaseModel):
     """
-    A unique case-insensitive identifier for a colormap
+    A unique case-insensitive identifier for a colormap.
+    Pre-defined colormap names can be found with the endpoint `/colormaps`.
+    CSS colors are valid colormap names (monotonic linear colormap).
+    Colormaps can be inverted by prepending the colormap name with `!`.
     """
-    __root__: str = Field(
-        ..., example='JET'
+    __root__: Union[str, ColormapEnum] = Field(
+        ..., examples=['JET', '!#f00', 'red']
     )
 
 
@@ -140,8 +152,19 @@ class ColormapIdList(BaseModel):
 
     Valid colormap names can be found with the endpoint `/colormaps`.
     """
-    # The colormap can be reversed by prepending the colormap name with `!`.
-    __root__: Union[FilterId, List[FilterId]]
+    __root__: Union[ColormapId, List[ColormapId]]
+
+
+class ExistingColormapId(BaseModel):
+    """
+    A unique case-insensitive identifier for a colormap.
+    Pre-defined colormap names can be found with the endpoint `/colormaps`.
+    CSS colors are valid colormap names (monotonic linear colormap).
+    Colormaps can be inverted by prepending the colormap name with `!`.
+    """
+    __root__: str = Field(
+        ..., examples=['JET', '!#f00', 'red']
+    )
 
 
 class ColormapType(str, Enum):

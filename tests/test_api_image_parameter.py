@@ -13,13 +13,16 @@
 # * limitations under the License.
 import pytest
 
-from pims.api.exceptions import TooLargeOutputProblem, BadRequestException
+from pims.api.exceptions import TooLargeOutputProblem, BadRequestException, ColormapNotFoundProblem
 from pims.api.utils.header import SafeMode
 from pims.api.utils.image_parameter import get_rationed_resizing, get_thumb_output_dimensions, parse_planes, \
     check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
-    check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity, parse_region
-from pims.api.utils.models import IntensitySelectionEnum, TierIndexType
+    check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity, parse_region, \
+    parse_colormap_id
+from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, ColormapEnum
 from pims.formats.utils.pyramid import Pyramid
+from pims.processing.color import Color
+from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.region import Region
 from tests.conftest import not_raises
 
@@ -217,3 +220,24 @@ def test_parse_region():
     with pytest.raises(BadRequestException):
         region = {'top': 100, 'left': 900, 'width': 1280, 'height': 1280}
         parse_region(img, **region, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False)
+
+
+def test_parse_colormap_id():
+    red = Color("red")
+    assert parse_colormap_id(ColormapEnum.NONE, ALL_COLORMAPS, red) is None
+    assert parse_colormap_id(ColormapEnum.DEFAULT, ALL_COLORMAPS, red).identifier == 'RED'
+
+    assert parse_colormap_id('JET', ALL_COLORMAPS, red).identifier == 'JET'
+    assert parse_colormap_id('!JET', ALL_COLORMAPS, red).identifier == '!JET'
+
+    assert parse_colormap_id('blue', ALL_COLORMAPS, red).identifier == 'BLUE'
+    assert parse_colormap_id('!blue', ALL_COLORMAPS, red).identifier == '!BLUE'
+
+    assert parse_colormap_id('!rgb(0, 255, 0)', ALL_COLORMAPS, red).identifier == '!LIME'
+
+    assert '#ABCDEF' not in ALL_COLORMAPS
+    assert parse_colormap_id('#abcdef', ALL_COLORMAPS, red).identifier == '#ABCDEF'
+    assert '#ABCDEF' in ALL_COLORMAPS
+
+    with pytest.raises(ColormapNotFoundProblem):
+        parse_colormap_id('brol', ALL_COLORMAPS, red)
