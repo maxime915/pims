@@ -54,11 +54,19 @@ def _serialize_colormap(cmap):
 
 
 @router.get('/colormaps', response_model=ColormapsList, tags=api_tags)
-def list_colormaps():
+def list_colormaps(
+        with_inverted: bool = Query(
+            False, description="Also list inverted colormaps"
+        )
+):
     """
     List all colormaps
     """
-    colormaps = [_serialize_colormap(cmap) for cmap in COLORMAPS.values()]
+    colormaps = [
+        _serialize_colormap(cmap)
+        for cmap in COLORMAPS.values()
+        if with_inverted or not cmap.inverted
+    ]
     return response_list(colormaps)
 
 

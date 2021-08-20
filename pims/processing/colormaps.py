@@ -21,17 +21,20 @@ from pims.api.utils.models import ColormapType
 
 
 class Colormap(ABC):
-    def __init__(self, id, ctype):
+    def __init__(self, id, ctype, inverted=False):
         self.id = id
         self.ctype = ctype
+        self.inverted = inverted
         
     @property
     def identifier(self):
-        return self.id.upper()
+        inv = "!" if self.inverted else ""
+        return inv + self.id.upper()
     
     @property
     def name(self):
-        return self.id.replace('_', ' ').title()
+        inv = " (Inverted)" if self.inverted else ""
+        return self.id.replace('_', ' ').title() + inv
 
     @abstractmethod
     def lut(self, size=256, bitdepth=8):
@@ -43,8 +46,8 @@ class Colormap(ABC):
 
 
 class MatplotlibColormap(Colormap):
-    def __init__(self, id, ctype):
-        super().__init__(id, ctype)
+    def __init__(self, id, ctype, inverted=False):
+        super().__init__(id, ctype, inverted)
 
         self._mpl_cmap = dict()
         self._init_cmap(256)
@@ -52,7 +55,8 @@ class MatplotlibColormap(Colormap):
     def _init_cmap(self, size):
         # (Matplotlib already precomputes with N=256)
         mpl_size = size if size != 256 else None
-        self._mpl_cmap[size] = get_cmap(self.id, mpl_size)
+        mpl_name = self.id + ("_r" if self.inverted else "")
+        self._mpl_cmap[size] = get_cmap(mpl_name, mpl_size)
         self._mpl_cmap[size]._init()
 
     def lut(self, size=256, bitdepth=8):
@@ -70,8 +74,8 @@ class MatplotlibColormap(Colormap):
 
 
 class ColorColormap(Colormap):
-    def __init__(self, color):
-        super().__init__(str(color), ColormapType.SEQUENTIAL)
+    def __init__(self, color, inverted=False):
+        super().__init__(str(color), ColormapType.SEQUENTIAL, inverted)
         self._color = color
 
     def lut(self, size=256, bitdepth=8):
@@ -83,7 +87,10 @@ class ColorColormap(Colormap):
         x = [0, size - 1]
         xvals = np.arange(size)
         for i, color in enumerate(colors):
-            y = [0, color]
+            if self.inverted:
+                y = [color, 0]
+            else:
+                y = [0, color]
             lut[:, i] = np.interp(xvals, x, y)
 
         lut = lut * (2 ** bitdepth - 1)
@@ -131,4 +138,6 @@ COLORMAPS = {}
 
 for ctype, cmaps in mpl_cmaps.items():
     for cmap in cmaps:
-        COLORMAPS[cmap.upper()] = MatplotlibColormap(cmap, ctype=ctype)
+        for inv in (False, True):
+            colormap = MatplotlibColormap(cmap, ctype=ctype, inverted=inv)
+            COLORMAPS[colormap.identifier] = colormap
