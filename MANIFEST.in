@@ -1,4 +1,2 @@
 include README.md LICENSE
-graft pims/static
-graft pims/templates
 global-exclude *.pyc
