@@ -46,6 +46,10 @@ class Colormap(ABC):
         lut = self.lut(size=width, bitdepth=bitdepth)
         return np.tile(lut, (height, 1, 1))
 
+    def __eq__(self, o: object) -> bool:
+        return isinstance(o, Colormap) and \
+               o.identifier == self.identifier
+
 
 class MatplotlibColormap(Colormap):
     def __init__(self, id, ctype, inverted=False):
@@ -172,3 +176,11 @@ DEFAULT_CHANNEL_COLORMAPS = {
     4: ALL_COLORMAPS['MAGENTA'],
     5: ALL_COLORMAPS['YELLOW']
 }
+
+RGB_COLORMAPS = [
+    ALL_COLORMAPS['RED'], ALL_COLORMAPS['LIME'], ALL_COLORMAPS['BLUE']
+]
+
+
+def is_rgb_colormapping(colormaps):
+    return len(colormaps) == 3 and colormaps == RGB_COLORMAPS
