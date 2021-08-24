@@ -113,17 +113,8 @@ class OmeTiffParser(TifffileParser):
         imd.n_intrinsic_channels = shape.get('C', 1)
         imd.n_channels_per_read = shape.get('S', 1)
 
-        return imd
-
-    def parse_known_metadata(self):
         omexml = cached_omexml(self.format)
         base = omexml.main_image
-
-        imd = super().parse_known_metadata()
-        imd.description = base.description
-        imd.acquisition_datetime = self.parse_ome_acquisition_date(
-            base.acquisition_date
-        )
 
         if imd.n_channels == 3:
             default_names = ['R', 'G', 'B']
@@ -146,6 +137,18 @@ class OmeTiffParser(TifffileParser):
                 excitation_wavelength=channel.excitation_wavelength,
                 suggested_name=name, color=color
             ))
+
+        return imd
+
+    def parse_known_metadata(self):
+        omexml = cached_omexml(self.format)
+        base = omexml.main_image
+
+        imd = super().parse_known_metadata()
+        imd.description = base.description
+        imd.acquisition_datetime = self.parse_ome_acquisition_date(
+            base.acquisition_date
+        )
 
         imd.physical_size_x = self.parse_ome_physical_size(
             base.pixels.physical_size_X, base.pixels.physical_size_X_unit

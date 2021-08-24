@@ -117,7 +117,7 @@ class Image(Path):
 
     @property
     def channels(self):
-        return self._format.full_imd.channels
+        return self._format.main_imd.channels
 
     @property
     def objective(self):
