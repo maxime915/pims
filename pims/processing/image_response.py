@@ -170,12 +170,6 @@ class ProcessedView(MultidimView):
         # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
         return self.channels, self.z_slices[0], self.timepoints[0]
 
-    def raw_view_reads(self):
-        # TODO: generalize
-        # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
-        n_c_reads = math.ceil(len(self.channels) / self.in_image.n_channels_per_read)
-        return n_c_reads, 1, 1
-
     def math_lut(self):
         def dtype(bitdepth):
             if bitdepth > 16:
@@ -237,7 +231,7 @@ class ProcessedView(MultidimView):
 
             if len(read_channels) == 3:
                 idxs = (c_idx, c_idx + 1, c_idx + 2)
-                if needed == (0, 1, 2) and \
+                if needed == [0, 1, 2] and \
                         is_rgb([self.colormaps[idx].color for idx in idxs]):
                     # RGB image, and no tinting required
                     c_idx = idxs[-1]
@@ -260,8 +254,9 @@ class ProcessedView(MultidimView):
 
         processed_channel_images = list()
         for img, channel in response_channel_images:
-            if type(channel) is tuple and math_lut is not None:
-                img = ApplyLutImgOp(math_lut)(img)
+            if type(channel) is tuple:
+                if math_lut is not None:
+                    img = ApplyLutImgOp(math_lut)(img)
             else:
                 colormap = self.colormaps[channel]
                 if colormap is not None:
