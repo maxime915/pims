@@ -622,8 +622,10 @@ def parse_filter_ids(filter_ids, existing_filters):
 
 def parse_colormap_ids(colormap_ids, existing_colormaps, channel_idxs, img_channels):
     colormaps = []
-    if len(colormap_ids) != len(channel_idxs):
-        colormap_ids = [colormap_ids[0]] * len(channel_idxs)
+    if len(colormap_ids) == 0:
+        colormap_ids = [ColormapEnum.DEFAULT] * len(channel_idxs)
+    elif len(colormap_ids) == 1:
+        colormap_ids = colormap_ids * len(channel_idxs)
 
     for i, colormap_id in zip(channel_idxs, colormap_ids):
         colormaps.append(parse_colormap_id(
