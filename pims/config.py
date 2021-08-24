@@ -10,6 +10,7 @@ logger = logging.getLogger("pims.app")
 
 class Settings(BaseSettings):
     root: str
+    pending_path: str
     default_image_size_safety_mode: str = "SAFE_REJECT"
     default_annotation_origin: str = "LEFT_TOP"
     output_size_limit: int = 10000

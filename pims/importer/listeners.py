@@ -5,6 +5,7 @@ from cytomine.models import UploadedFile, AbstractImage, \
     AbstractSliceCollection, AbstractSlice, Property
 
 from pims.api.utils.response import convert_quantity
+from pims.config import get_settings
 from pims.files.file import Path
 from pims.formats.utils.metadata import parse_int
 from pims.formats.utils.vips import dtype_to_bits
@@ -19,9 +20,8 @@ UploadedFile.ERROR_STORAGE = UploadedFile.ERROR_DEPLOYMENT
 UploadedFile.ERROR_UNEXPECTED = UploadedFile.ERROR_DEPLOYMENT
 UploadedFile.IMPORTED = UploadedFile.CONVERTED
 
-# TODO
-PENDING_PATH = Path("/tmp/uploaded")
-FILE_ROOT_PATH = Path("/data/pims")
+PENDING_PATH = Path(get_settings().pending_path)
+FILE_ROOT_PATH = Path(get_settings().root)
 
 
 class ImportEventType(str, Enum):

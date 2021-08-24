@@ -18,6 +18,7 @@ from datetime import datetime
 from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem, \
     BadRequestException
 from pims.api.utils.models import HistogramType
+from pims.config import get_settings
 from pims.files.archive import Archive, ArchiveError
 from pims.files.file import Path, HISTOGRAM_STEM, UPLOAD_DIR_PREFIX, PROCESSED_DIR, ORIGINAL_STEM, EXTRACTED_DIR, \
     SPATIAL_STEM
@@ -28,9 +29,8 @@ from pims.importer.listeners import ImportEventType
 
 log = logging.getLogger("pims.app")
 
-# TODO
-PENDING_PATH = Path("/tmp/uploaded")
-FILE_ROOT_PATH = Path("/data/pims")
+PENDING_PATH = Path(get_settings().pending_path)
+FILE_ROOT_PATH = Path(get_settings().root)
 
 
 def unique_name_generator():
