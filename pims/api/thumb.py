@@ -121,7 +121,7 @@ def _show_thumb(
     array_parameters = (min_intensities, max_intensities, colormaps)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
-    intensities = parse_intensity_bounds(in_image, channels, min_intensities, max_intensities)
+    intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 
@@ -130,8 +130,6 @@ def _show_thumb(
         # Currently, we only allow 1 parameter to be applied to all channels
         check_array_size(array_parameter, allowed=[0, 1], nullable=False)
     filters = parse_filter_ids(filters, FILTERS)
-
-    # TODO: verify colormap names are valid
 
     return ThumbnailResponse(
         in_image, channels, z_slices, timepoints,

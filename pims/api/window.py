@@ -134,7 +134,7 @@ def _show_window(
     array_parameters = (min_intensities, max_intensities, colormaps)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
-    intensities = parse_intensity_bounds(in_image, channels, min_intensities, max_intensities)
+    intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 

@@ -111,34 +111,34 @@ def test_parse_intensity_bounds():
         def channel_stats(self, channel):
             return dict(minimum=channel, maximum=channel + 10)
 
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], [], []) == ([0], [255])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [255])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], [IntensitySelectionEnum.STRETCH_IMAGE],
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [], []) == ([0], [255])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [255])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
                                   [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0], [10])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [100]) == ([10], [100])
-    assert parse_intensity_bounds(FakeImage(8, 1), [0], [10], [1000]) == ([10], [255])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [10], [100]) == ([10], [100])
+    assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [10], [1000]) == ([10], [255])
 
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [], []) == ([0], [65535])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [IntensitySelectionEnum.STRETCH_IMAGE],
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [], []) == ([0], [65535])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0], [10])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
                                   [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0], [10])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100]) == ([10], [100])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [1000]) == ([10], [1000])
-    assert parse_intensity_bounds(FakeImage(16, 1), [0], [10], [100000]) == ([10], [65535])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [10], [100]) == ([10], [100])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [10], [1000]) == ([10], [1000])
+    assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [10], [100000]) == ([10], [65535])
 
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 0], [255, 255])
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [IntensitySelectionEnum.STRETCH_IMAGE],
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 0], [255, 255])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
                                   [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0, 1], [10, 11])
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
-    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [255, 20])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1], [0], [0], [10], [100]) == ([10, 10], [100, 100])
+    assert parse_intensity_bounds(FakeImage(8, 2), [0, 1],  [0], [0],[10], [1000, 20]) == ([10, 10], [255, 20])
 
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [IntensitySelectionEnum.STRETCH_IMAGE],
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE], [IntensitySelectionEnum.AUTO_IMAGE]) == ([0, 1], [10, 11])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
                                   [IntensitySelectionEnum.STRETCH_IMAGE]) == ([0, 1], [10, 11])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [100]) == ([10, 10], [100, 100])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [10], [1000, 20]) == ([10, 10], [1000, 20])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, 5], [100000, 20]) == ([10, 5], [65535, 20])
-    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1],  [10, IntensitySelectionEnum.AUTO_IMAGE], [100000, 20]) == ([10, 1], [65535, 20])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [0], [0], [10], [100]) == ([10, 10], [100, 100])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [0], [0], [10], [1000, 20]) == ([10, 10], [1000, 20])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [0], [0],  [10, 5], [100000, 20]) == ([10, 5], [65535, 20])
+    assert parse_intensity_bounds(FakeImage(16, 2), [0, 1], [0], [0],  [10, IntensitySelectionEnum.AUTO_IMAGE], [100000, 20]) == ([10, 1], [65535, 20])
 
 
 class FakeImagePyramid:

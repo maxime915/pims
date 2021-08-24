@@ -429,7 +429,8 @@ def ensure_list(value):
     return []
 
 
-def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities, allow_none=False):
+def parse_intensity_bounds(image, out_channels, out_zslices, out_timepoints,
+                           min_intensities, max_intensities, allow_none=False):
     """
     Parse intensity parameters according to a specific image.
 
@@ -439,6 +440,10 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
         Input image used to determine minimum and maximum admissible values per channel.
     out_channels: list of int
         Channel indexes expected in the output, used for intensities.
+    out_zslices : list of int
+        Z slices indexes expected in the output, used for AUTO_PLANE and STRETCH_PLANE.
+    out_timepoints : list of int
+        Timepoint indexes expected in the output, used for AUTO_PLANE ans STRETCH_PLANE.
     min_intensities : list of int (optional) or str (optional)
         List of minimum intensities. See API spec for admissible string constants.
     max_intensities : list of int (optional) or str (optional)
@@ -469,6 +474,15 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
     
     def parse_intensity(c, bound_value, bound_default, bound_kind):
         bound_kind_idx = 0 if bound_kind == "minimum" else 1
+
+        def stretch_plane():
+            bounds = []
+            for z in out_zslices:
+                for t in out_timepoints:
+                    bounds.append(image.plane_bounds(c, z, t)[bound_kind_idx])
+            func = min if bound_kind == "minimum" else max
+            return func(bounds)
+
         if type(bound_value) is int:
             if bound_value < 0:
                 return 0
@@ -486,8 +500,14 @@ def parse_intensity_bounds(image, out_channels, min_intensities, max_intensities
                     return image.channel_bounds(c)[bound_kind_idx]
             elif bound_value == IntensitySelectionEnum.STRETCH_IMAGE:
                 return image.channel_bounds(c)[bound_kind_idx]
+            elif bound_value == IntensitySelectionEnum.AUTO_PLANE:
+                if image.significant_bits <= 8:
+                    return bound_default
+                else:
+                    return stretch_plane()
+            elif bound_value == IntensitySelectionEnum.STRETCH_PLANE:
+                return stretch_plane()
             else:
-                # TODO: AUTO_PLANE, STRETCH_PLANE
                 return bound_default
 
     for idx, (channel, intensity) in enumerate(zip(out_channels, min_intensities)):
