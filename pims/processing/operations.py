@@ -224,7 +224,12 @@ class ApplyLutImgOp(ImageOp):
         if self.lut is None:
             return img
 
-        lut = imglib_adapters.get((type(self.lut), VIPSImage))(self.lut[np.newaxis, :, :])
+        if self.lut.ndim == 3:
+            lut = self.lut.reshape((1,) + self.lut.shape[:2])
+        else:
+            lut = self.lut[np.newaxis, :, :]
+
+        lut = imglib_adapters.get((type(lut), VIPSImage))(lut)
         return img.maplut(lut)
 
 
