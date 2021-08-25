@@ -84,6 +84,9 @@ class MultidimView(View):
         # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
         return self.channels, self.z_slices[0], self.timepoints[0]
 
+    def raw_view(self, c, z, t):
+        pass
+
 
 class ProcessedView(MultidimView):
     def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
@@ -252,9 +255,6 @@ class ProcessedView(MultidimView):
                (self.colorspace == Colorspace.COLOR and
                 len(self.channels) == 1)
 
-    def raw_view(self, c, z, t):
-        pass
-
     def process(self):
         def channels_for_read(read, in_image):
             first = read * in_image.n_channels_per_read
@@ -310,13 +310,12 @@ class ProcessedView(MultidimView):
         img = ResizeImgOp(self.out_width, self.out_height)(img)
 
         if self.filter_processing:
+            if self.filter_colorspace is not None:
+                img = ColorspaceImgOp(self.filter_colorspace)(img)
+
             filter_params = dict()
             if self.filter_processing_histogram:
                 filter_params['histogram'] = self.process_histogram().squeeze()
-
-            if self.filter_colorspace_processing:
-                img = ColorspaceImgOp(self.filter_colorspace)(img)
-
             for filter_op in self.filters:
                 img = filter_op(**filter_params)(img)
 
@@ -325,9 +324,9 @@ class ProcessedView(MultidimView):
         return img
 
     def process_histogram(self):
-        hist = self.in_image.histogram.channel_histogram(np.s_[:])
-        if len(hist.shape) == 1:
-            hist = hist.reshape((1, -1))
+        hist = self.in_image.histogram.plane_histogram(*self.raw_view_planes())
+        hist = hist.squeeze()
+        hist = hist.reshape((1, -1)) if hist.ndim == 1 else hist
 
         # TODO: filters are computed on best_effort bitdepth while it should do on image bitdepth
         hist = RescaleHistOp(self.best_effort_bitdepth)(hist)

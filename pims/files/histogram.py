@@ -83,6 +83,9 @@ class ZarrHistogramFormat(HistogramFormat):
     def channel_histogram(self, c):
         if not self.per_channels:
             return self.image_histogram()
+
+        if type(c) is list:
+            return self.zhf[f"{ZHF_PER_CHANNEL}/{ZHF_HIST}"].get_orthogonal_selection((c,))
         return self.zhf[f"{ZHF_PER_CHANNEL}/{ZHF_HIST}"][c]
 
     def planes_bounds(self):
@@ -98,6 +101,13 @@ class ZarrHistogramFormat(HistogramFormat):
     def plane_histogram(self, c, z, t):
         if not self.per_planes:
             return self.channel_histogram(c)
+
+        if type(c) is list or type(z) is list or type(t) is list:
+            c = c if type(c) is list else [c]
+            z = z if type(z) is list else [z]
+            t = t if type(t) is list else [t]
+            return self.zhf[f"{ZHF_PER_PLANE}/{ZHF_HIST}"].get_orthogonal_selection((t, z, c))
+
         return self.zhf[f"{ZHF_PER_PLANE}/{ZHF_HIST}"][t, z, c]
 
 

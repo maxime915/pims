@@ -14,9 +14,9 @@
 import logging
 import time
 
+import numpy as np
 import pyvips
 from pyvips import Image as VIPSImage, Size as VIPSSize
-import numpy as np
 from rasterio.features import rasterize
 from shapely.affinity import affine_transform
 
@@ -36,6 +36,7 @@ class ImageOp:
 
     Image operations are expected to be called like a function: `MyImgOp(param)(img)`.
     """
+
     def __init__(self):
         self._impl = {}
 
@@ -106,27 +107,6 @@ class OutputProcessor(ImageOp):
         pass
 
 
-class CastImgOp(ImageOp):
-    """Cast an image to another type.
-
-    Attributes
-    ----------
-    dtype : data-type, optional
-        Desired data-type for the image.
-    """
-    def __init__(self, dtype):
-        super().__init__()
-        self._impl[VIPSImage] = self._vips_impl
-        self._impl[np.ndarray] = self._numpy_impl
-        self.dtype = dtype
-
-    def _vips_impl(self, img, *args, **kwargs):
-        return img.cast(dtype_to_vips_format[str(self.dtype)])
-
-    def _numpy_impl(self, img, *args, **kwargs):
-        return img.astype(self.dtype)
-
-
 class ResizeImgOp(ImageOp):
     """Resize a 2D image to expected size.
 
@@ -137,6 +117,7 @@ class ResizeImgOp(ImageOp):
     height: int
         Expected height
     """
+
     def __init__(self, width, height):
         super().__init__()
         self._impl[VIPSImage] = self._vips_impl
@@ -153,65 +134,6 @@ class ResizeImgOp(ImageOp):
 
             img = img.thumbnail_image(self.width, height=self.height, size=VIPSSize.FORCE)
         return img
-
-
-class LogImgOp(ImageOp):
-    """Apply logarithmic scale on image.
-    Image is expected to be a normalized float array.
-
-    Formula: out = ln(1+ in) * max_per_channel / ln(1 + max_per_channel)
-
-    Attributes
-    ----------
-    max_intensities : list of int
-        Maximum intensity per channel in the original image
-
-    References
-    ----------
-    * Icy Logarithmic 2D viewer plugin (http://icy.bioimageanalysis.org/plugin/logarithmic-2d-viewer/)
-    """
-
-    def __init__(self, max_intensities):
-        super().__init__()
-        self._impl[VIPSImage] = self._vips_impl
-        self._impl[np.ndarray] = self._numpy_impl
-        self.max_intensities = max_intensities
-
-    def ratio(self):
-        ratio = 1. / np.log1p(1)
-        return ratio.flatten()
-
-    def _vips_impl(self, img, *args, **kwargs):
-        return img.linear([1], [1]).log().linear(list(self.ratio()), [0])
-
-    def _numpy_impl(self, img, *args, **kwargs):
-        return np.log1p(img) * self.ratio()
-
-
-class GammaImgOp(ImageOp):
-    """Apply gamma on an image.
-    Image is expected to be a normalized float array.
-
-    Attributes
-    ----------
-    exponents : list of float
-        Exponents to apply per channel
-    """
-    def __init__(self, exponents):
-        super().__init__()
-        self._impl[VIPSImage] = self._vips_impl
-        self._impl[np.ndarray] = self._numpy_impl
-        self.exponents = exponents
-
-    def _vips_impl(self, img):
-        # TODO: apply gamma per channel (split with band join) if needed.
-        # TODO: now first gamma is applied on all channels.
-        # return img.math2_const("pow", self.exponent)
-        exp = self.exponents[0]
-        return img.gamma(exponent=1 / exp)
-
-    def _numpy_impl(self, img):
-        return np.power(img, self.exponents)
 
 
 class ApplyLutImgOp(ImageOp):
@@ -231,84 +153,6 @@ class ApplyLutImgOp(ImageOp):
 
         lut = imglib_adapters.get((type(lut), VIPSImage))(lut)
         return img.maplut(lut)
-
-
-class RescaleImgOp(ImageOp):
-    """Rescale a normalized float array to maximum admissible value for a given bit depth.
-
-    Attributes
-    ----------
-    bitdepth: int
-        Exponent used to rescale values so that out = in * (pow(2, bitdepth) - 1)
-    """
-    def __init__(self, bitdepth):
-        super().__init__()
-        self._impl[VIPSImage] = self._vips_impl
-        self._impl[np.ndarray] = self._numpy_impl
-        self.bitdepth = bitdepth
-
-    def dtype(self):
-        if self.bitdepth > 16:
-            return 'uint32'
-        elif self.bitdepth > 8:
-            return 'uint16'
-        else:
-            return 'uint8'
-
-    def factor(self):
-        return (2 ** self.bitdepth) - 1
-
-    def _vips_impl(self, img):
-        return img.linear([self.factor()], [0]).cast(dtype_to_vips_format[self.dtype()])
-
-    def _numpy_impl(self, img):
-        return (img * self.factor()).astype(np.dtype(self.dtype()))
-
-
-class NormalizeImgOp(ImageOp):
-    """Normalize an image according min and max intensities per channel.
-
-    Attributes
-    ----------
-    min_intensities : list of int
-        Minimum intensities per channel
-    max_intensities : list of int
-        Maximum intensities per channel
-    """
-    def __init__(self, min_intensities, max_intensities):
-        super().__init__()
-        self._impl[VIPSImage] = self._vips_impl
-        self._impl[np.ndarray] = self._numpy_impl
-
-        self.min_intensities = np.array(min_intensities)
-        self.max_intensities = np.array(max_intensities)
-
-    def invdiff(self):
-        diff = (self.max_intensities - self.min_intensities)
-        return 1. / np.where(diff == 0, 1e-30, diff)
-
-    def _vips_impl(self, img):
-        return img.linear(list(self.invdiff()), list(-self.min_intensities * self.invdiff()))
-
-    def _numpy_impl(self, img):
-        return (img - self.min_intensities) * self.invdiff()
-
-
-class RescaleHistOp(ImageOp):
-    """Rescale an histogram for a given bit depth.
-
-    Attributes
-    ----------
-    bitdepth: int
-        Exponent used to rescale values so that out = in * (pow(2, bitdepth) - 1)
-    """
-    def __init__(self, bitdepth):
-        super().__init__()
-        self._impl[np.ndarray] = self._numpy_impl
-        self.bitdepth = bitdepth
-
-    def _numpy_impl(self, hist):
-        return hist.reshape((hist.shape[0], 2 ** self.bitdepth, -1)).sum(axis=2)
 
 
 class ColorspaceImgOp(ImageOp):
@@ -366,6 +210,24 @@ class ChannelReductionOp(ImageOp):
         return VIPSImage.sum(imgs).cast(format)
 
 
+class RescaleHistOp(ImageOp):
+    """Rescale an histogram for a given bit depth.
+
+    Attributes
+    ----------
+    bitdepth: int
+        Exponent used to rescale values so that out = in * (pow(2, bitdepth) - 1)
+    """
+
+    def __init__(self, bitdepth):
+        super().__init__()
+        self._impl[np.ndarray] = self._numpy_impl
+        self.bitdepth = bitdepth
+
+    def _numpy_impl(self, hist):
+        return hist.reshape((hist.shape[0], 2 ** self.bitdepth, -1)).sum(axis=2)
+
+
 class ColorspaceHistOp(ImageOp):
     def __init__(self, colorspace):
         super().__init__()
@@ -374,10 +236,13 @@ class ColorspaceHistOp(ImageOp):
 
     def _numpy_impl(self, hist):
         hist = np.transpose(hist)
+        n_channels = hist.shape[-1]
 
-        if self.colorspace == Colorspace.GRAY and hist.shape[-1] != 1:
-            return hist @ np.array([0.2125, 0.7154, 0.0721])
-        elif self.colorspace == Colorspace.COLOR and hist.shape[-1] != 3:
+        if self.colorspace == Colorspace.GRAY and n_channels != 1:
+            n_used_channels = min(n_channels, 3)
+            luminance = [0.2125, 0.7154, 0.0721]
+            return hist[:n_used_channels] @ np.array(luminance[:n_used_channels])
+        elif self.colorspace == Colorspace.COLOR and n_channels != 3:
             return np.dstack((hist, hist, hist))
         else:
             return hist
