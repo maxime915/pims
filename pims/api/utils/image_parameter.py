@@ -683,11 +683,14 @@ def parse_colormap_id(colormap_id, existing_colormaps, default_color):
     """
     if colormap_id == ColormapEnum.NONE:
         return None
-    elif colormap_id in (ColormapEnum.DEFAULT, ColormapEnum.DEFAULT_INVERTED):
+    elif colormap_id == ColormapEnum.DEFAULT:
         if default_color is None:
             return None
-        inv = '!' if colormap_id == ColormapEnum.DEFAULT_INVERTED else ''
-        colormap_id = inv + str(default_color).upper()
+        colormap_id = str(default_color).upper()
+    elif colormap_id == ColormapEnum.DEFAULT_INVERTED:
+        if default_color is None:
+            return existing_colormaps.get('!WHITE')
+        colormap_id = '!' + str(default_color).upper()
     else:
         colormap_id = colormap_id.upper()
 
