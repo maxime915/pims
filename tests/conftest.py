@@ -13,15 +13,15 @@
 # * limitations under the License.
 
 import os
-import shutil
+from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from contextlib import contextmanager
 
 from pims import config
+
+os.environ['CONFIG_FILE'] = "./pims-config.env"
 
 with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
     lines = f.read().splitlines()
@@ -38,7 +38,7 @@ with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
 
 
 def create_fake_files(fake_files):
-    root = Path(".")  #TODO Path(current_app.config['FILE_ROOT_PATH'])
+    root = Path(test_root())
     for ff in fake_files.values():
         path = root / Path(ff['filepath'])
         path.parent.mkdir(exist_ok=True, parents=True)
@@ -59,14 +59,12 @@ def fake_files():
 
 
 def test_root():
-    return "/tmp/pims-test"
+    return get_settings().root
 
 
 def get_settings():
     return config.Settings(
-        root=test_root(),
-        cytomine_public_key="TODO",
-        cytomine_private_key="TODO"
+        _env_file=os.getenv("CONFIG_FILE")
     )
 
 
