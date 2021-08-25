@@ -17,6 +17,8 @@ from typing import Optional
 from fastapi import Header, Depends
 
 from pims.config import get_settings
+DEFAULT_SAFE_MODE = get_settings().default_image_size_safety_mode
+DEFAULT_ANNOTATION_ORIGIN = get_settings().default_annotation_origin
 
 
 def serialize_header(value, style='simple', explode=False):
@@ -96,7 +98,7 @@ def accept_header(
 
 def safe_mode_header(
     safe_mode: SafeMode = Header(
-        SafeMode.SAFE_REJECT,  # TODO get_settings().default_image_size_safety_mode,
+        DEFAULT_SAFE_MODE,
         alias="X-Image-Size-Safety",
         description="This header provides hints about the way the server has to deal "
                     "with too large image responses.\n"
@@ -118,7 +120,7 @@ class AnnotationOrigin(str, Enum):
 
 def annotation_origin_header(
     annot_origin: AnnotationOrigin = Header(
-        AnnotationOrigin.LEFT_TOP,  # TODO get_settings().default_annotation_origin,
+        DEFAULT_ANNOTATION_ORIGIN,
         alias="X-Annotation-Origin",
         description="This header give the origin coordinate system "
                     "in which are described provided annotations."
