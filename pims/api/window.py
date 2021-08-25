@@ -131,14 +131,14 @@ def _show_window(
     filters = ensure_list(filters)
     gammas = ensure_list(gammas)
 
-    array_parameters = (min_intensities, max_intensities, colormaps)
+    array_parameters = (min_intensities, max_intensities, colormaps, gammas)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
     intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 
-    array_parameters = (gammas, filters)
+    array_parameters = (filters,)
     for array_parameter in array_parameters:
         # Currently, we only allow 1 parameter to be applied to all channels
         check_array_size(array_parameter, allowed=[0, 1], nullable=False)
