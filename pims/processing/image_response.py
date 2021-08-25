@@ -11,30 +11,33 @@
 # * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # * See the License for the specific language governing permissions and
 # * limitations under the License.
-import math
+from functools import lru_cache
 
 import numpy as np
 from starlette.responses import Response
 
 from pims import PIMS_SLUG_PNG
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
-from pims.processing.color import is_rgb
-from pims.processing.colormaps import combine_lut, ColorColormap, is_rgb_colormapping
-from pims.processing.operations import OutputProcessor, ResizeImgOp, GammaImgOp, LogImgOp, RescaleImgOp, CastImgOp, \
-    NormalizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
+from pims.formats.utils.vips import np_dtype
+from pims.processing.colormaps import combine_lut, is_rgb_colormapping, default_lut
+from pims.processing.operations import OutputProcessor, ResizeImgOp, ColorspaceImgOp, MaskRasterOp, DrawRasterOp, \
+    TransparencyMaskImgOp, DrawOnImgOp, ColorspaceHistOp, \
     RescaleHistOp, ApplyLutImgOp, ExtractChannelOp, ChannelReductionOp
 
 
 class View:
-    def __init__(self, in_image, out_format, out_width, out_height, out_bitdepth=8, **kwargs):
+    def __init__(self, in_image, out_format, out_width, out_height,
+                 out_bitdepth=8, **kwargs):
         self.in_image = in_image
 
         self.out_width = out_width
         self.out_height = out_height
         self.out_format = out_format
         self.out_bitdepth = out_bitdepth
-        self.out_format_params = {k.replace('out_format_', ''): v
-                                  for k, v in kwargs.items() if k.startswith('out_format_')}
+        self.out_format_params = {
+            k.replace('out_format_', ''): v
+            for k, v in kwargs.items() if k.startswith('out_format_')
+        }
 
     @property
     def best_effort_bitdepth(self):
@@ -76,6 +79,11 @@ class MultidimView(View):
         self.z_reduction = z_reduction
         self.t_reduction = t_reduction
 
+    def raw_view_planes(self):
+        # TODO: generalize
+        # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
+        return self.channels, self.z_slices[0], self.timepoints[0]
+
 
 class ProcessedView(MultidimView):
     def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
@@ -110,6 +118,94 @@ class ProcessedView(MultidimView):
                any(i != self.max_intensity for i in self.max_intensities)
 
     @property
+    def math_processing(self):
+        return self.intensity_processing or \
+               self.gamma_processing or \
+               self.log_processing
+
+    @lru_cache(maxsize=None)
+    def math_lut(self):
+        """
+        Compute lookup table for math processing operations if any.
+
+        Returns
+        -------
+        lut : array_like or None
+            Array of shape (2**img.bitdepth, n_channels, 1)
+        """
+        if not self.math_processing:
+            return None
+
+        n_channels = len(self.channels)
+        lut = np.zeros((self.in_image.max_value + 1, n_channels))
+        if self.intensity_processing:
+            for c in range(n_channels):
+                mini = self.min_intensities[c]
+                maxi = self.max_intensities[c]
+                diff = maxi - mini
+                lut[mini:maxi, c] = np.linspace(0, 1, num=diff)
+                lut[maxi:, c] = 1
+        else:
+            lut = np.linspace(
+                (0,) * n_channels, (1,) * n_channels,
+                num=self.in_image.max_value + 1
+            )
+
+        if self.gamma_processing:
+            lut = np.power(lut, self.gammas)
+
+        if self.log_processing:
+            # Apply logarithmic scale on image.
+            # Formula: out = ln(1+ in) * max_per_channel / ln(1 + max_per_channel)
+            # Reference: Icy Logarithmic 2D viewer plugin
+            # (http://icy.bioimageanalysis.org/plugin/logarithmic-2d-viewer/)
+            lut = np.log1p(lut) * 1. / np.log1p(1)
+
+        lut *= self.max_intensity
+        return np.atleast_3d(lut.astype(np_dtype(self.best_effort_bitdepth)))
+
+    @property
+    def colormap_processing(self):
+        return any(self.colormaps)
+
+    @lru_cache(maxsize=None)
+    def colormap_lut(self):
+        if not self.colormap_processing:
+            return None
+
+        return np.stack([
+            colormap.lut(
+                size=self.max_intensity + 1,
+                bitdepth=self.best_effort_bitdepth
+            ) if colormap else default_lut(
+                size=self.max_intensity + 1,
+                bitdepth=self.best_effort_bitdepth
+            ) for colormap in self.colormaps
+        ], axis=1)
+
+    @lru_cache(maxsize=None)
+    def lut(self):
+        math_lut = self.math_lut()
+        colormap_lut = self.colormap_lut()
+
+        if math_lut is None:
+            if colormap_lut is None:
+                return None
+            else:
+                return colormap_lut
+        else:
+            if colormap_lut is None:
+                return math_lut
+            else:
+                return combine_lut(math_lut, colormap_lut)
+
+    def lut_for_channel(self, c):
+        lut = self.lut()
+        if lut is None:
+            return None
+        return self.lut()[:, c, :]
+
+    @property
     def filter_processing(self):
         return bool(len(self.filters))
 
@@ -142,8 +238,10 @@ class ProcessedView(MultidimView):
         return self.filter_required_colorspace
 
     @property
-    def colormap_processing(self):
-        return any(self.colormaps)
+    def new_colorspace(self):
+        if self.colorspace == Colorspace.AUTO:
+            return Colorspace.GRAY if len(self.channels) == 1 else Colorspace.COLOR
+        return self.colorspace
 
     @property
     def colorspace_processing(self):
@@ -153,55 +251,6 @@ class ProcessedView(MultidimView):
                 len(self.channels) > 1) or \
                (self.colorspace == Colorspace.COLOR and
                 len(self.channels) == 1)
-
-    @property
-    def new_colorspace(self):
-        if self.colorspace == Colorspace.AUTO:
-            return Colorspace.GRAY if len(self.channels) == 1 else Colorspace.COLOR
-        return self.colorspace
-
-    @property
-    def float_processing(self):
-        return self.intensity_processing or self.gamma_processing \
-               or self.log_processing
-
-    def raw_view_planes(self):
-        # TODO: generalize
-        # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
-        return self.channels, self.z_slices[0], self.timepoints[0]
-
-    def math_lut(self):
-        def dtype(bitdepth):
-            if bitdepth > 16:
-                return np.uint32
-            elif bitdepth > 8:
-                return np.uint16
-            else:
-                return np.uint8
-
-        n_channels = len(self.channels)
-        lut = np.zeros((self.in_image.max_value + 1, n_channels))
-        if self.intensity_processing:
-            for c in range(n_channels):
-                mini = self.min_intensities[c]
-                maxi = self.max_intensities[c]
-                diff = maxi - mini
-                lut[maxi:, c] = 1
-                lut[mini:maxi, c] = np.linspace(0, 1, num=diff)
-        else:
-            lut = np.linspace(
-                (0,) * n_channels, (1,) * n_channels,
-                num=self.in_image.max_value + 1
-            )
-
-        if self.gamma_processing:
-            lut = np.power(lut, self.gammas)
-
-        if self.log_processing:
-            lut = np.log1p(lut) * 1. / np.log1p(1)
-
-        lut *= self.max_intensity
-        return lut.astype(dtype(self.best_effort_bitdepth))
 
     def raw_view(self, c, z, t):
         pass
@@ -227,7 +276,7 @@ class ProcessedView(MultidimView):
         for read, needed in reads.items():
             read_channels = channels_for_read(read, self.in_image)
 
-            channel_image = self.raw_view(read_channels[0], z, t) #TODO
+            channel_image = self.raw_view(read_channels[0], z, t)  # TODO
 
             if len(read_channels) == 3:
                 idxs = (c_idx, c_idx + 1, c_idx + 2)
@@ -248,25 +297,12 @@ class ProcessedView(MultidimView):
                 response_channel_images.append((channel_image, c_idx))
                 c_idx += 1
 
-        math_lut = None
-        if self.float_processing:
-            math_lut = self.math_lut()
-
         processed_channel_images = list()
         for img, channel in response_channel_images:
             if type(channel) is tuple:
-                if math_lut is not None:
-                    img = ApplyLutImgOp(math_lut)(img)
+                img = ApplyLutImgOp(self.math_lut())(img)
             else:
-                colormap = self.colormaps[channel]
-                if colormap is not None:
-                    tinting_lut = colormap.lut(size=self.max_intensity + 1, bitdepth=self.best_effort_bitdepth)
-                    lut = combine_lut(math_lut[:, channel], tinting_lut) if math_lut is not None else tinting_lut
-                else:
-                    lut = math_lut
-
-                if lut is not None:
-                    img = ApplyLutImgOp(lut)(img)
+                img = ApplyLutImgOp(self.lut_for_channel(channel))(img)
 
             processed_channel_images.append(img)
 

@@ -63,3 +63,19 @@ def dtype_to_bits(dtype):
         dtype = np.dtype(dtype)
     return dtype.type(0).nbytes * 8
 
+
+def bits_to_dtype(bits):
+    if bits > 16:
+        return 'uint32'
+    elif bits > 8:
+        return 'uint16'
+    else:
+        return 'uint8'
+
+
+def np_dtype(bits):
+    return np.dtype(bits_to_dtype(bits))
+
+
+def vips_dtype(bits):
+    return dtype_to_vips_format[bits_to_dtype(bits)]

@@ -19,6 +19,7 @@ from matplotlib.cm import get_cmap
 from pydantic.color import COLORS_BY_NAME
 
 from pims.api.utils.models import ColormapType
+from pims.formats.utils.vips import np_dtype
 from pims.processing.color import Color
 
 
@@ -70,13 +71,7 @@ class MatplotlibColormap(Colormap):
             self._init_cmap(size)
 
         lut = self._mpl_cmap[size]._lut[:size, :3] * (2 ** bitdepth - 1)
-        if bitdepth > 16:
-            dtype = np.uint
-        elif bitdepth > 8:
-            dtype = np.uint16
-        else:
-            dtype = np.uint8
-        return lut.astype(dtype)
+        return lut.astype(np_dtype(bitdepth))
 
 
 class ColorColormap(Colormap):
@@ -104,19 +99,17 @@ class ColorColormap(Colormap):
             lut[:, i] = np.interp(xvals, x, y)
 
         lut = lut * (2 ** bitdepth - 1)
-        if bitdepth > 16:
-            dtype = np.uint
-        elif bitdepth > 8:
-            dtype = np.uint16
-        else:
-            dtype = np.uint8
-        return lut.astype(dtype)
+        return lut.astype(np_dtype(bitdepth))
 
 
 def combine_lut(lut_a, lut_b):
     if lut_a.ndim == 1:
         lut_a = lut_a[:, np.newaxis]
     return np.take_along_axis(lut_b, lut_a, axis=0)
+
+
+def default_lut(size=256, bitdepth=8):
+    return np.arange(size).reshape((size, 1, 1)).astype(np_dtype(bitdepth))
 
 
 mpl_cmaps = dict()

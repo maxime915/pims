@@ -221,6 +221,8 @@ class ApplyLutImgOp(ImageOp):
         self.lut = lut
 
     def _vips_impl(self, img):
+        if self.lut is None:
+            return img
 
         lut = imglib_adapters.get((type(self.lut), VIPSImage))(self.lut[np.newaxis, :, :])
         return img.maplut(lut)
