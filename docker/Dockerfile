@@ -6,6 +6,7 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install
         build-essential \
         ca-certificates \
         cmake \
+        git \
         gcc \
         net-tools \
         wget \
@@ -23,22 +24,17 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install
         liblcms2-dev \
         libpng-dev \
         gobject-introspection \
-        `# Openslide dependencies` \
-        libcairo2-dev \
-        libgdk-pixbuf2.0-dev \
-        libxml2-dev \
-        libsqlite3-dev \
-        libtool \
         `# Other tools` \
-        libimage-exiftool-perl && \
-    rm -rf /var/lib/apt/lists/*
+        libimage-exiftool-perl
 
 # openjpeg 2.4 is required by vips (J2000 support)
 ARG OPENJPEG_VERSION=2.4.0
-RUN cd /tmp && \
-    wget https://github.com/uclouvain/openjpeg/archive/v${OPENJPEG_VERSION}/openjpeg-${OPENJPEG_VERSION}.tar.gz && \
-    tar -zxvf ./openjpeg-${OPENJPEG_VERSION}.tar.gz && \
-    cd ./openjpeg-${OPENJPEG_VERSION} && \
+ARG OPENJPEG_URL=https://github.com/uclouvain/openjpeg/archive
+RUN cd /usr/local/src && \
+    wget ${OPENJPEG_URL}/v${OPENJPEG_VERSION}/openjpeg-${OPENJPEG_VERSION}.tar.gz && \
+    tar -zxvf openjpeg-${OPENJPEG_VERSION}.tar.gz && \
+    rm -rf openjpeg-${OPENJPEG_VERSION}.tar.gz && \
+    cd openjpeg-${OPENJPEG_VERSION} && \
     mkdir build && cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_STATIC_LIBS=ON .. && \
     make && \
@@ -46,34 +42,53 @@ RUN cd /tmp && \
     make clean && \
     ldconfig
 
-# openslide
-ARG OPENSLIDE_VERSION=3.4.1
-RUN cd /tmp && \
-    wget https://github.com/openslide/openslide/releases/download/v${OPENSLIDE_VERSION}/openslide-${OPENSLIDE_VERSION}.tar.gz && \
-    tar -zxvf ./openslide-${OPENSLIDE_VERSION}.tar.gz && \
-    cd ./openslide-${OPENSLIDE_VERSION} && \
-    autoreconf -i && \
-    ./configure && \
-    make && \
-    make install && \
-    ldconfig
+# Download plugins
+WORKDIR /app
+COPY ./docker/plugins.py /app/plugins.py
+
+ARG PLUGIN_CSV
+# ="enabled,name,git_url,git_branch\n"
+ENV PLUGIN_INSTALL_PATH /app/plugins
+RUN python plugins.py \
+   --plugin_csv ${PLUGIN_CSV} \
+   --install_path ${PLUGIN_INSTALL_PATH} \
+   --method download
+
+# Run before_vips() from plugins prerequisites
+RUN python plugins.py \
+   --plugin_csv ${PLUGIN_CSV} \
+   --install_path ${PLUGIN_INSTALL_PATH} \
+   --method dependencies_before_vips
 
 # vips
 ARG VIPS_VERSION=8.11.2
-RUN cd /tmp && \
-    wget https://github.com/libvips/libvips/releases/download/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz && \
-    tar -zxvf ./vips-${VIPS_VERSION}.tar.gz && \
-    cd ./vips-${VIPS_VERSION} && \
-    LDFLAGS="-L/usr/local/lib -lopenslide" CPPFLAGS="-I/usr/local/include/openslide" ./configure && \
-    make && \
+ARG VIPS_URL=https://github.com/libvips/libvips/releases/download
+RUN cd /usr/local/src && \
+    wget ${VIPS_URL}/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz && \
+    tar -zxvf vips-${VIPS_VERSION}.tar.gz && \
+    rm -rf vips-${VIPS_VERSION}.tar.gz && \
+    cd vips-${VIPS_VERSION} && \
+    ./configure && \
+    make V=0 && \
     make install && \
     ldconfig
 
-WORKDIR /app
+# Run before_python() from plugins prerequisites
+RUN python plugins.py \
+   --plugin_csv ${PLUGIN_CSV} \
+   --install_path ${PLUGIN_INSTALL_PATH} \
+   --method dependencies_before_python
+
+# Cleaning. Cannot be done before as plugin prerequisites could use apt-get.
+RUN rm -rf /var/lib/apt/lists/*
 
 # Install python requirements
 COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt && \
+    python plugins.py \
+   --plugin_csv ${PLUGIN_CSV} \
+   --install_path ${PLUGIN_INSTALL_PATH} \
+   --method install
 
 # Prestart configuration
 RUN touch /tmp/addHosts.sh
