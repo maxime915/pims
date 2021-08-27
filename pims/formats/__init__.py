@@ -16,24 +16,50 @@ import logging
 from importlib import import_module
 from inspect import isclass, isabstract
 from pkgutil import iter_modules
+from typing import List, Union
+
+from importlib_metadata import entry_points, EntryPoint
 
 from pims.formats.utils.abstract import AbstractFormat
 
 FORMAT_PLUGIN_PREFIX = 'pims_format_'
 NON_PLUGINS_MODULES = ["pims.formats.utils"]
+PLUGIN_GROUP = "pims.formats"
 
 logger = logging.getLogger("pims.app")
 logger.info("[green bold]Formats initialization...")
 
 
-def _discover_format_plugins():
+def _discover_format_plugins() -> List[Union[str, EntryPoint]]:
+    """
+    Discover format plugins in the Python env.
+    Plugins are:
+    * modules in `pims.formats`.
+    * modules starting with `FORMAT_PLUGIN_PREFIX`.
+    * packages having an entrypoint in group `PLUGIN_GROUP`.
 
-    plugins = [name for _, name, _ in iter_modules(__path__, prefix="pims.formats.")
-               if name not in NON_PLUGINS_MODULES]
-    plugins += [name for _, name, _ in iter_modules()
-                if name.startswith(FORMAT_PLUGIN_PREFIX)]
+    It follows conventions defined in
+    https://packaging.python.org/guides/creating-and-discovering-plugins/
 
-    logger.info(f"[green bold]Format plugins: found {len(plugins)} plugin(s)[/] [yellow]({', '.join(plugins)})", )
+    Returns
+    -------
+    plugins
+        The list of plugin module names or entry points
+    """
+
+    plugins = [
+        name for _, name, _ in iter_modules(__path__, prefix="pims.formats.")
+        if name not in NON_PLUGINS_MODULES
+    ]
+    plugins += [
+        name for _, name, _ in iter_modules()
+        if name.startswith(FORMAT_PLUGIN_PREFIX)
+    ]
+    plugins += entry_points(group=PLUGIN_GROUP)
+
+    plugin_names = [p.module if type(p) is EntryPoint else p for p in plugins]
+    logger.info(f"[green bold]Format plugins: found {len(plugins)} plugin(s)[/] "
+                f"[yellow]({', '.join(plugin_names)})")
     return plugins
 
 
@@ -56,14 +82,19 @@ def _find_formats_in_module(mod):
         submodule_name = "{}.{}".format(mod.__name__, name)
         try:
             for var in vars(import_module(submodule_name)).values():
-                if isclass(var) and issubclass(var, AbstractFormat) and not isabstract(var) \
-                        and 'Abstract' not in var.__name__:
+                if isclass(var) and \
+                        issubclass(var, AbstractFormat) and \
+                        not isabstract(var) and \
+                        'Abstract' not in var.__name__:
                     format = var
                     formats.append(format)
                     format.init()
-                    logger.info(f"[green] * [yellow]{format.get_identifier()} - {format.get_name()}[/] imported.")
+
+                    logger.info(f"[green] * [yellow]{format.get_identifier()} "
+                                f"- {format.get_name()}[/] imported.")
         except ImportError as e:
-            logger.error("{} submodule cannot be checked for formats !".format(submodule_name), exc_info=e)
+            logger.error(f"{submodule_name} submodule cannot be checked for "
+                         f"formats !", exc_info=e)
     return formats
 
 
@@ -77,9 +108,18 @@ def _get_all_formats():
         The format classes
     """
     formats = list()
-    for module_name in FORMAT_PLUGINS:
-        logger.info(f"[green bold]Importing formats from [yellow]{module_name}[/] plugin...")
-        formats.extend(_find_formats_in_module(import_module(module_name)))
+    for plugin in FORMAT_PLUGINS:
+        entrypoint_plugin = type(plugin) is EntryPoint
+
+        module_name = plugin.module if entrypoint_plugin else plugin
+        logger.info(f"[green bold]Importing formats from "
+                    f"[yellow]{module_name}[/] plugin...")
+
+        if entrypoint_plugin:
+            module = plugin.load()
+        else:
+            module = import_module(module_name)
+        formats.extend(_find_formats_in_module(module))
 
     return formats
 

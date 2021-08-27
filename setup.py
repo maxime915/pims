@@ -41,6 +41,7 @@ REQUIRED = [
     'python-dotenv>=0.17.1',
     'python-multipart>=0.0.5',
     'pathvalidate>=2.4.1',
+    'importlib_metadata>=4.7.1',
 
     'Pint>=0.17',
     'palettable>=3.3.0',
