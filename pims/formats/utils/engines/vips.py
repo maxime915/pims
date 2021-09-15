@@ -91,14 +91,15 @@ class VipsReader(AbstractReader):
         return filename
 
     def vips_thumbnail(self, width, height, **loader_options):
-        image = cached_vips_file(self.format)
-
         filename = self.vips_filename_with_options(str(self.format.path), **loader_options)
-        if image.interpretation in ("grey16", "rgb16"):
-            # Related to https://github.com/libvips/libvips/issues/1941 ?
-            return VIPSImage.thumbnail(filename, width, height=height,
-                                       size=VIPSSize.FORCE, linear=True) \
-                .colourspace(image.interpretation)
+
+        # Seems it has been fixed by https://github.com/libvips/libvips/pull/2120
+        # image = cached_vips_file(self.format)
+        # if image.interpretation in ("grey16", "rgb16"):
+        #     # Related to https://github.com/libvips/libvips/issues/1941 ?
+        #     return VIPSImage.thumbnail(filename, width, height=height,
+        #                                size=VIPSSize.FORCE, linear=True) \
+        #         .colourspace(image.interpretation)
 
         return VIPSImage.thumbnail(filename, width, height=height, size=VIPSSize.FORCE)
 
@@ -126,12 +127,12 @@ class VipsHistogramReader(NullHistogramReader):
             return cached_vips_file(self.format)
 
         def _thumb(format):
-            image = cached_vips_file(format)
-            if image.interpretation in ("grey16", "rgb16"):
-                return VIPSImage.thumbnail(str(format.path), 1024, linear=True)\
-                    .colourspace(image.interpretation)
-            else:
-                return VIPSImage.thumbnail(str(format.path), 1024)
+            # Seems it has been fixed by https://github.com/libvips/libvips/pull/2120
+            # image = cached_vips_file(format)
+            # if image.interpretation in ("grey16", "rgb16"):
+            #     return VIPSImage.thumbnail(str(format.path), 1024, linear=True)\
+            #         .colourspace(image.interpretation)
+            return VIPSImage.thumbnail(str(format.path), 1024)
         return self.format.get_cached('_vips_hist_image', _thumb, self.format)
 
     def type(self):
