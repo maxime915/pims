@@ -36,6 +36,10 @@ class Image(Path):
         return self._format
 
     @property
+    def media_type(self):
+        return self._format.media_type
+
+    @property
     def width(self):
         return self._format.main_imd.width
 

@@ -165,3 +165,7 @@ class JPEG2000Format(AbstractFormat):
         => Identify internal differences between file to establish a conversion need rule.
         """
         return False
+
+    @property
+    def media_type(self):
+        return "image/jp2"

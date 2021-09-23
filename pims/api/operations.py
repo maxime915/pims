@@ -19,13 +19,14 @@ from cytomine import Cytomine
 from cytomine.models import Storage, ProjectCollection, Project, UploadedFile, ImageInstance
 from fastapi import APIRouter, Query, Depends, Form, BackgroundTasks
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, FileResponse
 
-from pims.api.exceptions import CytomineProblem, AuthenticationException, BadRequestException
+from pims.api.exceptions import CytomineProblem, AuthenticationException, BadRequestException, \
+    check_representation_existence, NotAFileProblem
 from pims.api.utils.cytomine_auth import parse_authorization_header, parse_request_token, sign_token, \
     get_this_image_server
 from pims.api.utils.image_parameter import ensure_list
-from pims.api.utils.parameter import sanitize_filename
+from pims.api.utils.parameter import sanitize_filename, imagepath_parameter
 from pims.api.utils.response import serialize_cytomine_model
 from pims.config import get_settings, Settings
 from pims.files.file import Path
@@ -167,8 +168,37 @@ def import_(filepath, body):
     pass
 
 
-def export(filepath):
-    pass
+@router.get('/file/{filepath:path}/export', tags=['Export'])
+def export_file(path: Path = Depends(imagepath_parameter)):
+    """
+    Export a file. All files in the server base path can be exported.
+    """
+    if path.is_dir():
+        # TODO: zip and return the folder archive ?
+        raise NotAFileProblem(path)
+
+    return FileResponse(
+        path,
+        media_type="application/octet-stream",
+        filename=path.name
+    )
+
+
+@router.get('/image/{filepath:path}/export', tags=['Export'])
+def export_upload(path: Path = Depends(imagepath_parameter)):
+    """
+    Export the upload representation of an image.
+    """
+    image = path.get_original()
+    check_representation_existence(image)
+
+    upload_file = image.get_upload()
+    # TODO: if multi-file format and archive has been deleted -> zip on the fly original representation
+    return FileResponse(
+        upload_file,
+        media_type=image.media_type,
+        filename=path.name
+    )
 
 
 def delete(filepath):

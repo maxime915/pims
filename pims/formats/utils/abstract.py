@@ -303,6 +303,10 @@ class AbstractFormat(ABC, CachedData):
     def path(self):
         return self._path
 
+    @property
+    def media_type(self):
+        return "image"
+
     # Metadata parsing
 
     @cached_property

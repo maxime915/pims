@@ -93,6 +93,16 @@ class NotADirectoryProblem(BadRequestException):
         super().__init__(title, detail)
 
 
+class NotAFileProblem(BadRequestException):
+    def __init__(self, filepath):
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
+
+        title = 'Not a file'
+        detail = f'The filepath {filepath} is not a file'
+        super().__init__(title, detail)
+
+
 class NoMatchingFormatProblem(BadRequestException):
     def __init__(self, filepath):
         if type(filepath) is not str:

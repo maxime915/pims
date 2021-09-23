@@ -110,3 +110,7 @@ class WebPFormat(AbstractFormat):
     def need_conversion(self):
         imd = self.main_imd
         return not (imd.width < 1024 and imd.height < 1024)
+
+    @property
+    def media_type(self):
+        return "image/webp"

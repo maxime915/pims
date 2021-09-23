@@ -8,6 +8,8 @@
 
 affine==2.3.0
     # via rasterio
+aiofiles==0.7.0
+    # via pims (setup.py)
 asciitree==0.3.3
     # via zarr
 asgiref==3.3.4

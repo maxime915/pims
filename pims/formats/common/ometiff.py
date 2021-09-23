@@ -317,3 +317,7 @@ class OmeTiffFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         return False
+
+    @property
+    def media_type(self):
+        return "ome/ome-tiff"
