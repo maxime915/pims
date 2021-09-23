@@ -29,7 +29,8 @@ from pims.api.utils.image_parameter import ensure_list
 from pims.api.utils.parameter import sanitize_filename, imagepath_parameter
 from pims.api.utils.response import serialize_cytomine_model
 from pims.config import get_settings, Settings
-from pims.files.file import Path
+from pims.files.archive import make_zip_archive
+from pims.files.file import Path, unique_name_generator
 from pims.importer.importer import FileImporter
 from pims.importer.listeners import CytomineListener, StdoutListener
 
@@ -185,18 +186,33 @@ def export_file(path: Path = Depends(imagepath_parameter)):
 
 
 @router.get('/image/{filepath:path}/export', tags=['Export'])
-def export_upload(path: Path = Depends(imagepath_parameter)):
+def export_upload(
+        background: BackgroundTasks,
+        path: Path = Depends(imagepath_parameter),
+):
     """
     Export the upload representation of an image.
     """
     image = path.get_original()
     check_representation_existence(image)
 
-    upload_file = image.get_upload()
-    # TODO: if multi-file format and archive has been deleted -> zip on the fly original representation
+    upload_file = image.get_upload().resolve()
+    media_type = image.media_type
+    if upload_file.is_dir():
+        # if archive has been deleted
+        tmp_export = Path(f"/tmp/{unique_name_generator()}")
+        make_zip_archive(tmp_export, upload_file)
+
+        def cleanup(tmp):
+            tmp.unlink(missing_ok=True)
+
+        background.add_task(cleanup, tmp_export)
+        upload_file = tmp_export
+        media_type = "application/zip"
+
     return FileResponse(
         upload_file,
-        media_type=image.media_type,
+        media_type=media_type,
         filename=path.name
     )
 

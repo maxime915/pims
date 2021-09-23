@@ -76,7 +76,7 @@ class Path(type(_Path()), _Path):
         return EXTRACTED_DIR in self.parts
 
     def has_upload_role(self):
-        return not self.is_processed() and self.parent.samefile(self.upload_root()) and self.is_file()
+        return not self.is_processed() and self.parent.samefile(self.upload_root())
 
     def has_original_role(self):
         return self.is_processed() and self.true_stem == ORIGINAL_STEM
@@ -185,3 +185,7 @@ class Path(type(_Path()), _Path):
             return []
         with self.resolve().open('rb') as fp:
             return bytearray(fp.read(_NUM_SIGNATURE_BYTES))
+
+
+def unique_name_generator():
+    return int(datetime.now().timestamp() * 1e6)

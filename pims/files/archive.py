@@ -2,6 +2,7 @@ import shutil
 import sys
 
 from functools import lru_cache
+from zipfile import ZipFile
 
 from pims.api.exceptions import NoMatchingFormatProblem
 from pims.files.file import Path
@@ -127,3 +128,18 @@ class Archive(Path):
     @property
     def format(self):
         return self._format
+
+
+def make_zip_archive(archive_path, content_path):
+    def walk(path):
+        for p in Path(path).iterdir():
+            if p.is_dir():
+                yield from walk(p)
+                continue
+            yield p.resolve()
+
+    with ZipFile(archive_path, 'w') as zip:
+        for file in walk(content_path):
+            zip.write(file, file.relative_to(content_path))
+
+    return zip

@@ -13,15 +13,13 @@
 # * limitations under the License.
 import logging
 import shutil
-from datetime import datetime
 
-from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, MetadataParsingProblem, \
-    BadRequestException
+from pims.api.exceptions import FilepathNotFoundProblem, NoMatchingFormatProblem, BadRequestException
 from pims.api.utils.models import HistogramType
 from pims.config import get_settings
 from pims.files.archive import Archive, ArchiveError
-from pims.files.file import Path, HISTOGRAM_STEM, UPLOAD_DIR_PREFIX, PROCESSED_DIR, ORIGINAL_STEM, EXTRACTED_DIR, \
-    SPATIAL_STEM
+from pims.files.file import Path, HISTOGRAM_STEM, UPLOAD_DIR_PREFIX, PROCESSED_DIR, ORIGINAL_STEM, SPATIAL_STEM, \
+    unique_name_generator
 from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
@@ -31,10 +29,6 @@ log = logging.getLogger("pims.app")
 
 PENDING_PATH = Path(get_settings().pending_path)
 FILE_ROOT_PATH = Path(get_settings().root)
-
-
-def unique_name_generator():
-    return int(datetime.now().timestamp() * 1e6)
 
 
 class FileErrorProblem(BadRequestException):
