@@ -183,6 +183,7 @@ class FileImporter:
                         ImportEventType.END_UNPACKING, self.upload_path,
                         self.original_path, format=format, is_collection=False
                     )
+                    self.upload_path = self.original_path
                 else:
                     # TODO: add bg tasks for every file
                     self.notify(

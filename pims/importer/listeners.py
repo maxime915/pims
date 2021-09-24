@@ -217,16 +217,24 @@ class CytomineListener(ImportListener):
 
     def end_unpacking(self, path, unpacked_path, *args,
                       format=None, is_collection=False, **kwargs):
-        uf = self.get_uf(path)
-        if is_collection:
-            uf.status = UploadedFile.UNPACKED
-        else:
+        parent = self.get_uf(path)
+        parent.status = UploadedFile.UNPACKED
+        parent.update()
+
+        if not is_collection:
+            uf = UploadedFile()
+            uf.status = UploadedFile.UPLOADED  # Better status ?
             uf.contentType = format.get_identifier()  # TODO
             uf.size = unpacked_path.size
-            filename = str(format.main_path.name)
-            uf.originalFilename = filename
-        uf.update()
-        self.path_uf_mapping[str(unpacked_path)] = uf
+            uf.filename = str(unpacked_path.relative_to(FILE_ROOT_PATH))
+            uf.originalFilename = str(format.main_path.name)
+            uf.ext = ""
+            uf.storage = parent.storage
+            uf.user = parent.user
+            uf.parent = parent.id
+            uf.imageServer = parent.imageServer
+            uf.save()
+            self.path_uf_mapping[str(unpacked_path)] = uf
 
     def error_unpacking(self, path, *args, **kwargs):
         uf = self.get_uf(path)
