@@ -56,8 +56,6 @@ async def legacy_import(
         upload_name: str = Form(..., alias="files[].name"),
         upload_path: str = Form(..., alias="files[].path"),
         upload_size: int = Form(..., alias="files[].size"),
-        upload_content_type: str = Form(..., alias="files[].content_type"),
-        upload_md5: str = Form(..., alias="files[].md5"),
         config: Settings = Depends(get_settings)
 ):
     """
@@ -115,8 +113,10 @@ async def legacy_import(
         user_properties = zip(keys, values)
 
         upload_name = sanitize_filename(upload_name)
-        root = UploadedFile(upload_name, upload_path, upload_size, "", upload_content_type,
-                            id_projects, id_storage, user.id, this.id, UploadedFile.UPLOADED).save()
+        root = UploadedFile(
+            upload_name, upload_path, upload_size, "", "",
+            id_projects, id_storage, user.id, this.id, UploadedFile.UPLOADED
+        ).save()
 
         if sync:
             try:
@@ -154,7 +154,7 @@ async def legacy_import(
                 "name": upload_name,
                 "uploadedFile": serialize_cytomine_model(root),
                 "images": []
-            }], status_code=202)
+            }], status_code=200)
 
 
 def _legacy_import(filepath, name, root_uf, projects, user_properties):
