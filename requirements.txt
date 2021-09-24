@@ -42,7 +42,7 @@ commonmark==0.9.1
     # via rich
 cycler==0.10.0
     # via matplotlib
-cytomine-python-client==2.8.2
+cytomine-python-client==2.8.3
     # via pims (setup.py)
 decorator==4.4.2
     # via networkx

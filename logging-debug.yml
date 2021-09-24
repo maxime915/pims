@@ -30,6 +30,8 @@ loggers:
     level: DEBUG
   uvicorn.access:
     level: CRITICAL
+  cytomine.client:
+    level: INFO
 
 root:
   handlers: [console]

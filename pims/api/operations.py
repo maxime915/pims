@@ -80,8 +80,10 @@ async def legacy_import(
         raise BadRequestException(detail="Invalid projects or idProject parameter.")
 
     public_key, signature = parse_authorization_header(request.headers)
-    with Cytomine.connect(core, config.cytomine_public_key, config.cytomine_private_key) as c:
-        # c._logger = cytomine_logger  # TODO: improve logging management in Python client
+    with Cytomine(
+            core, config.cytomine_public_key, config.cytomine_private_key,
+            configure_logging=False
+    ) as c:
         if not c.current_user:
             raise AuthenticationException("PIMS authentication to Cytomine failed.")
 

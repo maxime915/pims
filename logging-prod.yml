@@ -28,6 +28,8 @@ loggers:
     level: CRITICAL
   gunicorn.error:
     propagate: true
+  cytomine.client:
+    level: WARNING
 
 root:
   handlers: [console]
