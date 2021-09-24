@@ -2,7 +2,7 @@ import logging
 from enum import Enum
 
 from cytomine.models import UploadedFile, AbstractImage, \
-    AbstractSliceCollection, AbstractSlice, Property
+    AbstractSliceCollection, AbstractSlice, Property, PropertyCollection
 
 from pims.api.utils.response import convert_quantity
 from pims.config import get_settings
@@ -353,15 +353,12 @@ class CytomineListener(ImportListener):
                     )
         asc.save()
 
-        # ---
-        # properties = PropertyCollection(ai)
-        # for k, v in image.raw_metadata.items():
-        #     properties.append(Property(ai, k, str(v)))
-        # properties.save()
-        # TODO: fix bug for DomainCollection save()
+        properties = PropertyCollection(ai)
         for metadata in image.raw_metadata.values():
-            Property(ai, metadata.namespaced_key, str(metadata.value)).save()
-        # ---
+            properties.append(
+                Property(ai, metadata.namespaced_key, str(metadata.value))
+            )
+        properties.save()
 
         uf.status = UploadedFile.DEPLOYED
         uf.update()
