@@ -130,7 +130,7 @@ async def legacy_import(
                     "uploadedFile": serialize_cytomine_model(root),
                     "images": [{
                         "image": serialize_cytomine_model(image[0]),
-                        "imageInstances": serialize_cytomine_model([1])
+                        "imageInstances": serialize_cytomine_model(image[1])
                     } for image in images]
                 }]
             except Exception as e:
