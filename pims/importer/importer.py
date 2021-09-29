@@ -195,14 +195,15 @@ class FileImporter:
                 else:
                     self.extracted_dir = self.processed_dir / Path(EXTRACTED_DIR)
                     self.mksymlink(self.extracted_dir, self.original_path)
+
+                    collection = self.import_collection(
+                        self.original_path, prefer_copy
+                    )
                     self.notify(
                         ImportEventType.END_UNPACKING, self.upload_path,
                         self.original_path, is_collection=True
                     )
-
-                    return self.import_collection(
-                        self.original_path, prefer_copy
-                    )
+                    return collection
             else:
                 self.mksymlink(self.original_path, self.upload_path)
                 assert self.original_path.has_original_role()
@@ -342,6 +343,7 @@ class FileImporter:
     def import_collection(self, collection, prefer_copy=False):
         imported = list()
         format_factory = FormatFactory()
+        # TODO: make this //
         for child in collection.get_extracted_children():
             if not child.is_dir() or \
                     (child.is_dir() and format_factory.match(child)):
