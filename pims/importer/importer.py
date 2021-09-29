@@ -19,7 +19,7 @@ from pims.api.utils.models import HistogramType
 from pims.config import get_settings
 from pims.files.archive import Archive, ArchiveError
 from pims.files.file import Path, HISTOGRAM_STEM, UPLOAD_DIR_PREFIX, PROCESSED_DIR, ORIGINAL_STEM, SPATIAL_STEM, \
-    unique_name_generator
+    unique_name_generator, EXTRACTED_DIR
 from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
@@ -106,9 +106,11 @@ class FileImporter:
         try:
             self.notify(ImportEventType.START_DATA_EXTRACTION, self.pending_file)
 
-            # Check the file is in pending area.
-            if self.pending_file.parent != PENDING_PATH or \
-                    not self.pending_file.exists():
+            # Check the file is in pending area,
+            # or comes from a extracted collection
+            if (not self.pending_file.is_extracted() and
+                    self.pending_file.parent != PENDING_PATH)\
+                    or not self.pending_file.exists():
                 self.notify(ImportEventType.FILE_NOT_FOUND, self.pending_file)
                 raise FilepathNotFoundProblem(self.pending_file)
 
@@ -125,6 +127,12 @@ class FileImporter:
             self.upload_path = self.upload_dir / name
 
             self.move(self.pending_file, self.upload_path, prefer_copy)
+
+            # If the pending file comes from an archive
+            if not prefer_copy and self.pending_file.is_extracted():
+                # Create symlink in processed to keep track of parent archive
+                self.mksymlink(self.pending_file, self.upload_path)
+
             self.notify(ImportEventType.MOVED_PENDING_FILE,
                         self.pending_file, self.upload_path)
             self.notify(ImportEventType.END_DATA_EXTRACTION, self.upload_path)
@@ -185,12 +193,16 @@ class FileImporter:
                     )
                     self.upload_path = self.original_path
                 else:
-                    # TODO: add bg tasks for every file
+                    self.extracted_dir = self.processed_dir / Path(EXTRACTED_DIR)
+                    self.mksymlink(self.extracted_dir, self.original_path)
                     self.notify(
                         ImportEventType.END_UNPACKING, self.upload_path,
                         self.original_path, is_collection=True
                     )
-                    raise NotImplementedError
+
+                    return self.import_collection(
+                        self.original_path, prefer_copy
+                    )
             else:
                 self.mksymlink(self.original_path, self.upload_path)
                 assert self.original_path.has_original_role()
@@ -326,3 +338,17 @@ class FileImporter:
         except (FileNotFoundError, FileExistsError, OSError) as e:
             self.notify(ImportEventType.FILE_ERROR, path, exception=e)
             raise FileErrorProblem(path)
+
+    def import_collection(self, collection, prefer_copy=False):
+        imported = list()
+        format_factory = FormatFactory()
+        for child in collection.get_extracted_children():
+            if not child.is_dir() or \
+                    (child.is_dir() and format_factory.match(child)):
+                self.notify(
+                    ImportEventType.REGISTER_FILE, child, self.upload_path
+                )
+                fi = FileImporter(child, loggers=self.loggers)
+                imported += fi.run(prefer_copy)
+
+        return imported

@@ -46,7 +46,8 @@ class ImportEventType(str, Enum):
     START_UNPACKING = "start_unpacking"
     END_UNPACKING = "end_unpacking"
     ERROR_UNPACKING = "error_unpacking"
-    
+    REGISTER_FILE = "register_file"
+
     START_SPATIAL_DEPLOY = "start_spatial_deploy"
     END_SPATIAL_DEPLOY = "end_spatial_deploy"
     
@@ -89,6 +90,9 @@ class ImportListener:
         pass
 
     def error_unpacking(self, path, *args, **kwargs):
+        pass
+
+    def register_file(self, path, parent_path, *args, **kwargs):
         pass
 
     def start_integrity_check(self, path, *args, **kwargs):
@@ -235,6 +239,23 @@ class CytomineListener(ImportListener):
             uf.imageServer = parent.imageServer
             uf.save()
             self.path_uf_mapping[str(unpacked_path)] = uf
+
+    def register_file(self, path, parent_path, *args, **kwargs):
+        parent = self.get_uf(parent_path) if parent_path else None
+
+        uf = UploadedFile()
+        uf.status = UploadedFile.UPLOADED
+        uf.contentType = ""
+        uf.size = path.size
+        uf.filename = str(path.relative_to(FILE_ROOT_PATH))
+        uf.originalFilename = str(path.name)
+        uf.ext = ""
+        uf.storage = parent.storage
+        uf.user = parent.user
+        uf.parent = parent.id
+        uf.imageServer = parent.imageServer
+        uf.save()
+        self.path_uf_mapping[str(path)] = uf
 
     def error_unpacking(self, path, *args, **kwargs):
         uf = self.get_uf(path)
@@ -423,6 +444,9 @@ class StdoutListener(ImportListener):
     def error_unpacking(self, path, *args, **kwargs):
         self.log.error(f"Error while unpacking archive {path} "
                        f"({str(kwargs.get('exception', ''))})")
+
+    def register_file(self, path, parent_path, *args, **kwargs):
+        self.log.info(f"Found {path} in {parent_path}")
 
     def start_integrity_check(self, path, *args, **kwargs):
         self.log.info(f"Start integrity check for {path}")

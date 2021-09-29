@@ -111,9 +111,12 @@ class SingleFileInfo(BaseModel):
 
 
 class CollectionFileInfo(SingleFileInfo):
-    children: List[SingleFileInfo] = Field(
+    children: List[Union['CollectionFileInfo', SingleFileInfo]] = Field(
         ..., description='Information about children files'
     )
+
+
+CollectionFileInfo.update_forward_refs()
 
 
 class FileInfo(BaseModel):
@@ -132,7 +135,10 @@ class FileInfo(BaseModel):
             "role": FileRole.from_path(path)
         }
         if path.is_collection():
-            children = [FileInfo.from_path(p) for p in path.get_extracted_children()]
+            children = []
+            for p in path.get_extracted_children():
+                if p.is_symlink():
+                    children.append(FileInfo.from_path(p.resolve()))
             return CollectionFileInfo(children=children, **info)
         else:
             return SingleFileInfo(**info)
