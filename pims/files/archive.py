@@ -106,7 +106,18 @@ class Archive(Path):
         else:
             self._format = _format
 
-    def extract(self, path: Path):
+    def extract(self, path: Path, clean=True):
+        """
+        Extract the archive content.
+
+        Parameters
+        ----------
+        path : Path
+            A non-existing directory path where the archive content is extracted
+        clean : bool (default: True)
+            Whether the archive content has to be cleaned from Mac OS hidden
+            files (.DS_STORE, __MACOSX).
+        """
         if path.exists() and not path.is_dir():
             raise ArchiveError(f"{self} cannot be extracted in {path} because "
                                f"it already exists or it is not a directory")
@@ -116,7 +127,11 @@ class Archive(Path):
         except shutil.ReadError as e:
             raise ArchiveError(str(e))
 
-        # TODO: clean unpacked directory (.DS_STORE)
+        if clean:
+            bad_filenames = ['.DS_STORE', '__MACOSX']
+            for bad_filename in bad_filenames:
+                for bad_path in path.rglob(bad_filename):
+                    bad_path.unlink(missing_ok=True)
 
     @classmethod
     def from_path(cls, path):
