@@ -349,6 +349,11 @@ class FileImporter:
                     ImportEventType.REGISTER_FILE, child, self.upload_path
                 )
                 fi = FileImporter(child, loggers=self.loggers)
-                imported += fi.run(prefer_copy)
+                try:
+                    imported += fi.run(prefer_copy)
+                except Exception as _:
+                    # Do not propagate error to siblings
+                    # Each importer is independent
+                    pass
 
         return imported
