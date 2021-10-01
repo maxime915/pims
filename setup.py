@@ -43,6 +43,7 @@ REQUIRED = [
     'pathvalidate>=2.4.1',
     'importlib_metadata>=4.7.1',
     'aiofiles>=0.7.0',
+    'fastapi-cache2[redis]>=0.1.6',
 
     'Pint>=0.17',
     'palettable>=3.3.0',
