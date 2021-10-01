@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     default_annotation_origin: str = "LEFT_TOP"
     output_size_limit: int = 10000
     pims_url: str = "http://localhost-ims"
+
     cache_url: str = "http://pims-cache:6379"
+    cache_ttl_thumb: int = 60 * 60 * 24 * 15
 
     cytomine_public_key: str
     cytomine_private_key: str

@@ -13,6 +13,8 @@
 # * limitations under the License.
 
 from fastapi import APIRouter, Depends, Query
+from starlette.requests import Request
+from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, get_channel_indexes, \
@@ -24,6 +26,7 @@ from pims.api.utils.models import ThumbnailRequest, ImageOutDisplayQueryParams, 
     ImageOpsDisplayQueryParams
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
+from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.filters import FILTERS
@@ -32,10 +35,12 @@ from pims.processing.image_response import ThumbnailResponse
 
 router = APIRouter()
 api_tags = ['Thumbnails']
+cache_ttl = get_settings().cache_ttl_thumb
 
 
 @router.get('/image/{filepath:path}/thumb{extension:path}', tags=api_tags)
-def show_thumb(
+async def show_thumb(
+        request: Request, response: Response,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
         output: ImageOutDisplayQueryParams = Depends(),
@@ -53,7 +58,8 @@ def show_thumb(
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
     """
-    return _show_thumb(
+    return await _show_thumb(
+        request, response,
         path=path, **output.dict(), **planes.dict(), **operations.dict(),
         use_precomputed=use_precomputed, extension=extension,
         headers=headers, config=config
@@ -61,7 +67,8 @@ def show_thumb(
 
 
 @router.post('/image/{filepath:path}/thumb{extension:path}', tags=api_tags)
-def show_thumb_with_body(
+async def show_thumb_with_body(
+        request: Request, response: Response,
         body: ThumbnailRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -79,10 +86,15 @@ def show_thumb_with_body(
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
     """
-    return _show_thumb(path, **body.dict(), extension=extension, headers=headers, config=config)
+    return await _show_thumb(
+        request, response, path, **body.dict(), extension=extension,
+        headers=headers, config=config
+    )
 
 
+@cache_image_response(expire=cache_ttl, vary=['config', 'request', 'response'])
 def _show_thumb(
+        request: Request, response: Response,  # required for @cache
         path: Path,
         height, width, length,
         channels, z_slices, timepoints,

@@ -138,6 +138,9 @@ class ImageRequestHeaders:
         self.accept = accept
         self.safe_mode = safe_mode
 
+    def get(self, header, default=None):
+        return getattr(self, header, default)
+
 
 class ImageAnnotationRequestHeaders(ImageRequestHeaders):
     def __init__(

@@ -16,7 +16,7 @@ import hashlib
 import inspect
 import typing
 from enum import Enum
-from functools import wraps
+from functools import wraps, partial
 from typing import Type, Callable, Optional
 
 from fastapi_cache import FastAPICache, Coder
@@ -25,6 +25,8 @@ from fastapi_cache.backends.redis import RedisBackend as RedisBackend_
 from fastapi_cache.coder import PickleCoder
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import Response
+
+from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
 
 HEADER_CACHE_CONTROL = "Cache-Control"
 HEADER_ETAG = "ETag"
@@ -63,6 +65,31 @@ def all_kwargs_key_builder(func, kwargs, excluded_parameters, prefix):
     hashed = hashlib.md5(hashable.encode()).hexdigest()
     cache_key = f"{prefix}:{hashed}"
     return cache_key
+
+
+def _image_response_key_builder(
+        func, kwargs, excluded_parameters, prefix, supported_mimetypes
+):
+    copy_kwargs = kwargs.copy()
+    headers = copy_kwargs.get('headers')
+    if headers and 'headers' not in excluded_parameters:
+        # Find true output extension
+        accept = headers.get('accept')
+        extension = copy_kwargs.get('extension')
+        format = get_output_format(extension, accept, supported_mimetypes)
+        copy_kwargs['extension'] = format
+
+        # Extract other custom headers
+        extra_headers = ('safe_mode', 'annotation_origin')
+        for eh in extra_headers:
+            v = headers.get(eh)
+            if v:
+                copy_kwargs[f"headers.{eh}"] = v
+        del copy_kwargs['headers']
+
+    return all_kwargs_key_builder(
+        func, copy_kwargs, excluded_parameters, prefix
+    )
 
 
 def default_cache_control_builder(ttl=0):
@@ -164,6 +191,12 @@ def cache(
 def cache_image_response(
         expire: int = None,
         vary: Optional[typing.List] = None,
+        supported_mimetypes=None
 ):
+    if supported_mimetypes is None:
+        supported_mimetypes = VISUALISATION_MIMETYPES
+    key_builder = partial(
+        _image_response_key_builder, supported_mimetypes=supported_mimetypes
+    )
     codec = PickleCoder
-    return cache(expire, vary, codec)
+    return cache(expire, vary, codec, key_builder)
