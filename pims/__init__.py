@@ -18,9 +18,4 @@ from .__version__ import __version__, __api_version__
 from .__version__ import __license__, __copyright__
 from .__version__ import __author__, __email__
 
-# PIMS constants
-PIMS_SLUG_JPEG = "JPEG"
-PIMS_SLUG_WEBP = "WEBP"
-PIMS_SLUG_PNG = "PNG"
-
 UNIT_REGISTRY = pint.UnitRegistry()
