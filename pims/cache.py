@@ -105,30 +105,31 @@ def cache(
             prefix = FastAPICache.get_prefix()
 
             cache_key = key_builder(func, all_kwargs, vary, prefix)
-            ttl, data = await backend.get_with_ttl(cache_key)
+            ttl, encoded = await backend.get_with_ttl(cache_key)
             if not request:
-                if data is not None:
-                    return codec.decode(data)
+                if encoded is not None:
+                    return codec.decode(encoded)
                 data = await exec_func_async(func, *args, **kwargs)
+                encoded = codec.encode(data)
                 await backend.set(
-                    cache_key, codec.encode(data),
+                    cache_key, encoded,
                     expire or FastAPICache.get_expire()
                 )
                 return data
 
             if_none_match = request.headers.get(HEADER_IF_NONE_MATCH.lower())
-            if data is not None:
+            if encoded is not None:
                 if response:
                     cache_control_builder = \
                         cache_control_builder or default_cache_control_builder
                     response.headers[HEADER_CACHE_CONTROL] = \
                         cache_control_builder(ttl=ttl)
-                    etag = f"W/{hash(data)}"
+                    etag = f"W/{hash(encoded)}"
+                    response.headers[HEADER_ETAG] = etag
                     if if_none_match == etag:
                         response.status_code = 304
                         return response
-                    response.headers[HEADER_ETAG] = etag
-                decoded = codec.decode(data)
+                decoded = codec.decode(encoded)
                 if isinstance(decoded, Response):
                     decoded.headers[HEADER_CACHE_CONTROL] = \
                         response.headers.get(HEADER_CACHE_CONTROL)
@@ -137,15 +138,15 @@ def cache(
                 return decoded
 
             data = await exec_func_async(func, *args, **kwargs)
-
-            await backend.set(cache_key, codec.encode(data), expire)
+            encoded = codec.encode(data)
+            await backend.set(cache_key, encoded, expire)
 
             if response:
                 cache_control_builder = \
                     cache_control_builder or default_cache_control_builder
                 response.headers[HEADER_CACHE_CONTROL] = \
                     cache_control_builder(ttl=expire)
-                etag = f"W/{hash(data)}"
+                etag = f"W/{hash(encoded)}"
                 response.headers[HEADER_ETAG] = etag
                 if isinstance(data, Response):
                     data.headers[HEADER_CACHE_CONTROL] = \
