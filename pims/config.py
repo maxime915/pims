@@ -18,6 +18,9 @@ class Settings(BaseSettings):
 
     cache_url: str = "http://pims-cache:6379"
     cache_ttl_thumb: int = 60 * 60 * 24 * 15
+    cache_ttl_resized: int = 60 * 60 * 24 * 15
+    cache_ttl_tile: int = 60 * 60 * 24
+    cache_ttl_window: int = 60 * 60 * 24
 
     cytomine_public_key: str
     cytomine_private_key: str

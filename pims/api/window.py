@@ -14,6 +14,8 @@
 from typing import Union, List
 
 from fastapi import APIRouter, Depends
+from starlette.requests import Request
+from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.annotation_parameter import parse_annotations
@@ -27,6 +29,7 @@ from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, 
     extension_path_parameter
 from pims.api.utils.models import WindowRequest, AnnotationStyleMode, TierIndexType
 from pims.api.utils.parameter import imagepath_parameter
+from pims.cache import cache_image_response
 from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.filters import FILTERS
@@ -38,10 +41,12 @@ from pims.processing.region import Region
 
 router = APIRouter()
 api_tags = ['Windows']
+cache_ttl = get_settings().cache_ttl_window
 
 
 @router.post('/image/{filepath:path}/window{extension:path}', tags=api_tags)
-def show_window_with_body(
+async def show_window_with_body(
+        request: Request, response: Response,
         body: WindowRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -59,10 +64,19 @@ def show_window_with_body(
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
     """
-    return _show_window(path, **body.dict(), extension=extension, headers=headers, config=config)
+    return await _show_window(
+        request, response,
+        path, **body.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
+@cache_image_response(
+    expire=cache_ttl,
+    vary=['config', 'request', 'response']
+)
 def _show_window(
+        request: Request, response: Response,  # required for @cache
         path: Path,
         region: Union[Region, dict],
         height, width, length, zoom, level,

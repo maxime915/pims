@@ -14,6 +14,8 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, Path as PathParam
+from starlette.requests import Request
+from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence, \
     BadRequestException
@@ -27,6 +29,7 @@ from pims.api.utils.models import Colorspace, TierIndexType, TileRequest, Target
     TargetZoomTileCoordinates, ImageOpsDisplayQueryParams, TargetZoom, \
     TileX, TileY, TileIndex, TargetLevel, PlaneSelectionQueryParams
 from pims.api.utils.parameter import imagepath_parameter
+from pims.cache import cache_image_response
 from pims.config import get_settings, Settings
 from pims.files.file import Path
 from pims.filters import FILTERS
@@ -36,10 +39,12 @@ from pims.processing.image_response import TileResponse, WindowResponse
 router = APIRouter()
 tile_tags = ['Tiles']
 norm_tile_tags = ['Normalized tiles']
+cache_ttl = get_settings().cache_ttl_tile
 
 
 @router.post('/image/{filepath:path}/tile{extension:path}', tags=tile_tags)
-def show_tile_with_body(
+async def show_tile_with_body(
+        request: Request, response: Response,
         body: TileRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -57,12 +62,16 @@ def show_tile_with_body(
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
     """
-    return _show_tile(path, **body.dict(), normalized=False,
-                      extension=extension, headers=headers, config=config)
+    return await _show_tile(
+        request, response,
+        path, **body.dict(), normalized=False,
+        extension=extension, headers=headers, config=config
+    )
 
 
 @router.post('/image/{filepath:path}/normalized-tile{extension:path}', tags=norm_tile_tags)
-def show_tile_with_body(
+async def show_tile_with_body(
+        request: Request, response: Response,
         body: TileRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -80,11 +89,16 @@ def show_tile_with_body(
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
     """
-    return _show_tile(path, **body.dict(), normalized=True,
-                      extension=extension, headers=headers, config=config)
+    return await _show_tile(
+        request, response,
+        path, **body.dict(), normalized=True,
+        extension=extension, headers=headers, config=config
+    )
 
 
+@cache_image_response(expire=cache_ttl, vary=['config', 'request', 'response'])
 def _show_tile(
+        request: Request, response: Response,  # required for @cache
         path: Path,
         normalized: bool,
         tile: dict,
@@ -195,7 +209,8 @@ def ti_query_parameter(
 
 
 @router.get('/image/{filepath:path}/tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=tile_tags)
-def show_tile_by_zoom(
+async def show_tile_by_zoom(
+        request: Request, response: Response,
         path: Path = Depends(imagepath_parameter),
         zoom: int = Depends(zoom_query_parameter),
         ti: int = Depends(ti_query_parameter),
@@ -214,12 +229,16 @@ def show_tile_by_zoom(
     tile is extracted from the median focal plane at first timepoint.
     """
     tile = dict(zoom=zoom, ti=ti)
-    return _show_tile(path, False, tile, **planes.dict(), **ops.dict(),
-                      extension=extension, headers=headers, config=config)
+    return await _show_tile(
+        request, response,
+        path, False, tile, **planes.dict(), **ops.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
 @router.get('/image/{filepath:path}/tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=tile_tags)
-def show_tile_by_level(
+async def show_tile_by_level(
+        request: Request, response: Response,
         path: Path = Depends(imagepath_parameter),
         level: int = Depends(level_query_parameter),
         ti: int = Depends(ti_query_parameter),
@@ -238,12 +257,16 @@ def show_tile_by_level(
      tile is extracted from the median focal plane at first timepoint.
     """
     tile = dict(level=level, ti=ti)
-    return _show_tile(path, False, tile, **planes.dict(), **ops.dict(),
-                      extension=extension, headers=headers, config=config)
+    return await _show_tile(
+        request, response,
+        path, False, tile, **planes.dict(), **ops.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
 @router.get('/image/{filepath:path}/normalized-tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=norm_tile_tags)
-def show_normalized_tile_by_zoom(
+async def show_normalized_tile_by_zoom(
+        request: Request, response: Response,
         path: Path = Depends(imagepath_parameter),
         zoom: int = Depends(zoom_query_parameter),
         ti: int = Depends(ti_query_parameter),
@@ -262,12 +285,16 @@ def show_normalized_tile_by_zoom(
     tile is extracted from the median focal plane at first timepoint.
     """
     tile = dict(zoom=zoom, ti=ti)
-    return _show_tile(path, True, tile, **planes.dict(), **ops.dict(),
-                      extension=extension, headers=headers, config=config)
+    return await _show_tile(
+        request, response,
+        path, True, tile, **planes.dict(), **ops.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
 @router.get('/image/{filepath:path}/normalized-tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=norm_tile_tags)
-def show_normalized_tile_by_level(
+async def show_normalized_tile_by_level(
+        request: Request, response: Response,
         path: Path = Depends(imagepath_parameter),
         level: int = Depends(level_query_parameter),
         ti: int = Depends(ti_query_parameter),
@@ -286,12 +313,16 @@ def show_normalized_tile_by_level(
      tile is extracted from the median focal plane at first timepoint.
     """
     tile = dict(level=level, ti=ti)
-    return _show_tile(path, True, tile, **planes.dict(), **ops.dict(),
-                      extension=extension, headers=headers, config=config)
+    return await _show_tile(
+        request, response,
+        path, True, tile, **planes.dict(), **ops.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
 @router.get('/image/tile.jpg', tags=norm_tile_tags, deprecated=True)
-def show_tile_v1(
+async def show_tile_v1(
+        request: Request, response: Response,
         zoomify: str,
         x: int,
         y: int,
@@ -307,7 +338,8 @@ def show_tile_v1(
     zoom = TargetZoom(__root__=z)
     tx, ty = TileX(__root__=x), TileY(__root__=y)
     tile = TargetZoomTileCoordinates(zoom=zoom, tx=tx, ty=ty)
-    return _show_tile(
+    return await _show_tile(
+        request, response,
         imagepath_parameter(zoomify),
         normalized=True,
         tile=tile.dict(),
@@ -320,7 +352,8 @@ def show_tile_v1(
 
 
 @router.get('/slice/tile', tags=norm_tile_tags, deprecated=True)
-def show_tile_v2(
+async def show_tile_v2(
+        request: Request, response: Response,
         z: int,
         fif: Optional[str] = None,
         zoomify: Optional[str] = None,
@@ -347,7 +380,8 @@ def show_tile_v2(
     else:
         raise BadRequestException(detail="Incoherent set of parameters.")
 
-    return _show_tile(
+    return await _show_tile(
+        request, response,
         path,
         normalized=True,
         tile=tile.dict(),
