@@ -22,8 +22,10 @@ from pims.processing.region import Region
 
 
 class ParsedAnnotation:
-    def __init__(self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
-                 point_envelope_length=1):
+    def __init__(
+        self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
+        point_envelope_length=1
+    ):
         self.geometry = geometry
         self.fill_color = fill_color
         self.stroke_color = stroke_color
@@ -73,8 +75,11 @@ class ParsedAnnotations(MutableSequence):
 
     def insert(self, index, value):
         if not isinstance(value, ParsedAnnotation):
-            raise TypeError("Value of type {} not allowed in {}.".format(
-                value.__class__.__name__, self.__class__.__name__))
+            raise TypeError(
+                "Value of type {} not allowed in {}.".format(
+                    value.__class__.__name__, self.__class__.__name__
+                )
+            )
         self._data.insert(index, value)
 
     def __len__(self):
@@ -85,8 +90,11 @@ class ParsedAnnotations(MutableSequence):
 
     def __setitem__(self, index, value):
         if not isinstance(value, ParsedAnnotation):
-            raise TypeError("Value of type {} not allowed in {}.".format(
-                value.__class__.__name__, self.__class__.__name__))
+            raise TypeError(
+                "Value of type {} not allowed in {}.".format(
+                    value.__class__.__name__, self.__class__.__name__
+                )
+            )
         self._data[index] = value
 
     def __delitem__(self, index):
@@ -152,12 +160,13 @@ def contour(geom, point_style=PointCross.CROSS):
             if coord % 1 < 0.5:
                 return floor(coord) + 0.5
             return coord
+
         x, y = center_coord(x), center_coord(y)
 
         if point_style == PointCross.CIRCLE:
             return Point(x, y).buffer(6).boundary
         elif point_style == PointCross.CROSSHAIR:
-            circle = Point(x, y). buffer(6).boundary
+            circle = Point(x, y).buffer(6).boundary
             left_line = LineString([(x - 10, y), (x - 3, y)])
             right_line = LineString([(x + 3, y), (x + 10, y)])
             top_line = LineString([(x, y - 10), (x, y - 3)])

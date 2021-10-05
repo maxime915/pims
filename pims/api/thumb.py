@@ -46,20 +46,21 @@ cache_ttl = get_settings().cache_ttl_thumb
 
 @router.get('/image/{filepath:path}/thumb{extension:path}', tags=api_tags)
 async def show_thumb(
-        request: Request, response: Response,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        output: ImageOutDisplayQueryParams = Depends(),
-        planes: PlaneSelectionQueryParams = Depends(),
-        operations: ImageOpsDisplayQueryParams = Depends(),
-        use_precomputed: bool = Query(True),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    output: ImageOutDisplayQueryParams = Depends(),
+    planes: PlaneSelectionQueryParams = Depends(),
+    operations: ImageOpsDisplayQueryParams = Depends(),
+    use_precomputed: bool = Query(True),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
-    multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
-    given (slice or selection), a reduction function must be provided.
+    Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and
+    timepoints. If multiple channels are given (slice or selection), they are merged. If
+    multiple focal planes or timepoints are given (slice or selection), a reduction function
+    must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
@@ -74,20 +75,21 @@ async def show_thumb(
 
 @router.post('/image/{filepath:path}/thumb{extension:path}', tags=api_tags)
 async def show_thumb_with_body(
-        request: Request, response: Response,
-        body: ThumbnailRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: ThumbnailRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and timepoints. If
-    multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
-    given (slice or selection), a reduction function must be provided.
+    Get a 8-bit thumbnail optimized for visualisation, with given channels, focal planes and
+    timepoints. If multiple channels are given (slice or selection), they are merged. If
+    multiple focal planes or timepoints are given (slice or selection), a reduction function
+    must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
@@ -100,16 +102,16 @@ async def show_thumb_with_body(
 
 @cache_image_response(expire=cache_ttl, vary=['config', 'request', 'response'])
 def _show_thumb(
-        request: Request, response: Response,  # required for @cache
-        path: Path,
-        height, width, length,
-        channels, z_slices, timepoints,
-        min_intensities, max_intensities, filters, gammas,
-        log, use_precomputed,
-        extension,
-        headers,
-        config: Settings,
-        colormaps, c_reduction="ADD", z_reduction=None, t_reduction=None
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    height, width, length,
+    channels, z_slices, timepoints,
+    min_intensities, max_intensities, filters, gammas,
+    log, use_precomputed,
+    extension,
+    headers,
+    config: Settings,
+    colormaps, c_reduction="ADD", z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -139,7 +141,9 @@ def _show_thumb(
     array_parameters = (min_intensities, max_intensities, colormaps, gammas)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
-    intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
+    intensities = parse_intensity_bounds(
+        in_image, channels, z_slices, timepoints, min_intensities, max_intensities
+    )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 

@@ -39,8 +39,8 @@ api_tags = ['Metadata']
 
 class FileRole(Enum):
     """
-    The role of a file. The same image data can be represented in different ways, in different files, each of them
-    serving different purposes.
+    The role of a file. The same image data can be represented in different ways, in different
+    files, each of them serving different purposes.
 
     * `UPLOAD` - This file is the one such as received by PIMS.
     * `ORIGINAL` - This file is in its original format and contains (part of) metadata.
@@ -73,7 +73,8 @@ class FileType(Enum):
     """
     The type of the file.
     * `SINGLE` - The file only has one image.
-    * `COLLECTION` - The file is a container and contains multiple images that need further processing.
+    * `COLLECTION` - The file is a container and contains multiple images that need further
+    processing.
     """
 
     SINGLE = 'SINGLE'
@@ -187,19 +188,21 @@ class ImageInfo(BaseModel):
     )
     physical_size_x: Optional[float] = Field(
         None,
-        description='The physical size of a pixel along the X axis, expressed in micrometers (µm).',
+        description='The physical size of a pixel along the X axis, expressed in micrometers (µm).'
     )
     physical_size_y: Optional[float] = Field(
         None,
-        description='The physical size of a pixel along the Y axis, expressed in micrometers (µm).',
+        description='The physical size of a pixel along the Y axis, expressed in micrometers (µm).'
     )
     physical_size_z: Optional[float] = Field(
         None,
-        description='The physical size of a pixel (voxel) along the Z axis, expressed in micrometers (µm).',
+        description='The physical size of a pixel (voxel) along the Z axis, expressed in '
+                    'micrometers (µm).',
     )
     frame_rate: Optional[float] = Field(
         None,
-        description='The frequency at which consecutive timepoints are taken (T axis), expressed in Hz.',
+        description='The frequency at which consecutive timepoints are taken (T axis), expressed '
+                    'in Hz.',
     )
     n_channels: conint(ge=1) = Field(
         ...,
@@ -209,14 +212,14 @@ class ImageInfo(BaseModel):
     n_intrinsic_channels: int = Field(
         ...,
         description='The number of intrinsic channel planes in the image.'
-                    'A RGB image has 3 channels, but they are usually interleaved in a single plane. In such a case,'
-                    'there is only 1 intrinsic channel.',
+                    'A RGB image has 3 channels, but they are usually interleaved in a single '
+                    'plane. In such a case, there is only 1 intrinsic channel.',
     )
     n_distinct_channels: int = Field(
         ...,
         description='The number of suggested distinct channels for visualisation.'
-                    'RGB or fluorescence images have 1 single distinct channels (all channels are merged). '
-                    'Hyperspectral images can have several distinct channels.'
+                    'RGB or fluorescence images have 1 single distinct channels (all channels '
+                    'are merged). Hyperspectral images can have several distinct channels.'
     )
     n_planes: int = Field(
         ...,
@@ -236,32 +239,34 @@ class ImageInfo(BaseModel):
     )
     n_samples_per_intrinsic_channel: int = Field(
         ...,
-        description='The number of samples per intrinsic channel. There is usually 1 sample per intrinsic channel, '
-                    'except when a RGB image have interleaved RGB values.'
+        description='The number of samples per intrinsic channel. There is usually 1 sample per '
+                    'intrinsic channel, except when a RGB image have interleaved RGB values.'
     )
 
     @classmethod
     def from_image(cls, image):
-        return cls(**{
-            "original_format": image.format.get_identifier(),
-            "width": image.width,
-            "height": image.height,
-            "depth": image.depth,
-            "duration": image.duration,
-            "n_channels": image.n_channels,
-            "n_intrinsic_channels": image.n_intrinsic_channels,
-            "n_distinct_channels": image.n_distinct_channels,
-            "n_planes": image.n_planes,
-            "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
-            "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
-            "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),
-            "frame_rate": convert_quantity(image.frame_rate, "Hz"),
-            "acquired_at": image.acquisition_datetime,
-            "description": image.description,
-            "pixel_type": PixelType[str(image.pixel_type)],
-            "significant_bits": image.significant_bits,
-            "n_samples_per_intrinsic_channel": image.n_channels_per_read
-        })
+        return cls(
+            **{
+                "original_format": image.format.get_identifier(),
+                "width": image.width,
+                "height": image.height,
+                "depth": image.depth,
+                "duration": image.duration,
+                "n_channels": image.n_channels,
+                "n_intrinsic_channels": image.n_intrinsic_channels,
+                "n_distinct_channels": image.n_distinct_channels,
+                "n_planes": image.n_planes,
+                "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
+                "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
+                "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),
+                "frame_rate": convert_quantity(image.frame_rate, "Hz"),
+                "acquired_at": image.acquisition_datetime,
+                "description": image.description,
+                "pixel_type": PixelType[str(image.pixel_type)],
+                "significant_bits": image.significant_bits,
+                "n_samples_per_intrinsic_channel": image.n_channels_per_read
+            }
+        )
 
 
 class TierInfo(BaseModel):
@@ -290,18 +295,20 @@ class TierInfo(BaseModel):
 
     @classmethod
     def from_tier(cls, tier):
-        return cls(**{
-            "width": tier.width,
-            "height": tier.height,
-            "level": tier.level,
-            "zoom": tier.zoom,
-            "tile_width": tier.tile_width,
-            "tile_height": tier.tile_height,
-            "downsampling_factor": tier.average_factor,
-            "n_tiles": tier.max_ti,
-            "n_tx": tier.max_tx,
-            "n_ty": tier.max_ty
-        })
+        return cls(
+            **{
+                "width": tier.width,
+                "height": tier.height,
+                "level": tier.level,
+                "zoom": tier.zoom,
+                "tile_width": tier.tile_width,
+                "tile_height": tier.tile_height,
+                "downsampling_factor": tier.average_factor,
+                "n_tiles": tier.max_ti,
+                "n_tx": tier.max_tx,
+                "n_ty": tier.max_ty
+            }
+        )
 
 
 class PyramidInfo(BaseModel):
@@ -371,8 +378,10 @@ class Objective(BaseModel):
 
     @classmethod
     def from_image(cls, image):
-        return cls(nominal_magnification=image.objective.nominal_magnification,
-                   calibrated_magnification=image.objective.calibrated_magnification)
+        return cls(
+            nominal_magnification=image.objective.nominal_magnification,
+            calibrated_magnification=image.objective.calibrated_magnification
+        )
 
 
 class InstrumentInfo(BaseModel):
@@ -385,8 +394,10 @@ class InstrumentInfo(BaseModel):
 
     @classmethod
     def from_image(cls, image):
-        return cls(microscope=Microscope.from_image(image),
-                   objective=Objective.from_image(image))
+        return cls(
+            microscope=Microscope.from_image(image),
+            objective=Objective.from_image(image)
+        )
 
 
 class ChannelsInfoItem(BaseModel):
@@ -408,13 +419,15 @@ class ChannelsInfoItem(BaseModel):
 
     @classmethod
     def from_channel(cls, c):
-        return cls(**{
-            "index": c.index,
-            "emission_wavelength": c.emission_wavelength,
-            "excitation_wavelength": c.excitation_wavelength,
-            "suggested_name": c.suggested_name,
-            "color": c.color.as_hex() if c.color is not None else None
-        })
+        return cls(
+            **{
+                "index": c.index,
+                "emission_wavelength": c.emission_wavelength,
+                "excitation_wavelength": c.excitation_wavelength,
+                "suggested_name": c.suggested_name,
+                "color": c.color.as_hex() if c.color is not None else None
+            }
+        )
 
 
 class ChannelsInfo(BaseModel):
@@ -460,12 +473,14 @@ class AssociatedInfoItem(BaseModel):
 
     @classmethod
     def from_associated(cls, associated):
-        return cls(**{
-            "name": AssociatedName[associated._kind],
-            "width": associated.width,
-            "height": associated.height,
-            "n_channels": associated.n_channels
-        })
+        return cls(
+            **{
+                "name": AssociatedName[associated._kind],
+                "width": associated.width,
+                "height": associated.height,
+                "n_channels": associated.n_channels
+            }
+        )
 
 
 class AssociatedInfo(BaseModel):
@@ -519,12 +534,16 @@ class Metadata(BaseModel):
 
     @classmethod
     def from_metadata(cls, metadata):
-        return cls(**{
-            "namespace": metadata.namespace,
-            "key": metadata.key,
-            "value": metadata.value if metadata.metadata_type != MetadataType.UNKNOWN else str(metadata.value),
-            "type": MetadataTypeEnum[metadata.metadata_type.name]
-        })
+        return cls(
+            **{
+                "namespace": metadata.namespace,
+                "key": metadata.key,
+                "value": metadata.value if metadata.metadata_type != MetadataType.UNKNOWN else str(
+                    metadata.value
+                ),
+                "type": MetadataTypeEnum[metadata.metadata_type.name]
+            }
+        )
 
 
 class ImageFullInfo(BaseModel):
@@ -541,7 +560,7 @@ class ImageFullInfo(BaseModel):
     tags=api_tags
 )
 def show_file(
-        path: Path = Depends(filepath_parameter),
+    path: Path = Depends(filepath_parameter),
 ):
     """
     Get file info
@@ -555,7 +574,7 @@ def show_file(
     tags=api_tags
 )
 def show_info(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get all image info
@@ -567,7 +586,8 @@ def show_info(
     data["instrument"] = InstrumentInfo.from_image(original)
     data["associated"] = AssociatedInfo.from_image(original)
     data["channels"] = ChannelsInfo.from_image(original)
-    data["representations"] = [RepresentationInfo.from_path(rpr) for rpr in original.get_representations()]
+    data["representations"] = [RepresentationInfo.from_path(rpr) for rpr in
+                               original.get_representations()]
     return data
 
 
@@ -579,7 +599,7 @@ def show_info(
     tags=api_tags
 )
 def show_image(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get standard image info
@@ -617,7 +637,7 @@ def show_channels(path: Path = Depends(imagepath_parameter)):
     tags=api_tags
 )
 def show_normalized_pyramid(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image normalized pyramid
@@ -635,7 +655,7 @@ def show_normalized_pyramid(
     tags=api_tags
 )
 def show_instrument(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image instrument info
@@ -657,7 +677,7 @@ class AssociatedInfoCollection(CollectionSize):
     tags=api_tags + ['Associated']
 )
 def show_associated(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get associated file info
@@ -672,11 +692,11 @@ def show_associated(
     tags=api_tags + ['Associated']
 )
 def show_associated_image(
-        path: Path = Depends(imagepath_parameter),
-        output: ImageOutDisplayQueryParams = Depends(),
-        associated_key: AssociatedName = Query(...),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    path: Path = Depends(imagepath_parameter),
+    output: ImageOutDisplayQueryParams = Depends(),
+    associated_key: AssociatedName = Query(...),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -685,7 +705,9 @@ def show_associated_image(
     if not associated or not associated.exists:
         raise NoAppropriateRepresentationProblem(path, associated_key)
 
-    out_format, mimetype = get_output_format(OutputExtension.NONE, headers.accept, VISUALISATION_MIMETYPES)
+    out_format, mimetype = get_output_format(
+        OutputExtension.NONE, headers.accept, VISUALISATION_MIMETYPES
+    )
     req_size = get_thumb_output_dimensions(associated, output.height, output.width, output.length)
     out_size = safeguard_output_dimensions(headers.safe_mode, config.output_size_limit, *req_size)
     out_width, out_height = out_size
@@ -710,7 +732,7 @@ class MetadataCollection(CollectionSize):
     tags=api_tags
 )
 def show_metadata(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image metadata
@@ -734,7 +756,7 @@ class RepresentationInfoCollection(CollectionSize):
     tags=api_tags
 )
 def list_representations(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get all image representation info
@@ -748,8 +770,8 @@ def list_representations(
     tags=api_tags
 )
 def show_representation(
-        representation: FileRole,
-        path: Path = Depends(imagepath_parameter)
+    representation: FileRole,
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get image representation info

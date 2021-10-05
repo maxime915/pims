@@ -84,8 +84,11 @@ class SimplePillowReader(AbstractReader):
     def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
 
-        # We do not use Pillow resize() method as resize will be better handled by vips in response generation.
-        return self.read_window(Region(0, 0, image.width, image.height), out_width, out_height, c, z, t)
+        # We do not use Pillow resize() method as resize will be better handled by vips in
+        # response generation.
+        return self.read_window(
+            Region(0, 0, image.width, image.height), out_width, out_height, c, z, t
+        )
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
@@ -98,7 +101,7 @@ class SimplePillowReader(AbstractReader):
 
 class PillowHistogramReader(NullHistogramReader):
     FORMAT_SLUG = None
-    
+
     def is_complete(self):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
         return image.width <= 1024 and image.height <= 1024
@@ -114,6 +117,7 @@ class PillowHistogramReader(NullHistogramReader):
             else:
                 h, w = get_rationed_resizing(1024, image.height, image.width)
             return image.resize((w, h))
+
         return self.format.get_cached('_pillow_hist_image', _thumb, self.format, self.FORMAT_SLUG)
 
     @property

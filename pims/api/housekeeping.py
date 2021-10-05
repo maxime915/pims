@@ -51,7 +51,8 @@ class DiskUsage(BaseModel):
     )
     used_size_percentage: confloat(ge=0.0, le=100.0) = Field(
         ...,
-        description='Percentage of directory used space regarding total space of the mounted file system',
+        description='Percentage of directory used space regarding total space of the mounted '
+                    'file system',
     )
 
 
@@ -59,21 +60,23 @@ def _serialize_usage(path):
     usage = path.mount_disk_usage()
     size = path.size
     mount_point = path.mount_point()
-    return DiskUsage(**{
-        "mount_point": str(mount_point) if mount_point else None,
-        "mount_available_size": usage.free,
-        "mount_total_size": usage.total,
-        "mount_used_size": usage.used,
-        "mount_used_size_percentage": float(usage.used) / float(usage.total) * 100,
-        "used_size": size,
-        "used_size_percentage": float(size) / float(usage.total) * 100
-    })
+    return DiskUsage(
+        **{
+            "mount_point": str(mount_point) if mount_point else None,
+            "mount_available_size": usage.free,
+            "mount_total_size": usage.total,
+            "mount_used_size": usage.used,
+            "mount_used_size_percentage": float(usage.used) / float(usage.total) * 100,
+            "used_size": size,
+            "used_size_percentage": float(size) / float(usage.total) * 100
+        }
+    )
 
 
 @router.get('/directory/{directorypath:path}/disk-usage', response_model=DiskUsage, tags=api_tags)
 def show_path_usage(
-        directorypath: str,
-        config: Settings = Depends(get_settings)
+    directorypath: str,
+    config: Settings = Depends(get_settings)
 ) -> DiskUsage:
     """
     Directory disk usage

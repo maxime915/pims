@@ -103,11 +103,13 @@ def safe_mode_header(
         alias="X-Image-Size-Safety",
         description="This header provides hints about the way the server has to deal "
                     "with too large image responses.\n"
-                    "* `SAFE_REJECT` - Reject too large image response and throw a `400 Bad Request`.\n"
+                    "* `SAFE_REJECT` - Reject too large image response and throw a `400 Bad "
+                    "Request`.\n "
                     "* `SAFE_RESIZE` - Resize the image response to an acceptable image size. "
                     "Information about the resize are returned in `X-Image-Size-Limit` header.\n"
                     "* `UNSAFE` - **At your own risk!** Try to fulfill the request but can cause "
-                    "unintended side effects (unreadable response, server slown down, server failure, "
+                    "unintended side effects (unreadable response, server slow down, server "
+                    "failure, "
                     "...). It should only be used in rare controlled situations."
     )
 ):
@@ -132,9 +134,9 @@ def annotation_origin_header(
 
 class ImageRequestHeaders:
     def __init__(
-            self,
-            accept: str = Depends(accept_header),
-            safe_mode: SafeMode = Depends(safe_mode_header),
+        self,
+        accept: str = Depends(accept_header),
+        safe_mode: SafeMode = Depends(safe_mode_header),
     ):
         self.accept = accept
         self.safe_mode = safe_mode
@@ -145,10 +147,10 @@ class ImageRequestHeaders:
 
 class ImageAnnotationRequestHeaders(ImageRequestHeaders):
     def __init__(
-            self,
-            accept: str = Depends(accept_header),
-            safe_mode: SafeMode = Depends(safe_mode_header),
-            annot_origin: AnnotationOrigin = Depends(annotation_origin_header)
+        self,
+        accept: str = Depends(accept_header),
+        safe_mode: SafeMode = Depends(safe_mode_header),
+        annot_origin: AnnotationOrigin = Depends(annotation_origin_header)
     ):
         super().__init__(accept, safe_mode)
         self.annot_origin = annot_origin

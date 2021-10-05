@@ -48,21 +48,21 @@ cytomine_logger = logging.getLogger("pims.cytomine")
 
 @router.post('/upload', tags=['Import'])
 async def legacy_import(
-        request: Request,
-        background: BackgroundTasks,
-        core: Optional[str] = None,
-        cytomine: Optional[str] = None,
-        storage: Optional[int] = None,
-        id_storage: Optional[int] = Query(None, alias='idStorage'),
-        projects: Optional[str] = None,
-        id_project: Optional[str] = Query(None, alias='idProject'),
-        sync: Optional[bool] = False,
-        keys: Optional[str] = None,
-        values: Optional[str] = None,
-        upload_name: str = Form(..., alias="files[].name"),
-        upload_path: str = Form(..., alias="files[].path"),
-        upload_size: int = Form(..., alias="files[].size"),
-        config: Settings = Depends(get_settings)
+    request: Request,
+    background: BackgroundTasks,
+    core: Optional[str] = None,
+    cytomine: Optional[str] = None,
+    storage: Optional[int] = None,
+    id_storage: Optional[int] = Query(None, alias='idStorage'),
+    projects: Optional[str] = None,
+    id_project: Optional[str] = Query(None, alias='idProject'),
+    sync: Optional[bool] = False,
+    keys: Optional[str] = None,
+    values: Optional[str] = None,
+    upload_name: str = Form(..., alias="files[].name"),
+    upload_path: str = Form(..., alias="files[].path"),
+    upload_size: int = Form(..., alias="files[].size"),
+    config: Settings = Depends(get_settings)
 ):
     """
     Import a file (legacy)
@@ -141,26 +141,30 @@ async def legacy_import(
                 }]
             except Exception as e:
                 traceback.print_exc()
-                return JSONResponse(content=[{
-                    "status": 500,
-                    "error": str(e),
-                    "files": [{
-                        "name": upload_name,
-                        "size": 0,
-                        "error": str(e)
-                    }]
-                }], status_code=400)
+                return JSONResponse(
+                    content=[{
+                        "status": 500,
+                        "error": str(e),
+                        "files": [{
+                            "name": upload_name,
+                            "size": 0,
+                            "error": str(e)
+                        }]
+                    }], status_code=400
+                )
         else:
             background.add_task(
                 _legacy_import, upload_path, upload_name, root,
                 projects, user_properties
             )
-            return JSONResponse(content=[{
-                "status": 200,
-                "name": upload_name,
-                "uploadedFile": serialize_cytomine_model(root),
-                "images": []
-            }], status_code=200)
+            return JSONResponse(
+                content=[{
+                    "status": 200,
+                    "name": upload_name,
+                    "uploadedFile": serialize_cytomine_model(root),
+                    "images": []
+                }], status_code=200
+            )
 
 
 def _legacy_import(filepath, name, root_uf, projects, user_properties):
@@ -211,8 +215,8 @@ def export_file(path: Path = Depends(imagepath_parameter)):
 
 @router.get('/image/{filepath:path}/export', tags=['Export'])
 def export_upload(
-        background: BackgroundTasks,
-        path: Path = Depends(imagepath_parameter),
+    background: BackgroundTasks,
+    path: Path = Depends(imagepath_parameter),
 ):
     """
     Export the upload representation of an image.

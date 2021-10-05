@@ -64,6 +64,7 @@ class FileImporter:
         A list of import loggers
 
     """
+
     def __init__(self, pending_file, pending_name=None, loggers=None):
         self.loggers = loggers if loggers is not None else []
         self.pending_file = pending_file
@@ -114,14 +115,16 @@ class FileImporter:
             # Check the file is in pending area,
             # or comes from a extracted collection
             if (not self.pending_file.is_extracted() and
-                    self.pending_file.parent != PENDING_PATH)\
+                self.pending_file.parent != PENDING_PATH) \
                     or not self.pending_file.exists():
                 self.notify(ImportEventType.FILE_NOT_FOUND, self.pending_file)
                 raise FilepathNotFoundProblem(self.pending_file)
 
             # Move the file to PIMS root path
-            upload_dir_name = Path(f"{UPLOAD_DIR_PREFIX}"
-                                   f"{str(unique_name_generator())}")
+            upload_dir_name = Path(
+                f"{UPLOAD_DIR_PREFIX}"
+                f"{str(unique_name_generator())}"
+            )
             self.upload_dir = FILE_ROOT_PATH / upload_dir_name
             self.mkdir(self.upload_dir)
 
@@ -138,8 +141,10 @@ class FileImporter:
                 # Create symlink in processed to keep track of parent archive
                 self.mksymlink(self.pending_file, self.upload_path)
 
-            self.notify(ImportEventType.MOVED_PENDING_FILE,
-                        self.pending_file, self.upload_path)
+            self.notify(
+                ImportEventType.MOVED_PENDING_FILE,
+                self.pending_file, self.upload_path
+            )
             self.notify(ImportEventType.END_DATA_EXTRACTION, self.upload_path)
 
             # Identify format
@@ -156,8 +161,10 @@ class FileImporter:
             if format is None:
                 self.notify(ImportEventType.ERROR_NO_FORMAT, self.upload_path)
                 raise NoMatchingFormatProblem(self.upload_path)
-            self.notify(ImportEventType.END_FORMAT_DETECTION,
-                        self.upload_path, format)
+            self.notify(
+                ImportEventType.END_FORMAT_DETECTION,
+                self.upload_path, format
+            )
 
             # Create processed dir
             self.processed_dir = self.upload_dir / Path(PROCESSED_DIR)
@@ -180,7 +187,7 @@ class FileImporter:
                         exception=e
                     )
                     raise FileErrorProblem(self.upload_path)
-                
+
                 # Now the archive is extracted, check if it's a multi-file format
                 format = format_factory.match(self.original_path)
                 if format:
@@ -233,12 +240,16 @@ class FileImporter:
             self.deploy_histogram(self.original.get_spatial())
 
             # Finished
-            self.notify(ImportEventType.END_SUCCESSFUL_IMPORT,
-                        self.upload_path, self.original)
+            self.notify(
+                ImportEventType.END_SUCCESSFUL_IMPORT,
+                self.upload_path, self.original
+            )
             return [self.upload_path]
         except Exception as e:
-            self.notify(ImportEventType.FILE_ERROR,
-                        self.upload_path, exeception=e)
+            self.notify(
+                ImportEventType.FILE_ERROR,
+                self.upload_path, exeception=e
+            )
             raise e
 
     def deploy_spatial(self, format):
@@ -249,19 +260,25 @@ class FileImporter:
                 ext = format.conversion_format().get_identifier()
                 spatial_filename = Path(f"{SPATIAL_STEM}.{ext}")
                 self.spatial_path = self.processed_dir / spatial_filename
-                self.notify(ImportEventType.START_CONVERSION,
-                            self.spatial_path, self.upload_path)
+                self.notify(
+                    ImportEventType.START_CONVERSION,
+                    self.spatial_path, self.upload_path
+                )
 
                 r = format.convert(self.spatial_path)
                 if not r or not self.spatial_path.exists():
-                    self.notify(ImportEventType.ERROR_CONVERSION,
-                                self.spatial_path)
+                    self.notify(
+                        ImportEventType.ERROR_CONVERSION,
+                        self.spatial_path
+                    )
                     raise FormatConversionProblem()
             except Exception as e:
-                self.notify(ImportEventType.ERROR_CONVERSION,
-                            self.spatial_path, exception=e)
+                self.notify(
+                    ImportEventType.ERROR_CONVERSION,
+                    self.spatial_path, exception=e
+                )
                 raise FormatConversionProblem()
-            
+
             self.notify(ImportEventType.END_CONVERSION, self.spatial_path)
 
             # Check format of converted file
@@ -270,8 +287,10 @@ class FileImporter:
             if not spatial_format:
                 self.notify(ImportEventType.ERROR_NO_FORMAT, self.spatial_path)
                 raise NoMatchingFormatProblem(self.spatial_path)
-            self.notify(ImportEventType.END_FORMAT_DETECTION, 
-                        self.spatial_path, spatial_format)
+            self.notify(
+                ImportEventType.END_FORMAT_DETECTION,
+                self.spatial_path, spatial_format
+            )
 
             self.spatial = Image(self.spatial_path, format=spatial_format)
 
@@ -285,7 +304,7 @@ class FileImporter:
                 )
                 raise ImageParsingProblem(self.spatial)
             self.notify(ImportEventType.END_INTEGRITY_CHECK, self.spatial)
-            
+
         else:
             # Create spatial role
             spatial_filename = Path(f"{SPATIAL_STEM}.{format.get_identifier()}")
@@ -299,8 +318,10 @@ class FileImporter:
 
     def deploy_histogram(self, image):
         self.histogram_path = self.processed_dir / Path(HISTOGRAM_STEM)
-        self.notify(ImportEventType.START_HISTOGRAM_DEPLOY,
-                    self.histogram_path, image)
+        self.notify(
+            ImportEventType.START_HISTOGRAM_DEPLOY,
+            self.histogram_path, image
+        )
         try:
             self.histogram = build_histogram_file(
                 image, self.histogram_path, HistogramType.FAST

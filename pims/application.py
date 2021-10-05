@@ -1,4 +1,4 @@
-#  * Copyright (c) 2019-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -13,25 +13,28 @@
 #  * limitations under the License.
 
 import logging
+
 logger = logging.getLogger("pims.app")
 logger.info("[green bold]PIMS initialization...")
 
-from .fastapi_tweaks import apply_fastapi_tweaks
+from pims.fastapi_tweaks import apply_fastapi_tweaks
+
 apply_fastapi_tweaks()
 
 import time
 from fastapi import FastAPI, Request
 from pydantic import ValidationError
 
-
-from .cache import _startup_cache
+from pims.cache import _startup_cache
 from pims.config import get_settings
 from pims.docs import get_redoc_html
-from .api.exceptions import add_problem_exception_handler
-from .api import server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile, operations, \
+from pims.api.exceptions import add_problem_exception_handler
+from pims.api import (
+    server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile,
+    operations,
     histograms, filters, colormaps
-from . import __api_version__,  __version__
-
+)
+from . import __api_version__, __version__
 
 app = FastAPI(
     title="Cytomine Python Image Management Server PIMS",
@@ -79,8 +82,10 @@ async def startup():
             await _startup_cache(__version__)
             logger.info(f"[green]Cache is ready!")
         except ConnectionError:
-            logger.error(f"[red]Impossible to connect to cache database. "
-                         f"Disabling cache!")
+            logger.error(
+                f"[red]Impossible to connect to cache database. "
+                f"Disabling cache!"
+            )
 
 
 @app.middleware("http")

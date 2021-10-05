@@ -96,7 +96,7 @@ def _histogram_binning(hist, n_bins):
     if hist.shape[-1] % n_bins != 0:
         raise BadRequestException(
             detail=f"Cannot make {n_bins} bins from histogram "
-            f"with shape {hist.shape}"
+                   f"with shape {hist.shape}"
         )
     return hist.reshape((n_bins, -1)).sum(axis=1)
 
@@ -130,19 +130,20 @@ def is_power_of_2(n):
 
 class HistogramConfig:
     def __init__(
-            self,
-            n_bins: int = Query(
-                256,
-                description="Number of bins. Must be a power of 2. "
-                            "If `nbins > 2 ** image.significant_bits` then "
-                            "´nbins = 2 ** image.significant_bits` "
-            ),
-            full_range: bool = Query(
-                False,
-                description="Whether to return full histogram range, "
-                            "including leading and ending zero bins. "
-                            "When set, `first_bin = 0` and "
-                            "`last_bin = 2 ** image.significant_bits - 1`.")
+        self,
+        n_bins: int = Query(
+            256,
+            description="Number of bins. Must be a power of 2. "
+                        "If `nbins > 2 ** image.significant_bits` then "
+                        "´nbins = 2 ** image.significant_bits` "
+        ),
+        full_range: bool = Query(
+            False,
+            description="Whether to return full histogram range, "
+                        "including leading and ending zero bins. "
+                        "When set, `first_bin = 0` and "
+                        "`last_bin = 2 ** image.significant_bits - 1`."
+        )
     ):
         if not is_power_of_2(n_bins):
             raise BadRequestException(detail=f"{n_bins} is not a power of 2.")
@@ -151,11 +152,13 @@ class HistogramConfig:
         self.full_range = full_range
 
 
-@router.get('/image/{filepath:path}/histogram/per-image',
-            tags=api_tags, response_model=Histogram)
+@router.get(
+    '/image/{filepath:path}/histogram/per-image',
+    tags=api_tags, response_model=Histogram
+)
 def show_image_histogram(
-        path: Path = Depends(imagepath_parameter),
-        hist_config: HistogramConfig = Depends()
+    path: Path = Depends(imagepath_parameter),
+    hist_config: HistogramConfig = Depends()
 ):
     """
     Get histogram for full image where all planes (C,Z,T) are merged.
@@ -174,10 +177,12 @@ def show_image_histogram(
     )
 
 
-@router.get('/image/{filepath:path}/histogram/per-image/bounds',
-            tags=api_tags, response_model=HistogramInfo)
+@router.get(
+    '/image/{filepath:path}/histogram/per-image/bounds',
+    tags=api_tags, response_model=HistogramInfo
+)
 def show_image_histogram_bounds(
-        path: Path = Depends(imagepath_parameter)
+    path: Path = Depends(imagepath_parameter)
 ):
     """
     Get histogram info for full image where all planes (C,Z,T) are merged.
@@ -190,14 +195,16 @@ def show_image_histogram_bounds(
     return HistogramInfo(type=htype, minimum=mini, maximum=maxi)
 
 
-@router.get('/image/{filepath:path}/histogram/per-channels',
-            tags=api_tags, response_model=ChannelsHistogramCollection)
+@router.get(
+    '/image/{filepath:path}/histogram/per-channels',
+    tags=api_tags, response_model=ChannelsHistogramCollection
+)
 def show_channels_histogram(
-        path: Path = Depends(imagepath_parameter),
-        hist_config: HistogramConfig = Depends(),
-        channels: Optional[List[conint(ge=0)]] = Query(
-            None, description="Only return histograms for these channels"
-        ),
+    path: Path = Depends(imagepath_parameter),
+    hist_config: HistogramConfig = Depends(),
+    channels: Optional[List[conint(ge=0)]] = Query(
+        None, description="Only return histograms for these channels"
+    ),
 ):
     """
     Get histograms per channel where all planes (Z,T) are merged.
@@ -227,13 +234,15 @@ def show_channels_histogram(
     return response_list(histograms)
 
 
-@router.get('/image/{filepath:path}/histogram/per-channels/bounds',
-            tags=api_tags, response_model=ChannelsHistogramInfoCollection)
+@router.get(
+    '/image/{filepath:path}/histogram/per-channels/bounds',
+    tags=api_tags, response_model=ChannelsHistogramInfoCollection
+)
 def show_channels_histogram_bounds(
-        path: Path = Depends(imagepath_parameter),
-        channels: Optional[List[conint(ge=0)]] = Query(
-            None, description="Only return histograms for these channels"
-        ),
+    path: Path = Depends(imagepath_parameter),
+    channels: Optional[List[conint(ge=0)]] = Query(
+        None, description="Only return histograms for these channels"
+    ),
 ):
     """
     Get histogram bounds per channel where all planes (Z,T) are merged.
@@ -259,16 +268,18 @@ def show_channels_histogram_bounds(
     return response_list(hist_info)
 
 
-@router.get('/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}',
-            tags=api_tags, response_model=PlaneHistogramCollection)
+@router.get(
+    '/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}',
+    tags=api_tags, response_model=PlaneHistogramCollection
+)
 def show_plane_histogram(
-        z_slices: conint(ge=0),
-        timepoints: conint(ge=0),
-        path: Path = Depends(imagepath_parameter),
-        hist_config: HistogramConfig = Depends(),
-        channels: Optional[List[conint(ge=0)]] = Query(
-            None, description="Only return histograms for these channels"
-        ),
+    z_slices: conint(ge=0),
+    timepoints: conint(ge=0),
+    path: Path = Depends(imagepath_parameter),
+    hist_config: HistogramConfig = Depends(),
+    channels: Optional[List[conint(ge=0)]] = Query(
+        None, description="Only return histograms for these channels"
+    ),
 ):
     """
     Get histogram per plane.
@@ -303,15 +314,17 @@ def show_plane_histogram(
     return response_list(histograms)
 
 
-@router.get('/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}/bounds',
-            tags=api_tags, response_model=PlaneHistogramInfoCollection)
+@router.get(
+    '/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}/bounds',
+    tags=api_tags, response_model=PlaneHistogramInfoCollection
+)
 def show_plane_histogram(
-        z_slices: conint(ge=0),
-        timepoints: conint(ge=0),
-        path: Path = Depends(imagepath_parameter),
-        channels: Optional[List[conint(ge=0)]] = Query(
-            None, description="Only return histograms for these channels"
-        ),
+    z_slices: conint(ge=0),
+    timepoints: conint(ge=0),
+    path: Path = Depends(imagepath_parameter),
+    channels: Optional[List[conint(ge=0)]] = Query(
+        None, description="Only return histograms for these channels"
+    ),
 ):
     """
     Get histogram per plane.
@@ -344,12 +357,12 @@ def show_plane_histogram(
 
 @router.post('/image/{filepath:path}/histogram', tags=api_tags)
 def compute_histogram(
-        response: Response,
-        background: BackgroundTasks,
-        path: Path = Depends(imagepath_parameter),
-        # companion_file_id: Optional[int] = Body(None, description="Cytomine ID for the histogram")
-        sync: bool = True,
-        overwrite: bool = True
+    response: Response,
+    background: BackgroundTasks,
+    path: Path = Depends(imagepath_parameter),
+    # companion_file_id: Optional[int] = Body(None, description="Cytomine ID for the histogram")
+    sync: bool = True,
+    overwrite: bool = True
 ):
     """
     Ask for histogram computation

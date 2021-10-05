@@ -1,16 +1,16 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 from functools import cached_property
 
 from pims.api.exceptions import NoMatchingFormatProblem
@@ -105,7 +105,7 @@ class Image(Path):
 
     @property
     def max_value(self):
-        return 2**self.significant_bits - 1
+        return 2 ** self.significant_bits - 1
 
     @property
     def value_range(self):
@@ -134,11 +134,11 @@ class Image(Path):
     @property
     def associated_thumb(self):
         return self._format.full_imd.associated_thumb
-    
+
     @property
     def associated_label(self):
         return self._format.full_imd.associated_label
-    
+
     @property
     def associated_macro(self):
         return self._format.full_imd.associated_macro
@@ -234,7 +234,9 @@ class Image(Path):
             The thumbnail (dimensions: try_out_width x try_out_height x len(c) x len(z) x len(t))
         """
         if hasattr(self._format.reader, "read_thumb"):
-            return self._format.reader.read_thumb(out_width, out_height, precomputed=precomputed, c=c, z=z, t=t)
+            return self._format.reader.read_thumb(
+                out_width, out_height, precomputed=precomputed, c=c, z=z, t=t
+            )
         else:
             # TODO
             raise NotImplementedError
@@ -257,7 +259,10 @@ class Image(Path):
         else:
             return None
 
-    def check_integrity(self, lazy_mode=False, metadata=True, tile=False, thumb=False, window=False, associated=False):
+    def check_integrity(
+        self, lazy_mode=False, metadata=True, tile=False, thumb=False, window=False,
+        associated=False
+    ):
         """
         Check integrity of the image. In lazy mode, stop at first error.
 
@@ -265,14 +270,17 @@ class Image(Path):
         -------
         errors : list of tuple (str, Exception)
             A list of problematic attributes with the associated exception.
-            Some attributes are inter-dependent, so the same exception can appear for several attributes.
+            Some attributes are inter-dependent, so the same exception can appear for several
+            attributes.
         """
         errors = []
         if metadata:
             attributes = ('width', 'height', 'depth', 'duration', 'n_channels', 'pixel_type',
                           'physical_size_x', 'physical_size_y', 'physical_size_z', 'frame_rate',
-                          'description', 'acquisition_datetime', 'channels', 'objective', 'microscope',
-                          'associated_thumb', 'associated_label', 'associated_macro', 'raw_metadata', 'pyramid')
+                          'description', 'acquisition_datetime', 'channels', 'objective',
+                          'microscope',
+                          'associated_thumb', 'associated_label', 'associated_macro',
+                          'raw_metadata', 'pyramid')
             for attr in attributes:
                 try:
                     getattr(self, attr)

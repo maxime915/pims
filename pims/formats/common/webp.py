@@ -60,16 +60,25 @@ class WebPParser(VipsParser):
         desc_fields = ("RIFF.Comment", "EXIF.ImageDescription", "EXIF.UserComment")
         imd.description = raw.get_first_value(desc_fields)
 
-        date_fields = ("RIFF.DateTimeOriginal", "EXIF.CreationDate", "EXIF.DateTimeOriginal", "EXIF.ModifyDate")
+        date_fields = (
+            "RIFF.DateTimeOriginal", "EXIF.CreationDate", "EXIF.DateTimeOriginal",
+            "EXIF.ModifyDate"
+        )
         imd.acquisition_datetime = parse_datetime(raw.get_first_value(date_fields))
 
-        imd.physical_size_x = self.parse_physical_size(raw.get_value("EXIF.XResolution"),
-                                                       raw.get_value("EXIF.ResolutionUnit"))
-        imd.physical_size_y = self.parse_physical_size(raw.get_value("EXIF.YResolution"),
-                                                       raw.get_value("EXIF.ResolutionUnit"))
+        imd.physical_size_x = self.parse_physical_size(
+            raw.get_value("EXIF.XResolution"),
+            raw.get_value("EXIF.ResolutionUnit")
+        )
+        imd.physical_size_y = self.parse_physical_size(
+            raw.get_value("EXIF.YResolution"),
+            raw.get_value("EXIF.ResolutionUnit")
+        )
 
         if imd.duration > 1:
-            total_time = raw.get_value("RIFF.Duration")  # String such as "0.84 s" -> all sequence duration
+            total_time = raw.get_value(
+                "RIFF.Duration"
+            )  # String such as "0.84 s" -> all sequence duration
             if total_time:
                 frame_rate = imd.duration / UNIT_REGISTRY(total_time)
                 imd.frame_rate = frame_rate.to("Hz")
@@ -80,7 +89,9 @@ class WebPParser(VipsParser):
     @staticmethod
     def parse_physical_size(physical_size, unit):
         supported_units = ("meters", "inches", "cm")
-        if physical_size is not None and parse_float(physical_size) is not None and unit in supported_units:
+        if physical_size is not None and parse_float(
+                physical_size
+        ) is not None and unit in supported_units:
             return parse_float(physical_size) * UNIT_REGISTRY(unit)
         return None
 

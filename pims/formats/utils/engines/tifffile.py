@@ -122,8 +122,12 @@ class TifffileParser(AbstractParser):
         imd.description = baseline.description
         imd.acquisition_datetime = self.parse_acquisition_date(tags.get(306))
 
-        imd.physical_size_x = self.parse_physical_size(tags.get("XResolution"), tags.get("ResolutionUnit"))
-        imd.physical_size_y = self.parse_physical_size(tags.get("YResolution"), tags.get("ResolutionUnit"))
+        imd.physical_size_x = self.parse_physical_size(
+            tags.get("XResolution"), tags.get("ResolutionUnit")
+        )
+        imd.physical_size_y = self.parse_physical_size(
+            tags.get("YResolution"), tags.get("ResolutionUnit")
+        )
         return imd
 
     @staticmethod
@@ -199,8 +203,10 @@ class TifffileParser(AbstractParser):
         pyramid = Pyramid()
         for level in base_series.levels:
             page = level[0]
-            pyramid.insert_tier(page.imagewidth, page.imagelength,
-                                (page.tilewidth, page.tilelength),
-                                page_index=page.index)
+            pyramid.insert_tier(
+                page.imagewidth, page.imagelength,
+                (page.tilewidth, page.tilelength),
+                page_index=page.index
+            )
 
         return pyramid

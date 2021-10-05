@@ -126,9 +126,11 @@ def vips_to_numpy(vips_image, *args, **kwargs):
     arr : Numpy array
         Array representation of VIPS image. Shape is always (height, width, bands).
     """
-    return np.ndarray(buffer=vips_image.write_to_memory(),
-                      dtype=vips_format_to_dtype[vips_image.format],
-                      shape=[vips_image.height, vips_image.width, vips_image.bands])
+    return np.ndarray(
+        buffer=vips_image.write_to_memory(),
+        dtype=vips_format_to_dtype[vips_image.format],
+        shape=[vips_image.height, vips_image.width, vips_image.bands]
+    )
 
 
 def vips_to_pil(vips_image, *args, **kwargs):

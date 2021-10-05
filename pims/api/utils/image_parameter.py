@@ -52,11 +52,13 @@ def get_rationed_resizing(resized, length, other_length):
     return resized, other_resized
 
 
-def get_thumb_output_dimensions(in_image, height=None, width=None, length=None,
-                                zoom=None, level=None, allow_upscaling=True):
+def get_thumb_output_dimensions(
+    in_image, height=None, width=None, length=None,
+    zoom=None, level=None, allow_upscaling=True
+):
     """
-    Get output dimensions according, by order of precedence, either height,
-    either width, either the largest image length, either zoom or level and such that ratio is preserved.
+    Get output dimensions according, by order of precedence, either height, either width,
+    either the largest image length, either zoom or level and such that ratio is preserved.
 
     Parameters
     ----------
@@ -110,8 +112,10 @@ def get_thumb_output_dimensions(in_image, height=None, width=None, length=None,
         else:
             out_height, out_width = get_rationed_resizing(length, in_image.height, in_image.width)
     else:
-        raise BadRequestException(detail='Impossible to determine output dimensions. '
-                                         'Height, width and length cannot all be unset.')
+        raise BadRequestException(
+            detail='Impossible to determine output dimensions. '
+                   'Height, width and length cannot all be unset.'
+        )
 
     if not allow_upscaling and (out_width > in_image.width or out_height > in_image.height):
         return in_image.width, in_image.height
@@ -119,10 +123,12 @@ def get_thumb_output_dimensions(in_image, height=None, width=None, length=None,
     return out_width, out_height
 
 
-def get_window_output_dimensions(in_image, region, height=None, width=None, length=None, zoom=None, level=None):
+def get_window_output_dimensions(
+    in_image, region, height=None, width=None, length=None, zoom=None, level=None
+):
     """
-    Get output dimensions according, by order of precedence, either height,
-    either width, either the largest image length, either zoom or level and such that region ratio is preserved.
+    Get output dimensions according, by order of precedence, either height, either width,
+    either the largest image length, either zoom or level and such that region ratio is preserved.
 
     Parameters
     ----------
@@ -161,22 +167,34 @@ def get_window_output_dimensions(in_image, region, height=None, width=None, leng
     """
     if level is not None:
         tier = in_image.pyramid.get_tier_at_level(level)
-        out_height, out_width = round(region.true_height / tier.height_factor), round(region.true_width / tier.width_factor)
+        out_height, out_width = round(region.true_height / tier.height_factor), round(
+            region.true_width / tier.width_factor
+            )
     elif zoom is not None:
         tier = in_image.pyramid.get_tier_at_zoom(zoom)
-        out_height, out_width = round(region.true_height / tier.height_factor), round(region.true_width / tier.width_factor)
+        out_height, out_width = round(region.true_height / tier.height_factor), round(
+            region.true_width / tier.width_factor
+            )
     elif height is not None:
-        out_height, out_width = get_rationed_resizing(height, region.true_height, region.true_width)
+        out_height, out_width = get_rationed_resizing(
+            height, region.true_height, region.true_width
+        )
     elif width is not None:
         out_width, out_height = get_rationed_resizing(width, region.true_width, region.true_height)
     elif length is not None:
         if region.true_width > region.true_height:
-            out_width, out_height = get_rationed_resizing(length, region.true_width, region.true_height)
+            out_width, out_height = get_rationed_resizing(
+                length, region.true_width, region.true_height
+            )
         else:
-            out_height, out_width = get_rationed_resizing(length, region.true_height, region.true_width)
+            out_height, out_width = get_rationed_resizing(
+                length, region.true_height, region.true_width
+            )
     else:
-        raise BadRequestException(detail='Impossible to determine output dimensions. '
-                                         'Height, width and length cannot all be unset.')
+        raise BadRequestException(
+            detail='Impossible to determine output dimensions. '
+                   'Height, width and length cannot all be unset.'
+        )
 
     return out_width, out_height
 
@@ -223,7 +241,9 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
         return width, height
 
 
-def parse_region(in_image, top, left, width, height, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False):
+def parse_region(
+    in_image, top, left, width, height, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False
+):
     """
     Parse a region
 
@@ -274,7 +294,9 @@ def parse_region(in_image, top, left, width, height, tier_idx=0, tier_type=TierI
     if not silent_oob:
         clipped = copy(region).clip(ref_tier.width, ref_tier.height)
         if clipped != region:
-            raise BadRequestException(detail="Some coordinates of region {} are out of bounds.".format(region))
+            raise BadRequestException(
+                detail="Some coordinates of region {} are out of bounds.".format(region)
+            )
 
     return region
 
@@ -290,7 +312,8 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
     n_planes : int
         Number of planes. It is the maximum output set size.
     default : int or list
-        Plane index or list of plane indexes used as default set if `planes_to_parse` is empty (or None).
+        Plane index or list of plane indexes used as default set if `planes_to_parse` is empty
+        (or None).
         Default is returned as a set but default values are expected to be in acceptable range.
     name : str
         Name of plane dimension (e.g. 'channels', 'z_slices', ...) used for exception messages.
@@ -317,7 +340,9 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
         elif is_range(plane):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
-            raise BadRequestException(detail='{} is not a valid index or range for {}.'.format(plane, name))
+            raise BadRequestException(
+                detail='{} is not a valid index or range for {}.'.format(plane, name)
+            )
     plane_set = sorted(set([idx for idx in plane_indexes if 0 <= idx < n_planes]))
     if len(plane_set) == 0:
         raise BadRequestException(detail=f"No valid indexes for {name}")
@@ -408,8 +433,10 @@ def check_array_size(iterable, allowed, nullable=True, name=None):
     if not len(iterable) in allowed:
         name = 'A parameter' if not name else name
         allowed_str = ', '.join([str(i) for i in allowed])
-        raise BadRequestException("{} has a size of {} while only "
-                                  "these sizes are allowed: {}".format(name, len(iterable), allowed_str))
+        raise BadRequestException(
+            "{} has a size of {} while only "
+            "these sizes are allowed: {}".format(name, len(iterable), allowed_str)
+        )
 
 
 def ensure_list(value):
@@ -431,8 +458,10 @@ def ensure_list(value):
     return []
 
 
-def parse_intensity_bounds(image, out_channels, out_zslices, out_timepoints,
-                           min_intensities, max_intensities, allow_none=False):
+def parse_intensity_bounds(
+    image, out_channels, out_zslices, out_timepoints,
+    min_intensities, max_intensities, allow_none=False
+):
     """
     Parse intensity parameters according to a specific image.
 
@@ -473,7 +502,7 @@ def parse_intensity_bounds(image, out_channels, out_zslices, out_timepoints,
         max_intensities = [max_allowed_intensity] * n_out_channels
     elif len(max_intensities) == 1:
         max_intensities = max_intensities * n_out_channels
-    
+
     def parse_intensity(c, bound_value, bound_default, bound_kind):
         bound_kind_idx = 0 if bound_kind == "minimum" else 1
 
@@ -516,7 +545,9 @@ def parse_intensity_bounds(image, out_channels, out_zslices, out_timepoints,
         min_intensities[idx] = parse_intensity(channel, intensity, 0, "minimum")
 
     for idx, (channel, intensity) in enumerate(zip(out_channels, max_intensities)):
-        max_intensities[idx] = parse_intensity(channel, intensity, max_allowed_intensity, "maximum")
+        max_intensities[idx] = parse_intensity(
+            channel, intensity, max_allowed_intensity, "maximum"
+        )
 
     return min_intensities, max_intensities
 
@@ -622,10 +653,14 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
         ref_tier = pyramid.get_tier_at_level(tier_idx)
 
     if not 0 <= tx < ref_tier.max_tx:
-        raise BadRequestException("Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier))
+        raise BadRequestException(
+            "Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier)
+        )
 
     if not 0 <= ty < ref_tier.max_ty:
-        raise BadRequestException("Tile coordinate {} along Y axis is invalid for tier {}.".format(ty, ref_tier))
+        raise BadRequestException(
+            "Tile coordinate {} along Y axis is invalid for tier {}.".format(ty, ref_tier)
+        )
 
 
 def parse_bitdepth(in_image, bits):
@@ -650,9 +685,11 @@ def parse_colormap_ids(colormap_ids, existing_colormaps, channel_idxs, img_chann
         colormap_ids = colormap_ids * len(channel_idxs)
 
     for i, colormap_id in zip(channel_idxs, colormap_ids):
-        colormaps.append(parse_colormap_id(
-            colormap_id, existing_colormaps, img_channels[i].color
-        ))
+        colormaps.append(
+            parse_colormap_id(
+                colormap_id, existing_colormaps, img_channels[i].color
+            )
+        )
     return colormaps
 
 

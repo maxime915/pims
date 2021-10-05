@@ -105,6 +105,7 @@ class MetadataType(Enum):
     Types for metadata.
     MetadataType names come from API specification.
     """
+
     def __init__(self, python_type=str):
         self.python_type = python_type
 
@@ -124,6 +125,7 @@ class Metadata:
     """
     A metadata from a file (e.g. an image).
     """
+
     def __init__(self, key, value, namespace=""):
         """
         Initialize a metadata.
@@ -189,6 +191,7 @@ class MetadataStore:
     1st level dict represents namespaced stores.
     2nd level dicts are metadata dictionaries for each namespace.
     """
+
     def __init__(self):
         self._namedstores = dict()
 
@@ -204,7 +207,8 @@ class MetadataStore:
         Parameters
         ----------
         namespaced_key: str
-            The name of the metadata, starting with its namespace. Namespace and key are dot-separated.
+            The name of the metadata, starting with its namespace. Namespace and key are
+            dot-separated.
         value: any
             The value of the metadata
         namespace: str, optional
@@ -301,9 +305,11 @@ class _MetadataStorable:
 
 
 class ImageChannel(_MetadataStorable):
-    def __init__(self, index=None, emission_wavelength=None,
-                 excitation_wavelength=None, suggested_name=None,
-                 color=None):
+    def __init__(
+        self, index=None, emission_wavelength=None,
+        excitation_wavelength=None, suggested_name=None,
+        color=None
+    ):
         self.emission_wavelength = emission_wavelength
         self.excitation_wavelength = excitation_wavelength
         self.index = index
@@ -327,7 +333,7 @@ class ImageChannel(_MetadataStorable):
     @color.setter
     def color(self, value):
         self._color = value
-        
+
     @property
     def hex_color(self):
         c = self.color
@@ -417,7 +423,10 @@ class ImageMetadata(_MetadataStorable):
 
     @property
     def n_intrinsic_channels(self):
-        return self._n_intrinsic_channels if self._n_intrinsic_channels is not None else self.n_channels
+        if self._n_intrinsic_channels is not None:
+            return self._n_intrinsic_channels
+        else:
+            return self.n_channels
 
     @n_intrinsic_channels.setter
     def n_intrinsic_channels(self, value):

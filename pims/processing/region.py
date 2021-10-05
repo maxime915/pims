@@ -1,16 +1,16 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 import math
 
 from pims.processing.utils import split_tuple
@@ -84,8 +84,8 @@ class Region:
         return self
 
     def scale_to_tier(self, tier):
-        return self.scale((tier.width_factor, tier.height_factor))\
-            .toint()\
+        return self.scale((tier.width_factor, tier.height_factor)) \
+            .toint() \
             .clip(tier.width, tier.height)
 
     def asdict(self):
@@ -99,16 +99,16 @@ class Region:
     def __eq__(self, other) -> bool:
         if isinstance(other, Region):
             scaled = other.scale(self.downsample)
-            return self.top == scaled.top and self.left == scaled.left and \
-                   self.width == scaled.width and self.height == scaled.height
+            return (self.top == scaled.top and self.left == scaled.left and
+                    self.width == scaled.width and self.height == scaled.height)
 
         return False
 
     def __repr__(self) -> str:
-        return "Region @ downsample ({}/{}) " \
-               "(Top: {} / Bottom: {} / Left: {} / Right: {} / Width: {} / Height: {})".format(
-            self.width_downsample, self.height_downsample,
-            self.top, self.bottom, self.left, self.right, self.width, self.height)
+        return f"Region @ downsample ({self.width_downsample}/{self.height_downsample}) " \
+               f"(Top: {self.top} / Bottom: {self.bottom} / " \
+               f"Left: {self.left} / Right: {self.right} / " \
+               f"Width: {self.width} / Height: {self.height}) "
 
 
 class TileRegion(Region):
@@ -117,7 +117,9 @@ class TileRegion(Region):
         top = ty * tier.tile_height
         width = tier.tile_width
         height = tier.tile_height
-        super().__init__(top, left, width, height, downsample=(tier.width_factor, tier.height_factor))
+        super().__init__(
+            top, left, width, height, downsample=(tier.width_factor, tier.height_factor)
+        )
         self.tier = tier
         self.tx = tx
         self.ty = ty

@@ -60,11 +60,19 @@ class JPEGParser(VipsParser):
         date_fields = ("EXIF.CreationDate", "EXIF.DateTimeOriginal", "EXIF.ModifyDate")
         imd.acquisition_datetime = parse_datetime(raw.get_first_value(date_fields))
 
-        imd.physical_size_x = self.parse_physical_size(raw.get_value("EXIF.XResolution"), raw.get_value("EXIF.ResolutionUnit"))
-        imd.physical_size_y = self.parse_physical_size(raw.get_value("EXIF.YResolution"), raw.get_value("EXIF.ResolutionUnit"))
+        imd.physical_size_x = self.parse_physical_size(
+            raw.get_value("EXIF.XResolution"), raw.get_value("EXIF.ResolutionUnit")
+        )
+        imd.physical_size_y = self.parse_physical_size(
+            raw.get_value("EXIF.YResolution"), raw.get_value("EXIF.ResolutionUnit")
+        )
         if imd.physical_size_x is None and imd.physical_size_y is None:
-            imd.physical_size_x = self.parse_physical_size(raw.get_value("JFIF.XResolution"), raw.get_value("JFIF.ResolutionUnit"))
-            imd.physical_size_y = self.parse_physical_size(raw.get_value("JFIF.YResolution"), raw.get_value("JFIF.ResolutionUnit"))
+            imd.physical_size_x = self.parse_physical_size(
+                raw.get_value("JFIF.XResolution"), raw.get_value("JFIF.ResolutionUnit")
+            )
+            imd.physical_size_y = self.parse_physical_size(
+                raw.get_value("JFIF.YResolution"), raw.get_value("JFIF.ResolutionUnit")
+            )
         imd.is_complete = True
         return imd
 

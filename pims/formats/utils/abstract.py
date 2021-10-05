@@ -131,8 +131,10 @@ class NullHistogramReader(AbstractHistogramReader):
 
     @abstractmethod
     def image_bounds(self):
-        log.warning(f"[orange]Impossible {self.format.path} to compute "
-                    f"image histogram bounds. Default values used.")
+        log.warning(
+            f"[orange]Impossible {self.format.path} to compute "
+            f"image histogram bounds. Default values used."
+        )
         return 0, 2 ** self.format.main_imd.significant_bits
 
     @abstractmethod
@@ -141,14 +143,18 @@ class NullHistogramReader(AbstractHistogramReader):
 
     @abstractmethod
     def channels_bounds(self):
-        log.warning(f"[orange]Impossible {self.format.path} to compute "
-                    f"channels histogram bounds. Default values used.")
+        log.warning(
+            f"[orange]Impossible {self.format.path} to compute "
+            f"channels histogram bounds. Default values used."
+        )
         return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_channels
 
     @abstractmethod
     def channel_bounds(self, c):
-        log.warning(f"[orange]Impossible {self.format.path} to compute "
-                    f"channel histogram bounds. Default values used.")
+        log.warning(
+            f"[orange]Impossible {self.format.path} to compute "
+            f"channel histogram bounds. Default values used."
+        )
         return 0, 2 ** self.format.main_imd.significant_bits
 
     @abstractmethod
@@ -157,14 +163,18 @@ class NullHistogramReader(AbstractHistogramReader):
 
     @abstractmethod
     def planes_bounds(self):
-        log.warning(f"[orange]Impossible {self.format.path} to compute "
-                    f"plane histogram bounds. Default values used.")
+        log.warning(
+            f"[orange]Impossible {self.format.path} to compute "
+            f"plane histogram bounds. Default values used."
+        )
         return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_planes
 
     @abstractmethod
     def plane_bounds(self, c, z, t):
-        log.warning(f"[orange]Impossible {self.format.path} to compute "
-                    f"plane histogram bounds. Default values used.")
+        log.warning(
+            f"[orange]Impossible {self.format.path} to compute "
+            f"plane histogram bounds. Default values used."
+        )
         return 0, 2 ** self.format.main_imd.significant_bits
 
     @abstractmethod

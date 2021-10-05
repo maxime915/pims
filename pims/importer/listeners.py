@@ -65,7 +65,7 @@ class ImportEventType(str, Enum):
 
     START_SPATIAL_DEPLOY = "start_spatial_deploy"
     END_SPATIAL_DEPLOY = "end_spatial_deploy"
-    
+
     START_HISTOGRAM_DEPLOY = "start_histogram_deploy"
     END_HISTOGRAM_DEPLOY = "end_histogram_deploy"
     ERROR_HISTOGRAM = "error_histogram"
@@ -100,8 +100,10 @@ class ImportListener:
     def start_unpacking(self, path, *args, **kwargs):
         pass
 
-    def end_unpacking(self, path, unpacked_path, *args,
-                      format=None, is_collection=False, **kwargs):
+    def end_unpacking(
+        self, path, unpacked_path, *args,
+        format=None, is_collection=False, **kwargs
+    ):
         pass
 
     def error_unpacking(self, path, *args, **kwargs):
@@ -171,8 +173,10 @@ class CytomineListener(ImportListener):
         self.abstract_images = []
 
     def _find_uf_by_id(self, id):
-        return next((uf for uf in self.path_uf_mapping.values() if uf.id == id),
-                    UploadedFile().fetch(id))
+        return next(
+            (uf for uf in self.path_uf_mapping.values() if uf.id == id),
+            UploadedFile().fetch(id)
+        )
 
     def get_uf(self, path):
         uf = self.path_uf_mapping.get(str(path))
@@ -234,8 +238,10 @@ class CytomineListener(ImportListener):
         uf.status = UploadedFile.UNPACKING
         uf.update()
 
-    def end_unpacking(self, path, unpacked_path, *args,
-                      format=None, is_collection=False, **kwargs):
+    def end_unpacking(
+        self, path, unpacked_path, *args,
+        format=None, is_collection=False, **kwargs
+    ):
         parent = self.get_uf(path)
         parent.status = UploadedFile.UNPACKED
         parent.update()
@@ -384,8 +390,10 @@ class CytomineListener(ImportListener):
                 for t in range(image.duration):
                     mime = "image/pyrtiff"  # TODO: remove
                     asc.append(
-                        AbstractSlice(ai.id, uf.id, mime, c, z, t,
-                                      channelName=name)
+                        AbstractSlice(
+                            ai.id, uf.id, mime, c, z, t,
+                            channelName=name
+                        )
                     )
         asc.save()
 
@@ -446,19 +454,27 @@ class StdoutListener(ImportListener):
     def start_unpacking(self, path, *args, **kwargs):
         self.log.info(f"Start unpacking archive {path}")
 
-    def end_unpacking(self, path, unpacked_path, *args,
-                      format=None, is_collection=False, **kwargs):
-        self.log.info(f"The archive {path} is unpacked in directory "
-                      f"{unpacked_path}.")
+    def end_unpacking(
+        self, path, unpacked_path, *args,
+        format=None, is_collection=False, **kwargs
+    ):
+        self.log.info(
+            f"The archive {path} is unpacked in directory "
+            f"{unpacked_path}."
+        )
         if is_collection:
             self.log.info(f"{path} is a collection.")
         else:
-            self.log.info(f"Identified format {format.get_name()} "
-                          f"for {unpacked_path} ")
+            self.log.info(
+                f"Identified format {format.get_name()} "
+                f"for {unpacked_path} "
+            )
 
     def error_unpacking(self, path, *args, **kwargs):
-        self.log.error(f"Error while unpacking archive {path} "
-                       f"({str(kwargs.get('exception', ''))})")
+        self.log.error(
+            f"Error while unpacking archive {path} "
+            f"({str(kwargs.get('exception', ''))})"
+        )
 
     def register_file(self, path, parent_path, *args, **kwargs):
         self.log.info(f"Found {path} in {parent_path}")
@@ -488,20 +504,26 @@ class StdoutListener(ImportListener):
         self.log.info(f"--- SPATIAL representation deployment for {path} ---")
 
     def end_spatial_deploy(self, spatial_path, *args, **kwargs):
-        self.log.info(f"Finished to deploy spatial representation "
-                      f"at {spatial_path}")
+        self.log.info(
+            f"Finished to deploy spatial representation "
+            f"at {spatial_path}"
+        )
 
     def start_histogram_deploy(self, hist_path, image, *args, **kwargs):
         self.log.info(f"--- HISTOGRAM representation deployment for {image} ---")
 
     def end_histogram_deploy(self, hist_path, image, *args, **kwargs):
-        self.log.info(f"Finished to deploy histogram representation "
-                      f"at {hist_path}")
+        self.log.info(
+            f"Finished to deploy histogram representation "
+            f"at {hist_path}"
+        )
 
     def error_histogram(self, hist_path, image, *args, **kwargs):
-        self.log.error(f"Failed to build histogram at {hist_path} "
-                       f"for image {image} "
-                       f"({kwargs.get('exception')}", exc_info=True)
+        self.log.error(
+            f"Failed to build histogram at {hist_path} "
+            f"for image {image} "
+            f"({kwargs.get('exception')}", exc_info=True
+        )
 
     def end_successful_import(self, path, image, *args, **kwargs):
         self.log.info(f"{path} imported !")

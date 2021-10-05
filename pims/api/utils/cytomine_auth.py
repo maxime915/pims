@@ -38,23 +38,33 @@ def parse_request_token(request: Request):
     md5 = headers.get("content-MD5", "")
     date = headers.get("date", headers.get("dateFull", ""))
 
-    content_type = headers.get("content-type-full",
-                               headers.get("Content-Type",
-                                           headers.get("content-type", "")))
+    content_type = headers.get(
+        "content-type-full",
+        headers.get(
+            "Content-Type",
+            headers.get("content-type", "")
+        )
+    )
     content_type = "" if content_type == "null" else content_type
 
     query_string = request.url.query
     query_string = "?" + query_string if query_string is not None else ""
 
-    message = "{}\n{}\n{}\n{}\n{}{}".format(request.method, md5, content_type,
-                                            date, request.url.path, query_string)
+    message = "{}\n{}\n{}\n{}\n{}{}".format(
+        request.method, md5, content_type,
+        date, request.url.path, query_string
+    )
     return message
 
 
 def sign_token(private_key, token):
-    return base64.b64encode(hmac.new(bytes(private_key, 'utf-8'),
-                                     token.encode('utf-8'),
-                                     hashlib.sha1).digest()).decode('utf-8')
+    return base64.b64encode(
+        hmac.new(
+            bytes(private_key, 'utf-8'),
+            token.encode('utf-8'),
+            hashlib.sha1
+        ).digest()
+    ).decode('utf-8')
 
 
 class ImageServer(Model):

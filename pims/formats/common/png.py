@@ -58,15 +58,23 @@ class PNGParser(VipsParser):
                        "EXIF.DateTimeOriginal", "EXIF.ModifyDate")
         imd.acquisition_datetime = parse_datetime(raw.get_first_value(date_fields))
 
-        imd.physical_size_x = self.parse_physical_size(raw.get_value("PNG.PixelsPerUnitX"),
-                                                       raw.get_value("PNG.PixelUnits"), True)
-        imd.physical_size_y = self.parse_physical_size(raw.get_value("PNG.PixelsPerUnitY"),
-                                                       raw.get_value("PNG.PixelUnits"), True)
+        imd.physical_size_x = self.parse_physical_size(
+            raw.get_value("PNG.PixelsPerUnitX"),
+            raw.get_value("PNG.PixelUnits"), True
+        )
+        imd.physical_size_y = self.parse_physical_size(
+            raw.get_value("PNG.PixelsPerUnitY"),
+            raw.get_value("PNG.PixelUnits"), True
+        )
         if imd.physical_size_x is None and imd.physical_size_y is None:
-            imd.physical_size_x = self.parse_physical_size(raw.get_value("EXIF.XResolution"),
-                                                           raw.get_value("EXIF.ResolutionUnit"), False)
-            imd.physical_size_y = self.parse_physical_size(raw.get_value("EXIF.YResolution"),
-                                                           raw.get_value("EXIF.ResolutionUnit"), False)
+            imd.physical_size_x = self.parse_physical_size(
+                raw.get_value("EXIF.XResolution"),
+                raw.get_value("EXIF.ResolutionUnit"), False
+            )
+            imd.physical_size_y = self.parse_physical_size(
+                raw.get_value("EXIF.YResolution"),
+                raw.get_value("EXIF.ResolutionUnit"), False
+            )
         imd.is_complete = True
         return imd
 

@@ -27,7 +27,7 @@ api_tags = ['Filters']
 
 class Filter(BaseModel):
     """
-    An image filter is used to change the appareance of an image and helps at understanding the
+    An image filter is used to change the appearance of an image and helps at understanding the
     source image.
     """
     id: FilterId
@@ -75,4 +75,3 @@ def show_filter(filter_id: str):
     if filter_id not in FILTERS.keys():
         raise FilterNotFoundProblem(filter_id)
     return _serialize_filter(FILTERS[filter_id])
-

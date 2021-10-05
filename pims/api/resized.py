@@ -47,26 +47,26 @@ cache_ttl = get_settings().cache_ttl_resized
 
 @router.get('/image/{filepath:path}/resized{extension:path}', tags=api_tags)
 async def show_resized(
-        request: Request, response: Response,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        output: ImageOutDisplayQueryParams = Depends(),
-        output2: ImageOutProcessingQueryParams = Depends(),
-        planes: PlaneSelectionQueryParams = Depends(),
-        operations: ImageOpsProcessingQueryParams = Depends(),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    output: ImageOutDisplayQueryParams = Depends(),
+    output2: ImageOutProcessingQueryParams = Depends(),
+    planes: PlaneSelectionQueryParams = Depends(),
+    operations: ImageOpsProcessingQueryParams = Depends(),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
     Get a resized full image (thumbnail), with given channels, focal planes and timepoints. If
-    multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
-    given (slice or selection), a reduction function must be provided.
+    multiple channels are given (slice or selection), they are merged. If multiple focal planes
+    or timepoints are given (slice or selection), a reduction function must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
 
-    **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
-    such as computer vision, image processing or machine learning.**
+    **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has
+    a general purpose, such as computer vision, image processing or machine learning.**
     """
     return await _show_resized(
         request, response,
@@ -78,26 +78,26 @@ async def show_resized(
 
 @router.post('/image/{filepath:path}/resized{extension:path}', tags=api_tags)
 async def show_resized_with_body(
-        request: Request, response: Response,
-        body: ResizedRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: ResizedRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
     Get a resized full image (thumbnail), with given channels, focal planes and timepoints. If
-    multiple channels are given (slice or selection), they are merged. If multiple focal planes or timepoints are
-    given (slice or selection), a reduction function must be provided.
+    multiple channels are given (slice or selection), they are merged. If multiple focal planes
+    or timepoints are given (slice or selection), a reduction function must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
     thumbnail is extracted from the median focal plane at first timepoint.
 
-    **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
-    such as computer vision, image processing or machine learning.**
+    **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has
+    a general purpose, such as computer vision, image processing or machine learning.**
     """
     return await _show_resized(
         request, response,
@@ -112,16 +112,16 @@ async def show_resized_with_body(
     supported_mimetypes=PROCESSING_MIMETYPES
 )
 def _show_resized(
-        request: Request, response: Response,  # required for @cache
-        path: Path,
-        height, width, length, zoom, level,
-        channels, z_slices, timepoints,
-        min_intensities, max_intensities, filters, gammas,
-        bits, colorspace,
-        extension,
-        headers,
-        config: Settings,
-        colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    height, width, length, zoom, level,
+    channels, z_slices, timepoints,
+    min_intensities, max_intensities, filters, gammas,
+    bits, colorspace,
+    extension,
+    headers,
+    config: Settings,
+    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -153,7 +153,9 @@ def _show_resized(
     array_parameters = (min_intensities, max_intensities, colormaps, gammas)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
-    intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
+    intensities = parse_intensity_bounds(
+        in_image, channels, z_slices, timepoints, min_intensities, max_intensities
+    )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 

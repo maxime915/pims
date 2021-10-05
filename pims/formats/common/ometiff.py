@@ -132,11 +132,13 @@ class OmeTiffParser(TifffileParser):
             if not name and default_names is not None:
                 name = default_names[c]
             color = Color(channel.color) if channel.color else None
-            imd.set_channel(ImageChannel(
-                index=c, emission_wavelength=channel.emission_wavelength,
-                excitation_wavelength=channel.excitation_wavelength,
-                suggested_name=name, color=color
-            ))
+            imd.set_channel(
+                ImageChannel(
+                    index=c, emission_wavelength=channel.emission_wavelength,
+                    excitation_wavelength=channel.excitation_wavelength,
+                    suggested_name=name, color=color
+                )
+            )
 
         return imd
 
@@ -232,9 +234,11 @@ class OmeTiffParser(TifffileParser):
             tilewidth = page.tilewidth if page.tilewidth != 0 else page.imagewidth
             tilelength = page.tilelength if page.tilelength != 0 else page.imagelength
             subifd = i - 1 if i > 0 else None
-            pyramid.insert_tier(page.imagewidth, page.imagelength,
-                                (tilewidth, tilelength),
-                                subifd=subifd)
+            pyramid.insert_tier(
+                page.imagewidth, page.imagelength,
+                (tilewidth, tilelength),
+                subifd=subifd
+            )
 
         return pyramid
 

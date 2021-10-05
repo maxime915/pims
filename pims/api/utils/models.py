@@ -61,10 +61,10 @@ class SingleTimepointIndex(BaseModel):
 
 class PlaneSelectionQueryParams(BaseDependency):
     def __init__(
-            self,
-            channels: Optional[conint(ge=0)] = Query(None),
-            z_slices: Optional[conint(ge=0)] = Query(None),
-            timepoints: Optional[conint(ge=0)] = Query(None)
+        self,
+        channels: Optional[conint(ge=0)] = Query(None),
+        z_slices: Optional[conint(ge=0)] = Query(None),
+        timepoints: Optional[conint(ge=0)] = Query(None)
     ):
         self.channels = channels
         self.z_slices = z_slices
@@ -268,17 +268,20 @@ class ImageOut(BaseModel):
     class Config:
         fields = {
             "height": {
-                "description": "Height of the thumbnail. Width is adjusted to preserve the aspect ratio. "
+                "description": "Height of the thumbnail. Width is adjusted to preserve the "
+                               "aspect ratio. "
                                "**Takes precedence over `width` and `length`.**"
             },
             "width": {
-                "description": "Width of the thumbnail. Height is adjusted to preserve the aspect ratio. "
+                "description": "Width of the thumbnail. Height is adjusted to preserve the "
+                               "aspect ratio. "
                                "**Takes precedence over `length`.**"
             },
             "length": {
                 "description": "Length of the largest side of the thumbnail. "
                                "The other dimension is adjusted to preserve the aspect ratio. "
-                               "**Ignored if other size-related parameter such as `width` or `height` is present.**"
+                               "**Ignored if other size-related parameter such as `width` or "
+                               "`height` is present.** "
             }
         }
 
@@ -295,15 +298,19 @@ class ImageInDisplay(ImageIn):
 
 class ImageOpsDisplayQueryParams(BaseDependency):
     def __init__(
-            self,
-            gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
-            min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query([
-                IntensitySelectionEnum.AUTO_IMAGE]),
-            max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query([
-                IntensitySelectionEnum.AUTO_IMAGE]),
-            colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
-            filters: Optional[List[str]] = Query(None),
-            log: bool = Query(False),
+        self,
+        gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+        min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(
+            [
+                IntensitySelectionEnum.AUTO_IMAGE]
+        ),
+        max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(
+            [
+                IntensitySelectionEnum.AUTO_IMAGE]
+        ),
+        colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
+        filters: Optional[List[str]] = Query(None),
+        log: bool = Query(False),
     ):
         self.gammas = gammas
         self.min_intensities = min_intensities
@@ -319,10 +326,10 @@ class ImageOutDisplay(ImageOut):
 
 class ImageOutDisplayQueryParams(BaseDependency):
     def __init__(
-            self,
-            height: Optional[Union[conint(gt=1), confloat(gt=0.0, le=1.0)]] = Query(None),
-            width: Optional[Union[conint(gt=1), confloat(gt=0.0, le=1.0)]] = Query(None),
-            length: Optional[Union[conint(gt=1), confloat(gt=0.0, le=1.0)]] = Query(256)
+        self,
+        height: Optional[Union[conint(gt=1), confloat(gt=0.0, le=1.0)]] = Query(None),
+        width: Optional[Union[conint(gt=1), confloat(gt=0.0, le=1.0)]] = Query(None),
+        length: Optional[Union[conint(gt=1), confloat(gt=0.0, le=1.0)]] = Query(256)
     ):
         self.length = length
         self.width = width
@@ -367,14 +374,14 @@ class ImageInProcessing(ImageIn):
 
 class ImageOpsProcessingQueryParams(BaseDependency):
     def __init__(
-            self,
-            gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
-            min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
-            max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
-            colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
-            filters: Optional[List[str]] = Query(None),
-            bits: Optional[Union[BitDepthEnum, int]] = Query(BitDepthEnum.AUTO),
-            colorspace: Optional[Colorspace] = Query(Colorspace.AUTO)
+        self,
+        gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+        min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
+        max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
+        colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
+        filters: Optional[List[str]] = Query(None),
+        bits: Optional[Union[BitDepthEnum, int]] = Query(BitDepthEnum.AUTO),
+        colorspace: Optional[Colorspace] = Query(Colorspace.AUTO)
     ):
         self.gammas = gammas
         self.min_intensities = min_intensities
@@ -392,13 +399,15 @@ class ImageOutProcessing(ImageOut):
     class Config:
         fields = {
             "zoom": {
-                "description": "The zoom level to consider as thumbnail. Zoom 0 has the worst resolution (smallest "
-                               "image, top of the image pyramid). Maximum admissible zoom level depends on image. "
+                "description": "The zoom level to consider as thumbnail. Zoom 0 has the worst "
+                               "resolution (smallest image, top of the image pyramid). Maximum "
+                               "admissible zoom level depends on image. "
                                "**Takes precedence over `height`, `width` and `length`.**"
             },
             "level": {
-                "description": "The tier level. Level 0 has the best resolution (largest image, basis of the image "
-                               "pyramid). Maximum admissible tier level depends on image. "
+                "description": "The tier level. Level 0 has the best resolution (largest image, "
+                               "basis of the image pyramid). Maximum admissible tier level "
+                               "depends on image. "
                                "**Takes precedence over `zoom`, `height`, `width` and `length`.**"
             }
         }
@@ -406,9 +415,9 @@ class ImageOutProcessing(ImageOut):
 
 class ImageOutProcessingQueryParams(BaseDependency):
     def __init__(
-            self,
-            zoom: Optional[conint(ge=0)] = Query(None),
-            level: Optional[conint(ge=0)] = Query(None)
+        self,
+        zoom: Optional[conint(ge=0)] = Query(None),
+        level: Optional[conint(ge=0)] = Query(None)
     ):
         self.zoom = zoom
         self.level = level

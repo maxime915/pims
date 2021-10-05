@@ -1,4 +1,4 @@
-#  * Copyright (c) 2019-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -46,8 +46,10 @@ class PIMSCache(FastAPICache):
     _enabled = False
 
     @classmethod
-    async def init(cls, backend, prefix: str = "", expire: int = None, coder: Coder = JsonCoder,
-                   key_builder: Callable = default_key_builder):
+    async def init(
+        cls, backend, prefix: str = "", expire: int = None, coder: Coder = JsonCoder,
+        key_builder: Callable = default_key_builder
+    ):
         super().init(backend, prefix, expire, coder, key_builder)
         try:
             await cls._backend.get(CACHE_KEY_PIMS_VERSION)

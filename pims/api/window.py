@@ -50,20 +50,21 @@ cache_ttl = get_settings().cache_ttl_window
 
 @router.post('/image/{filepath:path}/window{extension:path}', tags=api_tags)
 async def show_window_with_body(
-        request: Request, response: Response,
-        body: WindowRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageAnnotationRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: WindowRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageAnnotationRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    Get a window (rectangular crop) extract from an image, with given channels, focal
-    planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a window (rectangular crop) extract from an image, with given channels, focal planes and
+    timepoints. If multiple channels are given (slice or selection), they are merged. If
+    multiple focal planes or timepoints are given (slice or selection), a reduction function
+    must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
@@ -80,19 +81,19 @@ async def show_window_with_body(
     vary=['config', 'request', 'response']
 )
 def _show_window(
-        request: Request, response: Response,  # required for @cache
-        path: Path,
-        region: Union[Region, dict],
-        height, width, length, zoom, level,
-        channels, z_slices, timepoints,
-        min_intensities, max_intensities, filters, gammas,
-        bits, colorspace,
-        annotations: Union[ParsedAnnotations, dict, List[dict]],
-        annotation_style: dict,
-        extension,
-        headers,
-        config: Settings,
-        colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    region: Union[Region, dict],
+    height, width, length, zoom, level,
+    channels, z_slices, timepoints,
+    min_intensities, max_intensities, filters, gammas,
+    bits, colorspace,
+    annotations: Union[ParsedAnnotations, dict, List[dict]],
+    annotation_style: dict,
+    extension,
+    headers,
+    config: Settings,
+    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -108,22 +109,32 @@ def _show_window(
 
         if 'top' in region:
             # Parse raw WindowRegion to Region
-            region = parse_region(in_image, region['top'], region['left'],
-                                  region['width'], region['height'],
-                                  reference_tier_index, tier_index_type,
-                                  silent_oob=False)
+            region = parse_region(
+                in_image, region['top'], region['left'],
+                region['width'], region['height'],
+                reference_tier_index, tier_index_type,
+                silent_oob=False
+            )
         elif 'ti' in region:
             # Parse raw WindowTileIndex region to Region
-            check_tileindex_validity(in_image.pyramid, region['ti'],
-                                     reference_tier_index, tier_index_type)
-            region = in_image.pyramid.get_tier_at(reference_tier_index,
-                                                  tier_index_type).ti2region(region['ti'])
+            check_tileindex_validity(
+                in_image.pyramid, region['ti'],
+                reference_tier_index, tier_index_type
+            )
+            region = in_image.pyramid.get_tier_at(
+                reference_tier_index,
+                tier_index_type
+            ).ti2region(region['ti'])
         elif ('tx', 'ty') in region:
             # Parse raw WindowTileCoord region to Region
-            check_tilecoord_validity(in_image.pyramid, region['tx'], region['ty'],
-                                     reference_tier_index, tier_index_type)
-            region = in_image.pyramid.get_tier_at(reference_tier_index,
-                                                  tier_index_type).txty2region(region['tx'], region['ty'])
+            check_tilecoord_validity(
+                in_image.pyramid, region['tx'], region['ty'],
+                reference_tier_index, tier_index_type
+            )
+            region = in_image.pyramid.get_tier_at(
+                reference_tier_index,
+                tier_index_type
+            ).txty2region(region['tx'], region['ty'])
 
     out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
     check_zoom_validity(in_image.pyramid, zoom)
@@ -152,7 +163,9 @@ def _show_window(
     array_parameters = (min_intensities, max_intensities, colormaps, gammas)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
-    intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
+    intensities = parse_intensity_bounds(
+        in_image, channels, z_slices, timepoints, min_intensities, max_intensities
+    )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 

@@ -108,13 +108,14 @@ class AbstractFilter(ABC, ImageOp):
 
 
 def _discover_filter_plugins():
-
     plugins = [name for _, name, _ in iter_modules(__path__, prefix="pims.filters.")
                if name not in NON_PLUGINS_MODULES]
     plugins += [name for _, name, _ in iter_modules()
                 if name.startswith(FILTER_PLUGIN_PREFIX)]
 
-    logger.info(f"[green bold]Filter plugins: found {len(plugins)} plugin(s)[/] [yellow]({', '.join(plugins)})", )
+    logger.info(
+        f"[green bold]Filter plugins: found {len(plugins)} plugin(s)[/] "
+        f"[yellow]({', '.join(plugins)})", )
     return plugins
 
 
@@ -147,7 +148,10 @@ def _find_filters_in_module(module_name):
                     imgfilter = var
                     filters.append(var)
                     imgfilter.init()
-                    logger.info(f"[green] * [yellow]{imgfilter.get_identifier()} - {imgfilter.get_name()}[/] imported.")
+                    logger.info(
+                        f"[green] * [yellow]{imgfilter.get_identifier()} "
+                        f"- {imgfilter.get_name()}[/] imported."
+                    )
         except ImportError as e:
             logger.error(f"{module_name} submodule cannot be checked for filters !", exc_info=e)
     return filters

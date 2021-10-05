@@ -50,20 +50,21 @@ cache_ttl = get_settings().cache_ttl_tile
 
 @router.post('/image/{filepath:path}/tile{extension:path}', tags=tile_tags)
 async def show_tile_with_body(
-        request: Request, response: Response,
-        body: TileRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: TileRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    Get a 8-bit tile optimized for visualisation, with given channels, focal
-    planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a 8-bit tile optimized for visualisation, with given channels, focal planes and
+    timepoints. If multiple channels are given (slice or selection), they are merged. If
+    multiple focal planes or timepoints are given (slice or selection), a reduction function
+    must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
@@ -77,20 +78,21 @@ async def show_tile_with_body(
 
 @router.post('/image/{filepath:path}/normalized-tile{extension:path}', tags=norm_tile_tags)
 async def show_tile_with_body(
-        request: Request, response: Response,
-        body: TileRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: TileRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    Get a 8-bit normalized tile optimized for visualisation, with given channels, focal
-    planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a 8-bit normalized tile optimized for visualisation, with given channels, focal planes
+    and timepoints. If multiple channels are given (slice or selection), they are merged. If
+    multiple focal planes or timepoints are given (slice or selection), a reduction function
+    must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
@@ -104,14 +106,14 @@ async def show_tile_with_body(
 
 @cache_image_response(expire=cache_ttl, vary=['config', 'request', 'response'])
 def _show_tile(
-        request: Request, response: Response,  # required for @cache
-        path: Path,
-        normalized: bool,
-        tile: dict,
-        channels, z_slices, timepoints,
-        min_intensities, max_intensities, filters, gammas, log,
-        extension, headers, config,
-        colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    normalized: bool,
+    tile: dict,
+    channels, z_slices, timepoints,
+    min_intensities, max_intensities, filters, gammas, log,
+    extension, headers, config,
+    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -131,15 +133,21 @@ def _show_tile(
         tier_index_type = TierIndexType.LEVEL
 
     if 'ti' in tile:
-        check_tileindex_validity(pyramid, tile['ti'],
-                                 reference_tier_index, tier_index_type)
+        check_tileindex_validity(
+            pyramid, tile['ti'],
+            reference_tier_index, tier_index_type
+        )
         tile_region = pyramid.get_tier_at(
-            reference_tier_index, tier_index_type).ti2region(tile['ti'])
+            reference_tier_index, tier_index_type
+        ).ti2region(tile['ti'])
     else:
-        check_tilecoord_validity(pyramid, tile['tx'], tile['ty'],
-                                 reference_tier_index, tier_index_type)
+        check_tilecoord_validity(
+            pyramid, tile['tx'], tile['ty'],
+            reference_tier_index, tier_index_type
+        )
         tile_region = pyramid.get_tier_at(
-            reference_tier_index, tier_index_type).txty2region(tile['tx'], tile['ty'])
+            reference_tier_index, tier_index_type
+        ).txty2region(tile['tx'], tile['ty'])
 
     out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
     req_size = tile_region.width, tile_region.height
@@ -166,7 +174,9 @@ def _show_tile(
     array_parameters = (min_intensities, max_intensities, colormaps, gammas)
     for array_parameter in array_parameters:
         check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
-    intensities = parse_intensity_bounds(in_image, channels, z_slices, timepoints, min_intensities, max_intensities)
+    intensities = parse_intensity_bounds(
+        in_image, channels, z_slices, timepoints, min_intensities, max_intensities
+    )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 
@@ -182,13 +192,15 @@ def _show_tile(
             tile_region, out_format, out_width, out_height,
             c_reduction, z_reduction, t_reduction,
             gammas, filters, colormaps, min_intensities, max_intensities, log,
-            8, Colorspace.AUTO)
+            8, Colorspace.AUTO
+        )
     else:
         tile = TileResponse(
             in_image, channels, z_slices, timepoints,
             tile_region, out_format, out_width, out_height,
             c_reduction, z_reduction, t_reduction,
-            gammas, filters, colormaps, min_intensities, max_intensities, log)
+            gammas, filters, colormaps, min_intensities, max_intensities, log
+        )
 
     return tile.http_response(
         mimetype,
@@ -197,39 +209,42 @@ def _show_tile(
 
 
 def zoom_query_parameter(
-        zoom: int = PathParam(...)
+    zoom: int = PathParam(...)
 ):
     return TargetZoom(__root__=zoom).dict()['__root__']
 
 
 def level_query_parameter(
-        level: int = PathParam(...)
+    level: int = PathParam(...)
 ):
     return TargetLevel(__root__=level).dict()['__root__']
 
 
 def ti_query_parameter(
-        ti: int = PathParam(...)
+    ti: int = PathParam(...)
 ):
     return TileIndex(__root__=ti).dict()['__root__']
 
 
-@router.get('/image/{filepath:path}/tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=tile_tags)
+@router.get(
+    '/image/{filepath:path}/tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=tile_tags
+)
 async def show_tile_by_zoom(
-        request: Request, response: Response,
-        path: Path = Depends(imagepath_parameter),
-        zoom: int = Depends(zoom_query_parameter),
-        ti: int = Depends(ti_query_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        planes: PlaneSelectionQueryParams = Depends(),
-        ops: ImageOpsDisplayQueryParams = Depends(),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings),
+    request: Request, response: Response,
+    path: Path = Depends(imagepath_parameter),
+    zoom: int = Depends(zoom_query_parameter),
+    ti: int = Depends(ti_query_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    planes: PlaneSelectionQueryParams = Depends(),
+    ops: ImageOpsDisplayQueryParams = Depends(),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings),
 ):
     """
-    Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
-    planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation,
+    with given channels, focal planes and timepoints. If multiple channels are given (slice or
+    selection), they are merged. If multiple focal planes or timepoints are given (slice or
+    selection), a reduction function must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
     tile is extracted from the median focal plane at first timepoint.
@@ -242,22 +257,25 @@ async def show_tile_by_zoom(
     )
 
 
-@router.get('/image/{filepath:path}/tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=tile_tags)
+@router.get(
+    '/image/{filepath:path}/tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=tile_tags
+)
 async def show_tile_by_level(
-        request: Request, response: Response,
-        path: Path = Depends(imagepath_parameter),
-        level: int = Depends(level_query_parameter),
-        ti: int = Depends(ti_query_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        planes: PlaneSelectionQueryParams = Depends(),
-        ops: ImageOpsDisplayQueryParams = Depends(),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings),
+    request: Request, response: Response,
+    path: Path = Depends(imagepath_parameter),
+    level: int = Depends(level_query_parameter),
+    ti: int = Depends(ti_query_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    planes: PlaneSelectionQueryParams = Depends(),
+    ops: ImageOpsDisplayQueryParams = Depends(),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings),
 ):
     """
-    Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation, with given channels, focal
-    planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a 8-bit tile at a given zoom level and tile index, optimized for visualisation,
+    with given channels, focal planes and timepoints. If multiple channels are given (slice or
+    selection), they are merged. If multiple focal planes or timepoints are given (slice or
+    selection), a reduction function must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
@@ -270,22 +288,26 @@ async def show_tile_by_level(
     )
 
 
-@router.get('/image/{filepath:path}/normalized-tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}', tags=norm_tile_tags)
+@router.get(
+    '/image/{filepath:path}/normalized-tile/zoom/{zoom:int}/ti/{ti:int}{extension:path}',
+    tags=norm_tile_tags
+)
 async def show_normalized_tile_by_zoom(
-        request: Request, response: Response,
-        path: Path = Depends(imagepath_parameter),
-        zoom: int = Depends(zoom_query_parameter),
-        ti: int = Depends(ti_query_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        planes: PlaneSelectionQueryParams = Depends(),
-        ops: ImageOpsDisplayQueryParams = Depends(),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings),
+    request: Request, response: Response,
+    path: Path = Depends(imagepath_parameter),
+    zoom: int = Depends(zoom_query_parameter),
+    ti: int = Depends(ti_query_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    planes: PlaneSelectionQueryParams = Depends(),
+    ops: ImageOpsDisplayQueryParams = Depends(),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings),
 ):
     """
-    Get a 8-bit normalized tile at a given zoom level and tile index, optimized for visualisation, with given channels,
-    focal planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a 8-bit normalized tile at a given zoom level and tile index, optimized for
+    visualisation, with given channels, focal planes and timepoints. If multiple channels are
+    given (slice or selection), they are merged. If multiple focal planes or timepoints are
+    given (slice or selection), a reduction function must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
     tile is extracted from the median focal plane at first timepoint.
@@ -298,22 +320,26 @@ async def show_normalized_tile_by_zoom(
     )
 
 
-@router.get('/image/{filepath:path}/normalized-tile/level/{level:int}/ti/{ti:int}{extension:path}', tags=norm_tile_tags)
+@router.get(
+    '/image/{filepath:path}/normalized-tile/level/{level:int}/ti/{ti:int}{extension:path}',
+    tags=norm_tile_tags
+)
 async def show_normalized_tile_by_level(
-        request: Request, response: Response,
-        path: Path = Depends(imagepath_parameter),
-        level: int = Depends(level_query_parameter),
-        ti: int = Depends(ti_query_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        planes: PlaneSelectionQueryParams = Depends(),
-        ops: ImageOpsDisplayQueryParams = Depends(),
-        headers: ImageRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings),
+    request: Request, response: Response,
+    path: Path = Depends(imagepath_parameter),
+    level: int = Depends(level_query_parameter),
+    ti: int = Depends(ti_query_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    planes: PlaneSelectionQueryParams = Depends(),
+    ops: ImageOpsDisplayQueryParams = Depends(),
+    headers: ImageRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings),
 ):
     """
-    Get a 8-bit normalized tile at a given zoom level and tile index, optimized for visualisation, with given channels, 
-    focal planes and timepoints. If multiple channels are given (slice or selection), they are merged. If multiple focal
-    planes or timepoints are given (slice or selection), a reduction function must be provided.
+    Get a 8-bit normalized tile at a given zoom level and tile index, optimized for
+    visualisation, with given channels, focal planes and timepoints. If multiple channels are
+    given (slice or selection), they are merged. If multiple focal planes or timepoints are
+    given (slice or selection), a reduction function must be provided.
 
     **By default**, all image channels are used and when the image is multidimensional, the
      tile is extracted from the median focal plane at first timepoint.
@@ -328,15 +354,15 @@ async def show_normalized_tile_by_level(
 
 @router.get('/image/tile.jpg', tags=norm_tile_tags, deprecated=True)
 async def show_tile_v1(
-        request: Request, response: Response,
-        zoomify: str,
-        x: int,
-        y: int,
-        z: int,
-        ops: ImageOpsDisplayQueryParams = Depends(),
-        mime_type: Optional[str] = Query(None, alias='mimeType'),
-        tile_group: Optional[str] = Query(None, alias='tileGroup'),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    zoomify: str,
+    x: int,
+    y: int,
+    z: int,
+    ops: ImageOpsDisplayQueryParams = Depends(),
+    mime_type: Optional[str] = Query(None, alias='mimeType'),
+    tile_group: Optional[str] = Query(None, alias='tileGroup'),
+    config: Settings = Depends(get_settings)
 ):
     """
     Get a tile using IMS V1.x specification.
@@ -359,17 +385,17 @@ async def show_tile_v1(
 
 @router.get('/slice/tile', tags=norm_tile_tags, deprecated=True)
 async def show_tile_v2(
-        request: Request, response: Response,
-        z: int,
-        fif: Optional[str] = None,
-        zoomify: Optional[str] = None,
-        x: Optional[int] = None,
-        y: Optional[int] = None,
-        tile_index: Optional[int] = Query(None, alias='tileIndex'),
-        ops: ImageOpsDisplayQueryParams = Depends(),
-        tile_group: Optional[str] = Query(None, alias='tileGroup'),
-        mime_type: str = Query(None, alias='mimeType'),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    z: int,
+    fif: Optional[str] = None,
+    zoomify: Optional[str] = None,
+    x: Optional[int] = None,
+    y: Optional[int] = None,
+    tile_index: Optional[int] = Query(None, alias='tileIndex'),
+    ops: ImageOpsDisplayQueryParams = Depends(),
+    tile_group: Optional[str] = Query(None, alias='tileGroup'),
+    mime_type: str = Query(None, alias='mimeType'),
+    config: Settings = Depends(get_settings)
 ):
     """
     Get a tile using IMS V2.x specification.

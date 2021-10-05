@@ -167,9 +167,11 @@ class HDAB2DABDeconvolutionFilter(AbstractColorDeconvolutionFilter):
 # H&E
 
 # From https://github.com/fiji/Colour_Deconvolution/blob/master/src/main/resources/sc/fiji/colourDeconvolution/colourdeconvolution.txt#L2
-rgb_from_hex = np.array([[0.644211, 0.716556, 0.266844],
-                         [0.092789, 0.954111, 0.283111],
-                         [0.0, 0.0, 0.0]])
+rgb_from_hex = np.array(
+    [[0.644211, 0.716556, 0.266844],
+     [0.092789, 0.954111, 0.283111],
+     [0.0, 0.0, 0.0]]
+)
 rgb_from_hex[2, :] = np.cross(rgb_from_hex[0, :], rgb_from_hex[1, :])
 hex_from_rgb = linalg.inv(rgb_from_hex)
 
@@ -210,9 +212,11 @@ class HE2EosinDeconvolutionFilter(AbstractColorDeconvolutionFilter):
 
 # RGB substractive
 
-rgb_from_rgbsub = np.array([[0.0, 1.0, 1.0],
-                            [1.0, 0.0, 1.0],
-                            [1.0, 1.0, 0.0]])
+rgb_from_rgbsub = np.array(
+    [[0.0, 1.0, 1.0],
+     [1.0, 0.0, 1.0],
+     [1.0, 1.0, 0.0]]
+)
 rgbsub_from_rgb = linalg.inv(rgb_from_rgbsub)
 
 
@@ -248,7 +252,7 @@ class RGB2GreenDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     @classmethod
     def aliases(cls):
         return ["g_rgb"]
-    
+
 
 class RGB2BlueDeconvolutionFilter(AbstractColorDeconvolutionFilter):
     def __init__(self):
@@ -269,9 +273,11 @@ class RGB2BlueDeconvolutionFilter(AbstractColorDeconvolutionFilter):
 
 # CMY substractive
 
-rgb_from_cmy = np.array([[1.0, 0.0, 0.0],
-                         [0.0, 1.0, 0.0],
-                         [0.0, 0.0, 1.0]])
+rgb_from_cmy = np.array(
+    [[1.0, 0.0, 0.0],
+     [0.0, 1.0, 0.0],
+     [0.0, 0.0, 1.0]]
+)
 cmy_from_rgb = linalg.inv(rgb_from_cmy)
 
 

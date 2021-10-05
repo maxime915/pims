@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-#  * Copyright (c) 2019-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -79,7 +79,6 @@ EXTRAS = {
 # If you do change the License, remember to change the Trove Classifier for that!
 
 here = os.path.abspath(os.path.dirname(__file__))
-
 
 # Load the package's __version__.py module as a dictionary.
 about = {}

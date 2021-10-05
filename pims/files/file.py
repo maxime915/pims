@@ -108,14 +108,18 @@ class Path(type(_Path()), _Path):
         return extracted
 
     def get_upload(self):
-        upload = next((child for child in self.upload_root().iterdir() if child.has_upload_role()), None)
+        upload = next(
+            (child for child in self.upload_root().iterdir() if child.has_upload_role()), None
+        )
         return upload
 
     def get_original(self):
         if not self.processed_root().exists():
             return None
 
-        original = next((child for child in self.processed_root().iterdir() if child.has_original_role()), None)
+        original = next(
+            (child for child in self.processed_root().iterdir() if child.has_original_role()), None
+        )
 
         from pims.files.image import Image
         return Image(original, factory=FormatFactory(match_on_ext=True)) if original else None
@@ -124,31 +128,43 @@ class Path(type(_Path()), _Path):
         if not self.processed_root().exists():
             return None
 
-        spatial = next((child for child in self.processed_root().iterdir() if child.has_spatial_role()), None)
+        spatial = next(
+            (child for child in self.processed_root().iterdir() if child.has_spatial_role()), None
+        )
 
         from pims.files.image import Image
-        return Image(spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)) if spatial else None
+        return Image(
+            spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)
+        ) if spatial else None
 
     def get_spectral(self):
         if not self.processed_root().exists():
             return None
 
-        spectral = next((child for child in self.processed_root().iterdir() if child.has_spectral_role()), None)
+        spectral = next(
+            (child for child in self.processed_root().iterdir() if child.has_spectral_role()), None
+        )
 
         from pims.files.image import Image
-        return Image(spectral, factory=SpectralReadableFormatFactory(match_on_ext=True)) if spectral else None
+        return Image(
+            spectral, factory=SpectralReadableFormatFactory(match_on_ext=True)
+        ) if spectral else None
 
     def get_histogram(self):
         if not self.processed_root().exists():
             return None
 
-        histogram = next((child for child in self.processed_root().iterdir() if child.has_histogram_role()), None)
+        histogram = next(
+            (child for child in self.processed_root().iterdir() if child.has_histogram_role()),
+            None
+        )
 
         from pims.files.histogram import Histogram
         return Histogram(histogram) if histogram else None
 
     def get_representations(self):
-        representations = [self.get_upload(), self.get_original(), self.get_spatial(), self.get_spectral()]
+        representations = [self.get_upload(), self.get_original(), self.get_spatial(),
+                           self.get_spectral()]
         return [representation for representation in representations if representation is not None]
 
     def get_representation(self, role):

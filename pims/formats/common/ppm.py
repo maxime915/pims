@@ -94,4 +94,3 @@ class PPMFormat(AbstractFormat):
     @property
     def media_type(self):
         return "image/x-portable-pixmap"
-

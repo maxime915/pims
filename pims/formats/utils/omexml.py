@@ -1,12 +1,16 @@
-# * This file is extracted from Python-bioformats which is distributed under the
-# * GNU General Public Licence, but this file is licensed under the
-# * permissive BSD license.
-# *
-# * See original file (and its license) here:
-# * https://github.com/CellProfiler/python-bioformats/blob/master/bioformats/omexml.py
-# *
-# * Copyright (c) 2009-2014 Broad Institute
-# * All rights reserved.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 
 import re
 import xml.etree.ElementTree as ElementTree
@@ -183,7 +187,8 @@ class OMEXML(object):
         node = self.root_node.find(qn(self.ns['sa'], "StructuredAnnotations"))
         if node is None:
             node = ElementTree.SubElement(
-                self.root_node, qn(self.ns['sa'], "StructuredAnnotations"))
+                self.root_node, qn(self.ns['sa'], "StructuredAnnotations")
+            )
         return self.StructuredAnnotations(node)
 
     class Instrument(NodeWrapper):
@@ -272,7 +277,9 @@ class OMEXML(object):
 
     def image(self, index=0) -> Image:
         """Return an image node by index"""
-        return self.Image(self.root_node.findall(qn(self.ns['ome'], "Image"))[index], self.root_node)
+        return self.Image(
+            self.root_node.findall(qn(self.ns['ome'], "Image"))[index], self.root_node
+        )
 
     def image_by_name(self, name, case_sensitive=False):
         for i in range(self.image_count):
@@ -576,8 +583,10 @@ class OMEXML(object):
             return self.has_key(key)
 
         def keys(self):
-            return filter(lambda x: x is not None,
-                          [child.get("ID") for child in self.node])
+            return filter(
+                lambda x: x is not None,
+                [child.get("ID") for child in self.node]
+            )
 
         def has_key(self, key):
             for child in self.node:
@@ -616,7 +625,9 @@ class OMEXML(object):
                 annotation_id = annotation_node.get("ID")
                 for xa_value_node in annotation_node.findall(qn(self.ns['sa'], "Value")):
                     # <Value/>
-                    for om_node in xa_value_node.findall(qn(NS_ORIGINAL_METADATA, "OriginalMetadata")):
+                    for om_node in xa_value_node.findall(
+                            qn(NS_ORIGINAL_METADATA, "OriginalMetadata")
+                    ):
                         # <OriginalMetadata>
                         key_node = om_node.find(qn(NS_ORIGINAL_METADATA, "Key"))
                         value_node = om_node.find(qn(NS_ORIGINAL_METADATA, "Value"))
@@ -629,9 +640,11 @@ class OMEXML(object):
 
         def has_original_metadata(self, key):
             """True if there is an original metadata item with the given key"""
-            return any([k == key
-                        for annotation_id, (k, v)
-                        in self.iter_original_metadata()])
+            return any(
+                [k == key
+                 for annotation_id, (k, v)
+                 in self.iter_original_metadata()]
+            )
 
         def get_original_metadata_value(self, key, default=None):
             """Return the value for a particular original metadata key

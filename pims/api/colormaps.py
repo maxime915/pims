@@ -57,9 +57,9 @@ def _serialize_colormap(cmap):
 
 @router.get('/colormaps', response_model=ColormapsList, tags=api_tags)
 def list_colormaps(
-        with_inverted: bool = Query(
-            False, description="Also list inverted colormaps"
-        )
+    with_inverted: bool = Query(
+        False, description="Also list inverted colormaps"
+    )
 ):
     """
     List all colormaps
@@ -85,15 +85,15 @@ def show_colormap(colormap_id: str):
 
 @router.get('/colormaps/{colormap_id}/representation{extension:path}', tags=api_tags)
 def show_colormap_representation(
-        colormap_id: str,
-        width: conint(gt=10, le=512) = Query(
-            100, description="Width of the graphic representation, in pixels."
-        ),
-        height: conint(gt=0, le=512) = Query(
-            10, description="Height of the graphic representation, in pixels."
-        ),
-        headers: ImageRequestHeaders = Depends(),
-        extension: OutputExtension = Depends(extension_path_parameter),
+    colormap_id: str,
+    width: conint(gt=10, le=512) = Query(
+        100, description="Width of the graphic representation, in pixels."
+    ),
+    height: conint(gt=0, le=512) = Query(
+        10, description="Height of the graphic representation, in pixels."
+    ),
+    headers: ImageRequestHeaders = Depends(),
+    extension: OutputExtension = Depends(extension_path_parameter),
 ):
     """
     Get a graphic representation of a colormap

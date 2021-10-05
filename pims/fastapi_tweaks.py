@@ -63,7 +63,7 @@ def request_params_to_args(
         ), "Params must be subclasses of Param"
 
         if utils.is_scalar_sequence_field(field) and isinstance(
-            received_params, (QueryParams, Headers)
+                received_params, (QueryParams, Headers)
         ):
             if isinstance(field_info, params.Query) and not query_explode:
                 value = received_params.get(field.alias)

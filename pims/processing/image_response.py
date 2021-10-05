@@ -28,8 +28,10 @@ from pims.processing.operations import (
 
 
 class View:
-    def __init__(self, in_image, out_format, out_width, out_height,
-                 out_bitdepth=8, **kwargs):
+    def __init__(
+        self, in_image, out_format, out_width, out_height,
+        out_bitdepth=8, **kwargs
+    ):
         self.in_image = in_image
 
         self.out_width = out_width
@@ -57,7 +59,8 @@ class View:
     def get_response_buffer(self):
         return OutputProcessor(
             self.out_format, self.best_effort_bitdepth,
-            **self.out_format_params)(self.process())
+            **self.out_format_params
+        )(self.process())
 
     def http_response(self, mimetype, extra_headers=None):
         return Response(
@@ -68,9 +71,11 @@ class View:
 
 
 class MultidimView(View):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
-                 out_format, out_width, out_height, c_reduction, z_reduction,
-                 t_reduction, **kwargs):
+    def __init__(
+        self, in_image, in_channels, in_z_slices, in_timepoints,
+        out_format, out_width, out_height, c_reduction, z_reduction,
+        t_reduction, **kwargs
+    ):
         super().__init__(in_image, out_format, out_width, out_height, **kwargs)
         self.in_image = in_image
         self.channels = in_channels
@@ -91,15 +96,19 @@ class MultidimView(View):
 
 
 class ProcessedView(MultidimView):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints,
-                 out_format, out_width, out_height, out_bitdepth,
-                 c_reduction, z_reduction, t_reduction, gammas,
-                 filters, colormaps, min_intensities, max_intensities, log,
-                 colorspace=Colorspace.AUTO, **kwargs):
-        super().__init__(in_image, in_channels, in_z_slices, in_timepoints,
-                         out_format, out_width, out_height,
-                         c_reduction, z_reduction, t_reduction,
-                         out_bitdepth=out_bitdepth, **kwargs)
+    def __init__(
+        self, in_image, in_channels, in_z_slices, in_timepoints,
+        out_format, out_width, out_height, out_bitdepth,
+        c_reduction, z_reduction, t_reduction, gammas,
+        filters, colormaps, min_intensities, max_intensities, log,
+        colorspace=Colorspace.AUTO, **kwargs
+    ):
+        super().__init__(
+            in_image, in_channels, in_z_slices, in_timepoints,
+            out_format, out_width, out_height,
+            c_reduction, z_reduction, t_reduction,
+            out_bitdepth=out_bitdepth, **kwargs
+        )
 
         self.gammas = gammas
         self.filters = filters
@@ -178,15 +187,17 @@ class ProcessedView(MultidimView):
         if not self.colormap_processing:
             return None
 
-        return np.stack([
-            colormap.lut(
-                size=self.max_intensity + 1,
-                bitdepth=self.best_effort_bitdepth
-            ) if colormap else default_lut(
-                size=self.max_intensity + 1,
-                bitdepth=self.best_effort_bitdepth
-            ) for colormap in self.colormaps
-        ], axis=1)
+        return np.stack(
+            [
+                colormap.lut(
+                    size=self.max_intensity + 1,
+                    bitdepth=self.best_effort_bitdepth
+                ) if colormap else default_lut(
+                    size=self.max_intensity + 1,
+                    bitdepth=self.best_effort_bitdepth
+                ) for colormap in self.colormaps
+            ], axis=1
+        )
 
     @lru_cache(maxsize=None)
     def lut(self):
@@ -339,40 +350,57 @@ class ProcessedView(MultidimView):
 
 
 class ThumbnailResponse(ProcessedView):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, use_precomputed, **kwargs):
-        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                         8, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                         min_intensities, max_intensities, log, **kwargs)
+    def __init__(
+        self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+        c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+        max_intensities, log, use_precomputed, **kwargs
+    ):
+        super().__init__(
+            in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+            8, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+            min_intensities, max_intensities, log, **kwargs
+        )
 
         self.use_precomputed = use_precomputed
 
     def raw_view(self, c, z, t):
-        return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t,
-                                       precomputed=self.use_precomputed)
+        return self.in_image.thumbnail(
+            self.out_width, self.out_height, c=c, z=z, t=t,
+            precomputed=self.use_precomputed
+        )
 
 
 class ResizedResponse(ProcessedView):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, out_bitdepth, colorspace, **kwargs):
-        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                         out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                         min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
+    def __init__(
+        self, in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+        c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+        max_intensities, log, out_bitdepth, colorspace, **kwargs
+    ):
+        super().__init__(
+            in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+            out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+            min_intensities, max_intensities, log, colorspace=colorspace, **kwargs
+        )
 
     def raw_view(self, c, z, t):
-        return self.in_image.thumbnail(self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False)
+        return self.in_image.thumbnail(
+            self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False
+        )
 
 
 class WindowResponse(ProcessedView):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, region, out_format, out_width, out_height,
-                 c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, out_bitdepth, colorspace, annotations=None,
-                 affine_matrix=None, annot_params=None, **kwargs):
-        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                         out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                         min_intensities, max_intensities, log, colorspace=colorspace, **kwargs)
+    def __init__(
+        self, in_image, in_channels, in_z_slices, in_timepoints, region, out_format, out_width,
+        out_height,
+        c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
+        max_intensities, log, out_bitdepth, colorspace, annotations=None,
+        affine_matrix=None, annot_params=None, **kwargs
+    ):
+        super().__init__(
+            in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+            out_bitdepth, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+            min_intensities, max_intensities, log, colorspace=colorspace, **kwargs
+        )
 
         self.region = region
 
@@ -402,11 +430,17 @@ class WindowResponse(ProcessedView):
 
         if self.annotations and self.affine_matrix is not None:
             if self.annotation_mode == AnnotationStyleMode.CROP:
-                mask = MaskRasterOp(self.affine_matrix, self.out_width, self.out_height)(self.annotations)
-                img = TransparencyMaskImgOp(self.background_transparency, mask, self.out_bitdepth)(img)
+                mask = MaskRasterOp(self.affine_matrix, self.out_width, self.out_height)(
+                    self.annotations
+                )
+                img = TransparencyMaskImgOp(self.background_transparency, mask, self.out_bitdepth)(
+                    img
+                )
             elif self.annotation_mode == AnnotationStyleMode.DRAWING:
-                draw = DrawRasterOp(self.affine_matrix, self.out_width,
-                                    self.out_height, self.point_style)(self.annotations)
+                draw = DrawRasterOp(
+                    self.affine_matrix, self.out_width,
+                    self.out_height, self.point_style
+                )(self.annotations)
                 draw_background = DrawRasterOp.background_color(self.annotations)
                 if self.colorspace_processing:
                     draw = ColorspaceImgOp(self.new_colorspace)(draw)
@@ -419,12 +453,18 @@ class WindowResponse(ProcessedView):
 
 
 class TileResponse(ProcessedView):
-    def __init__(self, in_image, in_channels, in_z_slices, in_timepoints, tile_region, out_format, out_width,
-                 out_height, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps, min_intensities,
-                 max_intensities, log, **kwargs):
-        super().__init__(in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
-                         8, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
-                         min_intensities, max_intensities, log, **kwargs)
+    def __init__(
+        self, in_image, in_channels, in_z_slices, in_timepoints, tile_region, out_format,
+        out_width,
+        out_height, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+        min_intensities,
+        max_intensities, log, **kwargs
+    ):
+        super().__init__(
+            in_image, in_channels, in_z_slices, in_timepoints, out_format, out_width, out_height,
+            8, c_reduction, z_reduction, t_reduction, gammas, filters, colormaps,
+            min_intensities, max_intensities, log, **kwargs
+        )
 
         # Tile (region)
         self.tile_region = tile_region
@@ -455,7 +495,10 @@ class AssociatedResponse(View):
 
 
 class MaskResponse(View):
-    def __init__(self, in_image, annotations, affine_matrix, out_width, out_height, out_bitdepth, out_format, **kwargs):
+    def __init__(
+        self, in_image, annotations, affine_matrix, out_width, out_height, out_bitdepth,
+        out_format, **kwargs
+    ):
         super().__init__(in_image, out_format, out_width, out_height, out_bitdepth, **kwargs)
 
         self.annotations = annotations
@@ -466,16 +509,22 @@ class MaskResponse(View):
 
 
 class DrawingResponse(MaskResponse):
-    def __init__(self, in_image, annotations, affine_matrix, point_style,
-                 out_width, out_height, out_bitdepth, out_format, **kwargs):
-        super().__init__(in_image, annotations, affine_matrix, out_format,
-                         out_width, out_height, out_bitdepth, **kwargs)
+    def __init__(
+        self, in_image, annotations, affine_matrix, point_style,
+        out_width, out_height, out_bitdepth, out_format, **kwargs
+    ):
+        super().__init__(
+            in_image, annotations, affine_matrix, out_format,
+            out_width, out_height, out_bitdepth, **kwargs
+        )
 
         self.point_style = point_style
 
     def process(self):
-        return DrawRasterOp(self.affine_matrix, self.out_width,
-                            self.out_height, self.point_style)(self.annotations)
+        return DrawRasterOp(
+            self.affine_matrix, self.out_width,
+            self.out_height, self.point_style
+        )(self.annotations)
 
 
 class ColormapRepresentationResponse(View):

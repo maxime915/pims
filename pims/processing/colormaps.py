@@ -1,16 +1,16 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 
 from abc import ABC, abstractmethod
 
@@ -28,12 +28,12 @@ class Colormap(ABC):
         self.id = id
         self.ctype = ctype
         self.inverted = inverted
-        
+
     @property
     def identifier(self):
         inv = "!" if self.inverted else ""
         return inv + self.id.upper()
-    
+
     @property
     def name(self):
         inv = " (Inverted)" if self.inverted else ""
@@ -114,28 +114,28 @@ def default_lut(size=256, bitdepth=8):
 
 mpl_cmaps = dict()
 mpl_cmaps[ColormapType.PERCEPTUAL_UNIFORM] = [
-            'viridis', 'plasma', 'inferno', 'magma', 'cividis']
+    'viridis', 'plasma', 'inferno', 'magma', 'cividis']
 mpl_cmaps[ColormapType.SEQUENTIAL] = [
-            'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
-            'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
-            'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn',
-            'binary', 'gist_yarg', 'gist_gray', 'bone',
-            'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-            'hot', 'afmhot', 'gist_heat', 'copper']
+    'Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+    'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+    'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn',
+    'binary', 'gist_yarg', 'gist_gray', 'bone',
+    'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
+    'hot', 'afmhot', 'gist_heat', 'copper']
 mpl_cmaps[ColormapType.DIVERGING] = [
-            'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
-            'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
+    'PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
+    'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
 mpl_cmaps[ColormapType.CYCLIC] = [
-            'twilight', 'twilight_shifted', 'hsv']
+    'twilight', 'twilight_shifted', 'hsv']
 mpl_cmaps[ColormapType.DIVERGING] = [
-            'Pastel1', 'Pastel2', 'Paired', 'Accent',
-            'Dark2', 'Set1', 'Set2', 'Set3',
-            'tab10', 'tab20', 'tab20b', 'tab20c']
+    'Pastel1', 'Pastel2', 'Paired', 'Accent',
+    'Dark2', 'Set1', 'Set2', 'Set3',
+    'tab10', 'tab20', 'tab20b', 'tab20c']
 mpl_cmaps[ColormapType.MISCELLANEOUS] = [
-            'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-            'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
-            'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
-            'gist_ncar']
+    'flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
+    'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
+    'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
+    'gist_ncar']
 
 # Non-trivial colormaps
 COLORMAPS = {}
@@ -146,7 +146,6 @@ for ctype, cmaps in mpl_cmaps.items():
             colormap = MatplotlibColormap(cmap, ctype=ctype, inverted=inv)
             COLORMAPS[colormap.identifier] = colormap
 
-
 # Pre-load colormaps for named colors
 COLOR_COLORMAPS = {}
 
@@ -155,10 +154,8 @@ for name in COLORS_BY_NAME:
         colormap = ColorColormap(Color(name), inverted=inv)
         COLOR_COLORMAPS[colormap.identifier] = colormap
 
-
 # All pre-loaded colormaps
 ALL_COLORMAPS = {**COLORMAPS, **COLOR_COLORMAPS}
-
 
 # Default colormaps per channel index
 DEFAULT_CHANNEL_COLORMAPS = {

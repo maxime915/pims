@@ -22,8 +22,10 @@ from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
 from pims.processing.region import Region
 
 
-def parse_annotations(annotations, ignore_fields=None, default=None,
-                      point_envelope_length=None, origin='LEFT_TOP', im_height=None):
+def parse_annotations(
+    annotations, ignore_fields=None, default=None,
+    point_envelope_length=None, origin='LEFT_TOP', im_height=None
+):
     """
     Parse a list of annotations.
 
@@ -50,16 +52,22 @@ def parse_annotations(annotations, ignore_fields=None, default=None,
 
     al = ParsedAnnotations()
     for annotation in annotations:
-        al.append(parse_annotation(**annotation, ignore_fields=ignore_fields,
-                                   default=default, point_envelope_length=point_envelope_length,
-                                   origin=origin, im_height=im_height))
+        al.append(
+            parse_annotation(
+                **annotation, ignore_fields=ignore_fields,
+                default=default, point_envelope_length=point_envelope_length,
+                origin=origin, im_height=im_height
+            )
+        )
 
     return al
 
 
-def parse_annotation(geometry, fill_color=None, stroke_color=None,
-                     stroke_width=None, ignore_fields=None, default=None,
-                     point_envelope_length=1.0, origin='LEFT_TOP', im_height=None):
+def parse_annotation(
+    geometry, fill_color=None, stroke_color=None,
+    stroke_width=None, ignore_fields=None, default=None,
+    point_envelope_length=1.0, origin='LEFT_TOP', im_height=None
+):
     """
     Parse an annotation.
 

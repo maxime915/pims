@@ -47,26 +47,26 @@ cache_ttl = get_settings().cache_ttl_window
 
 @router.post('/image/{filepath:path}/annotation/mask{extension:path}', tags=api_tags)
 async def show_mask(
-        request: Request, response: Response,
-        body: AnnotationMaskRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageAnnotationRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: AnnotationMaskRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageAnnotationRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    The mask is a generated image where geometries are filled by their respective `fill_color`. The background is
-    black.
+    The mask is a generated image where geometries are filled by their respective `fill_color`.
+    The background is black.
 
-    The input spatial region is given by the rectangular envelope of all geometries multiplied by an optional
-    context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
-    `level`).
+    The input spatial region is given by the rectangular envelope of all geometries multiplied
+    by an optional context factor. The target size is given by one of the scaling factors (
+    `size`, `width`, `height`, `zoom` or `level`).
 
-    By default, a binary mask with white foreground is returned as the default fill color is white for every
-    annotation.
+    By default, a binary mask with white foreground is returned as the default fill color is
+    white for every annotation.
 
     Annotation `stroke_width` and `stroke_color` are ignored.
     """
@@ -83,12 +83,12 @@ async def show_mask(
     supported_mimetypes=PROCESSING_MIMETYPES
 )
 def _show_mask(
-        request: Request, response: Response,  # required for @cache
-        path: Path,
-        annotations,
-        context_factor,
-        height, width, length, zoom, level,
-        extension, headers, config
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    annotations,
+    context_factor,
+    height, width, length, zoom, level,
+    extension, headers, config
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -122,25 +122,27 @@ def _show_mask(
 
 @router.post('/image/{filepath:path}/annotation/crop{extension:path}', tags=api_tags)
 async def show_crop(
-        request: Request, response: Response,
-        body: AnnotationCropRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageAnnotationRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: AnnotationCropRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageAnnotationRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    The crop is similar to an image window but where the transparency of the background can be adjusted.
+    The crop is similar to an image window but where the transparency of the background can be
+    adjusted.
 
-    The input spatial region is given by the rectangular envelope of all geometries multiplied by an optional
-    context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
-    `level`).
+    The input spatial region is given by the rectangular envelope of all geometries multiplied
+    by an optional context factor. The target size is given by one of the scaling factors (
+    `size`, `width`, `height`, `zoom` or `level`).
 
-    By default, the background transparency is set to 100 which is also known as *alpha mask*. When the
-    background transparency is set to 0, foreground and background cannot be distinguished.
+    By default, the background transparency is set to 100 which is also known as *alpha mask*.
+    When the background transparency is set to 0, foreground and background cannot be
+    distinguished.
 
     Annotation `fill_color`, `stroke_width` and `stroke_color` are ignored.
     """
@@ -152,17 +154,17 @@ async def show_crop(
 
 
 async def _show_crop(
-        request: Request, response: Response,
-        path: Path,
-        annotations,
-        context_factor,
-        background_transparency,
-        height, width, length, zoom, level,
-        channels, z_slices, timepoints,
-        min_intensities, max_intensities, filters, gammas,
-        bits, colorspace,
-        extension, headers, config,
-        colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None,
+    request: Request, response: Response,
+    path: Path,
+    annotations,
+    context_factor,
+    background_transparency,
+    height, width, length, zoom, level,
+    channels, z_slices, timepoints,
+    min_intensities, max_intensities, filters, gammas,
+    bits, colorspace,
+    extension, headers, config,
+    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None,
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -196,23 +198,23 @@ async def _show_crop(
 
 @router.post('/image/{filepath:path}/annotation/drawing{extension:path}', tags=api_tags)
 async def show_drawing(
-        request: Request, response: Response,
-        body: AnnotationDrawingRequest,
-        path: Path = Depends(imagepath_parameter),
-        extension: OutputExtension = Depends(extension_path_parameter),
-        headers: ImageAnnotationRequestHeaders = Depends(),
-        config: Settings = Depends(get_settings)
+    request: Request, response: Response,
+    body: AnnotationDrawingRequest,
+    path: Path = Depends(imagepath_parameter),
+    extension: OutputExtension = Depends(extension_path_parameter),
+    headers: ImageAnnotationRequestHeaders = Depends(),
+    config: Settings = Depends(get_settings)
 ):
     """
-    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL size limits, a POST
-    with body content must be used.**
+    **`GET with body` - when a GET with URL encoded query parameters is not possible due to URL
+    size limits, a POST with body content must be used.**
 
-    Get an annotation crop (with apparent background) where annotations are drawn according to their respective
-    `fill_color`, `stroke_width` and `stroke_color`.
+    Get an annotation crop (with apparent background) where annotations are drawn according to
+    their respective `fill_color`, `stroke_width` and `stroke_color`.
 
-    The input spatial region is given by the rectangular envelope of all geometries multiplied by an optional
-    context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
-    `level`).
+    The input spatial region is given by the rectangular envelope of all geometries multiplied
+    by an optional context factor. The target size is given by one of the scaling factors (
+    `size`, `width`, `height`, `zoom` or `level`).
     """
     return await _show_drawing(
         request, response,
@@ -222,16 +224,16 @@ async def show_drawing(
 
 
 async def _show_drawing(
-        request: Request, response: Response,  # required for @cache
-        path: Path,
-        annotations,
-        context_factor,
-        try_square, point_cross, point_envelope_length,
-        height, width, length, zoom, level,
-        channels, z_slices, timepoints,
-        min_intensities, max_intensities, filters, gammas, log,
-        extension, headers, config,
-        colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None,
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    annotations,
+    context_factor,
+    try_square, point_cross, point_envelope_length,
+    height, width, length, zoom, level,
+    channels, z_slices, timepoints,
+    min_intensities, max_intensities, filters, gammas, log,
+    extension, headers, config,
+    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None,
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)

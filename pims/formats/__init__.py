@@ -58,8 +58,10 @@ def _discover_format_plugins() -> List[Union[str, EntryPoint]]:
     plugins += entry_points(group=PLUGIN_GROUP)
 
     plugin_names = [p.module if type(p) is EntryPoint else p for p in plugins]
-    logger.info(f"[green bold]Format plugins: found {len(plugins)} plugin(s)[/] "
-                f"[yellow]({', '.join(plugin_names)})")
+    logger.info(
+        f"[green bold]Format plugins: found {len(plugins)} plugin(s)[/] "
+        f"[yellow]({', '.join(plugin_names)})"
+    )
     return plugins
 
 
@@ -90,11 +92,15 @@ def _find_formats_in_module(mod):
                     formats.append(format)
                     format.init()
 
-                    logger.info(f"[green] * [yellow]{format.get_identifier()} "
-                                f"- {format.get_name()}[/] imported.")
+                    logger.info(
+                        f"[green] * [yellow]{format.get_identifier()} "
+                        f"- {format.get_name()}[/] imported."
+                    )
         except ImportError as e:
-            logger.error(f"{submodule_name} submodule cannot be checked for "
-                         f"formats !", exc_info=e)
+            logger.error(
+                f"{submodule_name} submodule cannot be checked for "
+                f"formats !", exc_info=e
+            )
     return formats
 
 
@@ -112,8 +118,10 @@ def _get_all_formats():
         entrypoint_plugin = type(plugin) is EntryPoint
 
         module_name = plugin.module if entrypoint_plugin else plugin
-        logger.info(f"[green bold]Importing formats from "
-                    f"[yellow]{module_name}[/] plugin...")
+        logger.info(
+            f"[green bold]Importing formats from "
+            f"[yellow]{module_name}[/] plugin..."
+        )
 
         if entrypoint_plugin:
             module = plugin.load()

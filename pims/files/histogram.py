@@ -195,9 +195,9 @@ def _extract_np_thumb(image):
                 thumb = image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
                 npthumb = imglib_adapters.get((type(thumb), np.ndarray))(thumb)
                 if npthumb.shape[2] != len(c_range):
-                    # TODO: improve palette support!
-                    # !! if we get more channels than expected, we have a color palette image
-                    # For now, try to discard the palette by only keeping the expected channel in the response
+                    # TODO: improve palette support! !! if we get more channels than expected,
+                    #  we have a color palette image For now, try to discard the palette by only
+                    #  keeping the expected channel in the response
                     mod_range = [c % npthumb.shape[2] for c in c_range]
                     npthumb = npthumb[:, :, mod_range]
                 yield npthumb, c_range, z, t, ratio
@@ -217,11 +217,13 @@ def clamp_histogram(hist, bounds=None):
         sup = argmax_nonzero(hist)
     else:
         inf, sup = bounds
-    return hist[inf:sup+1], np.arange(inf, sup+1)
+    return hist[inf:sup + 1], np.arange(inf, sup + 1)
 
 
-def build_histogram_file(in_image, dest, hist_type: HistogramType,
-                         overwrite: bool = False):
+def build_histogram_file(
+    in_image, dest, hist_type: HistogramType,
+    overwrite: bool = False
+):
     """
     Build an histogram for an image and save it as zarr file.
     Parameters
@@ -275,8 +277,10 @@ def build_histogram_file(in_image, dest, hist_type: HistogramType,
     zplane.array(ZHF_HIST, npplane_hist)
     zplane.array(
         ZHF_BOUNDS,
-        np.stack((argmin_nonzero(npplane_hist),
-                  argmax_nonzero(npplane_hist)), axis=-1)
+        np.stack(
+            (argmin_nonzero(npplane_hist),
+             argmax_nonzero(npplane_hist)), axis=-1
+        )
     )
 
     # Create the group for channel histogram
@@ -285,8 +289,10 @@ def build_histogram_file(in_image, dest, hist_type: HistogramType,
     zchannel.array(ZHF_HIST, npchannel_hist)
     zchannel.array(
         ZHF_BOUNDS,
-        np.stack((argmin_nonzero(npchannel_hist),
-                  argmax_nonzero(npchannel_hist)), axis=-1)
+        np.stack(
+            (argmin_nonzero(npchannel_hist),
+             argmax_nonzero(npchannel_hist)), axis=-1
+        )
     )
 
     # Create the group for image histogram

@@ -132,8 +132,10 @@ class Archive(Path):
             files (.DS_STORE, __MACOSX).
         """
         if path.exists() and not path.is_dir():
-            raise ArchiveError(f"{self} cannot be extracted in {path} because "
-                               f"it already exists or it is not a directory")
+            raise ArchiveError(
+                f"{self} cannot be extracted in {path} because "
+                f"it already exists or it is not a directory"
+            )
 
         try:
             shutil.unpack_archive(self.absolute(), path, self._format.name)

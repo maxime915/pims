@@ -36,7 +36,7 @@ mimetype_from_extension = {
 
 PNG_MIMETYPES = {
     "image/png": OutputExtension.PNG,
-    "image/apng":  OutputExtension.PNG
+    "image/apng": OutputExtension.PNG
 }
 WEBP_MIMETYPES = {
     "image/webp": OutputExtension.WEBP
@@ -67,8 +67,11 @@ major_type_str = r'[a-zA-Z0-9._-]+'
 minor_type_str = r'[a-zA-Z0-9._+-]+'
 
 # Matches either '*', 'image/*', or 'image/png'
-valid_mime_type = re.compile(r'^(?:\*|{major_type}/\*|{major_type}/{minor_type})$'.format(
-    major_type=major_type_str, minor_type=minor_type_str))
+valid_mime_type = re.compile(
+    r'^(?:\*|{major_type}/\*|{major_type}/{minor_type})$'.format(
+        major_type=major_type_str, minor_type=minor_type_str
+    )
+)
 
 # Matches the 'q=1.23' from the parameters of a Accept mime types
 q_match = re.compile(r'(?:^|;)\s*q=([0-9.-]+)(?:$|;)')
@@ -100,7 +103,7 @@ class AcceptableType:
 
     def __eq__(self, other):
         return isinstance(other, AcceptableType) and \
-            (self.mimetype, self.weight) == (other.mimetype, other.weight)
+               (self.mimetype, self.weight) == (other.mimetype, other.weight)
 
     def __lt__(self, other):
         if not isinstance(other, AcceptableType):
@@ -160,6 +163,7 @@ def get_output_format(extension, accept_header, supported):
 
     Parameters
     ----------
+    extension : OutputExtension
     accept_header : str
     supported : OrderedDict
         Ordered dictionary of supported mime types.
@@ -189,8 +193,9 @@ def get_output_format(extension, accept_header, supported):
 
 
 def extension_path_parameter(
-        extension: OutputExtension = PathParam(
-            OutputExtension.NONE, description="Image response format. If not set, `Accept` header is used."
-        )
+    extension: OutputExtension = PathParam(
+        OutputExtension.NONE,
+        description="Image response format. If not set, `Accept` header is used."
+    )
 ):
     return extension

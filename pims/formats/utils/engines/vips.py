@@ -139,6 +139,7 @@ class VipsHistogramReader(NullHistogramReader):
             #     return VIPSImage.thumbnail(str(format.path), 1024, linear=True)\
             #         .colourspace(image.interpretation)
             return VIPSImage.thumbnail(str(format.path), 1024)
+
         return self.format.get_cached('_vips_hist_image', _thumb, self.format)
 
     def type(self):
