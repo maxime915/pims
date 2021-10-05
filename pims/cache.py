@@ -1,45 +1,92 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2019-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 import asyncio
 import hashlib
 import inspect
 import typing
 from enum import Enum
-from functools import wraps, partial
-from typing import Type, Callable, Optional
+from functools import partial, wraps
+from typing import Callable, Optional, Type
 
-from fastapi_cache import FastAPICache, Coder
+import aioredis
+from fastapi_cache import Coder, FastAPICache, default_key_builder
 from fastapi_cache.backends import Backend
 from fastapi_cache.backends.redis import RedisBackend as RedisBackend_
-from fastapi_cache.coder import PickleCoder
+from fastapi_cache.coder import JsonCoder, PickleCoder
 from starlette.concurrency import run_in_threadpool
 from starlette.responses import Response
 
-from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES
+from pims.api.utils.mimetype import VISUALISATION_MIMETYPES, get_output_format
+from pims.config import get_settings
 
 HEADER_CACHE_CONTROL = "Cache-Control"
 HEADER_ETAG = "ETag"
 HEADER_IF_NONE_MATCH = "If-None-Match"
 
-
-def get_cache() -> Backend:
-    return FastAPICache.get_backend()
+CACHE_KEY_PIMS_VERSION = "PIMS_VERSION"
 
 
 class RedisBackend(RedisBackend_):
     async def exists(self, key) -> bool:
         return await self.redis.exists(key)
+
+
+class PIMSCache(FastAPICache):
+    _enabled = False
+
+    @classmethod
+    async def init(cls, backend, prefix: str = "", expire: int = None, coder: Coder = JsonCoder,
+                   key_builder: Callable = default_key_builder):
+        super().init(backend, prefix, expire, coder, key_builder)
+        try:
+            await cls._backend.get(CACHE_KEY_PIMS_VERSION)
+            cls._enabled = True
+        except ConnectionError:
+            cls._enabled = False
+
+    @classmethod
+    def get_backend(cls):
+        if not cls._enabled:
+            raise ConnectionError("Cache is not enabled.")
+        return cls._backend
+
+    @classmethod
+    def is_enabled(cls):
+        return cls._enabled
+
+
+def get_cache() -> Backend:
+    return PIMSCache.get_backend()
+
+
+async def _startup_cache(pims_version):
+    settings = get_settings()
+    if not settings.cache_enabled:
+        return
+
+    redis = aioredis.from_url(settings.cache_url)
+    await PIMSCache.init(
+        RedisBackend(redis), prefix="pims-cache",
+        key_builder=all_kwargs_key_builder
+    )
+
+    # Flush the cache if persistent and PIMS version has changed.
+    cache = get_cache()
+    cached_version = await cache.get(CACHE_KEY_PIMS_VERSION)
+    if cached_version != pims_version:
+        await cache.clear(PIMSCache.get_prefix())
+        await cache.set(CACHE_KEY_PIMS_VERSION, pims_version)
 
 
 async def exec_func_async(func, *args, **kwargs):
@@ -68,7 +115,7 @@ def all_kwargs_key_builder(func, kwargs, excluded_parameters, prefix):
 
 
 def _image_response_key_builder(
-        func, kwargs, excluded_parameters, prefix, supported_mimetypes
+    func, kwargs, excluded_parameters, prefix, supported_mimetypes
 ):
     copy_kwargs = kwargs.copy()
     headers = copy_kwargs.get('headers')
@@ -100,11 +147,11 @@ def default_cache_control_builder(ttl=0):
 
 
 def cache(
-        expire: int = None,
-        vary: Optional[typing.List] = None,
-        codec: Type[Coder] = None,
-        key_builder: Callable = None,
-        cache_control_builder: Callable = None
+    expire: int = None,
+    vary: Optional[typing.List] = None,
+    codec: Type[Coder] = None,
+    key_builder: Callable = None,
+    cache_control_builder: Callable = None
 ):
     def wrapper(func: Callable):
         @wraps(func)
@@ -121,15 +168,15 @@ def cache(
             request = all_kwargs.pop("request", None)
             response = all_kwargs.pop("response", None)
 
-            if request \
-                    and request.headers.get(HEADER_CACHE_CONTROL) == "no-store":
-                return exec_func_async(func, *args, **kwargs)
+            if not PIMSCache.is_enabled() or \
+                    (request and request.headers.get(HEADER_CACHE_CONTROL) == "no-store"):
+                return await exec_func_async(func, *args, **kwargs)
 
-            expire = expire or FastAPICache.get_expire()
-            codec = codec or FastAPICache.get_coder()
-            key_builder = key_builder or FastAPICache.get_key_builder()
-            backend = FastAPICache.get_backend()
-            prefix = FastAPICache.get_prefix()
+            expire = expire or PIMSCache.get_expire()
+            codec = codec or PIMSCache.get_coder()
+            key_builder = key_builder or PIMSCache.get_key_builder()
+            backend = PIMSCache.get_backend()
+            prefix = PIMSCache.get_prefix()
 
             cache_key = key_builder(func, all_kwargs, vary, prefix)
             ttl, encoded = await backend.get_with_ttl(cache_key)
@@ -140,7 +187,7 @@ def cache(
                 encoded = codec.encode(data)
                 await backend.set(
                     cache_key, encoded,
-                    expire or FastAPICache.get_expire()
+                    expire or PIMSCache.get_expire()
                 )
                 return data
 
@@ -189,9 +236,9 @@ def cache(
 
 
 def cache_image_response(
-        expire: int = None,
-        vary: Optional[typing.List] = None,
-        supported_mimetypes=None
+    expire: int = None,
+    vary: Optional[typing.List] = None,
+    supported_mimetypes=None
 ):
     if supported_mimetypes is None:
         supported_mimetypes = VISUALISATION_MIMETYPES
