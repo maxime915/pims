@@ -129,12 +129,6 @@ class ResizeImgOp(ImageOp):
 
     def _vips_impl(self, img, *args, **kwargs):
         if img.width != self.width or img.height != self.height:
-            # Seems it has been fixed by https://github.com/libvips/libvips/pull/2120
-            # if img.interpretation in ("grey16", "rgb16"):
-            #     # Related to https://github.com/libvips/libvips/issues/1941 ?
-            #     return img.thumbnail_image(self.width, height=self.height, size=VIPSSize.FORCE, linear=True) \
-            #         .colourspace(img.interpretation)
-
             img = img.thumbnail_image(self.width, height=self.height, size=VIPSSize.FORCE)
         return img
 
