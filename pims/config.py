@@ -1,4 +1,4 @@
-#  * Copyright (c) 2019-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@ import logging
 import os
 from functools import lru_cache
 
-from pydantic import BaseSettings
+from pydantic import BaseSettings, Extra
 
 logger = logging.getLogger("pims.app")
 
 
-class Settings(BaseSettings):
+class ReadableSettings(BaseSettings):
     root: str
     pending_path: str
     default_image_size_safety_mode: str = "SAFE_REJECT"
@@ -30,12 +30,17 @@ class Settings(BaseSettings):
     pims_url: str = "http://localhost-ims"
 
     cache_enabled: bool = True
-    cache_url: str = "http://pims-cache:6379"
+    cache_url: str = "redis://pims-cache:6379"
     cache_ttl_thumb: int = 60 * 60 * 24 * 15
     cache_ttl_resized: int = 60 * 60 * 24 * 15
     cache_ttl_tile: int = 60 * 60 * 24
     cache_ttl_window: int = 60 * 60 * 24
 
+    class Config:
+        extra = Extra.ignore
+
+
+class Settings(ReadableSettings):
     cytomine_public_key: str
     cytomine_private_key: str
 
