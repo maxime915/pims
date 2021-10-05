@@ -1,30 +1,33 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Union, List, Any
+from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, conint
 
-from pims.api.exceptions import check_representation_existence, NoAppropriateRepresentationProblem
-from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
+from pims.api.exceptions import NoAppropriateRepresentationProblem, check_representation_existence
+from pims.api.utils.header import ImageRequestHeaders, add_image_size_limit_header
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, safeguard_output_dimensions
-from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension
-from pims.api.utils.models import FormatId, ZoomOrLevel, CollectionSize, ImageOutDisplayQueryParams, AssociatedName
-from pims.api.utils.parameter import path2filepath, imagepath_parameter, filepath_parameter
-from pims.api.utils.response import response_list, convert_quantity
+from pims.api.utils.mimetype import OutputExtension, VISUALISATION_MIMETYPES, get_output_format
+from pims.api.utils.models import (
+    AssociatedName, CollectionSize, FormatId,
+    ImageOutDisplayQueryParams, ZoomOrLevel
+)
+from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, path2filepath
+from pims.api.utils.response import convert_quantity, response_list
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.formats.utils.metadata import MetadataType

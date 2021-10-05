@@ -1,30 +1,36 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
 from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence
-from pims.api.utils.annotation_parameter import parse_annotations, get_annotation_region
-from pims.api.utils.header import add_image_size_limit_header, ImageAnnotationRequestHeaders
-from pims.api.utils.image_parameter import check_zoom_validity, check_level_validity, get_window_output_dimensions, \
-    safeguard_output_dimensions, ensure_list
-from pims.api.utils.mimetype import get_output_format, OutputExtension, \
-    extension_path_parameter, PROCESSING_MIMETYPES
-from pims.api.utils.models import AnnotationStyleMode, AnnotationMaskRequest, AnnotationCropRequest, Colorspace, \
-    AnnotationDrawingRequest
+from pims.api.utils.annotation_parameter import get_annotation_region, parse_annotations
+from pims.api.utils.header import ImageAnnotationRequestHeaders, add_image_size_limit_header
+from pims.api.utils.image_parameter import (
+    check_level_validity, check_zoom_validity, ensure_list,
+    get_window_output_dimensions, safeguard_output_dimensions
+)
+from pims.api.utils.mimetype import (
+    OutputExtension, PROCESSING_MIMETYPES,
+    extension_path_parameter, get_output_format
+)
+from pims.api.utils.models import (
+    AnnotationCropRequest, AnnotationDrawingRequest,
+    AnnotationMaskRequest, AnnotationStyleMode, Colorspace
+)
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.window import _show_window
 from pims.cache import cache_image_response

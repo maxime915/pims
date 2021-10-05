@@ -1,35 +1,41 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 import logging
 import traceback
 from typing import Optional
 
 from cytomine import Cytomine
-from cytomine.models import Storage, ProjectCollection, Project, UploadedFile, ImageInstance, \
-    PropertyCollection, Property
-from fastapi import APIRouter, Query, Depends, Form, BackgroundTasks
+from cytomine.models import (
+    ImageInstance, Project, ProjectCollection, Property,
+    PropertyCollection, Storage, UploadedFile
+)
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query
 from starlette.requests import Request
-from starlette.responses import JSONResponse, FileResponse
+from starlette.responses import FileResponse, JSONResponse
 
-from pims.api.exceptions import CytomineProblem, AuthenticationException, BadRequestException, \
-    check_representation_existence, NotAFileProblem
-from pims.api.utils.cytomine_auth import parse_authorization_header, parse_request_token, sign_token, \
-    get_this_image_server
+from pims.api.exceptions import (
+    AuthenticationException, BadRequestException, CytomineProblem,
+    NotAFileProblem, check_representation_existence
+)
+from pims.api.utils.cytomine_auth import (
+    get_this_image_server, parse_authorization_header,
+    parse_request_token, sign_token
+)
 from pims.api.utils.image_parameter import ensure_list
-from pims.api.utils.parameter import sanitize_filename, imagepath_parameter
+from pims.api.utils.parameter import imagepath_parameter, sanitize_filename
 from pims.api.utils.response import serialize_cytomine_model
-from pims.config import get_settings, Settings
+from pims.config import Settings, get_settings
 from pims.files.archive import make_zip_archive
 from pims.files.file import Path, unique_name_generator
 from pims.importer.importer import FileImporter

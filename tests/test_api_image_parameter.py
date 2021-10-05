@@ -1,25 +1,28 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 import pytest
 
-from pims.api.exceptions import TooLargeOutputProblem, BadRequestException, ColormapNotFoundProblem
+from pims.api.exceptions import BadRequestException, ColormapNotFoundProblem, TooLargeOutputProblem
 from pims.api.utils.header import SafeMode
-from pims.api.utils.image_parameter import get_rationed_resizing, get_thumb_output_dimensions, parse_planes, \
-    check_reduction_validity, check_array_size, ensure_list, safeguard_output_dimensions, parse_intensity_bounds, \
-    check_level_validity, check_zoom_validity, check_tileindex_validity, check_tilecoord_validity, parse_region, \
-    parse_colormap_id
-from pims.api.utils.models import IntensitySelectionEnum, TierIndexType, ColormapEnum
+from pims.api.utils.image_parameter import (
+    check_array_size, check_level_validity,
+    check_reduction_validity, check_tilecoord_validity, check_tileindex_validity,
+    check_zoom_validity, ensure_list, get_rationed_resizing, get_thumb_output_dimensions,
+    parse_colormap_id, parse_intensity_bounds, parse_planes, parse_region,
+    safeguard_output_dimensions
+)
+from pims.api.utils.models import ColormapEnum, IntensitySelectionEnum, TierIndexType
 from pims.formats.utils.pyramid import Pyramid
 from pims.processing.color import Color
 from pims.processing.colormaps import ALL_COLORMAPS

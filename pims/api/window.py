@@ -1,17 +1,17 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
-from typing import Union, List
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
+from typing import List, Union
 
 from fastapi import APIRouter, Depends
 from starlette.requests import Request
@@ -19,24 +19,28 @@ from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.annotation_parameter import parse_annotations
-from pims.api.utils.header import add_image_size_limit_header, ImageAnnotationRequestHeaders
-from pims.api.utils.image_parameter import get_channel_indexes, \
-    get_zslice_indexes, get_timepoint_indexes, check_array_size, ensure_list, check_reduction_validity, \
-    safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth, \
-    parse_region, check_tileindex_validity, check_tilecoord_validity, get_window_output_dimensions, parse_filter_ids, \
-    parse_colormap_ids
-from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
-    extension_path_parameter
-from pims.api.utils.models import WindowRequest, AnnotationStyleMode, TierIndexType
+from pims.api.utils.header import ImageAnnotationRequestHeaders, add_image_size_limit_header
+from pims.api.utils.image_parameter import (
+    check_array_size, check_level_validity,
+    check_reduction_validity, check_tilecoord_validity, check_tileindex_validity,
+    check_zoom_validity, ensure_list, get_channel_indexes, get_timepoint_indexes,
+    get_window_output_dimensions, get_zslice_indexes, parse_bitdepth, parse_colormap_ids,
+    parse_filter_ids, parse_intensity_bounds, parse_region, safeguard_output_dimensions
+)
+from pims.api.utils.mimetype import (
+    OutputExtension, VISUALISATION_MIMETYPES,
+    extension_path_parameter, get_output_format
+)
+from pims.api.utils.models import AnnotationStyleMode, TierIndexType, WindowRequest
 from pims.api.utils.parameter import imagepath_parameter
 from pims.cache import cache_image_response
-from pims.config import get_settings, Settings
+from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.filters import FILTERS
-from pims.processing.annotations import annotation_crop_affine_matrix, ParsedAnnotations
-from pims.processing.color import WHITE, RED
+from pims.processing.annotations import ParsedAnnotations, annotation_crop_affine_matrix
+from pims.processing.color import RED, WHITE
 from pims.processing.colormaps import ALL_COLORMAPS
-from pims.processing.image_response import WindowResponse, MaskResponse
+from pims.processing.image_response import MaskResponse, WindowResponse
 from pims.processing.region import Region
 
 router = APIRouter()

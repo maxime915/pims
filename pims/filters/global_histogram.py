@@ -1,14 +1,27 @@
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
+
 from abc import ABC, abstractmethod
 from functools import cached_property
 
 import numpy as np
-from skimage.filters import threshold_otsu, threshold_isodata, threshold_yen, threshold_li, threshold_minimum
+from pyvips import Image as VIPSImage
+from skimage.filters import threshold_isodata, threshold_minimum, threshold_otsu, threshold_yen
 
-from pims.api.utils.models import FilterType, Colorspace
+from pims.api.utils.models import Colorspace, FilterType
 from pims.files.histogram import clamp_histogram
 from pims.filters import AbstractFilter
-
-from pyvips import Image as VIPSImage
 
 
 class AbstractGlobalFilter(AbstractFilter, ABC):

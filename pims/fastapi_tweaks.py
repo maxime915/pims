@@ -1,14 +1,29 @@
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
+
 import csv
 from copy import deepcopy
 from enum import Enum
-from typing import Sequence, Union, Mapping, Any, Tuple, Dict, List
+from typing import Any, Dict, List, Mapping, Sequence, Tuple, Union
 
 from fastapi import params
 from fastapi.dependencies import utils
-from pydantic.errors import MissingError
 from pydantic.error_wrappers import ErrorWrapper
+from pydantic.errors import MissingError
 from pydantic.fields import ModelField
-from starlette.datastructures import QueryParams, Headers
+from starlette.datastructures import Headers, QueryParams
+
 
 # Fast API tweaks
 

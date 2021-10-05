@@ -1,12 +1,28 @@
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
+
 from abc import ABC
 
 import numpy as np
 from scipy import linalg
-from skimage.color import separate_stains, combine_stains, hed_from_rgb, rgb_from_hed, bex_from_rgb, \
-    rgb_from_bex, hdx_from_rgb, rgb_from_hdx
+from skimage.color import (
+    bex_from_rgb, combine_stains, hdx_from_rgb, hed_from_rgb, rgb_from_bex,
+    rgb_from_hdx, rgb_from_hed, separate_stains
+)
 from skimage.util.dtype import _convert
 
-from pims.api.utils.models import FilterType, Colorspace
+from pims.api.utils.models import Colorspace, FilterType
 from pims.filters import AbstractFilter
 
 

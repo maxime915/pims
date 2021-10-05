@@ -1,30 +1,33 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 import itertools
-from typing import Optional, List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query, BackgroundTasks, Response
-from pydantic import conint, BaseModel, Field
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response
+from pydantic import BaseModel, Field, conint
 from starlette import status
 
-from pims.api.exceptions import check_representation_existence, BadRequestException
-from pims.api.utils.image_parameter import ensure_list, get_channel_indexes, get_zslice_indexes, get_timepoint_indexes
-from pims.api.utils.models import HistogramType, CollectionSize
+from pims.api.exceptions import BadRequestException, check_representation_existence
+from pims.api.utils.image_parameter import (
+    ensure_list, get_channel_indexes, get_timepoint_indexes,
+    get_zslice_indexes
+)
+from pims.api.utils.models import CollectionSize, HistogramType
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.utils.response import response_list
-from pims.files.file import Path, HISTOGRAM_STEM
-from pims.files.histogram import build_histogram_file, argmin_nonzero, argmax_nonzero
+from pims.files.file import HISTOGRAM_STEM, Path
+from pims.files.histogram import argmax_nonzero, argmin_nonzero, build_histogram_file
 
 router = APIRouter()
 api_tags = ['Histograms']
