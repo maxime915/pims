@@ -140,6 +140,13 @@ def _image_response_key_builder(
 
 
 def default_cache_control_builder(ttl=0):
+    """
+    Cache-Control header is not intuitive.
+    * https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+    * https://web.dev/http-cache/#flowchart
+    * https://jakearchibald.com/2016/caching-best-practices/
+    * https://www.azion.com/en/blog/what-is-http-caching-and-how-does-it-work/
+    """
     params = ["private", "must-revalidate"]
     if ttl:
         params += [f"max-age={ttl}"]
