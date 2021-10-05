@@ -16,20 +16,33 @@ from collections import OrderedDict
 from enum import Enum
 from functools import cached_property
 
-from pims import PIMS_SLUG_PNG, PIMS_SLUG_WEBP, PIMS_SLUG_JPEG
 from pims.api.exceptions import NoAcceptableResponseMimetypeProblem
 from fastapi.params import Path as PathParam
 
+
+class OutputExtension(str, Enum):
+    NONE = ""
+    JPEG = ".jpg"
+    PNG = ".png"
+    WEBP = ".webp"
+
+
+mimetype_from_extension = {
+    OutputExtension.JPEG: "image/jpeg",
+    OutputExtension.PNG: "image/png",
+    OutputExtension.WEBP: "image/webp"
+}
+
 PNG_MIMETYPES = {
-    "image/png": PIMS_SLUG_PNG,
-    "image/apng":  PIMS_SLUG_PNG
+    "image/png": OutputExtension.PNG,
+    "image/apng":  OutputExtension.PNG
 }
 WEBP_MIMETYPES = {
-    "image/webp": PIMS_SLUG_WEBP
+    "image/webp": OutputExtension.WEBP
 }
 JPEG_MIMETYPES = {
-    "image/jpg": PIMS_SLUG_JPEG,
-    "image/jpeg": PIMS_SLUG_JPEG
+    "image/jpg": OutputExtension.JPEG,
+    "image/jpeg": OutputExtension.JPEG
 }
 
 
@@ -172,20 +185,6 @@ def get_output_format(extension, accept_header, supported):
         return output_format, response_mimetype
 
     raise NoAcceptableResponseMimetypeProblem(str(), list(supported.keys()))
-
-
-class OutputExtension(str, Enum):
-    NONE = ""
-    JPEG = ".jpg"
-    PNG = ".png"
-    WEBP = ".webp"
-
-
-mimetype_from_extension = {
-    OutputExtension.JPEG: "image/jpeg",
-    OutputExtension.PNG: "image/png",
-    OutputExtension.WEBP: "image/webp"
-}
 
 
 def extension_path_parameter(

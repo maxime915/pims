@@ -13,18 +13,21 @@
 # * limitations under the License.
 
 from fastapi import APIRouter, Depends
+from starlette.requests import Request
+from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.annotation_parameter import parse_annotations, get_annotation_region
 from pims.api.utils.header import add_image_size_limit_header, ImageAnnotationRequestHeaders
 from pims.api.utils.image_parameter import check_zoom_validity, check_level_validity, get_window_output_dimensions, \
     safeguard_output_dimensions, ensure_list
-from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
-    extension_path_parameter
+from pims.api.utils.mimetype import get_output_format, OutputExtension, \
+    extension_path_parameter, PROCESSING_MIMETYPES
 from pims.api.utils.models import AnnotationStyleMode, AnnotationMaskRequest, AnnotationCropRequest, Colorspace, \
     AnnotationDrawingRequest
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.window import _show_window
+from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.processing.annotations import annotation_crop_affine_matrix
@@ -33,10 +36,12 @@ from pims.processing.image_response import MaskResponse
 
 router = APIRouter()
 api_tags = ['Annotations']
+cache_ttl = get_settings().cache_ttl_window
 
 
 @router.post('/image/{filepath:path}/annotation/mask{extension:path}', tags=api_tags)
-def show_mask(
+async def show_mask(
+        request: Request, response: Response,
         body: AnnotationMaskRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -59,10 +64,20 @@ def show_mask(
 
     Annotation `stroke_width` and `stroke_color` are ignored.
     """
-    return _show_mask(path, **body.dict(), extension=extension, headers=headers, config=config)
+    return await _show_mask(
+        request, response,
+        path, **body.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
+@cache_image_response(
+    expire=cache_ttl,
+    vary=['config', 'request', 'response'],
+    supported_mimetypes=PROCESSING_MIMETYPES
+)
 def _show_mask(
+        request: Request, response: Response,  # required for @cache
         path: Path,
         annotations,
         context_factor,
@@ -81,7 +96,7 @@ def _show_mask(
 
     region = get_annotation_region(in_image, annots, context_factor)
 
-    out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
+    out_format, mimetype = get_output_format(extension, headers.accept, PROCESSING_MIMETYPES)
     check_zoom_validity(in_image.pyramid, zoom)
     check_level_validity(in_image.pyramid, level)
     req_size = get_window_output_dimensions(in_image, region, height, width, length, zoom, level)
@@ -100,7 +115,8 @@ def _show_mask(
 
 
 @router.post('/image/{filepath:path}/annotation/crop{extension:path}', tags=api_tags)
-def show_crop(
+async def show_crop(
+        request: Request, response: Response,
         body: AnnotationCropRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -122,10 +138,15 @@ def show_crop(
 
     Annotation `fill_color`, `stroke_width` and `stroke_color` are ignored.
     """
-    return _show_crop(path, **body.dict(), extension=extension, headers=headers, config=config)
+    return await _show_crop(
+        request, response,
+        path, **body.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
-def _show_crop(
+async def _show_crop(
+        request: Request, response: Response,
         path: Path,
         annotations,
         context_factor,
@@ -154,7 +175,8 @@ def _show_crop(
         background_transparency=background_transparency
     )
 
-    return _show_window(
+    return await _show_window(
+        request, response,
         path, region,
         height, width, length, zoom, level,
         channels, z_slices, timepoints,
@@ -167,7 +189,8 @@ def _show_crop(
 
 
 @router.post('/image/{filepath:path}/annotation/drawing{extension:path}', tags=api_tags)
-def show_drawing(
+async def show_drawing(
+        request: Request, response: Response,
         body: AnnotationDrawingRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -185,10 +208,15 @@ def show_drawing(
     context factor. The target size is given by one of the scaling factors (`size`, `width`, `height`, `zoom` or
     `level`).
     """
-    return _show_drawing(path, **body.dict(), extension=extension, headers=headers, config=config)
+    return await _show_drawing(
+        request, response,
+        path, **body.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
-def _show_drawing(
+async def _show_drawing(
+        request: Request, response: Response,  # required for @cache
         path: Path,
         annotations,
         context_factor,
@@ -218,7 +246,8 @@ def _show_drawing(
         point_envelope_length=point_envelope_length
     )
 
-    return _show_window(
+    return await _show_window(
+        request, response,
         path, region,
         height, width, length, zoom, level,
         channels, z_slices, timepoints,

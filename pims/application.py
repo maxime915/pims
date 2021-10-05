@@ -1,16 +1,16 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2019-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 
 import logging
 logger = logging.getLogger("pims.app")
@@ -23,12 +23,14 @@ import time
 from fastapi import FastAPI, Request
 from pydantic import ValidationError
 
+
+from .cache import _startup_cache
 from pims.config import get_settings
 from pims.docs import get_redoc_html
 from .api.exceptions import add_problem_exception_handler
 from .api import server, housekeeping, formats, metadata, thumb, window, resized, annotation, tile, operations, \
     histograms, filters, colormaps
-from . import __api_version__
+from . import __api_version__,  __version__
 
 
 app = FastAPI(
@@ -54,6 +56,7 @@ async def startup():
     except ValidationError as e:
         logger.error("Impossible to read or parse some PIMS settings:")
         logger.error(e)
+        exit(-1)
 
     # Check optimisation are enabled for external libs
     from pydantic import compiled as pydantic_compiled
@@ -67,6 +70,17 @@ async def startup():
     from shapely.speedups import enabled as shapely_speedups
     if not shapely_speedups:
         logger.warning("[red]Shapely is running without speedups.")
+
+    # Caching
+    if not get_settings().cache_enabled:
+        logger.warning(f"[orange3]Cache is disabled by configuration.")
+    else:
+        try:
+            await _startup_cache(__version__)
+            logger.info(f"[green]Cache is ready!")
+        except ConnectionError:
+            logger.error(f"[red]Impossible to connect to cache database. "
+                         f"Disabling cache!")
 
 
 @app.middleware("http")

@@ -13,6 +13,8 @@
 # * limitations under the License.
 
 from fastapi import APIRouter, Depends
+from starlette.requests import Request
+from starlette.responses import Response
 
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.header import add_image_size_limit_header, ImageRequestHeaders
@@ -21,10 +23,11 @@ from pims.api.utils.image_parameter import get_thumb_output_dimensions, get_chan
     safeguard_output_dimensions, parse_intensity_bounds, check_zoom_validity, check_level_validity, parse_bitdepth, \
     parse_filter_ids, parse_colormap_ids
 from pims.api.utils.mimetype import get_output_format, VISUALISATION_MIMETYPES, OutputExtension, \
-    extension_path_parameter
+    extension_path_parameter, PROCESSING_MIMETYPES
 from pims.api.utils.models import PlaneSelectionQueryParams, ResizedRequest, ImageOutDisplayQueryParams, \
     ImageOutProcessingQueryParams, ImageOpsProcessingQueryParams
 from pims.api.utils.parameter import imagepath_parameter
+from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.filters import FILTERS
@@ -33,10 +36,12 @@ from pims.processing.image_response import ResizedResponse
 
 router = APIRouter()
 api_tags = ['Resized']
+cache_ttl = get_settings().cache_ttl_resized
 
 
 @router.get('/image/{filepath:path}/resized{extension:path}', tags=api_tags)
-def show_resized(
+async def show_resized(
+        request: Request, response: Response,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
         output: ImageOutDisplayQueryParams = Depends(),
@@ -57,14 +62,17 @@ def show_resized(
     **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
     such as computer vision, image processing or machine learning.**
     """
-    return _show_resized(
-        path=path, **output.dict(), **output2.dict(), **planes.dict(), **operations.dict(),
+    return await _show_resized(
+        request, response,
+        path, **output.dict(), **output2.dict(),
+        **planes.dict(), **operations.dict(),
         extension=extension, headers=headers, config=config
     )
 
 
 @router.post('/image/{filepath:path}/resized{extension:path}', tags=api_tags)
-def show_resized_with_body(
+async def show_resized_with_body(
+        request: Request, response: Response,
         body: ResizedRequest,
         path: Path = Depends(imagepath_parameter),
         extension: OutputExtension = Depends(extension_path_parameter),
@@ -85,10 +93,20 @@ def show_resized_with_body(
     **While `/image/{filepath}/thumb` provides optimization for visualisation, this endpoint has a general purpose,
     such as computer vision, image processing or machine learning.**
     """
-    return _show_resized(path, **body.dict(), extension=extension, headers=headers, config=config)
+    return await _show_resized(
+        request, response,
+        path, **body.dict(),
+        extension=extension, headers=headers, config=config
+    )
 
 
+@cache_image_response(
+    expire=cache_ttl,
+    vary=['config', 'request', 'response'],
+    supported_mimetypes=PROCESSING_MIMETYPES
+)
 def _show_resized(
+        request: Request, response: Response,  # required for @cache
         path: Path,
         height, width, length, zoom, level,
         channels, z_slices, timepoints,
@@ -102,7 +120,7 @@ def _show_resized(
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
-    out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
+    out_format, mimetype = get_output_format(extension, headers.accept, PROCESSING_MIMETYPES)
     check_zoom_validity(in_image.pyramid, zoom)
     check_level_validity(in_image.pyramid, level)
     req_size = get_thumb_output_dimensions(in_image, height, width, length, zoom, level)

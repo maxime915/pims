@@ -20,8 +20,9 @@ from pyvips import Image as VIPSImage, Size as VIPSSize
 from rasterio.features import rasterize
 from shapely.affinity import affine_transform
 
+from pims.api.utils.mimetype import OutputExtension
 from pims.api.utils.models import Colorspace
-from pims.formats.utils.vips import format_to_vips_suffix, dtype_to_vips_format, vips_format_to_dtype
+from pims.formats.utils.vips import dtype_to_vips_format, vips_format_to_dtype
 from pims.processing.adapters import imglib_adapters, numpy_to_vips
 from pims.processing.annotations import ParsedAnnotations, contour, stretch_contour
 from pims.processing.color import np_int2rgb
@@ -85,15 +86,15 @@ class OutputProcessor(ImageOp):
             return 'uint8'
 
     def _vips_impl(self, img, *args, **kwargs):
-        suffix = format_to_vips_suffix[self.format]
+        suffix = self.format
         params = self.format_params
         clean_params = {}
-        if suffix == '.jpg':
+        if suffix == OutputExtension.JPEG:
             clean_params['Q'] = params.get('quality', params.get('jpeg_quality', 75))
             clean_params['strip'] = True
-        elif suffix == '.png':
+        elif suffix == OutputExtension.PNG:
             clean_params['compression'] = params.get('compression', params.get('png_compression', 6))
-        elif suffix == '.webp':
+        elif suffix == OutputExtension.WEBP:
             clean_params['lossless'] = params.get('lossless', params.get('webp_lossless', False))
             clean_params['strip'] = True
             clean_params['Q'] = params.get('quality', params.get('webp_quality', 75))

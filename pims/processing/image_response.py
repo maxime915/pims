@@ -16,7 +16,7 @@ from functools import lru_cache
 import numpy as np
 from starlette.responses import Response
 
-from pims import PIMS_SLUG_PNG
+from pims.api.utils.mimetype import OutputExtension
 from pims.api.utils.models import Colorspace, AnnotationStyleMode, AssociatedName
 from pims.formats.utils.vips import np_dtype
 from pims.processing.colormaps import combine_lut, is_rgb_colormapping, default_lut
@@ -41,7 +41,7 @@ class View:
 
     @property
     def best_effort_bitdepth(self):
-        if self.out_format == PIMS_SLUG_PNG:
+        if self.out_format == OutputExtension.PNG:
             return min(self.out_bitdepth, 16)
         return min(self.out_bitdepth, 8)
 

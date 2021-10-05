@@ -10,10 +10,16 @@ affine==2.3.0
     # via rasterio
 aiofiles==0.7.0
     # via pims (setup.py)
+aioredis==2.0.0
+    # via
+    #   fastapi-cache2
+    #   pims (setup.py)
 asciitree==0.3.3
     # via zarr
 asgiref==3.3.4
     # via uvicorn
+async-timeout==3.0.1
+    # via aioredis
 attrs==21.2.0
     # via rasterio
 cachecontrol==0.12.6
@@ -47,6 +53,10 @@ cytomine-python-client==2.8.3
 decorator==4.4.2
     # via networkx
 fastapi==0.65.2
+    # via
+    #   fastapi-cache2
+    #   pims (setup.py)
+fastapi-cache2[redis]==0.1.6
     # via pims (setup.py)
 fasteners==0.16.3
     # via zarr
@@ -123,7 +133,9 @@ pyparsing==2.4.7
     #   packaging
     #   snuggs
 python-dateutil==2.8.1
-    # via matplotlib
+    # via
+    #   fastapi-cache2
+    #   matplotlib
 python-dotenv==0.17.1
     # via
     #   pims (setup.py)
@@ -157,7 +169,6 @@ shapely==1.8a1
     #   pims (setup.py)
 six==1.16.0
     # via
-    #   cycler
     #   cytomine-python-client
     #   fasteners
     #   python-dateutil
@@ -171,13 +182,17 @@ tifffile==2021.6.6
     #   pims (setup.py)
     #   scikit-image
 typing-extensions==3.10.0.0
-    # via pydantic
+    # via
+    #   aioredis
+    #   pydantic
 urllib3==1.26.5
     # via
     #   cytomine-python-client
     #   requests
 uvicorn[standard]==0.14.0
-    # via pims (setup.py)
+    # via
+    #   fastapi-cache2
+    #   pims (setup.py)
 uvloop==0.15.2
     # via uvicorn
 watchgod==0.7
