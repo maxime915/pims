@@ -17,6 +17,8 @@ from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field, conint
+from starlette.requests import Request
+from starlette.responses import Response
 
 from pims.api.exceptions import NoAppropriateRepresentationProblem, check_representation_existence
 from pims.api.utils.header import ImageRequestHeaders, add_image_size_limit_header
@@ -28,6 +30,7 @@ from pims.api.utils.models import (
 )
 from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, path2filepath
 from pims.api.utils.response import convert_quantity, response_list
+from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.formats.utils.metadata import MetadataType
@@ -35,6 +38,7 @@ from pims.processing.image_response import AssociatedResponse
 
 router = APIRouter()
 api_tags = ['Metadata']
+cache_associated_ttl = get_settings().cache_ttl_thumb
 
 
 class FileRole(Enum):
@@ -691,12 +695,29 @@ def show_associated(
     '/image/{filepath:path}/associated/{associated_key}',
     tags=api_tags + ['Associated']
 )
-def show_associated_image(
+async def show_associated_image(
+    request: Request, response: Response,
     path: Path = Depends(imagepath_parameter),
     output: ImageOutDisplayQueryParams = Depends(),
     associated_key: AssociatedName = Query(...),
     headers: ImageRequestHeaders = Depends(),
     config: Settings = Depends(get_settings)
+):
+    return await _show_associated_image(
+        request, response, path, **output.dict(),
+        associated_key=associated_key, headers=headers,
+        config=config
+    )
+
+
+@cache_image_response(expire=cache_associated_ttl, vary=['config', 'request', 'response'])
+def _show_associated_image(
+    request: Request, response: Response,  # required for @cache
+    path: Path,
+    height, width, length,
+    associated_key,
+    headers,
+    config: Settings
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -708,7 +729,7 @@ def show_associated_image(
     out_format, mimetype = get_output_format(
         OutputExtension.NONE, headers.accept, VISUALISATION_MIMETYPES
     )
-    req_size = get_thumb_output_dimensions(associated, output.height, output.width, output.length)
+    req_size = get_thumb_output_dimensions(associated, height, width, length)
     out_size = safeguard_output_dimensions(headers.safe_mode, config.output_size_limit, *req_size)
     out_width, out_height = out_size
 
