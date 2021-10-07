@@ -45,6 +45,7 @@ REQUIRED = [
     'aiofiles>=0.7.0',
     'fastapi-cache2[redis]>=0.1.6',
     'aioredis>=2.0.0',
+    'celery>=5.0.0',
 
     'Pint>=0.17',
     'palettable>=3.3.0',

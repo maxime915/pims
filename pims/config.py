@@ -44,6 +44,10 @@ class Settings(ReadableSettings):
     cytomine_public_key: str
     cytomine_private_key: str
 
+    task_queue_user: str = "router"
+    task_queue_password: str = "router"
+    task_queue_url: str = "rabbitmq:5672"
+
     class Config:
         env_file = "pims-config.env"
         env_file_encoding = 'utf-8'

@@ -28,7 +28,8 @@ from pims.files.file import (
 from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
-from pims.importer.listeners import ImportEventType
+from pims.importer.listeners import CytomineListener, ImportEventType, StdoutListener
+from pims.tasks.celery_app import celery_app
 
 log = logging.getLogger("pims.app")
 
@@ -385,3 +386,17 @@ class FileImporter:
                     pass
 
         return imported
+
+
+def run_import(filepath, name, extra_listeners=None):
+    pending_file = Path(filepath)
+
+    if extra_listeners is not None:
+        if not type(extra_listeners) is list:
+            extra_listeners = list(extra_listeners)
+    else:
+        extra_listeners = []
+
+    listeners = [StdoutListener(name)] + extra_listeners
+    fi = FileImporter(pending_file, name, listeners)
+    fi.run()

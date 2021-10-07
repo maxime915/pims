@@ -14,6 +14,8 @@ aioredis==2.0.0
     # via
     #   fastapi-cache2
     #   pims (setup.py)
+amqp==5.0.6
+    # via kombu
 asciitree==0.3.3
     # via zarr
 asgiref==3.3.4
@@ -22,8 +24,12 @@ async-timeout==3.0.1
     # via aioredis
 attrs==21.2.0
     # via rasterio
+billiard==3.6.4.0
+    # via celery
 cachecontrol==0.12.6
     # via cytomine-python-client
+celery==5.1.2
+    # via pims (setup.py)
 certifi==2021.5.30
     # via
     #   rasterio
@@ -32,14 +38,23 @@ cffi==1.14.6
     # via pyvips
 chardet==4.0.0
     # via requests
-click==8.0.1
+click==7.1.2
     # via
+    #   celery
+    #   click-didyoumean
     #   click-plugins
+    #   click-repl
     #   cligj
     #   rasterio
     #   uvicorn
+click-didyoumean==0.3.0
+    # via celery
 click-plugins==1.1.1
-    # via rasterio
+    # via
+    #   celery
+    #   rasterio
+click-repl==0.2.0
+    # via celery
 cligj==0.7.2
     # via rasterio
 colorama==0.4.4
@@ -76,6 +91,8 @@ importlib-metadata==4.7.1
     # via pims (setup.py)
 kiwisolver==1.3.1
     # via matplotlib
+kombu==5.1.0
+    # via celery
 matplotlib==3.4.2
     # via scikit-image
 msgpack==1.0.2
@@ -119,6 +136,8 @@ pint==0.17
     # via pims (setup.py)
 pkgconfig==1.5.5
     # via pyvips
+prompt-toolkit==3.0.20
+    # via click-repl
 pycparser==2.20
     # via cffi
 pydantic==1.8.2
@@ -142,6 +161,8 @@ python-dotenv==0.17.1
     #   uvicorn
 python-multipart==0.0.5
     # via pims (setup.py)
+pytz==2021.3
+    # via celery
 pyvips==2.1.15
     # via pims (setup.py)
 pywavelets==1.1.1
@@ -169,6 +190,8 @@ shapely==1.8a1
     #   pims (setup.py)
 six==1.16.0
     # via
+    #   click-repl
+    #   cycler
     #   cytomine-python-client
     #   fasteners
     #   python-dateutil
@@ -195,8 +218,15 @@ uvicorn[standard]==0.14.0
     #   pims (setup.py)
 uvloop==0.15.2
     # via uvicorn
+vine==5.0.0
+    # via
+    #   amqp
+    #   celery
+    #   kombu
 watchgod==0.7
     # via uvicorn
+wcwidth==0.2.5
+    # via prompt-toolkit
 websockets==9.1
     # via uvicorn
 zarr==2.8.3
