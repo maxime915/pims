@@ -18,12 +18,11 @@ from pims.config import get_settings
 
 settings = get_settings()
 
+broker_url = f"{settings.task_queue_user}:{settings.task_queue_password}@{settings.task_queue_url}"
 celery_app = Celery(
     "worker",
-    broker=f"amqp://{settings.task_queue_user}:{settings.task_queue_password}"
-           f"@{settings.task_queue_url}//",
-    backend=f"rpc://{settings.task_queue_user}:{settings.task_queue_password}"
-           f"@{settings.task_queue_url}//"
+    broker=f"amqp://{broker_url}//",
+    backend=f"rpc://{broker_url}//"
 )
 
 celery_app.conf.update(
