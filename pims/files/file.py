@@ -179,11 +179,21 @@ class Path(type(_Path()), _Path):
         else:
             return None
 
-    def get_extracted_children(self):
+    def get_extracted_children(self, stop_recursion_cond=None):
         if not self.is_collection():
             return []
 
-        return self.extracted_root().recursive_iterdir()
+        def _iterdir(directory):
+            for p in directory.glob("*"):
+                if p.is_dir():
+                    if stop_recursion_cond is not None and stop_recursion_cond(p):
+                        yield p
+                    else:
+                        yield from _iterdir(p)
+                else:
+                    yield p
+
+        return _iterdir(self.extracted_root())
 
     def is_collection(self):
         if not self.processed_root().exists():

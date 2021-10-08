@@ -383,25 +383,23 @@ class FileImporter:
         imported = list()
         format_factory = FormatFactory()
         tasks = list()
-        for child in collection.get_extracted_children():
-            if not child.is_dir() or \
-                    (child.is_dir() and format_factory.match(child)):
-                self.notify(
-                    ImportEventType.REGISTER_FILE, child, self.upload_path
-                )
-                try:
-                    if cytomine:
-                        new_listener = cytomine.new_listener_from_registered_child(child)
-                        args = [
-                            new_listener.auth, str(child), child.name, new_listener, prefer_copy
-                        ]
-                    else:
-                        args = [str(child), child.name, prefer_copy]
-                    tasks.append(signature(task, args=args))
-                except Exception as _:  # noqa
-                    # Do not propagate error to siblings
-                    # Each importer is independent
-                    pass
+        for child in collection.get_extracted_children(stop_recursion_cond=format_factory.match):
+            self.notify(
+                ImportEventType.REGISTER_FILE, child, self.upload_path
+            )
+            try:
+                if cytomine:
+                    new_listener = cytomine.new_listener_from_registered_child(child)
+                    args = [
+                        new_listener.auth, str(child), child.name, new_listener, prefer_copy
+                    ]
+                else:
+                    args = [str(child), child.name, prefer_copy]
+                tasks.append(signature(task, args=args))
+            except Exception as _:  # noqa
+                # Do not propagate error to siblings
+                # Each importer is independent
+                pass
 
         task_group = group(tasks)
         # WARNING !
