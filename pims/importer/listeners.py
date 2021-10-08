@@ -181,8 +181,7 @@ class CytomineListener(ImportListener):
         self.initial_uf = uf
 
         if existing_mapping is not None:
-            tmp = self.path_uf_mapping
-            self.path_uf_mapping = copy(existing_mapping).update(tmp)
+            self.path_uf_mapping.update(copy(existing_mapping))
         else:
             if root is None:
                 if uf.parent is not None:

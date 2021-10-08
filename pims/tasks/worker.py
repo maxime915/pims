@@ -27,14 +27,17 @@ from pims.tasks.celery_app import celery_app
 
 
 @celery_app.task
-def run_import_with_cytomine(cytomine_auth, filepath, name, cytomine_listener):
+def run_import_with_cytomine(cytomine_auth, filepath, name, cytomine_listener, prefer_copy):
     with Cytomine(*cytomine_auth, configure_logging=False) as c:
         if not c.current_user:
             raise AuthenticationException("PIMS authentication to Cytomine failed.")
 
-        run_import_(filepath, name, extra_listeners=[cytomine_listener])
+        run_import_(
+            filepath, name,
+            extra_listeners=[cytomine_listener], prefer_copy=prefer_copy
+        )
 
 
 @celery_app.task
-def run_import(filepath, name):
-    run_import_(filepath, name)
+def run_import(filepath, name, prefer_copy):
+    run_import_(filepath, name, prefer_copy=prefer_copy)

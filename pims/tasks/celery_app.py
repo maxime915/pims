@@ -21,6 +21,8 @@ settings = get_settings()
 celery_app = Celery(
     "worker",
     broker=f"amqp://{settings.task_queue_user}:{settings.task_queue_password}"
+           f"@{settings.task_queue_url}//",
+    backend=f"rpc://{settings.task_queue_user}:{settings.task_queue_password}"
            f"@{settings.task_queue_url}//"
 )
 

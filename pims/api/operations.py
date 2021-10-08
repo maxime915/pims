@@ -129,7 +129,10 @@ async def legacy_import(
 
         if sync:
             try:
-                run_import(upload_path, upload_name, extra_listeners=[cytomine])
+                run_import(
+                    upload_path, upload_name,
+                    extra_listeners=[cytomine], prefer_copy=False
+                )
                 root = cytomine.initial_uf.fetch()
                 images = cytomine.images
                 return [{
@@ -157,7 +160,7 @@ async def legacy_import(
         else:
             celery_app.send_task(
                 "pims.tasks.worker.run_import_with_cytomine",
-                args=[cytomine_auth, upload_path, upload_name, cytomine]
+                args=[cytomine_auth, upload_path, upload_name, cytomine, False]
             )
             return JSONResponse(
                 content=[{
