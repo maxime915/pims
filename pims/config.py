@@ -36,6 +36,9 @@ class ReadableSettings(BaseSettings):
     cache_ttl_tile: int = 60 * 60 * 24
     cache_ttl_window: int = 60 * 60 * 24
 
+    task_queue_enabled: bool = True
+    task_queue_url: str = "rabbitmq:5672"
+
     class Config:
         extra = Extra.ignore
 
@@ -46,7 +49,6 @@ class Settings(ReadableSettings):
 
     task_queue_user: str = "router"
     task_queue_password: str = "router"
-    task_queue_url: str = "rabbitmq:5672"
 
     class Config:
         env_file = "pims-config.env"

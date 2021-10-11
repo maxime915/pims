@@ -39,7 +39,7 @@ from pims.files.archive import make_zip_archive
 from pims.files.file import Path, unique_name_generator
 from pims.importer.importer import run_import
 from pims.importer.listeners import CytomineListener
-from pims.tasks.celery_app import celery_app
+from pims.tasks.queue import Task, send_task
 
 router = APIRouter()
 
@@ -158,9 +158,10 @@ async def legacy_import(
                     }], status_code=400
                 )
         else:
-            celery_app.send_task(
-                "pims.tasks.worker.run_import_with_cytomine",
-                args=[cytomine_auth, upload_path, upload_name, cytomine, False]
+            send_task(
+                Task.IMPORT_WITH_CYTOMINE,
+                args=[cytomine_auth, upload_path, upload_name, cytomine, False],
+                starlette_background=background
             )
             return JSONResponse(
                 content=[{
