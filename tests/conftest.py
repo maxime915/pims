@@ -1,18 +1,19 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
 
 import os
+import shutil
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -36,6 +37,8 @@ with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
             "collection": (kind == "collection")
         }
 
+fake_files_info = _fake_files.values()
+
 
 def create_fake_files(fake_files):
     root = Path(test_root())
@@ -53,8 +56,14 @@ def create_fake_files(fake_files):
             path.symlink_to(link, target_is_directory=target_is_directory)
 
 
-@pytest.fixture
-def fake_files():
+@pytest.fixture(scope="session")
+def fake_files(request):
+    create_fake_files(_fake_files)
+
+    def teardown():
+        shutil.rmtree(test_root())
+
+    request.addfinalizer(teardown)
     return _fake_files
 
 

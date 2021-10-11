@@ -24,7 +24,7 @@ def test_get_output_format_simple(app):
     format, mimetype = get_output_format(
         OutputExtension.NONE, 'image/jpeg', VISUALISATION_MIMETYPES
     )
-    assert format == "JPEG"
+    assert format == OutputExtension.JPEG
     assert mimetype == "image/jpeg"
 
 
@@ -35,11 +35,11 @@ def test_get_output_format_complex(app):
     format, mimetype = get_output_format(
         OutputExtension.NONE, accept_header, VISUALISATION_MIMETYPES
     )
-    assert format == "WEBP"
+    assert format == OutputExtension.WEBP
     assert mimetype == "image/webp"
 
     format, mimetype = get_output_format(OutputExtension.NONE, accept_header, PROCESSING_MIMETYPES)
-    assert format == "PNG"
+    assert format == OutputExtension.PNG
     assert mimetype == "image/apng"
 
 
@@ -48,7 +48,7 @@ def test_get_output_format_accept_all(app):
     format, mimetype = get_output_format(
         OutputExtension.NONE, accept_header, VISUALISATION_MIMETYPES
     )
-    assert format == "WEBP"
+    assert format == OutputExtension.WEBP
     assert mimetype == "image/webp"
 
 

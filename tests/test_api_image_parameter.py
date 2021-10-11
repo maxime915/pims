@@ -112,8 +112,8 @@ def test_parse_intensity_bounds():
             self.n_channels = n_channels
             self.significant_bits = significant_bits
 
-        def channel_stats(self, channel):
-            return dict(minimum=channel, maximum=channel + 10)
+        def channel_bounds(self, channel):
+            return [channel, channel + 10]
 
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [], []) == ([0], [255])
     assert parse_intensity_bounds(
