@@ -65,6 +65,11 @@ CONFIG_FILE="/path/to/my/config.env" python -m pims.main
 The server is running at http://127.0.0.1:5000 and API documentation is available 
 at http://127.0.0.1:5000/docs
 
+In order to test PIMS without Cytomine, you can import images locally using 
+```bash
+CONFIG_FILE=/path/to/config.env python pims/importer/import_local_images.py --path /my/folder
+```
+
 #### Environment variables
 * `CONFIG_FILE`: path to a `.env` configuration file. Default to `pims-config.env` (but some required configuration 
   settings need to be filled)
