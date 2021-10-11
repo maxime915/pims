@@ -73,3 +73,35 @@ at http://127.0.0.1:5000/docs
   log config file is specified.
   
 Configuration settings can be also given as environment variables and override values from `CONFIG_FILE`.
+
+## PIMS plugins
+PIMS plugins are quite new and plugin API is subject to change. To add a new format plugin, the 
+best is to adapt the existing [`pims-plugin-format-openslide`](https://github.com/Cytomine-ULiege/pims-plugin-format-openslide).
+
+A plugin can add one or several formats.
+
+1. Create a directory `pims-plugin-format-{name}` and copy/paste content from Openslide plugin
+2. In `setup.py`, rename the `NAME` variable
+3. Rename the source directory to `pims_plugin_format_{name}`
+4. Adapt `pims_plugin_format_{name}/__version__.py` content
+5. If needed, adapt dependencies prerequisites in `install-prerequisites.sh`
+6. Implement new formats by defining classes named `XYZFormat` (ending thus with `Format`) and 
+   extending `AbstractFormat`.
+   
+### Develop with plugins
+   
+As the core server `pims` is a dependency of every PIMS plugins, `pims` has to be installed in 
+the plugin virtual environment. At this stage, `pims` and plugins will probably be developed at 
+same time, and the easiest way is to 
+1. share the `pims` Python virtual env with the plugins
+2. install `pims` in editable mode. In `pims` root, run `pip install -e .` (you may need to add 
+   other options like `--extra-index-url`)
+3. install the plugin in editable mode. In the `pims-plugin-format-{name}` root, run `pip 
+   install -e .`
+   
+When you start PIMS, the logs should list your plugin.
+
+### Docker image with plugins
+The `pims/scripts` folder has a script to build Docker images of PIMS with or without some 
+plugins. Adapt the `plugin-list.csv` to build an image with the plugins (and their versions) 
+you want.
