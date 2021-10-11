@@ -14,6 +14,9 @@
 import logging
 import shutil
 
+from celery import group, signature
+from celery.result import allow_join_result
+
 from pims.api.exceptions import (
     BadRequestException, FilepathNotFoundProblem,
     NoMatchingFormatProblem
@@ -28,7 +31,7 @@ from pims.files.file import (
 from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
-from pims.importer.listeners import ImportEventType
+from pims.importer.listeners import CytomineListener, ImportEventType, StdoutListener
 
 log = logging.getLogger("pims.app")
 
@@ -367,21 +370,62 @@ class FileImporter:
             raise FileErrorProblem(path)
 
     def import_collection(self, collection, prefer_copy=False):
+        cytomine = None
+        for logger in self.loggers:
+            if isinstance(logger, CytomineListener):
+                cytomine = logger
+                break
+        if cytomine:
+            task = "pims.tasks.worker.run_import_with_cytomine"
+        else:
+            task = "pims.tasks.worker.run_import"
+
         imported = list()
         format_factory = FormatFactory()
-        # TODO: make this //
-        for child in collection.get_extracted_children():
-            if not child.is_dir() or \
-                    (child.is_dir() and format_factory.match(child)):
-                self.notify(
-                    ImportEventType.REGISTER_FILE, child, self.upload_path
-                )
-                fi = FileImporter(child, loggers=self.loggers)
-                try:
-                    imported += fi.run(prefer_copy)
-                except Exception as _:
-                    # Do not propagate error to siblings
-                    # Each importer is independent
-                    pass
+        tasks = list()
+        for child in collection.get_extracted_children(stop_recursion_cond=format_factory.match):
+            self.notify(
+                ImportEventType.REGISTER_FILE, child, self.upload_path
+            )
+            try:
+                if cytomine:
+                    new_listener = cytomine.new_listener_from_registered_child(child)
+                    args = [
+                        new_listener.auth, str(child), child.name, new_listener, prefer_copy
+                    ]
+                else:
+                    args = [str(child), child.name, prefer_copy]
+                tasks.append(signature(task, args=args))
+            except Exception as _:  # noqa
+                # Do not propagate error to siblings
+                # Each importer is independent
+                pass
+
+        task_group = group(tasks)
+        # WARNING !
+        # These tasks are synchronous with respect to the parent task (the archive)
+        # It is required to update the parent (the archive) status when everything is
+        # finished. Code should be refactored to use Celery callbacks but it does not
+        # seem so easy.
+        # Current implementation may cause deadlock if the worker pool is exhausted,
+        # while the parent task is waiting for subtasks to finish.
+        # http://docs.celeryq.org/en/latest/userguide/tasks.html#task-synchronous-subtasks
+        with allow_join_result():
+            r = task_group.apply_async()
+            r.get()  # Wait for group to finish
 
         return imported
+
+
+def run_import(filepath, name, extra_listeners=None, prefer_copy=False):
+    pending_file = Path(filepath)
+
+    if extra_listeners is not None:
+        if not type(extra_listeners) is list:
+            extra_listeners = list(extra_listeners)
+    else:
+        extra_listeners = []
+
+    listeners = [StdoutListener(name)] + extra_listeners
+    fi = FileImporter(pending_file, name, listeners)
+    fi.run(prefer_copy)

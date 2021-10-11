@@ -13,10 +13,11 @@
 #  * limitations under the License.
 
 import logging
+from copy import copy
 from enum import Enum
 
 from cytomine.models import (
-    AbstractImage, AbstractSlice, AbstractSliceCollection, Property,
+    AbstractImage, AbstractSlice, AbstractSliceCollection, ImageInstance, Property,
     PropertyCollection, UploadedFile
 )
 
@@ -159,18 +160,54 @@ class ImportListener:
 
 
 class CytomineListener(ImportListener):
-    def __init__(self, root_id, uploaded_file_id):
+    def __init__(self, auth, uf, root=None, existing_mapping=None, projects=None,
+                 user_properties=None):
+        """
+
+        Parameters
+        ----------
+        uf : UploadedFile
+            The UploadedFile associated to the listener.
+            The UploadedFile can be new, i.e. not yet saved.
+        root : UploadedFile (optional).
+            If set, it is supposed to already exist, i.e not new.
+        """
+        self.auth = auth
         self.path_uf_mapping = dict()
 
-        root = UploadedFile().fetch(root_id)
-        self.path_uf_mapping[root.path] = root
-        self.root_path = root.path
+        if uf.is_new():
+            uf.save()
+        self.path_uf_mapping[uf.path] = uf
+        self.initial_uf = uf
 
-        if uploaded_file_id != root_id:
-            uf = UploadedFile().fetch(uploaded_file_id)
-            self.path_uf_mapping[uf.path] = uf
+        if existing_mapping is not None:
+            self.path_uf_mapping.update(copy(existing_mapping))
+        else:
+            if root is None:
+                if uf.parent is not None:
+                    root = UploadedFile().fetch(uf.parent)
+                else:
+                    root = uf
+
+            while root is not None:
+                self.path_uf_mapping[root.path] = root
+                self.root_path = root.path
+                if root.parent is None:
+                    root = None
+                else:
+                    root = UploadedFile().fetch(root.parent)
 
         self.abstract_images = []
+        self.projects = projects
+        self.user_properties = user_properties
+        self.images = []
+
+    def new_listener_from_registered_child(self, child):
+        uf = self.get_uf(str(child))
+        return CytomineListener(
+            self.auth, uf, existing_mapping=self.path_uf_mapping,
+            projects=self.projects, user_properties=self.user_properties
+        )
 
     def _find_uf_by_id(self, id):
         return next(
@@ -262,7 +299,7 @@ class CytomineListener(ImportListener):
             self.path_uf_mapping[str(unpacked_path)] = uf
 
     def register_file(self, path, parent_path, *args, **kwargs):
-        parent = self.get_uf(parent_path) if parent_path else None
+        parent = self.get_uf(parent_path)
 
         uf = UploadedFile()
         uf.status = UploadedFile.UPLOADED
@@ -399,13 +436,25 @@ class CytomineListener(ImportListener):
 
         properties = PropertyCollection(ai)
         for metadata in image.raw_metadata.values():
-            properties.append(
-                Property(ai, metadata.namespaced_key, str(metadata.value))
-            )
+            if metadata.value is not None and str(metadata.value) != '':
+                properties.append(
+                    Property(ai, metadata.namespaced_key, str(metadata.value))
+                )
         properties.save()
 
         uf.status = UploadedFile.DEPLOYED
         uf.update()
+
+        properties = PropertyCollection(ai)
+        for k, v in self.user_properties:
+            if v is not None and str(v) != '':
+                properties.append(Property(ai, k, v))
+        properties.save()
+
+        instances = []
+        for p in self.projects:
+            instances.append(ImageInstance(ai.id, p.id).save())
+        self.images.append((ai, instances))
 
     def file_not_moved(self, path, *args, **kwargs):
         uf = self.get_uf(path)

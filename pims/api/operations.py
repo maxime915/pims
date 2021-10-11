@@ -17,8 +17,7 @@ from typing import Optional
 
 from cytomine import Cytomine
 from cytomine.models import (
-    ImageInstance, Project, ProjectCollection, Property,
-    PropertyCollection, Storage, UploadedFile
+    Project, ProjectCollection, Storage, UploadedFile
 )
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query
 from starlette.requests import Request
@@ -38,8 +37,9 @@ from pims.api.utils.response import serialize_cytomine_model
 from pims.config import Settings, get_settings
 from pims.files.archive import make_zip_archive
 from pims.files.file import Path, unique_name_generator
-from pims.importer.importer import FileImporter
-from pims.importer.listeners import CytomineListener, StdoutListener
+from pims.importer.importer import run_import
+from pims.importer.listeners import CytomineListener
+from pims.tasks.queue import Task, send_task
 
 router = APIRouter()
 
@@ -85,10 +85,8 @@ async def legacy_import(
         raise BadRequestException(detail="Invalid projects or idProject parameter.")
 
     public_key, signature = parse_authorization_header(request.headers)
-    with Cytomine(
-            core, config.cytomine_public_key, config.cytomine_private_key,
-            configure_logging=False
-    ) as c:
+    cytomine_auth = (core, config.cytomine_public_key, config.cytomine_private_key)
+    with Cytomine(*cytomine_auth, configure_logging=False) as c:
         if not c.current_user:
             raise AuthenticationException("PIMS authentication to Cytomine failed.")
 
@@ -122,14 +120,21 @@ async def legacy_import(
         root = UploadedFile(
             upload_name, upload_path, upload_size, "", "",
             id_projects, id_storage, user.id, this.id, UploadedFile.UPLOADED
-        ).save()
+        )
+
+        cytomine = CytomineListener(
+            cytomine_auth, root, projects=projects,
+            user_properties=user_properties
+        )
 
         if sync:
             try:
-                root, images = _legacy_import(
-                    upload_path, upload_name, root,
-                    projects, user_properties
+                run_import(
+                    upload_path, upload_name,
+                    extra_listeners=[cytomine], prefer_copy=False
                 )
+                root = cytomine.initial_uf.fetch()
+                images = cytomine.images
                 return [{
                     "status": 200,
                     "name": upload_name,
@@ -153,9 +158,10 @@ async def legacy_import(
                     }], status_code=400
                 )
         else:
-            background.add_task(
-                _legacy_import, upload_path, upload_name, root,
-                projects, user_properties
+            send_task(
+                Task.IMPORT_WITH_CYTOMINE,
+                args=[cytomine_auth, upload_path, upload_name, cytomine, False],
+                starlette_background=background
             )
             return JSONResponse(
                 content=[{
@@ -165,32 +171,6 @@ async def legacy_import(
                     "images": []
                 }], status_code=200
             )
-
-
-def _legacy_import(filepath, name, root_uf, projects, user_properties):
-    pending_file = Path(filepath)
-    cytomine = CytomineListener(root_uf.id, root_uf.id)
-    listeners = [
-        cytomine,
-        StdoutListener(name)
-    ]
-
-    fi = FileImporter(pending_file, name, listeners)
-    fi.run()
-
-    images = []
-    for ai in cytomine.abstract_images:
-        properties = PropertyCollection(ai)
-        for k, v in user_properties:
-            properties.append(Property(ai, k, v))
-        properties.save()
-
-        instances = []
-        for p in projects:
-            instances.append(ImageInstance(ai.id, p.id).save())
-        images.append((ai, instances))
-
-    return root_uf.fetch(), images
 
 
 def import_(filepath, body):

@@ -36,6 +36,9 @@ class ReadableSettings(BaseSettings):
     cache_ttl_tile: int = 60 * 60 * 24
     cache_ttl_window: int = 60 * 60 * 24
 
+    task_queue_enabled: bool = True
+    task_queue_url: str = "rabbitmq:5672"
+
     class Config:
         extra = Extra.ignore
 
@@ -43,6 +46,9 @@ class ReadableSettings(BaseSettings):
 class Settings(ReadableSettings):
     cytomine_public_key: str
     cytomine_private_key: str
+
+    task_queue_user: str = "router"
+    task_queue_password: str = "router"
 
     class Config:
         env_file = "pims-config.env"
