@@ -6,21 +6,66 @@ Python Image Management Server
     docker build -f docker/Dockerfile -t pims .
     docker run -p 5000:5000 pims
 
-The server is running at http://127.0.0.1:5000
+The server is running at http://127.0.0.1:5000 and API documentation is available 
+at http://127.0.0.1:5000/docs
+
+At this stage, it is hard to use Docker for development because hot-reload is not enabled and 
+PIMS plugin system is not yet easily manageable in a Docker container for development. However, 
+as PIMS requires a lot of low-level dependencies, developing using Docker would be a benefit.
 
 ## Run development server locally 
+### Dependencies
 First, dependencies must be installed
-1. Dependencies in Dockerfile must be installed first.
+1. Dependencies in Dockerfile must be installed first. For plugins, prerequisites have to be 
+   installed manually, especially for `before_vips` and `before_python`. See 
+   `install_prerequisites.sh` in respective plugins.
 2. `pip install -r requirements.txt`
 
+### Cache
+To run PIMS with cache, the cache must be configured in the settings. The cache uses an 
+external Redis in-memory database. To launch a Redis instance using default values in PIMS 
+settings, run: 
+```bash
+docker run -d --name pims-cache -p 6379:6379 redis
+```
+If the PIMS cache cannot be reached at PIMS startup, cache is automatically disabled.
+
+### Task queue
+Heavy computation like image imports are run in a task queue to prevent server flooding or 
+blocking. The task queue uses Celery workers and RabbitMQ to communicate, but a fallback is 
+possible when unavailable. 
+
+#### Celery and RabbitMQ
+PIMS is pre-configured to run with the Cytomine RabbitMQ configuration (see [Cytomine-bootstrap for PIMS](https://github.com/Cytomine-ULiege/Cytomine-bootstrap/tree/pims)).
+RabbitMQ broker can be launched without Cytomine, by changing username and default password for 
+task queue in PIMS settings by `guest`/`guest`, and then run:
+```bash
+docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 --hostname rabbitmq rabbitmq:3.9
+```
+
+Then, you have to run a Celery worker:
+```bash 
+CONFIG_FILE="/path/to/my/config.env" celery -A pims.tasks.worker worker -l info -Q 
+pims-import-queue -c 1
+```
+where `-c` is the concurrency level; 1 is enough for development.
+See below for environment variables.
+
+#### Fallback task queue
+If task queue is disabled in PIMS configuration of if RabbitMQ is unreachable, heavy 
+computations are still done in an asynchronous way but task queue is not mo running in separate 
+processes and there is no guarantee that all tasks will be able to fallback on this.
+
+### Run
 To run the development server, run:
 ```bash
 CONFIG_FILE="/path/to/my/config.env" python -m pims.main
 ```
     
-The server is running at http://127.0.0.1:5000
+The server is running at http://127.0.0.1:5000 and API documentation is available 
+at http://127.0.0.1:5000/docs
 
-### Environment variables
+#### Environment variables
 * `CONFIG_FILE`: path to a `.env` configuration file. Default to `pims-config.env` (but some required configuration 
   settings need to be filled)
 * `LOG_CONFIG_FILE`: path to a `.yml` Python logging configuration file. Default to `logging.yml`
