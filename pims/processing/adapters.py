@@ -14,9 +14,8 @@
 
 import numpy as np
 from PIL import Image as PILImage
-from pyvips import Image as VIPSImage
-
 from pims.formats.utils.vips import dtype_to_vips_format, vips_format_to_dtype
+from pyvips import Image as VIPSImage
 
 
 def numpy_to_vips(np_array, *args, width=None, height=None, n_channels=None, **kwargs):
@@ -46,6 +45,9 @@ def numpy_to_vips(np_array, *args, width=None, height=None, n_channels=None, **k
     ValueError
         If it is impossible to convert provided array.
     """
+    if not np_array.flags['C_CONTIGUOUS']:
+        np_array = np.ascontiguousarray(np_array)
+
     if np_array.ndim > 3:
         raise NotImplementedError
     elif np_array.ndim > 1:
