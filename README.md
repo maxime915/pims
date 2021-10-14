@@ -97,12 +97,13 @@ A plugin can add one or several formats.
    
 As the core server `pims` is a dependency of every PIMS plugins, `pims` has to be installed in 
 the plugin virtual environment. At this stage, `pims` and plugins will probably be developed at 
-same time, and the easiest way is to 
-1. share the `pims` Python virtual env with the plugins
-2. install `pims` in editable mode. In `pims` root, run `pip install -e .` (you may need to add 
-   other options like `--extra-index-url`)
-3. install the plugin in editable mode. In the `pims-plugin-format-{name}` root, run `pip 
-   install -e .`
+same time, and the easiest way is to
+1. install `pims` in editable mode in the plugin Python virtual env. Activate the plugin 
+   environment, and run `pip install -e /local/path/to/pims` (you may need to add other options 
+   like `--extra-index-url`)
+2. install the plugin in editable mode in PIMS Python virtual env. Activate the PIMS 
+   environment (e.g. in another terminal) and run 
+   `pip install -e /local/path/to/pims-plugin-format-{name}`
    
 When you start PIMS, the logs should list your plugin.
 
