@@ -24,11 +24,10 @@ from fastapi_cache import Coder, FastAPICache, default_key_builder
 from fastapi_cache.backends import Backend
 from fastapi_cache.backends.redis import RedisBackend as RedisBackend_
 from fastapi_cache.coder import JsonCoder, PickleCoder
-from starlette.concurrency import run_in_threadpool
-from starlette.responses import Response
-
 from pims.api.utils.mimetype import VISUALISATION_MIMETYPES, get_output_format
 from pims.config import get_settings
+from starlette.concurrency import run_in_threadpool
+from starlette.responses import Response
 
 HEADER_CACHE_CONTROL = "Cache-Control"
 HEADER_ETAG = "ETag"
@@ -101,6 +100,8 @@ async def exec_func_async(func, *args, **kwargs):
 
 def all_kwargs_key_builder(func, kwargs, excluded_parameters, prefix):
     copy_kwargs = kwargs.copy()
+    if excluded_parameters is None:
+        excluded_parameters =  []
     for excluded in excluded_parameters:
         if excluded in copy_kwargs:
             copy_kwargs.pop(excluded)
