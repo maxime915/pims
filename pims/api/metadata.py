@@ -16,10 +16,6 @@ from enum import Enum
 from typing import Any, List, Optional, Union
 
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel, Field, conint
-from starlette.requests import Request
-from starlette.responses import Response
-
 from pims.api.exceptions import NoAppropriateRepresentationProblem, check_representation_existence
 from pims.api.utils.header import ImageRequestHeaders, add_image_size_limit_header
 from pims.api.utils.image_parameter import get_thumb_output_dimensions, safeguard_output_dimensions
@@ -35,6 +31,9 @@ from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.formats.utils.metadata import MetadataType
 from pims.processing.image_response import AssociatedResponse
+from pydantic import BaseModel, Field, conint
+from starlette.requests import Request
+from starlette.responses import Response
 
 router = APIRouter()
 api_tags = ['Metadata']
@@ -426,8 +425,8 @@ class ChannelsInfoItem(BaseModel):
         return cls(
             **{
                 "index": c.index,
-                "emission_wavelength": c.emission_wavelength,
-                "excitation_wavelength": c.excitation_wavelength,
+                "emission_wavelength": convert_quantity(c.emission_wavelength, "nanometers"),
+                "excitation_wavelength": convert_quantity(c.excitation_wavelength, "nanometers"),
                 "suggested_name": c.suggested_name,
                 "color": c.color.as_hex() if c.color is not None else None
             }
