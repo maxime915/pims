@@ -20,7 +20,7 @@ from cytomine.models import (
     AbstractImage, AbstractSlice, AbstractSliceCollection, ImageInstance, Property,
     PropertyCollection, UploadedFile
 )
-
+from cytomine.models.collection import CollectionPartialUploadException
 from pims.api.utils.response import convert_quantity
 from pims.config import get_settings
 from pims.files.file import Path
@@ -440,7 +440,10 @@ class CytomineListener(ImportListener):
                 properties.append(
                     Property(ai, metadata.namespaced_key, str(metadata.value))
                 )
-        properties.save()
+        try:
+            properties.save()
+        except CollectionPartialUploadException:
+            pass  # TODO: improve handling of this exception, but prevent to fail the import
 
         uf.status = UploadedFile.DEPLOYED
         uf.update()
@@ -449,7 +452,10 @@ class CytomineListener(ImportListener):
         for k, v in self.user_properties:
             if v is not None and str(v) != '':
                 properties.append(Property(ai, k, v))
-        properties.save()
+        try:
+            properties.save()
+        except CollectionPartialUploadException:
+            pass  # TODO: improve handling of this exception, but prevent to fail the import
 
         instances = []
         for p in self.projects:
