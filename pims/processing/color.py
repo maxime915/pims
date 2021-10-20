@@ -169,3 +169,18 @@ def is_rgb(colors):
         if c1 != c2:
             return False
     return True
+
+
+def identify_channel_color(color_name, index, n_channels, channel_color_list=None):
+    try:
+        return Color(color_name)
+    except ColorError:
+        pass
+
+    if channel_color_list is None:
+        channel_color_list = ("red", "lime", "blue", "cyan", "magenta", "yellow")
+
+    if 1 < n_channels <= len(channel_color_list):
+        return Color(channel_color_list[index])
+
+    return None

@@ -28,7 +28,7 @@ from pims.formats.utils.omexml import OMEXML
 from pims.formats.utils.planes import PlanesInfo
 from pims.formats.utils.pyramid import Pyramid
 from pims.formats.utils.vips import dtype_to_bits
-from pims.processing.color import Color
+from pims.processing.color import identify_channel_color
 
 
 def clean_ome_dict(d):
@@ -131,7 +131,7 @@ class OmeTiffParser(TifffileParser):
             name = channel.name
             if not name and default_names is not None:
                 name = default_names[c]
-            color = Color(channel.color) if channel.color else None
+            color = identify_channel_color(channel.color, c, imd.n_channels)
             imd.set_channel(
                 ImageChannel(
                     index=c, emission_wavelength=channel.emission_wavelength,
