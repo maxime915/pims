@@ -43,6 +43,9 @@ class Colormap(ABC):
     def lut(self, size=256, bitdepth=8):
         pass
 
+    def n_components(self):
+        return 3
+
     def as_image(self, width, height, bitdepth=8):
         lut = self.lut(size=width, bitdepth=bitdepth)
         return np.tile(lut, (height, 1, 1))
@@ -83,12 +86,17 @@ class ColorColormap(Colormap):
     def color(self):
         return self._color
 
-    def lut(self, size=256, bitdepth=8):
+    def n_components(self):
         r, g, b = self._color.as_float_tuple(alpha=False)
-        n_colors = 1 if r == g == b else 3
-        colors = (r,) if n_colors == 1 else (r, g, b)
+        return 1 if r == g == b else 3
 
-        lut = np.zeros((size, n_colors))
+    def lut(self, size=256, bitdepth=8, n_components=None):
+        components = self._color.as_float_tuple(alpha=False)
+        if n_components is None or n_components > 3:
+            n_components = self.n_components()
+
+        colors = components[:n_components]
+        lut = np.zeros((size, n_components))
         x = [0, size - 1]
         xvals = np.arange(size)
         for i, color in enumerate(colors):
@@ -108,8 +116,8 @@ def combine_lut(lut_a, lut_b):
     return np.take_along_axis(lut_b, lut_a, axis=0)
 
 
-def default_lut(size=256, bitdepth=8):
-    return np.arange(size).reshape((size, 1, 1)).astype(np_dtype(bitdepth))
+def default_lut(size=256, bitdepth=8, n_components=1):
+    return np.arange(size).reshape((size, n_components)).astype(np_dtype(bitdepth))
 
 
 mpl_cmaps = dict()

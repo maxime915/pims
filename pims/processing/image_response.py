@@ -187,14 +187,20 @@ class ProcessedView(MultidimView):
         if not self.colormap_processing:
             return None
 
+        n_components = np.max(
+            [colormap.n_components() if colormap else 1
+             for colormap in self.colormaps]
+        )
         return np.stack(
             [
                 colormap.lut(
                     size=self.max_intensity + 1,
-                    bitdepth=self.best_effort_bitdepth
+                    bitdepth=self.best_effort_bitdepth,
+                    n_components=n_components
                 ) if colormap else default_lut(
                     size=self.max_intensity + 1,
-                    bitdepth=self.best_effort_bitdepth
+                    bitdepth=self.best_effort_bitdepth,
+                    n_components=n_components
                 ) for colormap in self.colormaps
             ], axis=1
         )
