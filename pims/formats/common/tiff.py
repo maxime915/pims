@@ -117,7 +117,7 @@ class PlanarTiffChecker(TifffileChecker):
             if getattr(tf, 'is_' + name, False):
                 return False
 
-        if len(tf.series) == 1:
+        if len(tf.series) >= 1:
             baseline = tf.series[0]
             if baseline and not baseline.is_pyramidal and len(baseline.levels) == 1:
                 return True
