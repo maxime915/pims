@@ -21,6 +21,7 @@ from cytomine.models import (
     PropertyCollection, UploadedFile
 )
 from cytomine.models.collection import CollectionPartialUploadException
+
 from pims.api.utils.response import convert_quantity
 from pims.config import get_settings
 from pims.files.file import Path
@@ -398,6 +399,7 @@ class CytomineListener(ImportListener):
         ai.depth = image.depth
         ai.duration = image.duration
         ai.channels = image.n_intrinsic_channels
+        ai.extrinsicChannels = image.n_channels
         if image.physical_size_x:
             ai.physicalSizeX = round(
                 convert_quantity(image.physical_size_x, "micrometers"), 6
@@ -413,7 +415,7 @@ class CytomineListener(ImportListener):
         ai.fps = image.frame_rate
         ai.magnification = parse_int(image.objective.nominal_magnification)
         ai.bitPerSample = dtype_to_bits(image.pixel_type)
-        ai.samplePerPixel = image.n_channels
+        ai.samplePerPixel = image.n_channels / image.n_intrinsic_channels
         ai.save()
         self.abstract_images.append(ai)
 
