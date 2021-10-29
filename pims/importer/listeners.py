@@ -423,15 +423,17 @@ class CytomineListener(ImportListener):
         set_channel_names = image.n_intrinsic_channels == image.n_channels
         for c in range(image.n_intrinsic_channels):
             name = None
+            color = None
             if set_channel_names:
                 name = image.channels[c].suggested_name
+                color = image.channels[c].color
             for z in range(image.depth):
                 for t in range(image.duration):
                     mime = "image/pyrtiff"  # TODO: remove
                     asc.append(
                         AbstractSlice(
                             ai.id, uf.id, mime, c, z, t,
-                            channelName=name
+                            channelName=name, channelColor=color
                         )
                     )
         asc.save()
