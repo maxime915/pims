@@ -5,14 +5,14 @@ from fastapi import APIRouter
 from pims.formats import FORMATS
 import io
 from pims.importer.importer import FileImporter
-
+from tests.utils.formats import info_test, thumb_test, resized_test, mask_test, crop_test, crop_null_annot_test, histogram_perimage_test
 from pims.files.file import (
     EXTRACTED_DIR, HISTOGRAM_STEM, ORIGINAL_STEM, PROCESSED_DIR, Path,
     SPATIAL_STEM, UPLOAD_DIR_PREFIX, unique_name_generator
 )
+import pytest
 
-
-def getImage(path, image):
+def get_image(path, image):
 	filepath = os.path.join(path, image)
 	# If image does not exist locally -> download image
 	if not os.path.exists(path):
@@ -28,7 +28,7 @@ def getImage(path, image):
 	
 	if not os.path.exists(path + "processed"):
 		try:
-			fi = FileImporter("/data/pims/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff")
+			fi = FileImporter(f"/data/pims/upload_test_tiff/{image}")
 			fi.upload_dir = "/data/pims/upload_test_tiff"
 			fi.processed_dir = fi.upload_dir / Path("processed")
 			fi.mkdir(fi.processed_dir)
@@ -49,62 +49,52 @@ def getImage(path, image):
 			print("Importation of images could not be done")
 			print(e)
 			
-def test_img_exists():
+def test_tiff_exists(image_path_tiff):
 	# Test if the file exists, either locally either with the OAC
-	path = "/data/pims/upload_test_tiff/"
-	image = "earthworm-transv-posterior-to-clitellum-02.tiff"
-	getImage(path, image)
-	assert os.path.exists(path+image) == True
-	
-router = APIRouter()
-tile_tags = ['Tiles']
+	get_image(image_path_tiff[0], image_path_tiff[1])
+	assert os.path.exists(os.path.join(image_path_tiff[0],image_path_tiff[1])) == True
 
-def test_info(app, client):
-	# Verify if image format corresponds
-	response = client.get('/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/info/image')
+def test_tiff_info(client, image_path_tiff):
+	response = client.get(f'/image/upload_test_tiff/{image_path_tiff[1]}/info')
 	assert response.status_code == 200
-	assert "tiff" in response.json()['original_format'].lower()
+	assert "tiff" in response.json()['image']['original_format'].lower()
+	assert response.json()['image']['width'] == 42460
+	assert response.json()['image']['height'] == 29140
 	
-def test_get_tile(app, client):
-	response = client.get("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/tile/zoom/3/ti/15", headers={"accept": "image/jpeg"})
+def test_tiff_metadata(client, image_path_tiff):
+	response = client.get(f'/image/upload_test_tiff/{image_path_tiff[1]}/metadata')
 	assert response.status_code == 200
+	assert response.json()['items'][7]["key"] == 'XResolution'
+	assert response.json()['items'][7]["value"] == '(4294967295, 69255)'
+	assert response.json()['items'][8]['key'] == 'YResolution'
+	assert response.json()['items'][8]["value"] == '(4294967295, 69255)'
+	assert response.json()['items'][10]['key'] == 'ResolutionUnit'
+	assert response.json()['items'][10]["value"] == "CENTIMETER"
+	
+def test_tiff_norm_tile(client, image_path_tiff):
+	response = client.get(f"/image/upload_test_tiff/{image_path_tiff[1]}/normalized-tile/zoom/3/ti/15", headers={"accept": "image/jpeg"})
+	assert response.status_code == 200
+	
 	img_response = Image.open(io.BytesIO(response.content))
 	width_resp, height_resp = img_response.size
 	assert width_resp == 256
 	assert height_resp == 256
 	
-def test_get_norm_tile(app, client):
-	response = client.get("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/tile/zoom/3/ti/15", headers={"accept": "image/jpeg"})
-	assert response.status_code == 200
+def test_tiff_thumb(client, image_path_tiff):
+	thumb_test(client, image_path_tiff[1], "tiff")
 	
-	img_response = Image.open(io.BytesIO(response.content))
-	width_resp, height_resp = img_response.size
-	assert width_resp == 256
-	assert height_resp == 256
+def test_tiff_resized(client, image_path_tiff):
+	resized_test(client, image_path_tiff[1], "tiff")
 	
-def test_get_thumb(app, client):
-	response = client.get("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/thumb", headers={"accept": "image/jpeg"})
-	assert response.status_code == 200
+def test_tiff_mask(client, image_path_tiff):
+	mask_test(client, image_path_tiff[1], "tiff")
 	
-def test_get_resized(app, client):
-	response = client.get("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/resized", headers={"accept": "image/jpeg"})
-	assert response.status_code == 200
-	
-def test_get_mask(app, client):
-	response = client.post("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/annotation/mask", headers={"accept": "image/jpeg"}, json={"annotations":[{"geometry": "POINT(10 10)"}], "height":50, "width":50})
-	assert response.status_code == 200
-	
-def test_get_crop(app, client):
-	response = client.post("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/annotation/crop", headers={"accept": "image/jpeg"}, json={"annotations":[{"geometry": "POINT(10 10)"}], "height":50, "width":50})
-	assert response.status_code == 200
-	
-"""	
-def test_crop_null_annot(app, client):
-	response = client.post("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/annotation/crop", headers={"accept": "image/jpeg"}, json={"annotations": [], "height":50, "width":50})
-	print(response.__dict__)
-	assert response.status_code == 400
-"""	
+def test_tiff_crop(client, image_path_tiff):
+	crop_test(client, image_path_tiff[1], "tiff")
 
-def test_histogram_perimage(app, client):
-	response = client.get("/image/upload_test_tiff/earthworm-transv-posterior-to-clitellum-02.tiff/histogram/per-image", headers={"accept": "image/jpeg"})
-	assert response.status_code == 200	
+@pytest.mark.skip
+def test_tiff_crop_null_annot(client, image_path_tiff):
+	crop_null_annot_test(client, image_path_tiff[1], "tiff")
+
+def test_tiff_histogram_perimage(client, image_path_tiff):
+	histogram_perimage_test(client, image_path_tiff[1], "tiff")

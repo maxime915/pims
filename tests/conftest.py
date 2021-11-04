@@ -23,6 +23,7 @@ from fastapi.testclient import TestClient
 from pims import config
 
 os.environ['CONFIG_FILE'] = "./pims-config.env"
+CLEAR_AT_SHUTDOWN=True
 
 with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
     lines = f.read().splitlines()
@@ -61,7 +62,8 @@ def fake_files(request):
     create_fake_files(_fake_files)
 
     def teardown():
-        shutil.rmtree(test_root())
+    	if CLEAR_AT_SHUTDOWN:
+        	shutil.rmtree(test_root())
 
     request.addfinalizer(teardown)
     return _fake_files
@@ -94,7 +96,25 @@ def app():
 def client(app):
     return TestClient(app)
 
+@pytest.fixture
+def image_path_jpeg():
+	image = "cytomine-org-logo.jpeg"
+	path = "/data/pims/upload_test_jpeg/"
+	return [path, image]
 
+@pytest.fixture
+def image_path_png():
+	image = "cytomine-org-logo.png"
+	path = "/data/pims/upload_test_png/"
+	return [path, image]
+
+@pytest.fixture(scope='module')
+def image_path_tiff():
+	image = "earthworm-transv-posterior-to-clitellum-02.tiff"
+	path = "/data/pims/upload_test_tiff/"
+	return [path, image]
+	
+	
 @contextmanager
 def not_raises(expected_exc):
     try:
