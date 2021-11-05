@@ -40,7 +40,7 @@ class Colormap(ABC):
         return self.id.replace('_', ' ').title() + inv
 
     @abstractmethod
-    def lut(self, size=256, bitdepth=8):
+    def lut(self, size=256, bitdepth=8, n_components=None):
         pass
 
     def n_components(self):
@@ -69,11 +69,14 @@ class MatplotlibColormap(Colormap):
         self._mpl_cmap[size] = get_cmap(mpl_name, mpl_size)
         self._mpl_cmap[size]._init()
 
-    def lut(self, size=256, bitdepth=8):
+    def lut(self, size=256, bitdepth=8, n_components=None):
+        if n_components is None or n_components > 3:
+            n_components = self.n_components()
+
         if size not in self._mpl_cmap:
             self._init_cmap(size)
 
-        lut = self._mpl_cmap[size]._lut[:size, :3] * (2 ** bitdepth - 1)
+        lut = self._mpl_cmap[size]._lut[:size, :n_components] * (2 ** bitdepth - 1)
         return lut.astype(np_dtype(bitdepth))
 
 
