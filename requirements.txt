@@ -144,6 +144,8 @@ pydantic==1.8.2
     # via
     #   fastapi
     #   pims (setup.py)
+pydicom==2.2.2
+    # via pims (setup.py)
 pygments==2.9.0
     # via rich
 pyparsing==2.4.7
