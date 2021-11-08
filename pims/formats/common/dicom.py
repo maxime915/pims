@@ -15,13 +15,15 @@ import logging
 from datetime import datetime
 from functools import cached_property
 
+from pydicom import dcmread
+from pydicom.multival import MultiValue
+
 from pims import UNIT_REGISTRY
 from pims.formats.utils.abstract import AbstractFormat, AbstractParser, AbstractReader
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import VipsHistogramReader, VipsSpatialConvertor
 from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_float
 from pims.formats.utils.vips import np_dtype
-from pydicom import dcmread
 
 log = logging.getLogger("pims.formats")
 
@@ -50,8 +52,8 @@ class DicomParser(AbstractParser):
         imd = ImageMetadata()
         imd.width = ds.Columns
         imd.height = ds.Rows
-        imd.depth = 1  # TODO
-        imd.duration = 1  # TODO
+        imd.depth = ds.get('NumberOfFrames', 1)
+        imd.duration = 1
 
         imd.n_channels = ds.SamplesPerPixel  # Only 1 or 3
         imd.n_intrinsic_channels = ds.SamplesPerPixel
@@ -104,8 +106,24 @@ class DicomParser(AbstractParser):
             return None
 
     def parse_raw_metadata(self):
-        # TODO
-        return super(DicomParser, self).parse_raw_metadata()
+        store = super(DicomParser, self).parse_raw_metadata()
+        ds = cached_dcmread(self.format)
+
+        for data_element in ds:
+            if type(data_element.value) in (bytes, bytearray) \
+                    or data_element.VR == "SQ":  # TODO: support sequence metadata
+                continue
+
+            name = data_element.name
+            if data_element.is_private:
+                name = f"{data_element.tag.group:04x}_{data_element.tag.element:04x}"
+            name = name.replace(' ', '')
+
+            value = data_element.value
+            if type(value) is MultiValue:
+                value = list(value)
+            store.set(name, value, namespace="DICOM")
+        return store
 
     @staticmethod
     def parse_physical_size(physical_size):
