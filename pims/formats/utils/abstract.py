@@ -104,6 +104,9 @@ class AbstractParser(ABC):
         pi = PlanesInfo(imd.n_channels, imd.depth, imd.duration)
         return pi
 
+    def parse_annotations(self):
+        return []
+
 
 class AbstractReader(ABC):
     def __init__(self, format):
@@ -361,3 +364,7 @@ class AbstractFormat(ABC, CachedData):
     @cached_property
     def main_path(self):
         return self.path
+
+    @cached_property
+    def annotations(self):
+        return self.parser.parse_annotations()

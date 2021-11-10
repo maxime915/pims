@@ -15,15 +15,17 @@ import logging
 from datetime import datetime
 from functools import cached_property
 
-from pydicom import dcmread
-from pydicom.multival import MultiValue
-
 from pims import UNIT_REGISTRY
 from pims.formats.utils.abstract import AbstractFormat, AbstractParser, AbstractReader
+from pims.formats.utils.annotations import ParsedMetadataAnnotation
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import VipsHistogramReader, VipsSpatialConvertor
 from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_float
 from pims.formats.utils.vips import np_dtype
+from pydicom import dcmread
+from pydicom.multival import MultiValue
+from shapely.errors import WKTReadingError
+from shapely.wkt import loads as wkt_loads
 
 log = logging.getLogger("pims.formats")
 
@@ -130,6 +132,43 @@ class DicomParser(AbstractParser):
         if physical_size is not None and parse_float(physical_size) is not None:
             return parse_float(physical_size) * UNIT_REGISTRY("millimeter")
         return None
+
+    def parse_annotations(self):
+        """
+        DICOM/DICONDE extension for Annotations
+        * 0x0077-0x1900 (US) - Annotation.Number
+        * 0x0077-0x1901 (SQ) - Annotation.Definition
+        * 0x0077-0x1912 (DS, multiple) - Annotation.Row
+        * 0x0077-0x1913 (DS, multiple) - Annotation.Col
+        * 0x0077-0x1903 (LO) - Annotation.Indication
+        * 0x0077-0x1904 (US) - Annotation.Severity
+        * 0x0077-0x1911 (LT) - Annotation.Polygon (WKT format)
+        """
+        ds = cached_dcmread(self.format)
+        channels = list(range(self.format.main_imd.n_channels))
+        parsed_annots = []
+        annots_sq = ds.get((0x77, 0x1901))
+        if annots_sq and annots_sq.VR == "SQ":
+            for annot in annots_sq:
+                try:
+                    wkt = annot.get((0x77, 0x1911))
+                    if wkt.value is not None:
+                        geometry = wkt_loads(wkt.value)
+                        parsed = ParsedMetadataAnnotation(geometry, channels, 0, 0)
+
+                        indication = annot.get((0x77, 0x1903))
+                        if indication:
+                            parsed.add_term(indication.value)
+
+                        severity = annot.get((0x77, 0x1904))
+                        if severity:
+                            parsed.add_property("severity", severity.value)
+
+                        parsed_annots.append(parsed)
+                except WKTReadingError:
+                    pass
+
+        return parsed_annots
 
 
 class DicomReader(AbstractReader):

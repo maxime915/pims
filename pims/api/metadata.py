@@ -764,6 +764,77 @@ def show_metadata(
     return response_list([Metadata.from_metadata(md) for md in store.values()])
 
 
+# ANNOTATIONS
+
+class MetadataAnnotation(BaseModel):
+    """
+    A metadata annotation is an annotation stored in an image file.
+
+    """
+    geometry: str = Field(
+        ...,
+        description='A geometry described in Well-known text (WKT)',
+        example='POINT(10 10)',
+    )
+    terms: List[str] = Field(
+        ...,
+        description='A list of terms (labels) associated to the annotation',
+        example='ROI'
+    )
+    properties: dict = Field(
+        ...,
+        description='A set of key-value pairs associated to the annotation'
+    )
+    channels: List[int] = Field(
+        ...,
+        description='Channel indexes associated to the annotation'
+    )
+    z_slices: List[int] = Field(
+        ...,
+        description='Z-slice indexes associated to the annotation'
+    )
+    timepoints: List[int] = Field(
+        ...,
+        description='Timepoint indexes associated to the annotation'
+    )
+
+    @classmethod
+    def from_metadata_annotation(cls, annot):
+        return cls(
+            **{
+                "geometry": annot.wkt,
+                "terms": annot.terms,
+                "properties": annot.properties,
+                "channels": annot.channels,
+                "z_slices": annot.z_slices,
+                "timepoints": annot.timepoints
+            }
+        )
+
+
+class MetadataAnnotationCollection(CollectionSize):
+    items: List[MetadataAnnotation]
+
+
+@router.get(
+    '/image/{filepath:path}/metadata/annotations',
+    response_model=MetadataAnnotationCollection,
+    tags=api_tags
+)
+def show_metadata_annotations(
+    path: Path = Depends(imagepath_parameter)
+):
+    """
+    Get image annotation metadata
+    """
+    original = path.get_original()
+    check_representation_existence(original)
+    return response_list(
+        [MetadataAnnotation.from_metadata_annotation(a)
+         for a in original.annotations]
+    )
+
+
 # REPRESENTATIONS
 
 class RepresentationInfoCollection(CollectionSize):
