@@ -161,6 +161,8 @@ python-dotenv==0.17.1
     # via
     #   pims (setup.py)
     #   uvicorn
+python-gdcm==3.0.10
+    # via pims (setup.py)
 python-multipart==0.0.5
     # via pims (setup.py)
 pytz==2021.3

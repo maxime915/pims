@@ -15,17 +15,24 @@ import logging
 from datetime import datetime
 from functools import cached_property
 
-from pims import UNIT_REGISTRY
-from pims.formats.utils.abstract import AbstractFormat, AbstractParser, AbstractReader
-from pims.formats.utils.annotations import ParsedMetadataAnnotation
-from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.engines.vips import VipsHistogramReader, VipsSpatialConvertor
-from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_float
-from pims.formats.utils.vips import np_dtype
+import numpy as np
 from pydicom import dcmread
 from pydicom.multival import MultiValue
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
+
+from pims import UNIT_REGISTRY
+from pims.formats.utils.abstract import (
+    AbstractFormat, AbstractParser, AbstractReader,
+    NullHistogramReader
+)
+from pims.formats.utils.annotations import ParsedMetadataAnnotation
+from pims.formats.utils.checker import SignatureChecker
+from pims.formats.utils.engines.vips import VipsSpatialConvertor
+from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_float
+from pims.formats.utils.vips import np_dtype
+from pims.processing.adapters import numpy_to_vips
+from pims.processing.utils import to_unsigned_int
 
 log = logging.getLogger("pims.formats")
 
@@ -75,9 +82,10 @@ class DicomParser(AbstractParser):
         ds = cached_dcmread(self.format)
         imd = super().parse_known_metadata()
 
-        imd.description = None  # TODO
+        imd.description = None
         imd.acquisition_datetime = self.parse_acquisition_date(
-            ds.get('AcquisitionDate'), ds.get('AcquisitionTime'))
+            ds.get('AcquisitionDate'), ds.get('AcquisitionTime')
+        )
         if imd.acquisition_datetime is None:
             imd.acquisition_datetime = self.parse_acquisition_date(
                 ds.get('ContentDate'), ds.get('ContentTime')
@@ -172,14 +180,59 @@ class DicomParser(AbstractParser):
 
 
 class DicomReader(AbstractReader):
+    """
+    Pydicom `pixel_array` have following shape:
+    * For single frame, single sample data (rows, columns)
+    * For single frame, multi-sample data (rows, columns, planes)
+    * For multi-frame, single sample data (frames, rows, columns)
+    * For multi-frame, multi-sample data (frames, rows, columns, planes)
+
+    NB: in DICOM world, "frame" is a z-slice and "plane" is a channel.
+    """
+
+    def _array_slices(self, x_np_slice, y_np_slice, c_np_slice, z_np_slice):
+        n_channels = self.format.main_imd.n_channels
+        depth = self.format.main_imd.depth
+
+        x_np_slice = np.s_[:] if x_np_slice is None else x_np_slice
+        y_np_slice = np.s_[:] if y_np_slice is None else y_np_slice
+        c_np_slice = np.s_[:] if c_np_slice is None else c_np_slice
+        z_np_slice = np.s_[:] if z_np_slice is None else z_np_slice
+
+        if n_channels == 1 and depth == 1:
+            return y_np_slice, x_np_slice
+        elif n_channels > 1 and depth == 1:
+            return y_np_slice, x_np_slice, c_np_slice
+        elif n_channels == 1 and depth > 1:
+            return z_np_slice, y_np_slice, x_np_slice
+        else:
+            return z_np_slice, y_np_slice, x_np_slice, c_np_slice
+
+    def _pixel_array(self, x_np_slice, y_np_slice, c_np_slice, z_np_slice):
+        slices = self._array_slices(x_np_slice, y_np_slice, c_np_slice, z_np_slice)
+        ds = cached_dcmread(self.format)
+        image = ds.pixel_array[slices]
+        return to_unsigned_int(image)
+
     def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
-        pass
+        return self._pixel_array(None, None, c, z)
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
-        pass
+        region = region.scale_to_tier(self.format.pyramid.base)
+        return self._pixel_array(
+            np.s_[region.left:region.right],
+            np.s_[region.top:region.bottom],
+            c, z
+        )
 
     def read_tile(self, tile, c=None, z=None, t=None):
-        pass
+        return self.read_window(tile, tile.width, tile.height, c, z, t)
+
+
+class DicomSpatialConvertor(VipsSpatialConvertor):
+    def vips_source(self):
+        image = cached_dcmread(self.source).pixel_array
+        return numpy_to_vips(to_unsigned_int(image))
 
 
 class DicomFormat(AbstractFormat):
@@ -191,8 +244,8 @@ class DicomFormat(AbstractFormat):
     checker_class = DicomChecker
     parser_class = DicomParser
     reader_class = DicomReader
-    histogram_reader_class = VipsHistogramReader  # TODO
-    convertor_class = VipsSpatialConvertor  # TODO
+    histogram_reader_class = NullHistogramReader  # TODO
+    convertor_class = DicomSpatialConvertor
 
     def __init__(self, *args, **kwargs):
         super(DicomFormat, self).__init__(*args, **kwargs)
@@ -205,7 +258,8 @@ class DicomFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        return not (imd.width < 1024 and imd.height < 1024)  # TODO
+        return not (imd.width < 1024 and imd.height < 1024) \
+               and imd.depth == 1  # TODO: the convertor only support 2D images
 
     @property
     def media_type(self):

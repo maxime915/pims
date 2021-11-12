@@ -58,6 +58,7 @@ REQUIRED = [
     'scikit-image>=0.18',
     'zarr>=2.8.3',
     'pydicom>=2.2.2',
+    'python-gdcm>=3.0.10',
 
     'Shapely>=1.8a1',
     'rasterio>=1.2.1',
