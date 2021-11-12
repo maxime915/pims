@@ -426,7 +426,7 @@ class CytomineListener(ImportListener):
             color = None
             if set_channel_names:
                 name = image.channels[c].suggested_name
-                color = image.channels[c].color
+                color = image.channels[c].hex_color
             for z in range(image.depth):
                 for t in range(image.duration):
                     mime = "image/pyrtiff"  # TODO: remove
