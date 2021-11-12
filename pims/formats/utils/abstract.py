@@ -128,11 +128,11 @@ class AbstractHistogramReader(HistogramReaderInterface, ABC):
 
 
 class NullHistogramReader(AbstractHistogramReader):
-    @abstractmethod
+    # @abstractmethod
     def type(self) -> HistogramType:
         return HistogramType.FAST
 
-    @abstractmethod
+    # @abstractmethod
     def image_bounds(self):
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
@@ -140,11 +140,11 @@ class NullHistogramReader(AbstractHistogramReader):
         )
         return 0, 2 ** self.format.main_imd.significant_bits
 
-    @abstractmethod
+    # @abstractmethod
     def image_histogram(self):
         raise BadRequestException(detail=f"No histogram found for {self.format.path}")
 
-    @abstractmethod
+    # @abstractmethod
     def channels_bounds(self):
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
@@ -152,7 +152,7 @@ class NullHistogramReader(AbstractHistogramReader):
         )
         return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_channels
 
-    @abstractmethod
+    # @abstractmethod
     def channel_bounds(self, c):
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
@@ -160,11 +160,11 @@ class NullHistogramReader(AbstractHistogramReader):
         )
         return 0, 2 ** self.format.main_imd.significant_bits
 
-    @abstractmethod
+    # @abstractmethod
     def channel_histogram(self, c):
         raise BadRequestException(detail=f"No histogram found for {self.format.path}")
 
-    @abstractmethod
+    # @abstractmethod
     def planes_bounds(self):
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
@@ -172,7 +172,7 @@ class NullHistogramReader(AbstractHistogramReader):
         )
         return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_planes
 
-    @abstractmethod
+    # @abstractmethod
     def plane_bounds(self, c, z, t):
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
@@ -180,7 +180,7 @@ class NullHistogramReader(AbstractHistogramReader):
         )
         return 0, 2 ** self.format.main_imd.significant_bits
 
-    @abstractmethod
+    # @abstractmethod
     def plane_histogram(self, c, z, t):
         raise BadRequestException(detail=f"No histogram found for {self.format.path}")
 
