@@ -151,6 +151,10 @@ class Image(Path):
     def pyramid(self):
         return self._format.pyramid
 
+    @property
+    def annotations(self):
+        return self._format.annotations
+
     @cached_property
     def normalized_pyramid(self):
         return normalized_pyramid(self.width, self.height)

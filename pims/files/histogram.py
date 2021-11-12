@@ -194,6 +194,7 @@ def _extract_np_thumb(image):
                 c = c_range[0]  # TODO
                 thumb = image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
                 npthumb = imglib_adapters.get((type(thumb), np.ndarray))(thumb)
+                npthumb = np.atleast_3d(npthumb)
                 if npthumb.shape[2] != len(c_range):
                     # TODO: improve palette support! !! if we get more channels than expected,
                     #  we have a color palette image For now, try to discard the palette by only

@@ -144,6 +144,8 @@ pydantic==1.8.2
     # via
     #   fastapi
     #   pims (setup.py)
+pydicom==2.2.2
+    # via pims (setup.py)
 pygments==2.9.0
     # via rich
 pyparsing==2.4.7
@@ -159,6 +161,8 @@ python-dotenv==0.17.1
     # via
     #   pims (setup.py)
     #   uvicorn
+python-gdcm==3.0.10
+    # via pims (setup.py)
 python-multipart==0.0.5
     # via pims (setup.py)
 pytz==2021.3
