@@ -26,12 +26,13 @@ from pims.config import get_settings
 from pims.files.archive import Archive, ArchiveError
 from pims.files.file import (
     EXTRACTED_DIR, HISTOGRAM_STEM, ORIGINAL_STEM, PROCESSED_DIR, Path,
-    SPATIAL_STEM, UPLOAD_DIR_PREFIX, unique_name_generator
+    SPATIAL_STEM, UPLOAD_DIR_PREFIX
 )
 from pims.files.histogram import build_histogram_file
 from pims.files.image import Image
 from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
 from pims.importer.listeners import CytomineListener, ImportEventType, StdoutListener
+from pims.utils.strings import unique_name_generator
 
 log = logging.getLogger("pims.app")
 

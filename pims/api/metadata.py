@@ -32,63 +32,13 @@ from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, pa
 from pims.api.utils.response import convert_quantity, response_list
 from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
-from pims.files.file import Path
+from pims.files.file import FileRole, FileType, Path
 from pims.formats.utils.structures.metadata import MetadataType
 from pims.processing.image_response import AssociatedResponse
 
 router = APIRouter()
 api_tags = ['Metadata']
 cache_associated_ttl = get_settings().cache_ttl_thumb
-
-
-class FileRole(Enum):
-    """
-    The role of a file. The same image data can be represented in different ways, in different
-    files, each of them serving different purposes.
-
-    * `UPLOAD` - This file is the one such as received by PIMS.
-    * `ORIGINAL` - This file is in its original format and contains (part of) metadata.
-    * `SPATIAL` - This file is used to retrieve regular 2D spatial regions from the image.
-    * `SPECTRAL` - This file is used to retrieve spectral data from the image.
-    * `NONE` - This file has no defined role for PIMS.
-    """
-
-    UPLOAD = 'UPLOAD'
-    ORIGINAL = 'ORIGINAL'
-    SPATIAL = 'SPATIAL'
-    SPECTRAL = 'SPECTRAL'
-    NONE = 'NONE'
-
-    @classmethod
-    def from_path(cls, path):
-        role = cls.NONE
-        if path.has_original_role():
-            role = cls.ORIGINAL
-        if path.has_spatial_role():
-            role = cls.SPATIAL
-        if path.has_spectral_role():
-            role = cls.SPECTRAL
-        if path.has_upload_role():
-            role = cls.UPLOAD
-        return role
-
-
-class FileType(Enum):
-    """
-    The type of the file.
-    * `SINGLE` - The file only has one image.
-    * `COLLECTION` - The file is a container and contains multiple images that need further
-    processing.
-    """
-
-    SINGLE = 'SINGLE'
-    COLLECTION = 'COLLECTION'
-
-    @classmethod
-    def from_path(cls, path):
-        if path.is_collection():
-            return cls.COLLECTION
-        return cls.SINGLE
 
 
 class SingleFileInfo(BaseModel):

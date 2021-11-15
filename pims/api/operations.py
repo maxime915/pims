@@ -35,11 +35,12 @@ from pims.api.utils.parameter import imagepath_parameter, sanitize_filename
 from pims.api.utils.response import serialize_cytomine_model
 from pims.config import Settings, get_settings
 from pims.files.archive import make_zip_archive
-from pims.files.file import Path, unique_name_generator
+from pims.files.file import Path
 from pims.importer.importer import run_import
 from pims.importer.listeners import CytomineListener
 from pims.tasks.queue import Task, send_task
 from pims.utils.iterables import ensure_list
+from pims.utils.strings import unique_name_generator
 
 router = APIRouter()
 

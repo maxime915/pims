@@ -11,19 +11,9 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from __future__ import annotations
 
-from abc import ABC
-from typing import TYPE_CHECKING, Union
-
-from pims.formats.utils.abstract import AbstractChecker, CachedDataPath
-
-if TYPE_CHECKING:
-    from pims.files.file import Path
+from datetime import datetime
 
 
-class SignatureChecker(AbstractChecker, ABC):
-    @classmethod
-    def get_signature(cls, pathlike: Union[Path, CachedDataPath]) -> bytearray:
-        """Get cached file signature"""
-        return pathlike.get_cached('signature', pathlike.path.signature)
+def unique_name_generator():
+    return int(datetime.now().timestamp() * 1e6)

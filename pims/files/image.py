@@ -11,15 +11,35 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
+
 from functools import cached_property
+from typing import List, Optional, TYPE_CHECKING, Tuple
 
 from pims.api.exceptions import NoMatchingFormatProblem
 from pims.files.file import Path
+from pims.formats.utils.factories import FormatFactory
 from pims.formats.utils.structures.pyramid import normalized_pyramid
+
+if TYPE_CHECKING:
+    from datetime import datetime
+
+    from pims.formats import AbstractFormat
+    from pims.api.utils.models import HistogramType
+    from pims.files.histogram import Histogram
+    from pims.formats.utils.structures.annotations import ParsedMetadataAnnotation
+    from pims.formats.utils.structures.metadata import (
+        ImageAssociated, ImageChannel, ImageMicroscope,
+        ImageObjective, MetadataStore
+    )
+    from pims.formats.utils.structures.pyramid import Pyramid
 
 
 class Image(Path):
-    def __init__(self, *pathsegments, factory=None, format=None):
+    def __init__(
+        self, *pathsegments,
+        factory: FormatFactory = None, format: AbstractFormat = None
+    ):
         super().__init__(*pathsegments)
 
         _format = factory.match(self) if factory else format
@@ -32,146 +52,146 @@ class Image(Path):
             self._format = _format
 
     @property
-    def format(self):
+    def format(self) -> AbstractFormat:
         return self._format
 
     @property
-    def media_type(self):
+    def media_type(self) -> str:
         return self._format.media_type
 
     @property
-    def width(self):
+    def width(self) -> int:
         return self._format.main_imd.width
 
     @property
-    def physical_size_x(self):
+    def physical_size_x(self) -> Optional[float]:
         return self._format.full_imd.physical_size_x
 
     @property
-    def height(self):
+    def height(self) -> int:
         return self._format.main_imd.height
 
     @property
-    def physical_size_y(self):
+    def physical_size_y(self) -> Optional[float]:
         return self._format.full_imd.physical_size_y
 
     @property
-    def n_pixels(self):
+    def n_pixels(self) -> int:
         return self.width * self.height
 
     @property
-    def depth(self):
+    def depth(self) -> int:
         return self._format.main_imd.depth
 
     @property
-    def physical_size_z(self):
+    def physical_size_z(self) -> Optional[float]:
         return self._format.full_imd.physical_size_z
 
     @property
-    def duration(self):
+    def duration(self) -> int:
         return self._format.main_imd.duration
 
     @property
-    def frame_rate(self):
+    def frame_rate(self) -> Optional[float]:
         return self._format.main_imd.frame_rate
 
     @property
-    def n_channels(self):
+    def n_channels(self) -> int:
         return self._format.main_imd.n_channels
 
     @property
-    def n_intrinsic_channels(self):
+    def n_intrinsic_channels(self) -> int:
         return self._format.main_imd.n_intrinsic_channels
 
     @property
-    def n_distinct_channels(self):
+    def n_distinct_channels(self) -> int:
         return self._format.main_imd.n_distinct_channels
 
     @property
-    def n_channels_per_read(self):
+    def n_channels_per_read(self) -> int:
         return self._format.main_imd.n_channels_per_read
 
     @property
-    def n_planes(self):
+    def n_planes(self) -> int:
         return self._format.main_imd.n_planes
 
     @property
-    def pixel_type(self):
+    def pixel_type(self):  # TODO
         return self._format.main_imd.pixel_type
 
     @property
-    def significant_bits(self):
+    def significant_bits(self) -> int:
         return self._format.main_imd.significant_bits
 
     @property
-    def max_value(self):
+    def max_value(self) -> int:
         return 2 ** self.significant_bits - 1
 
     @property
-    def value_range(self):
+    def value_range(self) -> range:
         return range(0, self.max_value + 1)
 
     @property
-    def acquisition_datetime(self):
+    def acquisition_datetime(self) -> datetime:
         return self._format.full_imd.acquisition_datetime
 
     @property
-    def description(self):
+    def description(self) -> str:
         return self._format.full_imd.description
 
     @property
-    def channels(self):
+    def channels(self) -> List[ImageChannel]:
         return self._format.main_imd.channels
 
     @property
-    def objective(self):
+    def objective(self) -> ImageObjective:
         return self._format.full_imd.objective
 
     @property
-    def microscope(self):
+    def microscope(self) -> ImageMicroscope:
         return self._format.full_imd.microscope
 
     @property
-    def associated_thumb(self):
+    def associated_thumb(self) -> ImageAssociated:
         return self._format.full_imd.associated_thumb
 
     @property
-    def associated_label(self):
+    def associated_label(self) -> ImageAssociated:
         return self._format.full_imd.associated_label
 
     @property
-    def associated_macro(self):
+    def associated_macro(self) -> ImageAssociated:
         return self._format.full_imd.associated_macro
 
     @property
-    def raw_metadata(self):
+    def raw_metadata(self) -> MetadataStore:
         return self._format.raw_metadata
 
     @property
-    def pyramid(self):
-        return self._format.pyramid
-
-    @property
-    def annotations(self):
+    def annotations(self) -> List[ParsedMetadataAnnotation]:
         return self._format.annotations
 
+    @property
+    def pyramid(self) -> Pyramid:
+        return self._format.pyramid
+
     @cached_property
-    def normalized_pyramid(self):
+    def normalized_pyramid(self) -> Pyramid:
         return normalized_pyramid(self.width, self.height)
 
     @cached_property
-    def is_pyramid_normalized(self):
+    def is_pyramid_normalized(self) -> bool:
         return self.pyramid == self.normalized_pyramid
 
     @cached_property
-    def histogram(self):
+    def histogram(self) -> Histogram:
         histogram = self.get_histogram()
         if histogram:
             return histogram
         else:
             return self._format.histogram
 
-    def histogram_type(self):
+    def histogram_type(self) -> HistogramType:
         return self.histogram.type()
 
     def image_bounds(self):
@@ -266,7 +286,7 @@ class Image(Path):
     def check_integrity(
         self, lazy_mode=False, metadata=True, tile=False, thumb=False, window=False,
         associated=False
-    ):
+    ) -> List[Tuple[str, Exception]]:
         """
         Check integrity of the image. In lazy mode, stop at first error.
 
