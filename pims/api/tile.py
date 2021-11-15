@@ -21,7 +21,7 @@ from pims.api.exceptions import BadRequestException, check_representation_existe
 from pims.api.utils.header import ImageRequestHeaders, SafeMode, add_image_size_limit_header
 from pims.api.utils.image_parameter import (
     check_array_size, check_reduction_validity,
-    check_tilecoord_validity, check_tileindex_validity, ensure_list, get_channel_indexes,
+    check_tilecoord_validity, check_tileindex_validity, get_channel_indexes,
     get_timepoint_indexes, get_zslice_indexes, parse_colormap_ids, parse_filter_ids,
     parse_intensity_bounds, safeguard_output_dimensions
 )
@@ -41,6 +41,7 @@ from pims.files.file import Path
 from pims.filters import FILTERS
 from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import TileResponse, WindowResponse
+from pims.utils.iterables import ensure_list
 
 router = APIRouter()
 tile_tags = ['Tiles']
@@ -139,7 +140,7 @@ def _show_tile(
         )
         tile_region = pyramid.get_tier_at(
             reference_tier_index, tier_index_type
-        ).ti2region(tile['ti'])
+        ).get_ti_tile(tile['ti'])
     else:
         check_tilecoord_validity(
             pyramid, tile['tx'], tile['ty'],
@@ -147,7 +148,7 @@ def _show_tile(
         )
         tile_region = pyramid.get_tier_at(
             reference_tier_index, tier_index_type
-        ).txty2region(tile['tx'], tile['ty'])
+        ).get_txty_tile(tile['tx'], tile['ty'])
 
     out_format, mimetype = get_output_format(extension, headers.accept, VISUALISATION_MIMETYPES)
     req_size = tile_region.width, tile_region.height

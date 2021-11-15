@@ -23,8 +23,8 @@ from pims.formats.utils.engines.vips import (
     VipsHistogramReader, VipsParser, VipsReader,
     VipsSpatialConvertor, cached_vips_file
 )
-from pims.formats.utils.metadata import parse_datetime, parse_float
-from pims.formats.utils.pyramid import Pyramid
+from pims.formats.utils.structures.pyramid import Pyramid
+from pims.utils.types import parse_datetime, parse_float
 
 log = logging.getLogger("pims.formats")
 

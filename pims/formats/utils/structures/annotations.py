@@ -11,11 +11,43 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from typing import Any, Dict, List, Optional, Union
 
-from pims.api.utils.image_parameter import ensure_list
+from shapely.geometry.base import BaseGeometry
+
+from pims.utils.iterables import ensure_list
+
+PlaneIndex = Union[int, List[int]]
+
 
 class ParsedMetadataAnnotation:
-    def __init__(self, geometry, c, z, t, terms=None, properties=None):
+    """
+    Parsed annotation from an image format metadata.
+    This is NOT an input annotation.
+    """
+    def __init__(
+        self, geometry: BaseGeometry, c: PlaneIndex, z: PlaneIndex, t: PlaneIndex,
+        terms: Optional[List[str]] = None,
+        properties: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Initialize an annotation from image metadata.
+
+        Parameters
+        ----------
+        geometry
+            A valid geometry
+        c
+            The channel(s) which the annotation is linked to
+        z
+            The z-slices(s) which the annotation is linked to
+        t
+            The timepoint(s) which the annotation is linked to
+        terms
+            The terms (labels) associated to the annotation
+        properties
+            Other properties (key-value pairs) associated to the annotation
+        """
         self.geometry = geometry
 
         self.channels = ensure_list(c)
@@ -31,14 +63,14 @@ class ParsedMetadataAnnotation:
         self.properties = properties
 
     @property
-    def wkt(self):
+    def wkt(self) -> str:
         return self.geometry.wkt
 
-    def add_term(self, term):
+    def add_term(self, term: str):
         if term not in self.terms:
             self.terms.append(term)
 
-    def add_property(self, key, value):
+    def add_property(self, key: str, value: Any):
         if key not in self.properties.keys():
             self.properties[key] = value
         else:

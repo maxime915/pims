@@ -31,7 +31,6 @@ from pims.api.utils.cytomine_auth import (
     get_this_image_server, parse_authorization_header,
     parse_request_token, sign_token
 )
-from pims.api.utils.image_parameter import ensure_list
 from pims.api.utils.parameter import imagepath_parameter, sanitize_filename
 from pims.api.utils.response import serialize_cytomine_model
 from pims.config import Settings, get_settings
@@ -40,6 +39,7 @@ from pims.files.file import Path, unique_name_generator
 from pims.importer.importer import run_import
 from pims.importer.listeners import CytomineListener
 from pims.tasks.queue import Task, send_task
+from pims.utils.iterables import ensure_list
 
 router = APIRouter()
 

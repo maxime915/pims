@@ -13,7 +13,7 @@
 #  * limitations under the License.
 import numpy as np
 
-from pims.processing.color import Color, np_int2rgb
+from pims.utils.color import Color, np_int2rgb
 
 
 def test_rgb_int_conversion():

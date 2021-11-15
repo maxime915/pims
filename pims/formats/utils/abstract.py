@@ -21,9 +21,9 @@ from typing import Type
 from pims.api.exceptions import BadRequestException
 from pims.api.utils.models import HistogramType
 from pims.formats.utils.histogram import HistogramReaderInterface
-from pims.formats.utils.metadata import MetadataStore
-from pims.formats.utils.planes import PlanesInfo
-from pims.formats.utils.pyramid import Pyramid
+from pims.formats.utils.structures.metadata import MetadataStore
+from pims.formats.utils.structures.planes import PlanesInfo
+from pims.formats.utils.structures.pyramid import Pyramid
 
 log = logging.getLogger("pims.formats")
 

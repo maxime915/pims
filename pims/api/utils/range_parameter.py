@@ -1,27 +1,17 @@
-# * Copyright (c) 2020. Authors: see NOTICE file.
-# *
-# * Licensed under the Apache License, Version 2.0 (the "License");
-# * you may not use this file except in compliance with the License.
-# * You may obtain a copy of the License at
-# *
-# *      http://www.apache.org/licenses/LICENSE-2.0
-# *
-# * Unless required by applicable law or agreed to in writing, software
-# * distributed under the License is distributed on an "AS IS" BASIS,
-# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# * See the License for the specific language governing permissions and
-# * limitations under the License.
-
-from shapely.errors import WKTReadingError
-from shapely.wkt import loads as wkt_loads
-
-
-def is_int(value):
-    try:
-        int(value)
-        return True
-    except ValueError:
-        return False
+#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  *
+#  * Licensed under the Apache License, Version 2.0 (the "License");
+#  * you may not use this file except in compliance with the License.
+#  * You may obtain a copy of the License at
+#  *
+#  *      http://www.apache.org/licenses/LICENSE-2.0
+#  *
+#  * Unless required by applicable law or agreed to in writing, software
+#  * distributed under the License is distributed on an "AS IS" BASIS,
+#  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  * See the License for the specific language governing permissions and
+#  * limitations under the License.
+from pims.utils.types import is_int
 
 
 def is_range(value):
@@ -78,25 +68,3 @@ def parse_range(pims_range, mini, maxi):
 
     low, high = min(low, high), max(low, high)
     return range(low, high)
-
-
-def is_wkt(value):
-    """
-    Whether a value is a Well-Known Text string.
-    The underlying geometry validity is not checked.
-
-    Parameters
-    ----------
-    value : str
-        Value expected to be a WKT string.
-
-    Returns
-    -------
-    bool
-        Whether the value is a WKT string or not
-    """
-    try:
-        wkt_loads(str(value))
-        return True
-    except WKTReadingError:
-        return False

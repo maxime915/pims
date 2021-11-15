@@ -17,10 +17,11 @@ import json
 
 import pytest
 
-from pims.formats.utils.metadata import (
+from pims.formats.utils.structures.metadata import (
     ImageChannel, ImageMetadata, Metadata, MetadataStore,
-    MetadataType, parse_boolean, parse_float, parse_json
+    MetadataType
 )
+from pims.utils.types import parse_boolean, parse_float, parse_json
 
 
 def test_boolean_parser():

@@ -22,11 +22,11 @@ from shapely.affinity import affine_transform
 
 from pims.api.utils.mimetype import OutputExtension
 from pims.api.utils.models import Colorspace
-from pims.formats.utils.vips import dtype_to_vips_format, vips_format_to_dtype
 from pims.processing.adapters import imglib_adapters, numpy_to_vips
 from pims.processing.annotations import ParsedAnnotations, contour, stretch_contour
-from pims.processing.color import np_int2rgb
-from pims.processing.utils import find_first_available_int
+from pims.utils.color import np_int2rgb
+from pims.utils.iterables import find_first_available_int
+from pims.utils.vips import dtype_to_vips_format, vips_format_to_dtype
 
 log = logging.getLogger("pims.processing")
 

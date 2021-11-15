@@ -19,8 +19,8 @@ from starlette.responses import Response
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.header import ImageRequestHeaders, add_image_size_limit_header
 from pims.api.utils.image_parameter import (
-    check_array_size, check_reduction_validity, ensure_list,
-    get_channel_indexes, get_thumb_output_dimensions, get_timepoint_indexes, get_zslice_indexes,
+    check_array_size, check_reduction_validity, get_channel_indexes, get_thumb_output_dimensions,
+    get_timepoint_indexes, get_zslice_indexes,
     parse_colormap_ids, parse_filter_ids, parse_intensity_bounds, safeguard_output_dimensions
 )
 from pims.api.utils.mimetype import (
@@ -38,6 +38,7 @@ from pims.files.file import Path
 from pims.filters import FILTERS
 from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import ThumbnailResponse
+from pims.utils.iterables import ensure_list
 
 router = APIRouter()
 api_tags = ['Thumbnails']

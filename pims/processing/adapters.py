@@ -14,8 +14,9 @@
 
 import numpy as np
 from PIL import Image as PILImage
-from pims.formats.utils.vips import dtype_to_vips_format, vips_format_to_dtype
 from pyvips import Image as VIPSImage
+
+from pims.utils.vips import dtype_to_vips_format, vips_format_to_dtype
 
 
 def numpy_to_vips(np_array, *args, width=None, height=None, n_channels=None, **kwargs):

@@ -19,37 +19,12 @@ from pims.api.exceptions import (
 )
 from pims.api.utils.header import SafeMode
 from pims.api.utils.models import BitDepthEnum, ColormapEnum, IntensitySelectionEnum, TierIndexType
-from pims.api.utils.schema_format import is_range, parse_range
-from pims.processing.color import Color
+from pims.api.utils.range_parameter import is_range, parse_range
 from pims.processing.colormaps import ColorColormap
 from pims.processing.region import Region
-
-
-def get_rationed_resizing(resized, length, other_length):
-    """
-    Get resized lengths for `length` and `other_length` according to
-    the ratio between `resized` and `length`.
-
-    Parameters
-    ----------
-    resized : int or float
-        Already resized length. If float, it is the ratio.
-    length : int
-        Non-resized length related to `resized`.
-    other_length : int
-        Other non-resized length to resize according the ratio.
-
-    Returns
-    -------
-    resized : int
-        First resized length according ratio.
-    other_resized : int
-        Other resized length according ratio.
-    """
-    ratio = resized if type(resized) == float else resized / length
-    resized = resized if type(resized) == int else round(ratio * length)
-    other_resized = round(ratio * other_length)
-    return resized, other_resized
+from pims.utils.color import Color
+from pims.utils.iterables import ensure_list
+from pims.utils.math import get_rationed_resizing
 
 
 def get_thumb_output_dimensions(
@@ -437,25 +412,6 @@ def check_array_size(iterable, allowed, nullable=True, name=None):
             "{} has a size of {} while only "
             "these sizes are allowed: {}".format(name, len(iterable), allowed_str)
         )
-
-
-def ensure_list(value):
-    """
-    Ensure it is a list.
-
-    Parameters
-    ----------
-    value : any
-        Value to convert as a list
-
-    Returns
-    -------
-    list
-        The value converted as a list if it is not already the case.
-    """
-    if value is not None:
-        return value if type(value) is list else [value]
-    return []
 
 
 def parse_intensity_bounds(

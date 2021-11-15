@@ -25,8 +25,8 @@ from cytomine.models.collection import CollectionPartialUploadException
 from pims.api.utils.response import convert_quantity
 from pims.config import get_settings
 from pims.files.file import Path
-from pims.formats.utils.metadata import parse_int
-from pims.formats.utils.vips import dtype_to_bits
+from pims.utils.dtypes import dtype_to_bits
+from pims.utils.types import parse_int
 
 UploadedFile.CHECKING_INTEGRITY = 60
 UploadedFile.ERROR_INTEGRITY = 61

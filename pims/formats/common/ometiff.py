@@ -20,15 +20,15 @@ from tifffile import xml2dict
 
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
-from pims.formats.utils.dict_utils import flatten_dict
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
 from pims.formats.utils.engines.vips import VipsHistogramReader, VipsReader
-from pims.formats.utils.metadata import ImageChannel, ImageMetadata
 from pims.formats.utils.omexml import OMEXML
-from pims.formats.utils.planes import PlanesInfo
-from pims.formats.utils.pyramid import Pyramid
-from pims.formats.utils.vips import dtype_to_bits
-from pims.processing.color import identify_channel_color
+from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata
+from pims.formats.utils.structures.planes import PlanesInfo
+from pims.formats.utils.structures.pyramid import Pyramid
+from pims.utils.color import infer_channel_color
+from pims.utils.dict import flatten
+from pims.utils.dtypes import dtype_to_bits
 
 
 def clean_ome_dict(d):
@@ -131,12 +131,12 @@ class OmeTiffParser(TifffileParser):
             name = channel.name
             if not name and default_names is not None:
                 name = default_names[c]
-            color = identify_channel_color(channel.color, c, imd.n_channels)
+            color = infer_channel_color(channel.color, c, imd.n_channels)
             imd.set_channel(
                 ImageChannel(
                     index=c, emission_wavelength=channel.emission_wavelength,
-                    excitation_wavelength=channel.excitation_wavelength,
-                    suggested_name=name, color=color
+                    excitation_wavelength=channel.excitation_wavelength, suggested_name=name,
+                    color=color
                 )
             )
 
@@ -217,7 +217,7 @@ class OmeTiffParser(TifffileParser):
 
     def parse_raw_metadata(self):
         store = super().parse_raw_metadata()
-        ome = flatten_dict(clean_ome_dict(cached_omedict(self.format)))
+        ome = flatten(clean_ome_dict(cached_omedict(self.format)))
         for full_key, value in ome.items():
             key = full_key.split('.')[-1]
             if key not in ('TiffData', 'BinData'):

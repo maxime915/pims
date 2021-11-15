@@ -26,13 +26,14 @@ from pims.formats.utils.abstract import (
     AbstractFormat, AbstractParser, AbstractReader,
     NullHistogramReader
 )
-from pims.formats.utils.annotations import ParsedMetadataAnnotation
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import VipsSpatialConvertor
-from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_float
-from pims.formats.utils.vips import np_dtype
+from pims.formats.utils.structures.annotations import ParsedMetadataAnnotation
+from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata
 from pims.processing.adapters import numpy_to_vips
-from pims.processing.utils import to_unsigned_int
+from pims.utils.arrays import to_unsigned_int
+from pims.utils.dtypes import np_dtype
+from pims.utils.types import parse_float
 
 log = logging.getLogger("pims.formats")
 

@@ -18,15 +18,17 @@ from pims.api.utils.header import SafeMode
 from pims.api.utils.image_parameter import (
     check_array_size, check_level_validity,
     check_reduction_validity, check_tilecoord_validity, check_tileindex_validity,
-    check_zoom_validity, ensure_list, get_rationed_resizing, get_thumb_output_dimensions,
+    check_zoom_validity, get_thumb_output_dimensions,
     parse_colormap_id, parse_intensity_bounds, parse_planes, parse_region,
     safeguard_output_dimensions
 )
 from pims.api.utils.models import ColormapEnum, IntensitySelectionEnum, TierIndexType
-from pims.formats.utils.pyramid import Pyramid
-from pims.processing.color import Color
+from pims.formats.utils.structures.pyramid import Pyramid
 from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.region import Region
+from pims.utils.color import Color
+from pims.utils.iterables import ensure_list
+from pims.utils.math import get_rationed_resizing
 from tests.conftest import not_raises
 
 

@@ -198,3 +198,25 @@ def get_annotation_region(in_image, annots, context_factor=1.0, try_square=False
         top = min(top, in_image.height - height)
 
     return Region(top, left, width, height)
+
+
+def is_wkt(value):
+    """
+    Whether a value is a Well-Known Text string.
+    The underlying geometry validity is not checked.
+
+    Parameters
+    ----------
+    value : str
+        Value expected to be a WKT string.
+
+    Returns
+    -------
+    bool
+        Whether the value is a WKT string or not
+    """
+    try:
+        wkt_loads(str(value))
+        return True
+    except WKTReadingError:
+        return False

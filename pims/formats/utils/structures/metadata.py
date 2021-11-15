@@ -12,92 +12,12 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 
-import json
 from datetime import date, datetime, time
 from enum import Enum
-from typing import AbstractSet, Tuple, ValuesView
+from typing import AbstractSet, Any, List, Optional, Tuple, ValuesView
 
-from pims.formats.utils.dict_utils import flatten_dict
-from pims.processing.color import Color
-
-
-def parse_json(value, raise_exc=False):
-    try:
-        return json.loads(value)
-    except:
-        if raise_exc:
-            raise
-        return None
-
-
-def parse_boolean(value, raise_exc=False):
-    _true_set = {'yes', 'true', 't', 'y', '1'}
-    _false_set = {'no', 'false', 'f', 'n', '0'}
-
-    if value is True or value is False:
-        return value
-    elif isinstance(value, str):
-        value = value.lower()
-        if value in _true_set:
-            return True
-        if value in _false_set:
-            return False
-
-    if raise_exc:
-        raise ValueError('Expected "%s"' % '", "'.join(_true_set | _false_set))
-    return None
-
-
-def parse_float(value, raise_exc=False):
-    if type(value) == str:
-        value = value.replace(",", ".")
-    try:
-        return float(value)
-    except:
-        if raise_exc:
-            raise
-        return None
-
-
-def parse_int(value, raise_exc=False):
-    try:
-        return int(value)
-    except:
-        if raise_exc:
-            raise
-        return None
-
-
-def parse_datetime(value, formats=None, raise_exc=False):
-    if formats is None:
-        formats = [
-            "%Y:%m:%d %H:%M:%S",
-            "%m/%d/%y %H:%M:%S"
-        ]
-
-    for format in formats:
-        try:
-            return datetime.strptime(value, format)
-        except (ValueError, TypeError):
-            continue
-    if raise_exc:
-        raise ValueError
-    return None
-
-
-def parse_bytes(value, encoding=None, errors='strict', raise_exc=False):
-    """Return Unicode string from encoded bytes."""
-    try:
-        if encoding is not None:
-            return value.decode(encoding, errors)
-        try:
-            return value.decode('utf-8', errors)
-        except UnicodeDecodeError:
-            return value.decode('cp1252', errors)
-    except Exception:
-        if raise_exc:
-            raise ValueError
-        return None
+from pims.utils.color import Color, infer_channel_color
+from pims.utils.dict import flatten
 
 
 class MetadataType(Enum):
@@ -126,7 +46,7 @@ class Metadata:
     A metadata from a file (e.g. an image).
     """
 
-    def __init__(self, key, value, namespace=""):
+    def __init__(self, key: str, value: Any, namespace: str = ""):
         """
         Initialize a metadata.
 
@@ -147,7 +67,7 @@ class Metadata:
         self._metadata_type = self.infer_metadata_type()
 
     @property
-    def value(self):
+    def value(self) -> Any:
         return self._value
 
     @property
@@ -155,18 +75,21 @@ class Metadata:
         return self._key
 
     @property
-    def namespace(self):
+    def namespace(self) -> str:
         return self._namespace
 
     @property
-    def namespaced_key(self):
-        return "{}.{}".format(self.namespace, self.key) if self.namespace else self.key
+    def namespaced_key(self) -> str:
+        return f"{self.namespace}.{self.key}" if self.namespace else self.key
 
     @property
     def metadata_type(self) -> MetadataType:
         return self._metadata_type
 
-    def infer_metadata_type(self):
+    def infer_metadata_type(self) -> MetadataType:
+        """
+        Try to infer the metadata type from the metadata value.
+        """
         for mt in MetadataType:
             if type(self._value) == mt.python_type:
                 return mt
@@ -177,11 +100,11 @@ class Metadata:
                and self.value == o.value \
                and self.namespace == o.namespace
 
-    def __str__(self):
-        return "{}={} ({})".format(self.namespaced_key, str(self.value), self.metadata_type.name)
+    def __str__(self) -> str:
+        return f"{self.namespaced_key}={str(self.value)} ({self.metadata_type.name})"
 
-    def __repr__(self):
-        return "{}={} ({})".format(self.namespaced_key, str(self.value), self.metadata_type.name)
+    def __repr__(self) -> str:
+        return f"{self.namespaced_key}={str(self.value)} ({self.metadata_type.name})"
 
 
 class MetadataStore:
@@ -196,11 +119,12 @@ class MetadataStore:
         self._namedstores = dict()
 
     @staticmethod
-    def _split_namespaced_key(namespaced_key):
+    def _split_namespaced_key(namespaced_key: str) -> Tuple[str, str]:
+        """Split namespace and the rest from a key"""
         split = namespaced_key.split('.', 1)
         return ("", namespaced_key) if len(split) < 2 else split
 
-    def set(self, namespaced_key, value, namespace=None) -> None:
+    def set(self, namespaced_key: str, value: Any, namespace: Optional[str] = None) -> None:
         """
         Set a metadata in the store.
 
@@ -215,37 +139,42 @@ class MetadataStore:
             If given, prepend the namespaced_key with this namespace
         """
         if namespace:
-            namespaced_key = "{}.{}".format(namespace, namespaced_key)
+            namespaced_key = f"{namespace}.{namespaced_key}"
         namespace, key = self._split_namespaced_key(namespaced_key)
         metadata = Metadata(key, value, namespace)
         store = self._namedstores.get(metadata.namespace, dict())
         store[key] = metadata
         self._namedstores[metadata.namespace] = store
 
-    def get_namedstore(self, namespace, default=None):
+    def get_namedstore(self, namespace: str, default=None) -> dict:
+        """Get store for given namespace"""
         return self._namedstores.get(namespace.upper(), default)
 
-    def get(self, namespaced_key, default=None):
+    def get(self, namespaced_key: str, default: Any = None) -> Any:
+        """Get metadata for a given (namespaced) key"""
         namespace, key = self._split_namespaced_key(namespaced_key)
         store = self.get_namedstore(namespace)
         if store:
             return store.get(key, default)
         return default
 
-    def get_value(self, namespaced_key, default=None):
+    def get_value(self, namespaced_key: str, default: Any = None) -> Any:
+        """Get metadata value for a given (namespaced) key"""
         metadata = self.get(namespaced_key, None)
         if metadata:
             return metadata.value
         return default
 
-    def get_first_value(self, namespaced_keys, default=None):
+    def get_first_value(self, namespaced_keys: List[str], default: Any = None) -> Any:
+        """Get the first non-null metadata value in the list of metadata keys"""
         for namespaced_key in namespaced_keys:
             metadata = self.get(namespaced_key, None)
             if metadata is not None:
                 return metadata.value
         return default
 
-    def get_metadata_type(self, namespaced_key, default=None):
+    def get_metadata_type(self, namespaced_key: str, default: Any = None) -> Any:
+        """Get metadata type for a given (namespaced) key"""
         metadata = self.get(namespaced_key, None)
         if metadata:
             return metadata.metadata_type
@@ -253,7 +182,7 @@ class MetadataStore:
 
     @staticmethod
     def _flatten(d, parent_key='', sep='.'):
-        return flatten_dict(d, parent_key, sep)
+        return flatten(d, parent_key, sep)
 
     def flatten(self):
         return self._flatten(self._namedstores)
@@ -286,10 +215,15 @@ class MetadataStore:
 
 
 class _MetadataStorable:
-    def metadata_namespace(self):
+    """An interface to convert a class to a metadata store"""
+    def metadata_namespace(self) -> str:
         return ""
 
-    def to_metadata_store(self, store):
+    def to_metadata_store(self, store: MetadataStore) -> MetadataStore:
+        """
+        Insert this object content into a metadata store.
+        Object variables starting with `_` are ignored.
+        """
         for key in self.__dict__:
             if not key.startswith("_"):
                 value = getattr(self, key)
@@ -300,15 +234,23 @@ class _MetadataStorable:
                 elif issubclass(type(value), _MetadataStorable):
                     value.to_metadata_store(store)
                 elif value is not None:
-                    store.set(key, value, namespace=self.metadata_namespace())
+                    store.set(
+                        key, value,
+                        namespace=self.metadata_namespace()
+                    )
         return store
 
 
 class ImageChannel(_MetadataStorable):
+    emission_wavelength: Optional[float]
+    excitation_wavelength: Optional[float]
+    index: int
+    suggested_name: Optional[str]
+
     def __init__(
-        self, index=None, emission_wavelength=None,
-        excitation_wavelength=None, suggested_name=None,
-        color=None
+        self, index: int, emission_wavelength: Optional[float] = None,
+        excitation_wavelength: Optional[float] = None, suggested_name: Optional[str] = None,
+        color: Optional[Color] = None
     ):
         self.emission_wavelength = emission_wavelength
         self.excitation_wavelength = excitation_wavelength
@@ -316,74 +258,108 @@ class ImageChannel(_MetadataStorable):
         self.suggested_name = suggested_name
         self._color = color
 
-    def _guess_color(self):
-        # True green is "lime" in CSS
-        colors = dict(R="red", G="lime", B="blue")
-        c = colors.get(self.suggested_name, None)
+    def _infer_color(self) -> Optional[Color]:
+        """Try to infer channel color. If found, store color in `_color`."""
+        c = infer_channel_color(self.suggested_name, self.index, channel_color_list=[])
         if c:
-            c = Color(c)
+            self._color = c
         return c
 
     @property
-    def color(self):
+    def color(self) -> Optional[Color]:
         if self._color:
             return self._color
-        return self._guess_color()
+        return self._infer_color()
 
     @color.setter
-    def color(self, value):
+    def color(self, value: Color):
         self._color = value
 
     @property
-    def hex_color(self):
+    def hex_color(self) -> str:
         c = self.color
         return c.as_hex() if c else None
 
-    def metadata_namespace(self):
-        return "channel[{}]".format(self.index)
+    def metadata_namespace(self) -> str:
+        return f"channel[{self.index}]"
 
 
 class ImageObjective(_MetadataStorable):
+    nominal_magnification: Optional[float]
+    calibrated_magnification: Optional[float]
+
     def __init__(self):
         self.nominal_magnification = None
         self.calibrated_magnification = None
 
-    def metadata_namespace(self):
+    def metadata_namespace(self) -> str:
         return "objective"
 
 
 class ImageMicroscope(_MetadataStorable):
+    model: Optional[str]
+
     def __init__(self):
         self.model = None
 
-    def metadata_namespace(self):
+    def metadata_namespace(self) -> str:
         return "microscope"
 
 
 class ImageAssociated(_MetadataStorable):
-    def __init__(self, kind):
+    n_channels: Optional[int]
+    height: Optional[int]
+    width: Optional[int]
+
+    def __init__(self, kind: str):
         self.width = None
         self.height = None
         self.n_channels = None
         self._kind = kind
 
     @property
-    def exists(self):
-        return self.width is not None and self.height is not None and self.n_channels is not None
+    def exists(self) -> bool:
+        return self.width is not None and \
+               self.height is not None and \
+               self.n_channels is not None
 
-    def metadata_namespace(self):
-        return "associated.{}".format(self._kind)
+    def metadata_namespace(self) -> str:
+        return f"associated.{self._kind}"
 
 
 class ImageMetadata(_MetadataStorable):
+    """Wrapper on parsed image metadata"""
+    width: int
+    height: int
+    depth: int
+    n_channels: int
+    duration: int
+    _n_intrinsic_channels: Optional[int]
+    n_channels_per_read: int
+    n_distinct_channels: int
+    pixel_type: None  # TODO
+    significant_bits: None  # TODO
+    physical_size_x: Optional[float]
+    physical_size_y: Optional[float]
+    physical_size_z: Optional[float]
+    frame_rate: Optional[float]
+    acquisition_datetime: Optional[datetime]
+    description: Optional[str]
+    channels: List[ImageChannel]
+    objective: ImageObjective
+    microscope: ImageMicroscope
+    associated_thumb: ImageAssociated
+    associated_label: ImageAssociated
+    associated_macro: ImageAssociated
+
     def __init__(self):
         self._is_complete = False
 
-        self.width = None
-        self.height = None
-        self.depth = None
-        self.n_channels = None
-        self.duration = None
+        self.width = 1
+        self.height = 1
+        self.depth = 1
+        self.n_channels = 1
+        self.duration = 1
 
         self._n_intrinsic_channels = None
         self.n_channels_per_read = 1
@@ -410,28 +386,29 @@ class ImageMetadata(_MetadataStorable):
     def set_channel(self, channel):
         self.channels.insert(channel.index, channel)
 
-    def metadata_namespace(self):
+    def metadata_namespace(self) -> str:
         return "image"
 
     @property
-    def is_complete(self):
+    def is_complete(self) -> bool:
+        """Whether the parser tried to fill all metadata or not"""
         return self._is_complete
 
     @is_complete.setter
-    def is_complete(self, value):
+    def is_complete(self, value: bool):
         self._is_complete = value
 
     @property
-    def n_intrinsic_channels(self):
+    def n_intrinsic_channels(self) -> int:
         if self._n_intrinsic_channels is not None:
             return self._n_intrinsic_channels
         else:
             return self.n_channels
 
     @n_intrinsic_channels.setter
-    def n_intrinsic_channels(self, value):
+    def n_intrinsic_channels(self, value: int):
         self._n_intrinsic_channels = value
 
     @property
-    def n_planes(self):
+    def n_planes(self) -> int:
         return self.n_intrinsic_channels * self.depth * self.duration

@@ -13,7 +13,8 @@
 #  * limitations under the License.
 import pytest
 
-from pims.api.utils.schema_format import is_range, is_wkt, parse_range
+from pims.api.utils.annotation_parameter import is_wkt
+from pims.api.utils.range_parameter import is_range, parse_range
 
 
 def test_is_range():

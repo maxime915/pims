@@ -18,13 +18,13 @@ from starlette.responses import Response
 
 from pims.api.utils.mimetype import OutputExtension
 from pims.api.utils.models import AnnotationStyleMode, AssociatedName, Colorspace
-from pims.formats.utils.vips import np_dtype
 from pims.processing.colormaps import combine_lut, default_lut, is_rgb_colormapping
 from pims.processing.operations import (
     ApplyLutImgOp, ChannelReductionOp, ColorspaceHistOp,
     ColorspaceImgOp, DrawOnImgOp, DrawRasterOp, ExtractChannelOp, MaskRasterOp, OutputProcessor,
     RescaleHistOp, ResizeImgOp, TransparencyMaskImgOp
 )
+from pims.utils.dtypes import np_dtype
 
 
 class View:

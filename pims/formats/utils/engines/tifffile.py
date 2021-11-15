@@ -20,8 +20,9 @@ from tifffile import TiffTag, tifffile
 from pims import UNIT_REGISTRY
 from pims.formats.utils.abstract import AbstractParser
 from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_datetime
-from pims.formats.utils.pyramid import Pyramid
+from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata
+from pims.formats.utils.structures.pyramid import Pyramid
+from pims.utils.types import parse_datetime
 
 TIFF_FLAGS = (
     'geotiff',

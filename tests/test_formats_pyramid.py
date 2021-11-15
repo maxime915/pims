@@ -11,7 +11,7 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from pims.formats.utils.pyramid import Pyramid, PyramidTier
+from pims.formats.utils.structures.pyramid import Pyramid, PyramidTier
 from pims.processing.region import Region
 
 
@@ -57,8 +57,8 @@ def test_pyramid_tier_indexes():
     assert tier.ti2txty(0) == (0, 0)
     assert tier.ti2txty(31) == (3, 7)
 
-    assert tier.txty2region(0, 0) == Region(0, 0, 256, 256)
-    assert tier.txty2region(3, 7) == Region(1792, 768, 1000 - 768, 2000 - 1792)
+    assert tier.get_txty_tile(0, 0) == Region(0, 0, 256, 256)
+    assert tier.get_txty_tile(3, 7) == Region(1792, 768, 1000 - 768, 2000 - 1792)
 
-    assert tier.ti2region(0) == Region(0, 0, 256, 256)
-    assert tier.ti2region(31) == Region(1792, 768, 1000 - 768, 2000 - 1792)
+    assert tier.get_ti_tile(0) == Region(0, 0, 256, 256)
+    assert tier.get_ti_tile(31) == Region(1792, 768, 1000 - 768, 2000 - 1792)

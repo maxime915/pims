@@ -13,15 +13,15 @@
 #  * limitations under the License.
 
 import numpy as np
+from skimage import dtype_limits
+from skimage.exposure.exposure import _offset_array  # noqa
 
-from pims.formats.utils.structures.planes import PlanesInfo
 
-
-def test_plane_info():
-    pi = PlanesInfo(3, 5, 1, ['index'], [np.int])
-    pi.set(0, 0, 0, index=2)
-    assert pi.get(0, 0, 0, 'index') == 2
-    assert pi.get(0, 0, 0, 'invalid') is None
-
-    pi = PlanesInfo(3, 5, 1)
-    assert pi.get(0, 0, 0, 'invalid') is None
+def to_unsigned_int(arr: np.ndarray) -> np.ndarray:
+    """
+    Offset the array to get the lowest value at 0 if there is any negative.
+    """
+    if arr.dtype is not np.uint8 or arr.dtype is not np.uint16:
+        arr_min, arr_max = dtype_limits(arr, clip_negative=False)
+        arr, _ = _offset_array(arr, arr_min, arr_max)
+    return arr

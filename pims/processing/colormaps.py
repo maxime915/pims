@@ -19,8 +19,8 @@ from matplotlib.cm import get_cmap
 from pydantic.color import COLORS_BY_NAME
 
 from pims.api.utils.models import ColormapType
-from pims.formats.utils.vips import np_dtype
-from pims.processing.color import Color
+from pims.utils.color import Color
+from pims.utils.dtypes import np_dtype
 
 
 class Colormap(ABC):

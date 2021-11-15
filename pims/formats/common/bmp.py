@@ -21,7 +21,7 @@ from pims.formats.utils.engines.pil import (
     PillowHistogramReader, PillowParser,
     PillowSpatialConvertor, SimplePillowReader
 )
-from pims.formats.utils.metadata import parse_float
+from pims.utils.types import parse_float
 
 log = logging.getLogger("pims.formats")
 

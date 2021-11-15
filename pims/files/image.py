@@ -15,7 +15,7 @@ from functools import cached_property
 
 from pims.api.exceptions import NoMatchingFormatProblem
 from pims.files.file import Path
-from pims.formats.utils.pyramid import normalized_pyramid
+from pims.formats.utils.structures.pyramid import normalized_pyramid
 
 
 class Image(Path):

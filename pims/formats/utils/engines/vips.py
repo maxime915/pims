@@ -25,12 +25,13 @@ from pims.formats.utils.abstract import (
     NullHistogramReader
 )
 from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.metadata import ImageChannel, ImageMetadata
-from pims.formats.utils.vips import (
-    dtype_to_bits, vips_format_to_dtype,
+from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata
+from pims.processing.adapters import vips_to_numpy
+from pims.utils.dtypes import dtype_to_bits
+from pims.utils.vips import (
+    vips_format_to_dtype,
     vips_interpretation_to_mode
 )
-from pims.processing.adapters import vips_to_numpy
 
 log = logging.getLogger("pims.formats")
 

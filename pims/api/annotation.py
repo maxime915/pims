@@ -20,8 +20,8 @@ from pims.api.exceptions import check_representation_existence
 from pims.api.utils.annotation_parameter import get_annotation_region, parse_annotations
 from pims.api.utils.header import ImageAnnotationRequestHeaders, add_image_size_limit_header
 from pims.api.utils.image_parameter import (
-    check_level_validity, check_zoom_validity, ensure_list,
-    get_window_output_dimensions, safeguard_output_dimensions
+    check_level_validity, check_zoom_validity, get_window_output_dimensions,
+    safeguard_output_dimensions
 )
 from pims.api.utils.mimetype import (
     OutputExtension, PROCESSING_MIMETYPES,
@@ -37,8 +37,9 @@ from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.processing.annotations import annotation_crop_affine_matrix
-from pims.processing.color import WHITE
 from pims.processing.image_response import MaskResponse
+from pims.utils.color import WHITE
+from pims.utils.iterables import ensure_list
 
 router = APIRouter()
 api_tags = ['Annotations']
