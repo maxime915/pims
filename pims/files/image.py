@@ -16,6 +16,9 @@ from __future__ import annotations
 from functools import cached_property
 from typing import List, Optional, TYPE_CHECKING, Tuple
 
+import numpy as np
+from pint import Quantity
+
 from pims.api.exceptions import NoMatchingFormatProblem
 from pims.files.file import Path
 from pims.formats.utils.factories import FormatFactory
@@ -64,7 +67,7 @@ class Image(Path):
         return self._format.main_imd.width
 
     @property
-    def physical_size_x(self) -> Optional[float]:
+    def physical_size_x(self) -> Optional[Quantity]:
         return self._format.full_imd.physical_size_x
 
     @property
@@ -72,7 +75,7 @@ class Image(Path):
         return self._format.main_imd.height
 
     @property
-    def physical_size_y(self) -> Optional[float]:
+    def physical_size_y(self) -> Optional[Quantity]:
         return self._format.full_imd.physical_size_y
 
     @property
@@ -84,7 +87,7 @@ class Image(Path):
         return self._format.main_imd.depth
 
     @property
-    def physical_size_z(self) -> Optional[float]:
+    def physical_size_z(self) -> Optional[Quantity]:
         return self._format.full_imd.physical_size_z
 
     @property
@@ -92,7 +95,7 @@ class Image(Path):
         return self._format.main_imd.duration
 
     @property
-    def frame_rate(self) -> Optional[float]:
+    def frame_rate(self) -> Optional[Quantity]:
         return self._format.main_imd.frame_rate
 
     @property
@@ -116,7 +119,7 @@ class Image(Path):
         return self._format.main_imd.n_planes
 
     @property
-    def pixel_type(self):  # TODO
+    def pixel_type(self) -> np.dtype:
         return self._format.main_imd.pixel_type
 
     @property

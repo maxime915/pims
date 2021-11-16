@@ -11,11 +11,22 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
+
 import json
 import subprocess
+from abc import ABC
+from typing import TYPE_CHECKING
+
+from pims.formats.utils.parser import AbstractParser
+from pims.formats.utils.structures.metadata import MetadataStore
+
+if TYPE_CHECKING:
+    from pims.files.file import Path
 
 
-def is_valid_key(key):
+def is_valid_key(key: str) -> bool:
+    """Check if an exiftool key is valid and interesting."""
     # https://exiftool.org/TagNames/Extra.html
     file_keys = (
         'FileName', 'Directory', 'FileSize', 'FileModifyDate', 'FileAccessDate',
@@ -32,7 +43,11 @@ def is_valid_key(key):
     return True
 
 
-def read_raw_metadata(path):
+def read_raw_metadata(path: Path) -> dict:
+    """
+    Extract raw metadata using Exiftool.
+    WARNING: this function is SLOW! Only to be used for raw metadata!
+    """
     bytes_info = "use -b option to extract)"
 
     exiftool_exc = "exiftool"
@@ -52,3 +67,14 @@ def read_raw_metadata(path):
         }
 
     return dict()
+
+
+class ExifToolParser(AbstractParser, ABC):
+    def parse_raw_metadata(self) -> MetadataStore:
+        store = super().parse_raw_metadata()
+
+        raw = read_raw_metadata(self.format.path)
+        for key, value in raw.items():
+            store.set(key, value)
+
+        return store

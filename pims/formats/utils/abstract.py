@@ -15,14 +15,16 @@ from __future__ import annotations
 
 import logging
 import re
-from abc import ABC, abstractmethod
+from abc import ABC
 from functools import cached_property
-from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type, Union
+from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type
 
-from pims.api.exceptions import BadRequestException
-from pims.api.utils.models import HistogramType
 from pims.cache import SimpleDataCache
-from pims.formats.utils.histogram import HistogramReaderInterface
+from pims.formats.utils.checker import AbstractChecker
+from pims.formats.utils.convertor import AbstractConvertor
+from pims.formats.utils.histogram import AbstractHistogramReader
+from pims.formats.utils.parser import AbstractParser
+from pims.formats.utils.reader import AbstractReader
 from pims.formats.utils.structures.annotations import ParsedMetadataAnnotation
 from pims.formats.utils.structures.metadata import ImageMetadata, MetadataStore
 from pims.formats.utils.structures.planes import PlanesInfo
@@ -49,243 +51,6 @@ class CachedDataPath(SimpleDataCache):
     def __init__(self, path: Path):
         super().__init__()
         self.path = path
-
-
-class AbstractChecker(ABC):
-    """
-    Base checker. All format checkers must extend this class.
-    """
-
-    @classmethod
-    @abstractmethod
-    def match(cls, pathlike: Union[Path, CachedDataPath]) -> bool:
-        """Whether the path is in this format or not."""
-        pass
-
-
-class AbstractParser(ABC):
-    """
-    Base parser. All format parsers must extend this class.
-    """
-
-    def __init__(self, format: AbstractFormat):
-        self.format = format
-
-    @abstractmethod
-    def parse_main_metadata(self) -> ImageMetadata:
-        """
-        Parse minimal set of required metadata for any PIMS request.
-        This method must be as fast as possible.
-
-        Main metadata that must be parsed by this method are:
-        * width
-        * height
-        * depth
-        * duration
-        * n_channels
-        * n_channels_per_read
-        * n_distinct_channels
-        * pixel_type
-        * significant_bits
-        * for every channel:
-            * index
-            * color (can be None)
-            * suggested_name (can be None, used to infer color)
-
-        It is allowed to parse more metadata in this method if it does not
-        introduce overhead.
-        """
-        pass
-
-    @abstractmethod
-    def parse_known_metadata(self) -> ImageMetadata:
-        """
-        Parse all known standardised metadata. In practice, this method
-        completes the image metadata object partially filled by
-        `parse_main_metadata`.
-
-        This method should set `imd.is_complete` to True before returning `imd`.
-        """
-        return self.format.main_imd
-
-    @abstractmethod
-    def parse_raw_metadata(self) -> MetadataStore:
-        """
-        Parse all raw metadata in a generic store. Raw metadata are not
-        standardised and highly depend on underlying parsed format.
-
-        Raw metadata MUST NOT be used by PIMS for processing.
-        This method is expected to be SLOW.
-        """
-        return MetadataStore()
-
-    def parse_pyramid(self) -> Pyramid:
-        """
-        Parse pyramid (and tiers) from format metadata. In all cases, the
-        pyramid must have at least one tier (i.e. the image at full resolution).
-
-        Arbitrary information useful for readers can be stored for each tier
-        (e.g.: a TIFF page index).
-
-        This method must be as fast as possible.
-        """
-        imd = self.format.main_imd
-        p = Pyramid()
-        p.insert_tier(imd.width, imd.height, (imd.width, imd.height))
-        return p
-
-    def parse_planes(self) -> PlanesInfo:
-        """
-        Parse plane information from format metadata. In all cases, there is
-        at least one plane (0, 0, 0).
-
-        Arbitrary information useful for readers can be stored for each plane
-        (e.g.: a TIFF page index).
-
-        This method must be as fast as possible.
-        """
-        imd = self.format.main_imd
-        pi = PlanesInfo(imd.n_channels, imd.depth, imd.duration)
-        return pi
-
-    def parse_annotations(self) -> List[ParsedMetadataAnnotation]:
-        """
-        Parse annotations stored in image format metadata, together with
-        optional terms and properties.
-        """
-        return []
-
-
-class AbstractReader(ABC):
-    """
-    Base reader. All format readers must extend this class.
-    """
-    def __init__(self, format: AbstractFormat):
-        self.format = format
-
-    def read_thumb(
-        self, out_width: int, out_height: int, precomputed: bool = None,
-        c: Optional[int] = None, z: Optional[int] = None, t: Optional[int] = None
-    ) -> object:
-        """
-        Get the nearest image thumbnail to asked output dimensions.
-
-        Output dimensions are best-effort, that is, depending on the format
-        and the underlying library used to extract pixels from the image format,
-        it may or may not be possible to return a thumbnail at the asked output
-        dimensions. The implementation SHOULD try to return the nearest possible
-        thumbnail using format capabilities (such as shrink on load features)
-        but MUST NOT perform any resize operation after read (in that case, an
-        optimized resize operator is used in post-processing).
-
-        Parameters
-        ----------
-        out_width
-            The asked output width (best-effort)
-        out_height
-            The asked output height (best-effort)
-        precomputed
-            Whether use precomputed thumbnail stored in the file if available.
-            Retrieving precomputed thumbnail should be faster than computing
-            the thumbnail from scratch (for multi-giga pixels images), but there
-            is no guarantee the precomputed thumb has the same quality.
-        c
-            The asked channel index (best-effort).
-            If not set, all channels are considered.
-        z
-            The asked z-slice index. Image formats without Z-stack support
-            can safely ignore this parameter. Behavior is undetermined if `z`
-            is not set for an image format with Z-stack support.
-        t
-            The asked timepoint index. Image formats without time support
-            can safely ignore this parameter. Behavior is undetermined if `t`
-            is not set for an image format with time support.
-
-        Returns
-        -------
-
-        """
-        raise NotImplementedError()
-
-    def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
-        raise NotImplementedError()
-
-    def read_tile(self, tile, c=None, z=None, t=None):
-        raise NotImplementedError()
-
-
-class AbstractHistogramReader(HistogramReaderInterface, ABC):
-    def __init__(self, format):
-        self.format = format
-
-
-class NullHistogramReader(AbstractHistogramReader):
-    # @abstractmethod
-    def type(self) -> HistogramType:
-        return HistogramType.FAST
-
-    # @abstractmethod
-    def image_bounds(self):
-        log.warning(
-            f"[orange]Impossible {self.format.path} to compute "
-            f"image histogram bounds. Default values used."
-        )
-        return 0, 2 ** self.format.main_imd.significant_bits
-
-    # @abstractmethod
-    def image_histogram(self):
-        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
-
-    # @abstractmethod
-    def channels_bounds(self):
-        log.warning(
-            f"[orange]Impossible {self.format.path} to compute "
-            f"channels histogram bounds. Default values used."
-        )
-        return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_channels
-
-    # @abstractmethod
-    def channel_bounds(self, c):
-        log.warning(
-            f"[orange]Impossible {self.format.path} to compute "
-            f"channel histogram bounds. Default values used."
-        )
-        return 0, 2 ** self.format.main_imd.significant_bits
-
-    # @abstractmethod
-    def channel_histogram(self, c):
-        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
-
-    # @abstractmethod
-    def planes_bounds(self):
-        log.warning(
-            f"[orange]Impossible {self.format.path} to compute "
-            f"plane histogram bounds. Default values used."
-        )
-        return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_planes
-
-    # @abstractmethod
-    def plane_bounds(self, c, z, t):
-        log.warning(
-            f"[orange]Impossible {self.format.path} to compute "
-            f"plane histogram bounds. Default values used."
-        )
-        return 0, 2 ** self.format.main_imd.significant_bits
-
-    # @abstractmethod
-    def plane_histogram(self, c, z, t):
-        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
-
-
-class AbstractConvertor(ABC):
-    def __init__(self, source):
-        self.source = source
-
-    def convert(self, dest_path):
-        raise NotImplementedError()
-
-    def conversion_format(self):
-        raise NotImplementedError()
 
 
 class AbstractFormat(ABC, SimpleDataCache):
@@ -445,7 +210,7 @@ class AbstractFormat(ABC, SimpleDataCache):
         """
         return True
 
-    def conversion_format(self) -> Optional[AbstractFormat]:
+    def conversion_format(self) -> Optional[Type[AbstractFormat]]:
         """
         Get the format to which the image in this format will be converted,
         if needed.
@@ -529,5 +294,3 @@ class AbstractFormat(ABC, SimpleDataCache):
     @cached_property
     def main_path(self):  # TODO: seem to be useless
         return self.path
-
-

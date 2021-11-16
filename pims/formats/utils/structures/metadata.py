@@ -14,7 +14,10 @@
 
 from datetime import date, datetime, time
 from enum import Enum
-from typing import AbstractSet, Any, List, Optional, Tuple, ValuesView
+from typing import AbstractSet, Any, List, Optional, Sequence, Tuple, ValuesView
+
+import numpy as np
+from pint import Quantity
 
 from pims.utils.color import Color, infer_channel_color
 from pims.utils.dict import flatten
@@ -165,7 +168,7 @@ class MetadataStore:
             return metadata.value
         return default
 
-    def get_first_value(self, namespaced_keys: List[str], default: Any = None) -> Any:
+    def get_first_value(self, namespaced_keys: Sequence[str], default: Any = None) -> Any:
         """Get the first non-null metadata value in the list of metadata keys"""
         for namespaced_key in namespaced_keys:
             metadata = self.get(namespaced_key, None)
@@ -242,8 +245,8 @@ class _MetadataStorable:
 
 
 class ImageChannel(_MetadataStorable):
-    emission_wavelength: Optional[float]
-    excitation_wavelength: Optional[float]
+    emission_wavelength: Optional[Quantity]
+    excitation_wavelength: Optional[Quantity]
     index: int
     suggested_name: Optional[str]
 
@@ -337,12 +340,12 @@ class ImageMetadata(_MetadataStorable):
     _n_intrinsic_channels: Optional[int]
     n_channels_per_read: int
     n_distinct_channels: int
-    pixel_type: None  # TODO
-    significant_bits: None  # TODO
-    physical_size_x: Optional[float]
-    physical_size_y: Optional[float]
-    physical_size_z: Optional[float]
-    frame_rate: Optional[float]
+    pixel_type: np.dtype
+    significant_bits: int
+    physical_size_x: Optional[Quantity]
+    physical_size_y: Optional[Quantity]
+    physical_size_z: Optional[Quantity]
+    frame_rate: Optional[Quantity]
     acquisition_datetime: Optional[datetime]
     description: Optional[str]
     channels: List[ImageChannel]
@@ -365,8 +368,8 @@ class ImageMetadata(_MetadataStorable):
         self.n_channels_per_read = 1
         self.n_distinct_channels = 1
 
-        self.pixel_type = None
-        self.significant_bits = None
+        self.pixel_type = np.dtype('uint8')
+        self.significant_bits = 8
 
         self.physical_size_x = None
         self.physical_size_y = None

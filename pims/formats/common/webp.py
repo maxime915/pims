@@ -13,14 +13,19 @@
 #  * limitations under the License.
 import logging
 from functools import cached_property
+from typing import Optional
+
+from pint import Quantity
 
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
+from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import (
     VipsHistogramReader, VipsParser, VipsReader,
     VipsSpatialConvertor
 )
+from pims.formats.utils.structures.metadata import ImageMetadata
 from pims.utils.types import parse_datetime, parse_float
 
 log = logging.getLogger("pims.formats")
@@ -28,7 +33,7 @@ log = logging.getLogger("pims.formats")
 
 class WebPChecker(SignatureChecker):
     @classmethod
-    def match(cls, pathlike):
+    def match(cls, pathlike: CachedDataPath) -> bool:
         buf = cls.get_signature(pathlike)
         return (len(buf) > 13 and
                 buf[0] == 0x52 and
@@ -44,7 +49,7 @@ class WebPChecker(SignatureChecker):
 
 
 class WebPParser(VipsParser):
-    def parse_main_metadata(self):
+    def parse_main_metadata(self) -> ImageMetadata:
         imd = super().parse_main_metadata()
         # Do not count alpha channel if any
         if imd.n_channels in (2, 4):
@@ -52,7 +57,7 @@ class WebPParser(VipsParser):
             imd.n_channels_per_read = imd.n_channels
         return imd
 
-    def parse_known_metadata(self):
+    def parse_known_metadata(self) -> ImageMetadata:
         imd = super().parse_known_metadata()
         raw = self.format.raw_metadata
         # Tags reference: https://exiftool.org/TagNames/RIFF.html
@@ -87,7 +92,9 @@ class WebPParser(VipsParser):
         return imd
 
     @staticmethod
-    def parse_physical_size(physical_size, unit):
+    def parse_physical_size(
+        physical_size: Optional[str], unit: Optional[str]
+    ) -> Optional[Quantity]:
         supported_units = ("meters", "inches", "cm")
         if physical_size is not None and parse_float(
                 physical_size
@@ -122,7 +129,7 @@ class WebPFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        return not (imd.width < 1024 and imd.height < 1024)
+        return imd.width > 1024 or imd.height > 1024
 
     @property
     def media_type(self):

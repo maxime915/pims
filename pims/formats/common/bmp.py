@@ -13,6 +13,9 @@
 #  * limitations under the License.
 import logging
 from functools import cached_property
+from typing import Optional
+
+from pint import Quantity
 
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
@@ -21,6 +24,7 @@ from pims.formats.utils.engines.pil import (
     PillowHistogramReader, PillowParser,
     PillowSpatialConvertor, SimplePillowReader
 )
+from pims.formats.utils.structures.metadata import ImageMetadata
 from pims.utils.types import parse_float
 
 log = logging.getLogger("pims.formats")
@@ -39,7 +43,7 @@ class BMPChecker(SignatureChecker):
 class BMPParser(PillowParser):
     FORMAT_SLUG = 'BMP'
 
-    def parse_known_metadata(self):
+    def parse_known_metadata(self) -> ImageMetadata:
         # Tags reference: https://exiftool.org/TagNames/BMP.html
         imd = super().parse_known_metadata()
         raw = self.format.raw_metadata
@@ -52,7 +56,7 @@ class BMPParser(PillowParser):
         return imd
 
     @staticmethod
-    def parse_physical_size(physical_size):
+    def parse_physical_size(physical_size: Optional[str]) -> Optional[Quantity]:
         if physical_size is not None and parse_float(physical_size) not in (None, 0.0):
             return 1 / parse_float(physical_size) * UNIT_REGISTRY("meters")
         return None
@@ -97,7 +101,7 @@ class BMPFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        return not (imd.width < 1024 and imd.height < 1024)
+        return imd.width > 1024 or imd.height > 1024
 
     @property
     def media_type(self):

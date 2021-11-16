@@ -12,16 +12,20 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
+from typing import Optional
 
 import numpy as np
 from PIL import Image as PILImage
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.api.utils.models import HistogramType
-from pims.formats.utils.abstract import AbstractParser, AbstractReader, NullHistogramReader
+from pims.formats import AbstractFormat
+from pims.formats.utils.engines.exiftool import ExifToolParser
 from pims.formats.utils.engines.vips import VipsSpatialConvertor
-from pims.formats.utils.exiftool import read_raw_metadata
-from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata
+from pims.formats.utils.histogram import NullHistogramReader
+from pims.formats.utils.parser import AbstractParser
+from pims.formats.utils.reader import AbstractReader
+from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.processing.adapters import pil_to_numpy, pil_to_vips
 from pims.processing.region import Region
 from pims.utils.math import get_rationed_resizing
@@ -29,15 +33,17 @@ from pims.utils.math import get_rationed_resizing
 log = logging.getLogger("pims.formats")
 
 
-def cached_pillow_file(format, pil_format_slug):
+def cached_pillow_file(
+    format: AbstractFormat, pil_format_slug: Optional[str]
+) -> PILImage:
     slugs = [pil_format_slug] if pil_format_slug else None
     return format.get_cached('_pil', PILImage.open, format.path, formats=slugs)
 
 
-class PillowParser(AbstractParser):
+class PillowParser(ExifToolParser, AbstractParser):
     FORMAT_SLUG = None
 
-    def parse_main_metadata(self):
+    def parse_main_metadata(self) -> ImageMetadata:
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
 
         imd = ImageMetadata()
@@ -58,45 +64,46 @@ class PillowParser(AbstractParser):
                 imd.set_channel(ImageChannel(index=i, suggested_name=name))
         else:
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#bmp
-            log.error("{}: Mode {} is not supported.".format(self.format.path, mode))
+            log.error(f"{self.format.path}: Mode {mode} is not supported.")
             raise MetadataParsingProblem(self.format.path)
         imd.n_channels_per_read = imd.n_channels
 
         return imd
 
-    def parse_known_metadata(self):
+    def parse_known_metadata(self) -> ImageMetadata:
         imd = super().parse_known_metadata()
         return imd
 
-    def parse_raw_metadata(self):
-        store = super().parse_raw_metadata()
-
-        raw = read_raw_metadata(self.format.path)
-        for key, value in raw.items():
-            store.set(key, value)
-
+    def parse_raw_metadata(self) -> MetadataStore:
+        store = super().parse_raw_metadata()  # Get from ExifToolParser
         return store
 
 
 class SimplePillowReader(AbstractReader):
     FORMAT_SLUG = None
 
-    def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
+    def read_thumb(
+        self, out_width, out_height, precomputed=None,
+        c=None, z=None, t=None
+    ):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
 
-        # We do not use Pillow resize() method as resize will be better handled by vips in
-        # response generation.
+        # We do not use Pillow resize() method as resize will be better handled
+        # by vips in response generation.
         return self.read_window(
-            Region(0, 0, image.width, image.height), out_width, out_height, c, z, t
+            Region(0, 0, image.width, image.height),
+            out_width, out_height, c, z, t
         )
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
         image = cached_pillow_file(self.format, self.FORMAT_SLUG)
         region = region.scale_to_tier(self.format.pyramid.base)
-        return image.crop((region.left, region.top, region.right, region.bottom))
+        return image.crop(
+            (region.left, region.top, region.right, region.bottom)
+        )
 
     def read_tile(self, tile, c=None, z=None, t=None):
-        return self.read_window(tile, tile.width, tile.height, c, z, t)
+        return self.read_window(tile, int(tile.width), int(tile.height), c, z, t)
 
 
 class PillowHistogramReader(NullHistogramReader):
@@ -118,7 +125,9 @@ class PillowHistogramReader(NullHistogramReader):
                 h, w = get_rationed_resizing(1024, image.height, image.width)
             return image.resize((w, h))
 
-        return self.format.get_cached('_pillow_hist_image', _thumb, self.format, self.FORMAT_SLUG)
+        return self.format.get_cached(
+            '_pillow_hist_image', _thumb, self.format, self.FORMAT_SLUG
+        )
 
     @property
     def use_pillow(self):

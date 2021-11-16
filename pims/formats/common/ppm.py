@@ -13,14 +13,19 @@
 #  * limitations under the License.
 import logging
 from functools import cached_property
+from typing import Optional
+
+from pint import Quantity
 
 from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
+from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import (
     VipsHistogramReader, VipsParser, VipsReader,
     VipsSpatialConvertor
 )
+from pims.formats.utils.structures.metadata import ImageMetadata
 from pims.utils.types import parse_float
 
 log = logging.getLogger("pims.formats")
@@ -28,7 +33,7 @@ log = logging.getLogger("pims.formats")
 
 class PPMChecker(SignatureChecker):
     @classmethod
-    def match(cls, pathlike):
+    def match(cls, pathlike: CachedDataPath) -> bool:
         buf = cls.get_signature(pathlike)
         return (len(buf) > 1 and
                 buf[0] == 0x50 and
@@ -36,10 +41,7 @@ class PPMChecker(SignatureChecker):
 
 
 class PPMParser(VipsParser):
-    def parse_main_metadata(self):
-        return super().parse_main_metadata()
-
-    def parse_known_metadata(self):
+    def parse_known_metadata(self) -> ImageMetadata:
         imd = super().parse_known_metadata()
         raw = self.format.raw_metadata
 
@@ -52,7 +54,7 @@ class PPMParser(VipsParser):
         return imd
 
     @staticmethod
-    def parse_physical_size(physical_size):
+    def parse_physical_size(physical_size: Optional[str]) -> Optional[Quantity]:
         if physical_size is not None and parse_float(physical_size) not in (None, 0.0):
             return 1 / parse_float(physical_size) * UNIT_REGISTRY("meters")
         return None
@@ -89,7 +91,7 @@ class PPMFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        return not (imd.width < 1024 and imd.height < 1024)
+        return imd.width > 1024 or imd.height > 1024
 
     @property
     def media_type(self):

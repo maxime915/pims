@@ -17,7 +17,7 @@ import hashlib
 import inspect
 from enum import Enum
 from functools import partial, wraps
-from typing import Any, Callable, Dict, KeysView, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, KeysView, List, Optional, Type, Union
 
 import aioredis
 from fastapi_cache import Coder, FastAPICache, default_key_builder
@@ -289,7 +289,7 @@ class SimpleDataCache:
         if force or key not in self._cache:
             self._cache[key] = value
 
-    def cache_func(self, key: str, delayed_func: Callable, *args: Tuple, **kwargs: Dict):
+    def cache_func(self, key: str, delayed_func: Callable, *args, **kwargs):
         """
         Cache a function result at some key in the cache.
 
@@ -308,7 +308,7 @@ class SimpleDataCache:
 
     def get_cached(
         self, key: str, delayed_func_or_value: Union[Callable, Any],
-        *args: Tuple, **kwargs: Dict
+        *args, **kwargs
     ) -> Any:
         """
         Get cache content at given key, otherwise cache new content for this key.

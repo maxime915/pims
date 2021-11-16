@@ -11,17 +11,52 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
 
-from pims.formats import FORMATS
-from pims.formats.utils.abstract import CachedDataPath
+from typing import Optional, TYPE_CHECKING
+
+from pims.formats import FORMATS, FormatsByExt
+from pims.formats.utils.abstract import AbstractFormat, CachedDataPath
+
+if TYPE_CHECKING:
+    from pims.files.file import Path
 
 
 class FormatFactory:
-    def __init__(self, match_on_ext=False, formats=FORMATS):
+    def __init__(self, match_on_ext: bool = False, formats: FormatsByExt = None):
+        """
+        Initialize factory of image formats.
+
+        Parameters
+        ----------
+        match_on_ext
+            Whether to identify the format on PIMS extension basis.
+            Extensions are defined by PIMS and does not correspond to regular
+            image file extensions. Should be set to True to identify an
+            already PIMS-processed image format.
+        formats
+            The list of formats to test in this factory.
+        """
+        if formats is None:
+            formats = FORMATS
         self.formats = formats
         self.match_on_ext = match_on_ext
 
-    def match(self, path):
+    def match(self, path: Path) -> Optional[AbstractFormat]:
+        """
+        Identify a matching format for given path.
+
+        Parameters
+        ----------
+        path
+            The filepath to try against format checkers.
+
+        Returns
+        -------
+        format
+            An image format initialized for the given filepath, if there is
+            a match. None otherwise.
+        """
         if self.match_on_ext:
             format = self.formats.get(path.extension)
             if format:
@@ -35,12 +70,20 @@ class FormatFactory:
 
 
 class SpatialReadableFormatFactory(FormatFactory):
-    def __init__(self, match_on_ext=False):
-        formats = {e: f for e, f in FORMATS.items() if f.is_spatial()}  # and f.is_readable()]
+    def __init__(self, match_on_ext: bool = False):
+        formats = {
+            e: f
+            for e, f in FORMATS.items()
+            if f.is_spatial() and f.is_readable()
+        }
         super(SpatialReadableFormatFactory, self).__init__(match_on_ext, formats)
 
 
 class SpectralReadableFormatFactory(FormatFactory):
-    def __init__(self, match_on_ext=False):
-        formats = {e: f for e, f in FORMATS.items() if f.is_spectral()}  # and f.is_readable()]
+    def __init__(self, match_on_ext: bool = False):
+        formats = {
+            e: f
+            for e, f in FORMATS.items()
+            if f.is_spectral() and f.is_readable()
+        }
         super(SpectralReadableFormatFactory, self).__init__(match_on_ext, formats)
