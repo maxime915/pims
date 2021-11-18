@@ -151,7 +151,7 @@ class Archive(Path):
                     bad_path.unlink(missing_ok=True)
 
     @classmethod
-    def from_path(cls, path) -> Optional[ArchiveFormat]:
+    def from_path(cls, path):
         try:
             return cls(path)
         except NoMatchingFormatProblem:

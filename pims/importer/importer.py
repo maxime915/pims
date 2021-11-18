@@ -227,7 +227,7 @@ class FileImporter:
             # Check original image integrity
             self.notify(ImportEventType.START_INTEGRITY_CHECK, self.original_path)
             self.original = Image(self.original_path, format=format)
-            errors = self.original.check_integrity(metadata=True)
+            errors = self.original.check_integrity(check_metadata=True)
             if len(errors) > 0:
                 self.notify(
                     ImportEventType.ERROR_INTEGRITY_CHECK, self.original_path,
@@ -300,7 +300,7 @@ class FileImporter:
 
             # Check spatial image integrity
             self.notify(ImportEventType.START_INTEGRITY_CHECK, self.spatial_path)
-            errors = self.spatial.check_integrity(metadata=True)
+            errors = self.spatial.check_integrity(check_metadata=True)
             if len(errors) > 0:
                 self.notify(
                     ImportEventType.ERROR_INTEGRITY_CHECK, self.spatial_path,
