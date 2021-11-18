@@ -41,3 +41,14 @@ def get_rationed_resizing(
     resized = resized if type(resized) == int else round(ratio * length)
     other_resized = round(ratio * other_length)
     return resized, other_resized
+
+
+def max_intensity(bitdepth: int, count: bool = False):
+    """
+    Get maximum intensity for a given bitdepth.
+    To get number of possible intensities, set `count` to True.
+    """
+    mi = 2 ** bitdepth
+    if not count:
+        mi -= 1
+    return mi

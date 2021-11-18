@@ -29,7 +29,7 @@ logger = logging.getLogger("pims.app")
 logger.info("[green bold]Filters initialization...")
 
 
-class AbstractFilter(ABC, ImageOp):
+class AbstractFilter(ImageOp, ABC):
     def __init__(self, histogram=None):
         super(AbstractFilter, self).__init__()
 

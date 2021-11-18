@@ -21,7 +21,7 @@ def dtype_to_bits(dtype) -> int:
     return dtype.type(0).nbytes * 8
 
 
-def bits_to_dtype(bits: int) -> str:
+def bits_to_str_dtype(bits: int) -> str:
     """
     Get the required (string) datatype for data encoded on given bits.
 
@@ -57,4 +57,4 @@ def np_dtype(bits: int) -> np.dtype:
     dtype
         Numpy datatype for given `bits`
     """
-    return np.dtype(bits_to_dtype(bits))
+    return np.dtype(bits_to_str_dtype(bits))

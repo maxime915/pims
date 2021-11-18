@@ -13,18 +13,26 @@
 #  * limitations under the License.
 from collections.abc import MutableSequence
 from math import floor
+from typing import List, Optional, Tuple
 
 import numpy as np
 from shapely.geometry import GeometryCollection, LineString, Point
+from shapely.geometry.base import BaseGeometry
 
 from pims.api.utils.models import PointCross
 from pims.processing.region import Region
+from pims.utils.color import Color
 
 
 class ParsedAnnotation:
+    """
+    An input annotation
+    """
+
     def __init__(
-        self, geometry, fill_color=None, stroke_color=None, stroke_width=None,
-        point_envelope_length=1
+        self, geometry: BaseGeometry, fill_color: Optional[Color] = None,
+        stroke_color: Optional[Color] = None, stroke_width: int = None,
+        point_envelope_length: float = 1
     ):
         self.geometry = geometry
         self.fill_color = fill_color
@@ -35,33 +43,40 @@ class ParsedAnnotation:
         if self.geometry.type == 'Point' and point_envelope_length is not None:
             pt = self.geometry
             length = point_envelope_length / 2
-            self.custom_bounds = (pt.x - length, pt.y - length, pt.x + length, pt.y + length)
+            self.custom_bounds = (
+                pt.x - length, pt.y - length,  # noqa
+                pt.x + length, pt.y + length  # noqa
+            )
 
     @property
-    def is_fill_grayscale(self):
+    def is_fill_grayscale(self) -> bool:
         return self.fill_color.is_grayscale() if self.fill_color else True
 
     @property
-    def is_stroke_grayscale(self):
+    def is_stroke_grayscale(self) -> bool:
         return self.stroke_color.is_grayscale() if self.stroke_color else True
 
     @property
-    def is_grayscale(self):
+    def is_grayscale(self) -> bool:
         return self.is_fill_grayscale and self.is_stroke_grayscale
 
     @property
-    def bounds(self):
-        """Returns a (minx, miny, maxx, maxy) tuple (float values) that bounds the object.
+    def bounds(self) -> Tuple[float, float, float, float]:
+        """
+        Returns a (minx, miny, maxx, maxy) tuple (float values)
+        that bounds the object.
         Ported from Shapely.
         """
-        return self.custom_bounds if self.custom_bounds else self.geometry.bounds
+        return self.custom_bounds \
+            if self.custom_bounds \
+            else self.geometry.bounds
 
     @property
-    def region(self):
+    def region(self) -> Region:
         left, top, right, bottom = self.bounds
         return Region(top, left, right - left, bottom - top)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return isinstance(other, ParsedAnnotation) \
                and self.geometry.equals(other.geometry) \
                and self.fill_color == other.fill_color \
@@ -73,7 +88,7 @@ class ParsedAnnotations(MutableSequence):
     def __init__(self):
         self._data = []
 
-    def insert(self, index, value):
+    def insert(self, index: int, value: ParsedAnnotation):
         if not isinstance(value, ParsedAnnotation):
             raise TypeError(
                 "Value of type {} not allowed in {}.".format(
@@ -101,19 +116,19 @@ class ParsedAnnotations(MutableSequence):
         del self._data[index]
 
     @property
-    def is_fill_grayscale(self):
+    def is_fill_grayscale(self) -> bool:
         return all(annot.is_fill_grayscale for annot in self._data)
 
     @property
-    def is_stroke_grayscale(self):
+    def is_stroke_grayscale(self) -> bool:
         return all(annot.is_stroke_grayscale for annot in self._data)
 
     @property
-    def is_grayscale(self):
+    def is_grayscale(self) -> bool:
         return all(annot.is_grayscale for annot in self._data)
 
     @property
-    def bounds(self):
+    def bounds(self) -> Tuple[float, float, float, float]:
         """
         Returns a (minx, miny, maxx, maxy) tuple (float values)
         that bounds the whole collection.
@@ -124,12 +139,19 @@ class ParsedAnnotations(MutableSequence):
         return mini[0], mini[1], maxi[2], maxi[3]
 
     @property
-    def region(self):
+    def region(self) -> Region:
         left, top, right, bottom = self.bounds
         return Region(top, left, right - left, bottom - top)
 
 
-def annotation_crop_affine_matrix(annot_region, in_region, out_width, out_height):
+def annotation_crop_affine_matrix(
+    annot_region: Region, in_region: Region, out_width: int, out_height: int
+) -> List[int]:
+    """
+    Compute affine transformation matrix to apply to annotations in the given
+    region.
+    """
+
     rx = out_width / in_region.true_width
     ry = out_height / in_region.true_height
     tx = -annot_region.left * rx + (annot_region.left - in_region.true_left) * rx
@@ -137,7 +159,9 @@ def annotation_crop_affine_matrix(annot_region, in_region, out_width, out_height
     return [rx, 0, 0, ry, tx, ty]
 
 
-def contour(geom, point_style=PointCross.CROSS):
+def contour(
+    geom: BaseGeometry, point_style: PointCross = PointCross.CROSS
+) -> BaseGeometry:
     """
     Extract geometry's contour.
 
@@ -171,8 +195,10 @@ def contour(geom, point_style=PointCross.CROSS):
             right_line = LineString([(x + 3, y), (x + 10, y)])
             top_line = LineString([(x, y - 10), (x, y - 3)])
             bottom_line = LineString([(x, y + 3), (x, y + 10)])
-            return GeometryCollection([circle, left_line, right_line, top_line, bottom_line])
-        elif point_style == 'CROSS':
+            return GeometryCollection(
+                [circle, left_line, right_line, top_line, bottom_line]
+            )
+        elif point_style == PointCross.CROSS:
             horizontal = LineString([(x - 10, y), (x + 10, y)])
             vertical = LineString([(x, y - 10), (x, y + 10)])
             return GeometryCollection([horizontal, vertical])
@@ -182,7 +208,10 @@ def contour(geom, point_style=PointCross.CROSS):
         return geom.boundary
 
 
-def stretch_contour(geom, width=1):
+def stretch_contour(geom: BaseGeometry, width: float = 1) -> BaseGeometry:
+    """
+    Stretch geometry (expected to be a geometry contour) to given width scale.
+    """
     if width > 1 and geom:
         buf = 1 + (width - 1) / 10
         return geom.buffer(buf)

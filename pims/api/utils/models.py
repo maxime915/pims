@@ -182,25 +182,6 @@ class ExistingColormapId(BaseModel):
     )
 
 
-class ColormapType(str, Enum):
-    """
-    * `SEQUENTIAL` - change in lightness and often saturation of color
-    incrementally, often using a single hue should be used for representing
-    information that has ordering.
-    * `DIVERGING` - change in lightness and possibly saturation of two different
-    colors that meet in the middle at an unsaturated color; should be used when
-    the image has a critical middle value.
-    * `QUALITATIVE` - often are miscellaneous colors; should be used to
-    represent information which does not have ordering or relationships
-    """
-    PERCEPTUAL_UNIFORM = "PERCEPTUAL_UNIFORM"
-    SEQUENTIAL = "SEQUENTIAL"
-    DIVERGING = "DIVERGING"
-    QUALITATIVE = "QUALITATIVE"
-    CYCLIC = "CYCLIC"
-    MISCELLANEOUS = "MISCELLANEOUS"
-
-
 class ImageIn(BaseModel):
     channels: Optional[SingleChannelIndex] = None
     z_slices: Optional[SingleZSliceIndex] = None
