@@ -657,7 +657,7 @@ class TileRequest(ImageInDisplay):
                 TargetLevelTileIndex, TargetLevelTileCoordinates]
 
 
-class ChannelReduction(Enum):
+class ChannelReduction(str, Enum):
     """
     Reduction function used to merge selected channels.
     """
@@ -668,7 +668,7 @@ class ChannelReduction(Enum):
     MAX = 'MAX'
 
 
-class GenericReduction(Enum):
+class GenericReduction(str, Enum):
     MIN = 'MIN'
     AVG = 'AVG'
     MAX = 'MAX'

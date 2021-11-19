@@ -102,7 +102,7 @@ class FileInfo(BaseModel):
             return SingleFileInfo(**info)
 
 
-class PixelType(Enum):
+class PixelType(str, Enum):
     """
     The type used to store each pixel in the image.
     """
@@ -455,7 +455,7 @@ class AssociatedInfo(BaseModel):
         ]
 
 
-class MetadataTypeEnum(Enum):
+class MetadataTypeEnum(str, Enum):
     """
     The metadata value type
     """

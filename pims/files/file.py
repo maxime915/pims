@@ -42,7 +42,7 @@ HISTOGRAM_STEM = "histogram"
 _NUM_SIGNATURE_BYTES = 262
 
 
-class FileRole(Enum):
+class FileRole(str, Enum):
     """
     The role of a file. The same image data can be represented in different ways, in different
     files, each of them serving different purposes.
@@ -74,7 +74,7 @@ class FileRole(Enum):
         return role
 
 
-class FileType(Enum):
+class FileType(str, Enum):
     """
     The type of the file.
     * `SINGLE` - The file only has one image.
