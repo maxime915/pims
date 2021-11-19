@@ -14,8 +14,8 @@
 
 from shapely.geometry import Point, box
 
-from pims.api.utils.annotation_parameter import get_annotation_region, parse_annotation
-from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations
+from pims.api.utils.annotation_parameter import parse_annotation
+from pims.processing.annotations import ParsedAnnotation, ParsedAnnotations, get_annotation_region
 from pims.processing.region import Region
 from pims.utils.color import Color
 

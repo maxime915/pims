@@ -14,7 +14,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 from matplotlib.cm import get_cmap
@@ -225,6 +225,8 @@ mpl_cmaps[ColormapType.MISCELLANEOUS] = [
     'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix', 'brg',
     'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
     'gist_ncar']
+
+ColormapsByName = Dict[str, Colormap]
 
 # Non-trivial colormaps
 COLORMAPS = {}

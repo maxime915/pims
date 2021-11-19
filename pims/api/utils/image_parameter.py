@@ -11,59 +11,75 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
+
 from copy import copy
+from typing import Iterable, List, Optional, Sized, TYPE_CHECKING, Tuple, Type, Union
 
 from pims.api.exceptions import (
     BadRequestException, ColormapNotFoundProblem,
     FilterNotFoundProblem, TooLargeOutputProblem
 )
 from pims.api.utils.header import SafeMode
-from pims.api.utils.models import BitDepthEnum, ColormapEnum, IntensitySelectionEnum, TierIndexType
+from pims.api.utils.models import (
+    BitDepthEnum, ChannelReduction, ColormapEnum, ColormapId, GenericReduction,
+    IntensitySelectionEnum, TierIndexType
+)
 from pims.api.utils.range_parameter import is_range, parse_range
-from pims.processing.colormaps import ColorColormap
+from pims.files.image import Image
+from pims.formats.utils.structures.metadata import ImageChannel
+from pims.formats.utils.structures.pyramid import Pyramid
+from pims.processing.colormaps import ColorColormap, Colormap, ColormapsByName
 from pims.processing.region import Region
 from pims.utils.color import Color
 from pims.utils.iterables import ensure_list
 from pims.utils.math import get_rationed_resizing
 
+if TYPE_CHECKING:
+    from pims.filters import AbstractFilter, FiltersById
+
+
+Size = Union[int, float]
+
 
 def get_thumb_output_dimensions(
-    in_image, height=None, width=None, length=None,
-    zoom=None, level=None, allow_upscaling=True
-):
+    in_image: Image, height: Optional[Size] = None, width: Optional[Size] = None,
+    length: Optional[Size] = None, zoom: Optional[int] = None, level: Optional[int] = None,
+    allow_upscaling: bool = True
+) -> Tuple[int, int]:
     """
     Get output dimensions according, by order of precedence, either height, either width,
     either the largest image length, either zoom or level and such that ratio is preserved.
 
     Parameters
     ----------
-    in_image : Image
+    in_image
         Input image with the aspect ratio to preserve.
-    height : int or float (optional)
+    height
         Output height absolute size (int) or ratio (float).
         Ignored if `level` or `zoom` is not None.
-    width : int or float (optional)
+    width
         Output width absolute size (int) or ratio (float).
         Ignored if `level` or `zoom` or `height` is not None.
-    length : int or float (optional)
+    length
         Output largest side absolute size (int) or ratio (float).
         Ignored if `level` or `zoom` or `width` or `height` is not None.
-    zoom : int (optional)
+    zoom
         Output zoom tier to consider as size.
         The zoom tier is expected to be valid for the input image.
         Ignored if `level` is not None.
-    level : int (optional)
+    level
         Output level tier to consider as size.
         The level tier is expected to be valid for the input image.
-    allow_upscaling : bool (default: True)
+    allow_upscaling
         Whether the output thumb size can be greater than the input image size.
         If upscaling is not allowed, maximum thumb size is the input image size.
 
     Returns
     -------
-    out_width : int
+    out_width
         Output width preserving aspect ratio.
-    out_height : int
+    out_height
         Output height preserving aspect ratio.
 
     Raises
@@ -99,40 +115,41 @@ def get_thumb_output_dimensions(
 
 
 def get_window_output_dimensions(
-    in_image, region, height=None, width=None, length=None, zoom=None, level=None
-):
+    in_image: Image, region: Region, height: Optional[Size] = None, width: Optional[Size] = None,
+    length: Optional[Size] = None, zoom: Optional[int] = None, level: Optional[int] = None
+) -> Tuple[int, int]:
     """
     Get output dimensions according, by order of precedence, either height, either width,
     either the largest image length, either zoom or level and such that region ratio is preserved.
 
     Parameters
     ----------
-    in_image : Image
+    in_image
         Input image from which region is extracted.
-    region : Region
+    region
         Input region with aspect ratio to preserve.
-    height : int or float (optional)
+    height
         Output height absolute size (int) or ratio (float).
         Ignored if `level` or `zoom` is not None.
-    width : int or float (optional)
+    width
         Output width absolute size (int) or ratio (float).
         Ignored if `level` or `zoom` or `height` is not None.
-    length : int or float (optional)
+    length
         Output largest side absolute size (int) or ratio (float).
         Ignored if `level` or `zoom` or `width` or `height` is not None.
-    zoom : int (optional)
+    zoom
         Output zoom tier to consider as size.
         The zoom tier is expected to be valid for the input image.
         Ignored if `level` is not None.
-    level : int (optional)
+    level
         Output level tier to consider as size.
         The level tier is expected to be valid for the input image.
 
     Returns
     -------
-    out_width : int
+    out_width
         Output width preserving aspect ratio.
-    out_height : int
+    out_height
         Output height preserving aspect ratio.
 
     Raises
@@ -152,18 +169,20 @@ def get_window_output_dimensions(
             )
     elif height is not None:
         out_height, out_width = get_rationed_resizing(
-            height, region.true_height, region.true_width
+            height, int(region.true_height), int(region.true_width)
         )
     elif width is not None:
-        out_width, out_height = get_rationed_resizing(width, region.true_width, region.true_height)
+        out_width, out_height = get_rationed_resizing(
+            width, int(region.true_width), int(region.true_height)
+        )
     elif length is not None:
         if region.true_width > region.true_height:
             out_width, out_height = get_rationed_resizing(
-                length, region.true_width, region.true_height
+                length, int(region.true_width), int(region.true_height)
             )
         else:
             out_height, out_width = get_rationed_resizing(
-                length, region.true_height, region.true_width
+                length, int(region.true_height), int(region.true_width)
             )
     else:
         raise BadRequestException(
@@ -174,7 +193,9 @@ def get_window_output_dimensions(
     return out_width, out_height
 
 
-def safeguard_output_dimensions(safe_mode, max_size, width, height):
+def safeguard_output_dimensions(
+    safe_mode: SafeMode, max_size: int, width: int, height: int
+) -> Tuple[int, int]:
     """
     Safeguard image output dimensions according to safe mode and maximum
     admissible size.
@@ -217,29 +238,30 @@ def safeguard_output_dimensions(safe_mode, max_size, width, height):
 
 
 def parse_region(
-    in_image, top, left, width, height, tier_idx=0, tier_type=TierIndexType.LEVEL, silent_oob=False
-):
+    in_image: Image, top: Size, left: Size, width: Size, height: Size, tier_idx: int = 0,
+    tier_type: TierIndexType = TierIndexType.LEVEL, silent_oob: bool = False
+) -> Region:
     """
     Parse a region
 
     Parameters
     ----------
-    in_image : Image
+    in_image
         Image in which region is extracted
-    top : int or float
-    left : int or float
-    width : int or float
-    height : int or float
-    tier_idx : int
+    top
+    left
+    width
+    height
+    tier_idx
         Tier index to use as reference
-    tier_type: TierIndexType
+    tier_type
         Type of tier index
-    silent_oob: bool (default: false)
+    silent_oob
         Whether out of bounds region should raise an error or not.
 
     Returns
     -------
-    region: Region
+    region
         The parsed region
 
     Raises
@@ -270,27 +292,29 @@ def parse_region(
         clipped = copy(region).clip(ref_tier.width, ref_tier.height)
         if clipped != region:
             raise BadRequestException(
-                detail="Some coordinates of region {} are out of bounds.".format(region)
+                detail=f"Some coordinates of region {region} are out of bounds."
             )
 
     return region
 
 
-def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
+def parse_planes(
+    planes_to_parse: List[int], n_planes: int, default: Union[int, List[int]] = 0,
+    name: str = 'planes'
+) -> List[int]:
     """
     Get a set of planes from a list of plane indexes and ranges.
 
     Parameters
     ----------
-    planes_to_parse : list
+    planes_to_parse
         List of plane indexes and ranges to parse.
-    n_planes : int
+    n_planes
         Number of planes. It is the maximum output set size.
-    default : int or list
-        Plane index or list of plane indexes used as default set if `planes_to_parse` is empty
-        (or None).
+    default
+        Plane index or list of plane indexes used as default set if `planes_to_parse` is empty.
         Default is returned as a set but default values are expected to be in acceptable range.
-    name : str
+    name
         Name of plane dimension (e.g. 'channels', 'z_slices', ...) used for exception messages.
 
     Returns
@@ -316,7 +340,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
             plane_indexes += [*parse_range(plane, 0, n_planes)]
         else:
             raise BadRequestException(
-                detail='{} is not a valid index or range for {}.'.format(plane, name)
+                detail=f'{plane} is not a valid index or range for {name}.'
             )
     plane_set = sorted(set([idx for idx in plane_indexes if 0 <= idx < n_planes]))
     if len(plane_set) == 0:
@@ -324,7 +348,7 @@ def parse_planes(planes_to_parse, n_planes, default=0, name='planes'):
     return plane_set
 
 
-def get_channel_indexes(image, planes):
+def get_channel_indexes(image: Image, planes: List[int]) -> List[int]:
     """
     Image channels used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
@@ -334,7 +358,7 @@ def get_channel_indexes(image, planes):
     return parse_planes(planes, image.n_channels, default, 'channels')
 
 
-def get_zslice_indexes(image, planes):
+def get_zslice_indexes(image: Image, planes: List[int]) -> List[int]:
     """
     Image focal planes used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
@@ -344,7 +368,7 @@ def get_zslice_indexes(image, planes):
     return parse_planes(planes, image.depth, default, 'z_slices')
 
 
-def get_timepoint_indexes(image, planes):
+def get_timepoint_indexes(image: Image, planes: List[int]) -> List[int]:
     """
     Image timepoints used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
@@ -354,18 +378,21 @@ def get_timepoint_indexes(image, planes):
     return parse_planes(planes, image.duration, default, 'timepoints')
 
 
-def check_reduction_validity(planes, reduction, name='planes'):
+def check_reduction_validity(
+    planes: List[int], reduction: Optional[Union[GenericReduction, ChannelReduction]],
+    name: str = 'planes'
+):
     """
     Verify if a reduction function is given when needed i.e. when
     the set of planes has a size > 1.
 
     Parameters
     ----------
-    planes : set
+    planes
         Set of planes
-    reduction : str or None
+    reduction
         Reduction function to reduce the set of planes.
-    name : str
+    name
         Name of plane dimension (e.g. 'channels', 'z_slices', ...) used for exception messages.
 
     Raises
@@ -374,22 +401,25 @@ def check_reduction_validity(planes, reduction, name='planes'):
         If no reduction function is given while needed.
     """
     if len(planes) > 1 and reduction is None:
-        raise BadRequestException(detail='A reduction is required for {}'.format(name))
+        raise BadRequestException(detail=f'A reduction is required for {name}')
 
 
-def check_array_size(iterable, allowed, nullable=True, name=None):
+def check_array_size(
+    iterable: Optional[Sized], allowed: List[int], nullable: bool = True,
+    name: Optional[str] = None
+):
     """
     Verify an iterable has an allowed size or, optionally, is empty.
 
     Parameters
     ----------
-    iterable : iterable
+    iterable
         Iterable which the size has to be verified.
-    allowed : list of int
+    allowed
         Allowed iterable sizes
-    nullable : boolean
+    nullable
         Whether no iterable at all is accepted or not.
-    name : str (optional)
+    name
         Iterable name for exception messages.
 
     Raises
@@ -402,47 +432,50 @@ def check_array_size(iterable, allowed, nullable=True, name=None):
     if iterable is None:
         if not nullable:
             name = 'A parameter' if not name else name
-            raise BadRequestException(detail="{} is unset while it is not allowed.".format(name))
+            raise BadRequestException(detail=f"{name} is unset while it is not allowed.")
         return
 
     if not len(iterable) in allowed:
         name = 'A parameter' if not name else name
         allowed_str = ', '.join([str(i) for i in allowed])
         raise BadRequestException(
-            "{} has a size of {} while only "
-            "these sizes are allowed: {}".format(name, len(iterable), allowed_str)
+            f'{name} has a size of {len(iterable)} '
+            f'while only these sizes are allowed: {allowed_str}'
         )
 
 
+Intensities = List[Union[int, str]]
+
+
 def parse_intensity_bounds(
-    image, out_channels, out_zslices, out_timepoints,
-    min_intensities, max_intensities, allow_none=False
-):
+    image: Image, out_channels: List[int], out_zslices: List[int], out_timepoints: List[int],
+    min_intensities: Intensities, max_intensities: Intensities, allow_none: bool = False
+) -> Tuple[List[int], List[int]]:
     """
     Parse intensity parameters according to a specific image.
 
     Parameters
     ----------
-    image : Image
+    image
         Input image used to determine minimum and maximum admissible values per channel.
-    out_channels: list of int
+    out_channels
         Channel indexes expected in the output, used for intensities.
-    out_zslices : list of int
+    out_zslices
         Z slices indexes expected in the output, used for AUTO_PLANE and STRETCH_PLANE.
-    out_timepoints : list of int
+    out_timepoints
         Timepoint indexes expected in the output, used for AUTO_PLANE ans STRETCH_PLANE.
-    min_intensities : list of int (optional) or str (optional)
+    min_intensities
         List of minimum intensities. See API spec for admissible string constants.
-    max_intensities : list of int (optional) or str (optional)
+    max_intensities
         List of maximum intensities. See API spec for admissible string constants.
-    allow_none : bool
+    allow_none
         Whether the NONE string constant is admissible or not.
 
     Returns
     -------
-    parsed_min_intensities : list of int
+    parsed_min_intensities
         Parsed min intensities. List size is the number of channels in the image output.
-    parsed_max_intensities : list of int
+    parsed_max_intensities
         Parsed max intensities. List size is the number of channels in the image output.
     """
     bit_depth = image.significant_bits
@@ -508,7 +541,7 @@ def parse_intensity_bounds(
     return min_intensities, max_intensities
 
 
-def check_level_validity(pyramid, level):
+def check_level_validity(pyramid: Pyramid, level: Optional[int]):
     """ Check the level tier exists in the image pyramid.
 
     Parameters
@@ -525,10 +558,10 @@ def check_level_validity(pyramid, level):
     """
 
     if level is not None and not 0 <= level <= pyramid.max_level:
-        raise BadRequestException(detail="Level tier {} does not exist.".format(level))
+        raise BadRequestException(detail=f"Level tier {level} does not exist.")
 
 
-def check_zoom_validity(pyramid, zoom):
+def check_zoom_validity(pyramid: Pyramid, zoom: Optional[int]):
     """Check the zoom tier exists in the image pyramid.
 
     Parameters
@@ -545,22 +578,22 @@ def check_zoom_validity(pyramid, zoom):
     """
 
     if zoom is not None and not 0 <= zoom <= pyramid.max_zoom:
-        raise BadRequestException(detail="Zoom tier {} does not exist.".format(zoom))
+        raise BadRequestException(detail=f"Zoom tier {zoom} does not exist.")
 
 
-def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
+def check_tileindex_validity(pyramid: Pyramid, ti: int, tier_idx: int, tier_type: TierIndexType):
     """
     Check the tile index exists in the image pyramid at given tier.
 
     Parameters
     ----------
-    pyramid : Pyramid
+    pyramid
         Image pyramid
-    ti : int
+    ti
         Tile index to check
-    tier_idx : int
+    tier_idx
         Tier index in the pyramid expected to contain the tile
-    tier_type : str (`LEVEL` or `ZOOM`)
+    tier_type
         Tier type
 
     Raises
@@ -576,24 +609,26 @@ def check_tileindex_validity(pyramid, ti, tier_idx, tier_type):
         ref_tier = pyramid.get_tier_at_level(tier_idx)
 
     if not 0 <= ti < ref_tier.max_ti:
-        raise BadRequestException("Tile index {} is invalid for tier {}.".format(ti, ref_tier))
+        raise BadRequestException(f"Tile index {ti} is invalid for tier {ref_tier}.")
 
 
-def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
+def check_tilecoord_validity(
+    pyramid: Pyramid, tx: int, ty: int, tier_idx: int, tier_type: TierIndexType
+):
     """
     Check the tile index exists in the image pyramid at given tier.
 
     Parameters
     ----------
-    pyramid : Pyramid
+    pyramid
         Image pyramid
-    tx : int
+    tx
         Tile coordinate along X axis to check
-    ty : int
+    ty
         Tile coordinate along Y axis to check
-    tier_idx : int
+    tier_idx
         Tier index in the pyramid expected to contain the tile
-    tier_type : str (`LEVEL` or `ZOOM`)
+    tier_type
         Tier type
 
     Raises
@@ -610,20 +645,22 @@ def check_tilecoord_validity(pyramid, tx, ty, tier_idx, tier_type):
 
     if not 0 <= tx < ref_tier.max_tx:
         raise BadRequestException(
-            "Tile coordinate {} along X axis is invalid for tier {}.".format(tx, ref_tier)
+            f"Tile coordinate {tx} along X axis is invalid for tier {ref_tier}."
         )
 
     if not 0 <= ty < ref_tier.max_ty:
         raise BadRequestException(
-            "Tile coordinate {} along Y axis is invalid for tier {}.".format(ty, ref_tier)
+            f"Tile coordinate {ty} along Y axis is invalid for tier {ref_tier}."
         )
 
 
-def parse_bitdepth(in_image, bits):
+def parse_bitdepth(in_image: Image, bits: Union[int, BitDepthEnum]) -> int:
     return in_image.significant_bits if bits == BitDepthEnum.AUTO else bits
 
 
-def parse_filter_ids(filter_ids, existing_filters):
+def parse_filter_ids(
+    filter_ids: Iterable[str], existing_filters: FiltersById
+) -> List[Type[AbstractFilter]]:
     filters = []
     for filter_id in filter_ids:
         try:
@@ -633,7 +670,10 @@ def parse_filter_ids(filter_ids, existing_filters):
     return filters
 
 
-def parse_colormap_ids(colormap_ids, existing_colormaps, channel_idxs, img_channels):
+def parse_colormap_ids(
+    colormap_ids: List[ColormapId], existing_colormaps: ColormapsByName, channel_idxs: List[int],
+    img_channels: List[ImageChannel]
+) -> List[Union[Colormap, None]]:
     colormaps = []
     if len(colormap_ids) == 0:
         colormap_ids = [ColormapEnum.DEFAULT] * len(channel_idxs)
@@ -649,7 +689,9 @@ def parse_colormap_ids(colormap_ids, existing_colormaps, channel_idxs, img_chann
     return colormaps
 
 
-def parse_colormap_id(colormap_id, existing_colormaps, default_color):
+def parse_colormap_id(
+    colormap_id: ColormapId, existing_colormaps: ColormapsByName, default_color: Optional[Color]
+) -> Optional[Colormap]:
     """
     Parse a colormap ID to a valid colormap (or None).
 
@@ -659,16 +701,16 @@ def parse_colormap_id(colormap_id, existing_colormaps, default_color):
 
     Parameters
     ----------
-    colormap_id : ColormapId
-    existing_colormaps : dict
+    colormap_id
+    existing_colormaps
         Existing colormaps
-    default_color : Color (optional)
+    default_color
         The color for a monotonic linear colormap if the colormap ID is
         `ColormapEnum.DEFAULT`.
 
     Returns
     -------
-    colormap : Colormap or None
+    colormap
         The parsed colormap. If None, no colormap has to be applied.
 
     Raises
@@ -687,7 +729,7 @@ def parse_colormap_id(colormap_id, existing_colormaps, default_color):
             return existing_colormaps.get('!WHITE')
         colormap_id = '!' + str(default_color).upper()
     else:
-        colormap_id = colormap_id.upper()
+        colormap_id = colormap_id.upper()  # noqa
 
     colormap = existing_colormaps.get(str(colormap_id))
     if colormap is None:

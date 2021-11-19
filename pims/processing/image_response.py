@@ -13,7 +13,7 @@
 #  * limitations under the License.
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Type
 
 import numpy as np
 from starlette.responses import Response
@@ -149,7 +149,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         out_format: OutputExtension, out_width: int, out_height: int,
         out_bitdepth: int, c_reduction: ChannelReduction,
         z_reduction: GenericReduction, t_reduction: GenericReduction,
-        gammas: List[float], filters: List[AbstractFilter],
+        gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
         max_intensities: List[int], log: bool,
         colorspace: Colorspace = Colorspace.AUTO, **kwargs
@@ -461,7 +461,7 @@ class ThumbnailResponse(ProcessedView):
         in_timepoints: List[int], out_format: OutputExtension, out_width: int,
         out_height: int, c_reduction: ChannelReduction, z_reduction: GenericReduction,
         t_reduction: GenericReduction, gammas: List[float],
-        filters: List[AbstractFilter], colormaps: List[Colormap],
+        filters: List[Type[AbstractFilter]], colormaps: List[Colormap],
         min_intensities: List[int], max_intensities: List[int], log: bool,
         use_precomputed: bool, **kwargs
     ):
@@ -487,7 +487,7 @@ class ResizedResponse(ProcessedView):
         in_timepoints: List[int], out_format: OutputExtension, out_width: int,
         out_height: int, c_reduction: ChannelReduction,
         z_reduction: GenericReduction, t_reduction: GenericReduction,
-        gammas: List[float], filters: List[AbstractFilter],
+        gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
         max_intensities: List[int], log: bool, out_bitdepth: int,
         colorspace: Colorspace, **kwargs
@@ -511,7 +511,7 @@ class WindowResponse(ProcessedView):
         in_timepoints: List[int], region: Region, out_format: OutputExtension,
         out_width: int, out_height: int, c_reduction: ChannelReduction,
         z_reduction: GenericReduction, t_reduction: GenericReduction,
-        gammas: List[float], filters: List[AbstractFilter],
+        gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
         max_intensities: List[int], log: bool, out_bitdepth: int,
         colorspace: Colorspace, annotations: Optional[ParsedAnnotations] = None,
@@ -587,7 +587,7 @@ class TileResponse(ProcessedView):
         in_timepoints: List[int], tile_region: Tile, out_format: OutputExtension,
         out_width: int, out_height: int, c_reduction: ChannelReduction,
         z_reduction: GenericReduction, t_reduction: GenericReduction,
-        gammas: List[float], filters: List[AbstractFilter],
+        gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
         max_intensities: List[int], log: bool, **kwargs
     ):

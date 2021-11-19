@@ -12,7 +12,8 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import re
-from collections import Iterable, OrderedDict
+import typing
+from collections import OrderedDict
 from enum import Enum
 from functools import cached_property
 from typing import List, Optional, Tuple
@@ -29,8 +30,8 @@ class OutputExtension(str, Enum):
     WEBP = ".webp"
 
 
-SupportedMimeTypes = OrderedDict[str, OutputExtension]
-SupportedExtensions = OrderedDict[OutputExtension, str]
+SupportedMimeTypes = typing.OrderedDict[str, OutputExtension]
+SupportedExtensions = typing.OrderedDict[OutputExtension, str]
 
 
 mimetype_from_extension = {
@@ -145,7 +146,7 @@ def parse_accept_header(header: str) -> List[AcceptableType]:
     return sorted(mime_types, reverse=True)
 
 
-def get_best_mimetype(header: str, available_types: Iterable[str]) -> Optional[str]:
+def get_best_mimetype(header: str, available_types: List[str]) -> Optional[str]:
     """
     Find the best mime type to respond to a request with,
     from an ``Accept`` header and list of response mime types
@@ -191,7 +192,7 @@ def get_output_format(
     if extension and extension in mimetype_from_extension:
         response_mimetype = mimetype_from_extension.get(extension)
     else:
-        response_mimetype = get_best_mimetype(accept_header, supported.keys())
+        response_mimetype = get_best_mimetype(accept_header, list(supported.keys()))
 
     output_format = supported.get(response_mimetype)
     if output_format:

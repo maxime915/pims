@@ -20,6 +20,7 @@ from shapely.geometry import GeometryCollection, LineString, Point
 from shapely.geometry.base import BaseGeometry
 
 from pims.api.utils.models import PointCross
+from pims.files.image import Image
 from pims.processing.region import Region
 from pims.utils.color import Color
 
@@ -216,3 +217,63 @@ def stretch_contour(geom: BaseGeometry, width: float = 1) -> BaseGeometry:
         buf = 1 + (width - 1) / 10
         return geom.buffer(buf)
     return geom
+
+
+def get_annotation_region(
+    in_image: Image, annots: ParsedAnnotations, context_factor: float = 1.0,
+    try_square: bool = False
+) -> Region:
+    """
+    Get the region describing the rectangular envelope of all
+    annotations multiplied by an optional context factor.
+
+    Parameters
+    ----------
+    in_image
+        Image in which region is extracted.
+    annots
+        List of parsed annotations
+    context_factor
+        Context factor
+    try_square
+        Try to adapt region's width or height to have a square region.
+    Returns
+    -------
+    Region
+    """
+
+    # All computation are done in non normalized float.
+    minx, miny, maxx, maxy = annots.bounds
+    left = minx
+    top = miny
+    width = maxx - minx
+    height = maxy - miny
+    if context_factor and context_factor != 1.0:
+        left -= width * (context_factor - 1) / 2.0
+        top -= height * (context_factor - 1) / 2.0
+        width *= context_factor
+        height *= context_factor
+
+    if try_square:
+        if width < height:
+            delta = height - width
+            left -= delta / 2
+            width += delta
+        elif height < width:
+            delta = width - height
+            top -= delta / 2
+            height += delta
+
+    width = min(width, in_image.width)
+    if left < 0:
+        left = 0
+    else:
+        left = min(left, in_image.width - width)
+
+    height = min(height, in_image.height)
+    if top < 0:
+        top = 0
+    else:
+        top = min(top, in_image.height - height)
+
+    return Region(top, left, width, height)

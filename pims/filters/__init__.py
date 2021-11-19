@@ -18,6 +18,7 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from inspect import isabstract, isclass
 from pkgutil import iter_modules
+from typing import Dict, Type
 
 from pims.processing.operations import ImageOp
 
@@ -172,6 +173,9 @@ def _get_all_filters():
         filters.extend(_find_filters_in_module(module_name))
 
     return filters
+
+
+FiltersById = Dict[str, Type[AbstractFilter]]
 
 
 FILTER_PLUGINS = _discover_filter_plugins()

@@ -11,7 +11,9 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from typing import Any
+from typing import Any, List, TypeVar, Union
+
+T = TypeVar('T')
 
 
 def split_tuple(tuple_: Any, index: int) -> Any:
@@ -50,18 +52,18 @@ def find_first_available_int(values, mini=0, maxi=100) -> int:
     raise ValueError("There is no available integer.")
 
 
-def ensure_list(value: Any) -> list:
+def ensure_list(value: Union[List[T], T]) -> List[T]:
     """
     Ensure it is a list.
 
     Parameters
     ----------
-    value : any
+    value
         Value to convert as a list
 
     Returns
     -------
-    list
+    transformed
         The value converted as a list if it is not already the case.
     """
     if value is not None:

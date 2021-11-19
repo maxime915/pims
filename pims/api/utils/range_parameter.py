@@ -11,17 +11,19 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from typing import Any
+
 from pims.utils.types import is_int
 
 
-def is_range(value):
+def is_range(value: Any) -> bool:
     """
     Whether a value is a PIMS range or not.
     Valid range examples: ":", "2:", ":2", "2:4"
 
     Parameters
     ----------
-    value : str
+    value
         Value expected to be formatted as a range.
 
     Returns
@@ -35,18 +37,18 @@ def is_range(value):
     return len(split) == 2 and all([bound == '' or is_int(bound) for bound in split])
 
 
-def parse_range(pims_range, mini, maxi):
+def parse_range(pims_range: Any, mini: int, maxi: int) -> range:
     """
     Cast PIMS range to a Python range. Implicit low and high bounds
     are replace by `mini` and `maxi` respectively if necessary.
 
     Parameters
     ----------
-    pims_range : str
+    pims_range
         PIMS range to convert.
-    mini : int
+    mini
         Value replacing implicit low bound.
-    maxi : int
+    maxi
         Value replacing implicit high bound.
 
     Returns
