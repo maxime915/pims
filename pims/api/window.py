@@ -31,7 +31,10 @@ from pims.api.utils.mimetype import (
     OutputExtension, VISUALISATION_MIMETYPES,
     extension_path_parameter, get_output_format
 )
-from pims.api.utils.models import AnnotationStyleMode, TierIndexType, WindowRequest
+from pims.api.utils.models import (
+    AnnotationStyleMode, ChannelReduction, TierIndexType,
+    WindowRequest
+)
 from pims.api.utils.parameter import imagepath_parameter
 from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
@@ -94,7 +97,7 @@ def _show_window(
     extension,
     headers,
     config: Settings,
-    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
+    colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)

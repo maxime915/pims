@@ -28,7 +28,7 @@ from pims.api.utils.mimetype import (
     extension_path_parameter, get_output_format
 )
 from pims.api.utils.models import (
-    ImageOpsDisplayQueryParams, ImageOutDisplayQueryParams,
+    ChannelReduction, ImageOpsDisplayQueryParams, ImageOutDisplayQueryParams,
     PlaneSelectionQueryParams, ThumbnailRequest
 )
 from pims.api.utils.parameter import imagepath_parameter
@@ -112,7 +112,7 @@ def _show_thumb(
     extension,
     headers,
     config: Settings,
-    colormaps, c_reduction="ADD", z_reduction=None, t_reduction=None
+    colormaps, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)

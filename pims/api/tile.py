@@ -30,7 +30,7 @@ from pims.api.utils.mimetype import (
     extension_path_parameter, get_output_format
 )
 from pims.api.utils.models import (
-    Colorspace, ImageOpsDisplayQueryParams,
+    ChannelReduction, Colorspace, ImageOpsDisplayQueryParams,
     PlaneSelectionQueryParams, TargetLevel, TargetZoom, TargetZoomTileCoordinates,
     TargetZoomTileIndex, TierIndexType, TileIndex, TileRequest, TileX, TileY
 )
@@ -114,7 +114,7 @@ def _show_tile(
     channels, z_slices, timepoints,
     min_intensities, max_intensities, filters, gammas, log,
     extension, headers, config,
-    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None
+    colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)

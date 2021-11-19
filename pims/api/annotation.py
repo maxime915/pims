@@ -29,7 +29,7 @@ from pims.api.utils.mimetype import (
 )
 from pims.api.utils.models import (
     AnnotationCropRequest, AnnotationDrawingRequest,
-    AnnotationMaskRequest, AnnotationStyleMode, Colorspace
+    AnnotationMaskRequest, AnnotationStyleMode, ChannelReduction, Colorspace
 )
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.window import _show_window
@@ -165,7 +165,7 @@ async def _show_crop(
     min_intensities, max_intensities, filters, gammas,
     bits, colorspace,
     extension, headers, config,
-    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None,
+    colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None,
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
@@ -234,7 +234,7 @@ async def _show_drawing(
     channels, z_slices, timepoints,
     min_intensities, max_intensities, filters, gammas, log,
     extension, headers, config,
-    colormaps=None, c_reduction="ADD", z_reduction=None, t_reduction=None,
+    colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None,
 ):
     in_image = path.get_spatial()
     check_representation_existence(in_image)
