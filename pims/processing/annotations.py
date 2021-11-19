@@ -13,7 +13,7 @@
 #  * limitations under the License.
 from collections.abc import MutableSequence
 from math import floor
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from shapely.geometry import GeometryCollection, LineString, Point
@@ -146,7 +146,7 @@ class ParsedAnnotations(MutableSequence):
 
 def annotation_crop_affine_matrix(
     annot_region: Region, in_region: Region, out_width: int, out_height: int
-) -> List[int]:
+) -> np.ndarray:
     """
     Compute affine transformation matrix to apply to annotations in the given
     region.
@@ -156,7 +156,7 @@ def annotation_crop_affine_matrix(
     ry = out_height / in_region.true_height
     tx = -annot_region.left * rx + (annot_region.left - in_region.true_left) * rx
     ty = -annot_region.top * ry + (annot_region.top - in_region.true_top) * ry
-    return [rx, 0, 0, ry, tx, ty]
+    return np.asarray([rx, 0, 0, ry, tx, ty])
 
 
 def contour(
