@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field, conint
 from starlette import status
 
 from pims.api.exceptions import BadRequestException, check_representation_existence
-from pims.api.utils.image_parameter import (
+from pims.api.utils.input_parameter import (
     get_channel_indexes, get_timepoint_indexes,
     get_zslice_indexes
 )

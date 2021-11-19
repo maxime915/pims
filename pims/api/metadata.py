@@ -22,11 +22,14 @@ from starlette.responses import Response
 
 from pims.api.exceptions import NoAppropriateRepresentationProblem, check_representation_existence
 from pims.api.utils.header import ImageRequestHeaders, add_image_size_limit_header
-from pims.api.utils.image_parameter import get_thumb_output_dimensions, safeguard_output_dimensions
 from pims.api.utils.mimetype import OutputExtension, VISUALISATION_MIMETYPES, get_output_format
 from pims.api.utils.models import (
     AssociatedName, CollectionSize, FormatId,
     ImageOutDisplayQueryParams, ZoomOrLevel
+)
+from pims.api.utils.output_parameter import (
+    get_thumb_output_dimensions,
+    safeguard_output_dimensions
 )
 from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, path2filepath
 from pims.api.utils.response import convert_quantity, response_list

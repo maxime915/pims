@@ -19,10 +19,6 @@ from starlette.responses import Response
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.annotation_parameter import parse_annotations
 from pims.api.utils.header import ImageAnnotationRequestHeaders, add_image_size_limit_header
-from pims.api.utils.image_parameter import (
-    check_level_validity, check_zoom_validity, get_window_output_dimensions,
-    safeguard_output_dimensions
-)
 from pims.api.utils.mimetype import (
     OutputExtension, PROCESSING_MIMETYPES,
     extension_path_parameter, get_output_format
@@ -30,6 +26,10 @@ from pims.api.utils.mimetype import (
 from pims.api.utils.models import (
     AnnotationCropRequest, AnnotationDrawingRequest,
     AnnotationMaskRequest, AnnotationStyleMode, ChannelReduction, Colorspace
+)
+from pims.api.utils.output_parameter import (
+    check_level_validity, check_zoom_validity, get_window_output_dimensions,
+    safeguard_output_dimensions
 )
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.window import _show_window

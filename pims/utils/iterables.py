@@ -11,7 +11,9 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from typing import Any, List, TypeVar, Union
+from typing import Any, List, Optional, Sized, TypeVar, Union
+
+from pims.api.exceptions import BadRequestException
 
 T = TypeVar('T')
 
@@ -69,3 +71,43 @@ def ensure_list(value: Union[List[T], T]) -> List[T]:
     if value is not None:
         return value if type(value) is list else [value]
     return []
+
+
+def check_array_size(
+    iterable: Optional[Sized], allowed: List[int], nullable: bool = True,
+    name: Optional[str] = None
+):
+    """
+    Verify an iterable has an allowed size or, optionally, is empty.
+
+    Parameters
+    ----------
+    iterable
+        Iterable which the size has to be verified.
+    allowed
+        Allowed iterable sizes
+    nullable
+        Whether no iterable at all is accepted or not.
+    name
+        Iterable name for exception messages.
+
+    Raises
+    ------
+    BadRequestException
+        If the iterable doesn't have one of the allowed sizes
+        or is None if `nullable` is false.
+
+    """
+    if iterable is None:
+        if not nullable:
+            name = 'A parameter' if not name else name
+            raise BadRequestException(detail=f"{name} is unset while it is not allowed.")
+        return
+
+    if not len(iterable) in allowed:
+        name = 'A parameter' if not name else name
+        allowed_str = ', '.join([str(i) for i in allowed])
+        raise BadRequestException(
+            f'{name} has a size of {len(iterable)} '
+            f'while only these sizes are allowed: {allowed_str}'
+        )

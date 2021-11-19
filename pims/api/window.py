@@ -20,12 +20,9 @@ from starlette.responses import Response
 from pims.api.exceptions import check_representation_existence
 from pims.api.utils.annotation_parameter import parse_annotations
 from pims.api.utils.header import ImageAnnotationRequestHeaders, add_image_size_limit_header
-from pims.api.utils.image_parameter import (
-    check_array_size, check_level_validity,
-    check_reduction_validity, check_tilecoord_validity, check_tileindex_validity,
-    check_zoom_validity, get_channel_indexes, get_timepoint_indexes,
-    get_window_output_dimensions, get_zslice_indexes, parse_bitdepth, parse_colormap_ids,
-    parse_filter_ids, parse_intensity_bounds, parse_region, safeguard_output_dimensions
+from pims.api.utils.input_parameter import (
+    check_reduction_validity, get_channel_indexes, get_timepoint_indexes,
+    get_zslice_indexes, parse_region
 )
 from pims.api.utils.mimetype import (
     OutputExtension, VISUALISATION_MIMETYPES,
@@ -35,7 +32,16 @@ from pims.api.utils.models import (
     AnnotationStyleMode, ChannelReduction, TierIndexType,
     WindowRequest
 )
+from pims.api.utils.output_parameter import (
+    check_level_validity, check_tilecoord_validity, check_tileindex_validity, check_zoom_validity,
+    get_window_output_dimensions,
+    safeguard_output_dimensions
+)
 from pims.api.utils.parameter import imagepath_parameter
+from pims.api.utils.processing_parameter import (
+    parse_bitdepth, parse_colormap_ids, parse_filter_ids,
+    parse_intensity_bounds
+)
 from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
@@ -45,7 +51,7 @@ from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import MaskResponse, WindowResponse
 from pims.processing.region import Region
 from pims.utils.color import RED, WHITE
-from pims.utils.iterables import ensure_list
+from pims.utils.iterables import check_array_size, ensure_list
 
 router = APIRouter()
 api_tags = ['Windows']

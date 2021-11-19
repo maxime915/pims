@@ -19,11 +19,9 @@ from starlette.responses import Response
 
 from pims.api.exceptions import BadRequestException, check_representation_existence
 from pims.api.utils.header import ImageRequestHeaders, SafeMode, add_image_size_limit_header
-from pims.api.utils.image_parameter import (
-    check_array_size, check_reduction_validity,
-    check_tilecoord_validity, check_tileindex_validity, get_channel_indexes,
-    get_timepoint_indexes, get_zslice_indexes, parse_colormap_ids, parse_filter_ids,
-    parse_intensity_bounds, safeguard_output_dimensions
+from pims.api.utils.input_parameter import (
+    check_reduction_validity, get_channel_indexes, get_timepoint_indexes,
+    get_zslice_indexes
 )
 from pims.api.utils.mimetype import (
     OutputExtension, VISUALISATION_MIMETYPES,
@@ -34,14 +32,22 @@ from pims.api.utils.models import (
     PlaneSelectionQueryParams, TargetLevel, TargetZoom, TargetZoomTileCoordinates,
     TargetZoomTileIndex, TierIndexType, TileIndex, TileRequest, TileX, TileY
 )
+from pims.api.utils.output_parameter import (
+    check_tilecoord_validity, check_tileindex_validity,
+    safeguard_output_dimensions
+)
 from pims.api.utils.parameter import imagepath_parameter
+from pims.api.utils.processing_parameter import (
+    parse_colormap_ids, parse_filter_ids,
+    parse_intensity_bounds
+)
 from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.filters import FILTERS
 from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import TileResponse, WindowResponse
-from pims.utils.iterables import ensure_list
+from pims.utils.iterables import check_array_size, ensure_list
 
 router = APIRouter()
 tile_tags = ['Tiles']

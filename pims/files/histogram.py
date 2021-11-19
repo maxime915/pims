@@ -22,8 +22,8 @@ from skimage.exposure import histogram
 from zarr.errors import _BaseZarrError as ZarrError
 
 from pims.api.exceptions import NoMatchingFormatProblem
-from pims.api.utils.image_parameter import get_thumb_output_dimensions
 from pims.api.utils.models import HistogramType
+from pims.api.utils.output_parameter import get_thumb_output_dimensions
 from pims.files.file import Path
 from pims.formats.utils.histogram import HistogramReaderInterface
 from pims.processing.adapters import imglib_adapters
