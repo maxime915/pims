@@ -107,7 +107,7 @@ async def show_tile_with_body(
 
 @cache_image_response(expire=cache_ttl, vary=['config', 'request', 'response'])
 def _show_tile(
-    request: Request, response: Response,  # required for @cache
+    request: Request, response: Response,  # required for @cache  # noqa
     path: Path,
     normalized: bool,
     tile: dict,
@@ -361,8 +361,8 @@ async def show_tile_v1(
     y: int,
     z: int,
     ops: ImageOpsDisplayQueryParams = Depends(),
-    mime_type: Optional[str] = Query(None, alias='mimeType'),
-    tile_group: Optional[str] = Query(None, alias='tileGroup'),
+    mime_type: Optional[str] = Query(None, alias='mimeType'),  # noqa
+    tile_group: Optional[str] = Query(None, alias='tileGroup'),  # noqa
     config: Settings = Depends(get_settings)
 ):
     """
@@ -395,7 +395,7 @@ async def show_tile_v2(
     tile_index: Optional[int] = Query(None, alias='tileIndex'),
     ops: ImageOpsDisplayQueryParams = Depends(),
     tile_group: Optional[str] = Query(None, alias='tileGroup'),
-    mime_type: str = Query(None, alias='mimeType'),
+    mime_type: str = Query(None, alias='mimeType'),  # noqa
     config: Settings = Depends(get_settings)
 ):
     """

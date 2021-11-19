@@ -84,7 +84,7 @@ async def show_mask(
     supported_mimetypes=PROCESSING_MIMETYPES
 )
 def _show_mask(
-    request: Request, response: Response,  # required for @cache
+    request: Request, response: Response,  # required for @cache  # noqa
     path: Path,
     annotations,
     context_factor,
@@ -225,7 +225,7 @@ async def show_drawing(
 
 
 async def _show_drawing(
-    request: Request, response: Response,  # required for @cache
+    request: Request, response: Response,  # required for @cache  # noqa
     path: Path,
     annotations,
     context_factor,

@@ -103,7 +103,7 @@ async def show_thumb_with_body(
 
 @cache_image_response(expire=cache_ttl, vary=['config', 'request', 'response'])
 def _show_thumb(
-    request: Request, response: Response,  # required for @cache
+    request: Request, response: Response,  # required for @cache  # noqa
     path: Path,
     height, width, length,
     channels, z_slices, timepoints,

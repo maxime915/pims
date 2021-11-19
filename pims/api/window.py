@@ -85,7 +85,7 @@ async def show_window_with_body(
     vary=['config', 'request', 'response']
 )
 def _show_window(
-    request: Request, response: Response,  # required for @cache
+    request: Request, response: Response,  # required for @cache  # noqa
     path: Path,
     region: Union[Region, dict],
     height, width, length, zoom, level,

@@ -662,7 +662,7 @@ async def show_associated_image(
 
 @cache_image_response(expire=cache_associated_ttl, vary=['config', 'request', 'response'])
 def _show_associated_image(
-    request: Request, response: Response,  # required for @cache
+    request: Request, response: Response,  # required for @cache  # noqa
     path: Path,
     height, width, length,
     associated_key,
