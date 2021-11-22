@@ -227,7 +227,13 @@ class _MetadataStorable:
         Insert this object content into a metadata store.
         Object variables starting with `_` are ignored.
         """
-        for key in self.__dict__:
+        keys = ()
+        if hasattr(self, '__slots__'):
+            keys += self.__slots__
+        if hasattr(self, '__dict__'):
+            keys += tuple(self.__dict__.keys())
+
+        for key in keys:
             if not key.startswith("_"):
                 value = getattr(self, key)
                 if isinstance(value, list):
@@ -249,6 +255,11 @@ class ImageChannel(_MetadataStorable):
     excitation_wavelength: Optional[Quantity]
     index: int
     suggested_name: Optional[str]
+
+    __slots__ = (
+        'emission_wavelength', 'excitation_wavelength', 'index',
+        'suggested_name', '_color'
+    )
 
     def __init__(
         self, index: int, emission_wavelength: Optional[float] = None,
@@ -291,6 +302,8 @@ class ImageObjective(_MetadataStorable):
     nominal_magnification: Optional[float]
     calibrated_magnification: Optional[float]
 
+    __slots__ = ('nominal_magnification', 'calibrated_magnification')
+
     def __init__(self):
         self.nominal_magnification = None
         self.calibrated_magnification = None
@@ -301,6 +314,8 @@ class ImageObjective(_MetadataStorable):
 
 class ImageMicroscope(_MetadataStorable):
     model: Optional[str]
+
+    __slots__ = ('model',)
 
     def __init__(self):
         self.model = None
@@ -313,6 +328,8 @@ class ImageAssociated(_MetadataStorable):
     n_channels: Optional[int]
     height: Optional[int]
     width: Optional[int]
+
+    __slots__ = ('n_channels', 'height', 'width', '_kind')
 
     def __init__(self, kind: str):
         self.width = None
@@ -354,6 +371,15 @@ class ImageMetadata(_MetadataStorable):
     associated_thumb: ImageAssociated
     associated_label: ImageAssociated
     associated_macro: ImageAssociated
+
+    __slots__ = (
+        'width', 'height', 'n_channels', 'duration', '_n_intrinsic_channels',
+        'n_channels_per_read', 'n_distinct_channels', 'pixel_type',
+        'significant_bits', 'physical_size_x', 'physical_size_y',
+        'physical_size_z', 'frame_rate', 'acquisition_datetime',
+        'description', 'channels', 'objective', 'microscope',
+        'associated_thumb', 'associated_label', 'associated_macro'
+    )
 
     def __init__(self):
         self._is_complete = False
