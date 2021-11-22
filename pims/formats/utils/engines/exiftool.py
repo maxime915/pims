@@ -34,7 +34,7 @@ def is_valid_key(key: str) -> bool:
         'FileTypeExtension', 'MIMEType', 'ExifByteOrder'
     )
     invalid_prefixes = ("ExifTool", "System", "SourceFile") + tuple(
-        "File:{}".format(k) for k in file_keys
+        f"File:{k}" for k in file_keys
     )
     for invalid_prefix in invalid_prefixes:
         if key.startswith(invalid_prefix):

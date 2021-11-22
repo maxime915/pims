@@ -92,9 +92,8 @@ class ParsedAnnotations(MutableSequence):
     def insert(self, index: int, value: ParsedAnnotation):
         if not isinstance(value, ParsedAnnotation):
             raise TypeError(
-                "Value of type {} not allowed in {}.".format(
-                    value.__class__.__name__, self.__class__.__name__
-                )
+                f"Value of type {value.__class__.__name__} "
+                f"not allowed in {self.__class__.__name__}."
             )
         self._data.insert(index, value)
 
@@ -107,9 +106,8 @@ class ParsedAnnotations(MutableSequence):
     def __setitem__(self, index, value):
         if not isinstance(value, ParsedAnnotation):
             raise TypeError(
-                "Value of type {} not allowed in {}.".format(
-                    value.__class__.__name__, self.__class__.__name__
-                )
+                f"Value of type {value.__class__.__name__} "
+                f"not allowed in {self.__class__.__name__}."
             )
         self._data[index] = value
 

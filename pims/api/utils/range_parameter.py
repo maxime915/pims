@@ -62,7 +62,7 @@ def parse_range(pims_range: Any, mini: int, maxi: int) -> range:
         If `pims_range` is not a PIMS range.
     """
     if not is_range(pims_range):
-        raise ValueError('Invalid literal for Range(): {}'.format(pims_range))
+        raise ValueError(f'Invalid literal for Range(): {pims_range}')
 
     low, high = [v.strip() for v in pims_range.split(':')]
     low = mini if low == '' else int(low)

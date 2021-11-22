@@ -70,7 +70,7 @@ def numpy_to_vips(
         n_channels = n_channels if n_channels is not None else n_channels_
 
     if width * height * n_channels != np_array.size:
-        raise ValueError("Cannot convert {} to VIPS image".format(np_array))
+        raise ValueError(f"Cannot convert {np_array} to VIPS image")
 
     flat = np_array.reshape(np_array.size)
     vips_format = dtype_to_vips_format[str(np_array.dtype)]

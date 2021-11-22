@@ -53,7 +53,7 @@ def convert_quantity(quantity: Optional[Quantity], unit: str, ndigits: int = 6) 
         return round(quantity.to(unit).magnitude, ndigits)
 
     log.warning(
-        'The quantity {} is not of type Quantity and is thus not converted.'.format(quantity)
+        f'The quantity {quantity} is not of type Quantity and is thus not converted.'
     )
     return round(quantity, ndigits)
 

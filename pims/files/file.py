@@ -222,7 +222,7 @@ class Path(type(_Path()), _Path):
         for parent in self.parents:
             if parent.name.startswith(UPLOAD_DIR_PREFIX):
                 return Path(parent)
-        raise FileNotFoundError("No upload root for {}".format(self))
+        raise FileNotFoundError(f"No upload root for {self}")
 
     def processed_root(self) -> Path:
         processed = self.upload_root() / Path(PROCESSED_DIR)

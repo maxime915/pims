@@ -82,7 +82,7 @@ def _find_formats_in_module(mod: ModuleType) -> List[Type[AbstractFormat]]:
     """
     formats = list()
     for _, name, _ in iter_modules(mod.__path__):
-        submodule_name = "{}.{}".format(mod.__name__, name)
+        submodule_name = f"{mod.__name__}.{name}"
         try:
             for var in vars(import_module(submodule_name)).values():
                 if isclass(var) and \

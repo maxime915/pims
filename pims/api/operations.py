@@ -92,7 +92,7 @@ async def legacy_import(
             raise AuthenticationException("PIMS authentication to Cytomine failed.")
 
         this = get_this_image_server(config.pims_url)
-        cyto_keys = c.get("userkey/{}/keys.json".format(public_key))
+        cyto_keys = c.get(f"userkey/{public_key}/keys.json")
         private_key = cyto_keys["privateKey"]
 
         if sign_token(private_key, parse_request_token(request)) != signature:
@@ -102,13 +102,13 @@ async def legacy_import(
         user = c.current_user
         storage = Storage().fetch(id_storage)
         if not storage:
-            raise CytomineProblem("Storage {} not found".format(id_storage))
+            raise CytomineProblem(f"Storage {id_storage} not found")
 
         projects = ProjectCollection()
         for pid in id_projects:
             project = Project().fetch(pid)
             if not project:
-                raise CytomineProblem("Project {} not found".format(pid))
+                raise CytomineProblem(f"Project {pid} not found")
             projects.append(project)
 
         keys = keys.split(',') if keys is not None else []

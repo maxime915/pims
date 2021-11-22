@@ -675,7 +675,7 @@ def _show_associated_image(
     in_image = path.get_spatial()
     check_representation_existence(in_image)
 
-    associated = getattr(in_image, 'associated_{}'.format(associated_key.value))
+    associated = getattr(in_image, f'associated_{associated_key.value}')
     if not associated or not associated.exists:
         raise NoAppropriateRepresentationProblem(path, associated_key)
 

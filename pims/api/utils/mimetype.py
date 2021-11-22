@@ -74,9 +74,7 @@ minor_type_str = r'[a-zA-Z0-9._+-]+'
 
 # Matches either '*', 'image/*', or 'image/png'
 valid_mime_type = re.compile(
-    r'^(?:\*|{major_type}/\*|{major_type}/{minor_type})$'.format(
-        major_type=major_type_str, minor_type=minor_type_str
-    )
+    fr'^(?:\*|{major_type_str}/\*|{major_type_str}/{minor_type_str})$'
 )
 
 # Matches the 'q=1.23' from the parameters of a Accept mime types

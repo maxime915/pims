@@ -490,7 +490,7 @@ class CytomineListener(ImportListener):
 
 class StdoutListener(ImportListener):
     def __init__(self, name):
-        self.log = logging.getLogger("upload.{}".format(name))
+        self.log = logging.getLogger(f"upload.{name}")
 
     def start_data_extraction(self, path, *args, **kwargs):
         self.log.info(f"Start import and data extraction for {path}")
