@@ -13,6 +13,7 @@
 #  * limitations under the License.
 from __future__ import annotations
 
+from functools import lru_cache
 from math import ceil
 from typing import List, Tuple, Union
 
@@ -243,6 +244,7 @@ class Pyramid:
                and all([a == b for (a, b) in zip(o.tiers, self.tiers)])
 
 
+@lru_cache(maxsize=4096)
 def normalized_pyramid(width: int, height: int) -> Pyramid:
     """
     Build a normalized pyramid, with normalized tiles, i.e.
