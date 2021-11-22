@@ -28,8 +28,8 @@ from pims.filters import AbstractFilter
 from pims.processing.adapters import ImagePixels
 from pims.processing.annotations import ParsedAnnotations
 from pims.processing.colormaps import (
-    Colormap, LookUpTable, combine_lut, default_lut,
-    is_rgb_colormapping
+    Colormap, StackedLookUpTables, combine_stacked_lut, default_lut,
+    get_lut_from_stacked, is_rgb_colormapping
 )
 from pims.processing.operations import (
     ApplyLutImgOp, ChannelReductionOp, ColorspaceHistOp,
@@ -192,32 +192,32 @@ class ProcessedView(MultidimImageResponse, ABC):
                 self.log_processing)
 
     @lru_cache(maxsize=None)
-    def math_lut(self) -> Optional[LookUpTable]:
+    def math_lut(self) -> Optional[StackedLookUpTables]:
         """
         Compute lookup table for math processing operations if any.
 
         Returns
         -------
         lut
-            Array of shape (2**img.bitdepth, n_channels, 1)
+            Stacked LUTs (n_channels, 2**img.bitdepth, 1)
         """
         if not self.math_processing:
             return None
 
         n_channels = len(self.channels)
-        lut = np.zeros((self.in_image.max_value + 1, n_channels))
+        lut = np.zeros((n_channels, self.in_image.max_value + 1, 1))
         if self.intensity_processing:
             for c in range(n_channels):
                 mini = self.min_intensities[c]
                 maxi = self.max_intensities[c]
                 diff = maxi - mini
-                lut[mini:maxi, c] = np.linspace(0, 1, num=diff)
-                lut[maxi:, c] = 1
+                lut[c, mini:maxi] = np.linspace((0,), (1,), num=diff)
+                lut[c, maxi:] = 1
         else:
-            lut = np.linspace(
+            lut[:, :, 0] = np.linspace(
                 (0,) * n_channels, (1,) * n_channels,
                 num=self.in_image.max_value + 1
-            )
+            ).T
 
         if self.gamma_processing:
             lut = np.power(lut, self.gammas)
@@ -230,7 +230,7 @@ class ProcessedView(MultidimImageResponse, ABC):
             lut = np.log1p(lut) * 1. / np.log1p(1)
 
         lut *= self.max_intensity
-        return np.atleast_3d(lut.astype(np_dtype(self.best_effort_bitdepth)))
+        return lut.astype(np_dtype(self.best_effort_bitdepth))
 
     @property
     def colormap_processing(self) -> bool:
@@ -238,14 +238,14 @@ class ProcessedView(MultidimImageResponse, ABC):
         return any(self.colormaps)
 
     @lru_cache(maxsize=None)
-    def colormap_lut(self) -> Optional[LookUpTable]:
+    def colormap_lut(self) -> Optional[StackedLookUpTables]:
         """
         Compute lookup table from colormaps if any.
 
         Returns
         -------
         lut
-            Array of shape (2**img.bitdepth, n_channels, n_components)
+            Array of shape (n_channels, 2**img.bitdepth, n_components)
         """
         if not self.colormap_processing:
             return None
@@ -265,11 +265,11 @@ class ProcessedView(MultidimImageResponse, ABC):
                     bitdepth=self.best_effort_bitdepth,
                     n_components=n_components
                 ) for colormap in self.colormaps
-            ], axis=1
+            ]
         )
 
     @lru_cache(maxsize=None)
-    def lut(self) -> Optional[LookUpTable]:
+    def lut(self) -> Optional[StackedLookUpTables]:
         """
         The lookup table to apply combining all processing operations.
         """
@@ -285,14 +285,7 @@ class ProcessedView(MultidimImageResponse, ABC):
             if colormap_lut is None:
                 return math_lut
             else:
-                return combine_lut(math_lut, colormap_lut)
-
-    def lut_for_channel(self, c):
-        # TODO: move outside ? and fix lookup table dimension order
-        lut = self.lut()
-        if lut is None:
-            return None
-        return self.lut()[:, c, :]
+                return combine_stacked_lut(math_lut, colormap_lut)
 
     # Colorspace
 
@@ -413,9 +406,13 @@ class ProcessedView(MultidimImageResponse, ABC):
         processed_channel_images = list()
         for img, channel in response_channel_images:
             if type(channel) is tuple:
-                img = ApplyLutImgOp(self.math_lut())(img)
+                img = ApplyLutImgOp(
+                    get_lut_from_stacked(self.math_lut())
+                )(img)
             else:
-                img = ApplyLutImgOp(self.lut_for_channel(channel))(img)
+                img = ApplyLutImgOp(
+                    get_lut_from_stacked(self.lut(), channel)
+                )(img)
 
             processed_channel_images.append(img)
         # ----------- end to optimize

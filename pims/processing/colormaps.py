@@ -14,7 +14,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 from matplotlib.cm import get_cmap
@@ -23,7 +23,8 @@ from pydantic.color import COLORS_BY_NAME
 from pims.utils.color import Color
 from pims.utils.dtypes import np_dtype
 
-LookUpTable = np.ndarray
+LookUpTable = np.ndarray  # Shape: (LUT size, LUT n_components)
+StackedLookUpTables = np.ndarray  # Shape: (N, LUT size, LUT n_components)
 
 
 class ColormapType(str, Enum):
@@ -170,19 +171,6 @@ class ColorColormap(Colormap):
         return lut.astype(np_dtype(bitdepth))
 
 
-def combine_lut(lut_a: LookUpTable, lut_b: LookUpTable) -> LookUpTable:
-    """
-    Combine 2 LUTs in a single LUT. Applying combined LUT from LUTs A & B on
-    an image produces the same result than applying successively LUT A on an
-    image, and then LUT B on the result.
-
-    `lut_a` and `lut_b` must have same size.
-    """
-    if lut_a.ndim == 1:
-        lut_a = lut_a[:, np.newaxis]
-    return np.take_along_axis(lut_b, lut_a, axis=0)
-
-
 def default_lut(
     size: int = 256, bitdepth: int = 8, n_components: int = 1
 ) -> LookUpTable:
@@ -192,12 +180,61 @@ def default_lut(
     ).astype(np_dtype(bitdepth))
 
 
-def get_lut_component(
-    lut: Optional[LookUpTable], channel: int
-) -> Optional[LookUpTable]:
-    if lut is None:
+def combine_lut(lut_a: LookUpTable, lut_b: LookUpTable) -> LookUpTable:
+    """
+    Combine 2 LUTs in a single LUT. Applying combined LUT from LUTs A & B on
+    an image produces the same result than applying successively LUT A on an
+    image, and then LUT B on the result.
+
+    `lut_a` and `lut_b` must have same size.
+    """
+    return np.take_along_axis(lut_b, lut_a, axis=0)
+
+
+def combine_stacked_lut(
+    lut_a: StackedLookUpTables, lut_b: StackedLookUpTables
+) -> StackedLookUpTables:
+    """
+    Combine 2 stacked LUTs in a single stacked LUT.
+    Applying combined LUT from LUTs A & B on an image produces the same result
+    than applying successively LUT A on an image, and then LUT B on the result.
+
+    `lut_a` and `lut_b` must have same size and same number of elements in the
+    stack.
+    """
+    return np.take_along_axis(lut_b, lut_a, axis=1)
+
+
+def get_lut_from_stacked(
+    stack: Optional[StackedLookUpTables], index: int = 0, as_stack: bool = False
+) -> Union[None, LookUpTable, StackedLookUpTables]:
+    """
+    Get a LUT from a stack of LUTs.
+
+    Parameters
+    ----------
+    stack
+        The stack of LUTs. If not set, None is returned.
+    index
+        The index of the desired LUT in the stack
+    as_stack
+        Whether to return the LUT as a stack of length 1 or not.
+
+    Returns
+    -------
+    None
+        if `stack` is None.
+    LookUpTable
+        if `as_stack` is False.
+    StackedLookUpTable
+        if `as_stack` is True.
+    """
+    if stack is None:
         return None
-    return lut[:, channel, :]
+    lut = stack[index, :, :]
+    if as_stack:
+        lut = lut[np.newaxis, :, :]
+    return lut
 
 
 mpl_cmaps = dict()

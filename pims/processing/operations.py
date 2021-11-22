@@ -196,13 +196,7 @@ class ApplyLutImgOp(ImageOp):
     def _vips_impl(self, img: VIPSImage) -> VIPSImage:
         if self.lut is None:
             return img
-
-        # TODO
-        if self.lut.ndim == 3:
-            lut = self.lut.reshape((1,) + self.lut.shape[:2])
-        else:
-            lut = self.lut[np.newaxis, :, :]
-
+        lut = self.lut[np.newaxis, :, :]
         return img.maplut(convert_to(lut, VIPSImage))
 
 
