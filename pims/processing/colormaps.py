@@ -222,12 +222,8 @@ def get_lut_from_stacked(
 
     Returns
     -------
-    None
-        if `stack` is None.
-    LookUpTable
-        if `as_stack` is False.
-    StackedLookUpTable
-        if `as_stack` is True.
+    None if `stack` is None or a LUT if `as_stack` is False or a LUT stack
+    if `as_stack` is True.
     """
     if stack is None:
         return None
