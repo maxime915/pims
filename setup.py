@@ -48,8 +48,6 @@ REQUIRED = [
     'celery>=5.0.0',
 
     'Pint>=0.17',
-    'palettable>=3.3.0',
-
     'numpy>=1.20.1',
     'Pillow>=8.0.0',
     'pyvips>=2.1.14',
