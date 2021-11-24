@@ -25,7 +25,8 @@ from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.omexml import OMEXML
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
-from pims.formats.utils.engines.vips import VipsHistogramReader, VipsReader
+from pims.formats.utils.engines.vips import VipsReader
+from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.formats.utils.structures.planes import PlanesInfo
 from pims.formats.utils.structures.pyramid import Pyramid
@@ -318,7 +319,7 @@ class OmeTiffFormat(AbstractFormat):
     checker_class = OmeTiffChecker
     parser_class = OmeTiffParser
     reader_class = OmeTiffReader
-    histogram_reader_class = VipsHistogramReader  # TODO
+    histogram_reader_class = DefaultHistogramReader
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

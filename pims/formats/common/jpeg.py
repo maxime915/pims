@@ -22,9 +22,10 @@ from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import (
-    VipsHistogramReader, VipsParser, VipsReader,
+    VipsParser, VipsReader,
     VipsSpatialConvertor
 )
+from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageMetadata
 from pims.utils.types import parse_datetime, parse_float
 
@@ -96,7 +97,7 @@ class JPEGFormat(AbstractFormat):
     checker_class = JPEGChecker
     parser_class = JPEGParser
     reader_class = VipsReader
-    histogram_reader_class = VipsHistogramReader
+    histogram_reader_class = DefaultHistogramReader
     convertor_class = VipsSpatialConvertor
 
     def __init__(self, *args, **kwargs):

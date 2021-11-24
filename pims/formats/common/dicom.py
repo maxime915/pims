@@ -30,7 +30,7 @@ from pims.formats.utils.abstract import (
 )
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import VipsSpatialConvertor
-from pims.formats.utils.histogram import NullHistogramReader
+from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.parser import AbstractParser
 from pims.formats.utils.reader import AbstractReader
 from pims.formats.utils.structures.annotations import ParsedMetadataAnnotation
@@ -270,7 +270,7 @@ class DicomFormat(AbstractFormat):
     checker_class = DicomChecker
     parser_class = DicomParser
     reader_class = DicomReader
-    histogram_reader_class = NullHistogramReader  # TODO
+    histogram_reader_class = DefaultHistogramReader  # TODO
     convertor_class = DicomSpatialConvertor
 
     def __init__(self, *args, **kwargs):

@@ -20,15 +20,12 @@ from pyvips import Image as VIPSImage, Size as VIPSSize  # noqa
 from pyvips.error import Error as VIPSError
 
 from pims.api.exceptions import MetadataParsingProblem
-from pims.api.utils.models import HistogramType
 from pims.formats import AbstractFormat
 from pims.formats.utils.convertor import AbstractConvertor
 from pims.formats.utils.engines.exiftool import ExifToolParser
-from pims.formats.utils.histogram import NullHistogramReader
 from pims.formats.utils.parser import AbstractParser
 from pims.formats.utils.reader import AbstractReader
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
-from pims.processing.adapters import vips_to_numpy
 from pims.processing.region import Region, Tile
 from pims.utils.dtypes import dtype_to_bits
 from pims.utils.vips import (
@@ -138,64 +135,66 @@ class VipsReader(AbstractReader):
         return self.read_window(tile, int(tile.width), int(tile.height))
 
 
-class VipsHistogramReader(NullHistogramReader):
-    def is_complete(self):
-        image = cached_vips_file(self.format)
-        return image.width <= 1024 and image.height <= 1024
-
-    def vips_hist_image(self):
-        if self.is_complete():
-            return cached_vips_file(self.format)
-
-        def _thumb(format):
-            image = cached_vips_file(format)
-            if image.interpretation in ("grey16", "rgb16"):
-                return VIPSImage.thumbnail(str(format.path), 1024, linear=True)\
-                    .colourspace(image.interpretation)
-            return VIPSImage.thumbnail(str(format.path), 1024)
-
-        return self.format.get_cached('_vips_hist_image', _thumb, self.format)
-
-    def type(self):
-        if self.is_complete():
-            return HistogramType.COMPLETE
-        else:
-            return HistogramType.FAST
-
-    def image_bounds(self):
-        image = self.vips_hist_image()
-        vips_stats = image.stats()
-        np_stats = vips_to_numpy(vips_stats).astype(np.int)
-        return tuple(np_stats[0, 0:2, 0])
-
-    def image_histogram(self):
-        image = self.vips_hist_image()
-        return np.sum(vips_to_numpy(image.hist_find()), axis=2).squeeze()
-
-    def channels_bounds(self):
-        image = self.vips_hist_image()
-        vips_stats = image.stats()
-        np_stats = vips_to_numpy(vips_stats).astype(np.int)
-        return list(map(tuple, np_stats[1:, :2, 0]))
-
-    def channel_bounds(self, c):
-        image = self.vips_hist_image()
-        vips_stats = image.stats()
-        np_stats = vips_to_numpy(vips_stats).astype(np.int)
-        return tuple(np_stats[c + 1, :2, 0])
-
-    def channel_histogram(self, c):
-        image = self.vips_hist_image()
-        return vips_to_numpy(image.hist_find(band=c))[0, :, 0]
-
-    def planes_bounds(self):
-        return self.channels_bounds()
-
-    def plane_bounds(self, c, z, t):
-        return self.channel_bounds(c)
-
-    def plane_histogram(self, c, z, t):
-        return self.channel_histogram(c)
+# [HISTOGRAM REFACTORING] Not used in practice ? to delete ?
+# class VipsHistogramReader(NullHistogramReader):
+#     def is_complete(self) -> bool:
+#         image = cached_vips_file(self.format)
+#         return image.width * image.height <= get_settings().max_pixels_complete_histogram
+#
+#     def vips_hist_image(self) -> VIPSImage:
+#         if self.is_complete():
+#             return cached_vips_file(self.format)
+#
+#         def _thumb(format):
+#             length = get_settings().max_length_complete_histogram
+#             image = cached_vips_file(format)
+#             if image.interpretation in ("grey16", "rgb16"):
+#                 return VIPSImage.thumbnail(str(format.path), length, linear=True)\
+#                     .colourspace(image.interpretation)
+#             return VIPSImage.thumbnail(str(format.path), length)
+#
+#         return self.format.get_cached('_vips_hist_image', _thumb, self.format)
+#
+#     def type(self) -> HistogramType:
+#         if self.is_complete():
+#             return HistogramType.COMPLETE
+#         else:
+#             return HistogramType.FAST
+#
+#     def image_bounds(self) -> Tuple[int, int]:
+#         image = self.vips_hist_image()
+#         vips_stats = image.stats()
+#         np_stats = vips_to_numpy(vips_stats).astype(np.int)
+#         return tuple(np_stats[0, 0:2, 0])
+#
+#     def image_histogram(self, squeeze=True):
+#         image = self.vips_hist_image()
+#         return np.sum(vips_to_numpy(image.hist_find()), axis=2).squeeze()
+#
+#     def channels_bounds(self) -> List[Tuple[int, int]]:
+#         image = self.vips_hist_image()
+#         vips_stats = image.stats()
+#         np_stats = vips_to_numpy(vips_stats).astype(np.int)
+#         return list(map(tuple, np_stats[1:, :2, 0]))
+#
+#     def channel_bounds(self, c: int) -> Tuple[int, int]:
+#         image = self.vips_hist_image()
+#         vips_stats = image.stats()
+#         np_stats = vips_to_numpy(vips_stats).astype(np.int)
+#         return tuple(np_stats[c + 1, :2, 0])
+#
+#     def channel_histogram(self, c, squeeze=True):
+#         image = self.vips_hist_image()
+#         return vips_to_numpy(image.hist_find(band=c))[0, :, 0]
+#
+#     def planes_bounds(self):
+#         return self.channels_bounds()
+#
+#     def plane_bounds(self, c, z, t):
+#         return self.channel_bounds(c)
+#
+#     def plane_histogram(self, c, z, t, squeeze=True):
+#         return self.channel_histogram(c)
 
 
 class VipsSpatialConvertor(AbstractConvertor):

@@ -21,9 +21,10 @@ from pims.formats.common.jpeg import JPEGParser
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import (
-    VipsHistogramReader, VipsReader,
+    VipsReader,
     VipsSpatialConvertor, cached_vips_file
 )
+from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.pyramid import Pyramid
 
 log = logging.getLogger("pims.formats")
@@ -109,7 +110,7 @@ class JPEG2000Format(AbstractFormat):
     checker_class = JPEG2000Checker
     parser_class = JPEG2000Parser
     reader_class = JPEG2000Reader
-    histogram_reader_class = VipsHistogramReader
+    histogram_reader_class = DefaultHistogramReader
     convertor_class = VipsSpatialConvertor
 
     def __init__(self, *args, **kwargs):

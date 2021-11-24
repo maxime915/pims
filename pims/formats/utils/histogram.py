@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from typing import List, TYPE_CHECKING, Tuple
+from typing import List, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 
@@ -26,6 +26,8 @@ log = logging.getLogger("pims.formats")
 
 if TYPE_CHECKING:
     from pims.formats import AbstractFormat
+
+PlaneIndex = Union[int, List[int]]
 
 
 class HistogramReaderInterface(ABC):
@@ -49,13 +51,19 @@ class HistogramReaderInterface(ABC):
         pass
 
     @abstractmethod
-    def image_histogram(self) -> np.ndarray:
+    def image_histogram(self, squeeze: bool = True) -> np.ndarray:
         """
         Intensity histogram on the whole image (all planes merged)
 
+        Parameters
+        ----------
+        squeeze
+
         Returns
         -------
-        histogram : array_like (shape: 2^image.bitdepth)
+        histogram : np.ndarray of shape:
+         * If `squeeze=True`: `(2**image.bitdepth,)`
+         * Otherwise: `(1, 2**image.bitdepth)`
         """
         pass
 
@@ -90,18 +98,21 @@ class HistogramReaderInterface(ABC):
         pass
 
     @abstractmethod
-    def channel_histogram(self, c: int) -> np.ndarray:
+    def channel_histogram(self, c: PlaneIndex, squeeze: bool = True) -> np.ndarray:
         """
-        Intensity histogram for a channel
+        Intensity histogram(s) for one of several channel(s)
 
         Parameters
         ----------
-        c : int
-            The image channel index
+        squeeze
+        c
+            The image channel index(es)
 
         Returns
         -------
-        histogram : array_like (shape: 2^image.bitdepth)
+        histogram : np.ndarray of shape:
+         * If `squeeze=True` and `type(c) is int`: `(2**image.bitdepth,)`
+         * Otherwise: `(len(c), 2**image.bitdepth)`
         """
         pass
 
@@ -140,13 +151,16 @@ class HistogramReaderInterface(ABC):
         pass
 
     @abstractmethod
-    def plane_histogram(self, c: int, z: int, t: int) -> np.ndarray:
+    def plane_histogram(
+        self, c: PlaneIndex, z: PlaneIndex, t: PlaneIndex, squeeze=True
+    ) -> np.ndarray:
         """
-        Intensity histogram for a plane
+        Intensity histogram(s) for one or several plane(s).
 
         Returns
         -------
-        histogram : array_like (shape: 2^image.bitdepth)
+        Shape: (len(t), len(z), len(c), 2**image.bitdepth). If `squeeze` is
+        True, plane dimensions of length 1 are removed.
         """
         pass
 
@@ -159,59 +173,58 @@ class AbstractHistogramReader(HistogramReaderInterface, ABC):
         self.format = format
 
 
-class NullHistogramReader(AbstractHistogramReader):
-    # @abstractmethod
+class DefaultHistogramReader(AbstractHistogramReader):
     def type(self) -> HistogramType:
         return HistogramType.FAST
 
-    # @abstractmethod
-    def image_bounds(self):
+    def image_bounds(self) -> Tuple[int, int]:
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
             f"image histogram bounds. Default values used."
         )
         return 0, 2 ** self.format.main_imd.significant_bits
 
-    # @abstractmethod
-    def image_histogram(self):
-        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
+    def image_histogram(self, squeeze=True):
+        raise BadRequestException(
+            detail=f"No histogram found for {self.format.path}"
+        )
 
-    # @abstractmethod
-    def channels_bounds(self):
+    def channels_bounds(self) -> List[Tuple[int, int]]:
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
             f"channels histogram bounds. Default values used."
         )
-        return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_channels
+        return [(0, 2 ** self.format.main_imd.significant_bits)] \
+               * self.format.main_imd.n_channels
 
-    # @abstractmethod
-    def channel_bounds(self, c):
+    def channel_bounds(self, c: int) -> Tuple[int, int]:
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
             f"channel histogram bounds. Default values used."
         )
         return 0, 2 ** self.format.main_imd.significant_bits
 
-    # @abstractmethod
-    def channel_histogram(self, c):
-        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
+    def channel_histogram(self, c, squeeze=True):
+        raise BadRequestException(
+            detail=f"No histogram found for {self.format.path}"
+        )
 
-    # @abstractmethod
-    def planes_bounds(self):
+    def planes_bounds(self) -> List[Tuple[int, int]]:
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
             f"plane histogram bounds. Default values used."
         )
-        return [(0, 2 ** self.format.main_imd.significant_bits)] * self.format.main_imd.n_planes
+        return [(0, 2 ** self.format.main_imd.significant_bits)] \
+               * self.format.main_imd.n_planes
 
-    # @abstractmethod
-    def plane_bounds(self, c, z, t):
+    def plane_bounds(self, c: int, z: int, t: int) -> Tuple[int, int]:
         log.warning(
             f"[orange]Impossible {self.format.path} to compute "
             f"plane histogram bounds. Default values used."
         )
         return 0, 2 ** self.format.main_imd.significant_bits
 
-    # @abstractmethod
-    def plane_histogram(self, c, z, t):
-        raise BadRequestException(detail=f"No histogram found for {self.format.path}")
+    def plane_histogram(self, c, z, t, squeeze=True):
+        raise BadRequestException(
+            detail=f"No histogram found for {self.format.path}"
+        )

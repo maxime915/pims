@@ -21,9 +21,9 @@ from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.pil import (
-    PillowHistogramReader, PillowParser,
-    PillowSpatialConvertor, SimplePillowReader
+    PillowParser, PillowSpatialConvertor, SimplePillowReader
 )
+from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageMetadata
 from pims.utils.types import parse_float
 
@@ -66,10 +66,6 @@ class BMPReader(SimplePillowReader):
     FORMAT_SLUG = 'BMP'
 
 
-class BMPHistogramManager(PillowHistogramReader):
-    FORMAT_SLUG = 'BMP'
-
-
 class BMPFormat(AbstractFormat):
     """BMP Format.
 
@@ -81,7 +77,7 @@ class BMPFormat(AbstractFormat):
     checker_class = BMPChecker
     parser_class = BMPParser
     reader_class = BMPReader
-    histogram_reader_class = BMPHistogramManager
+    histogram_reader_class = DefaultHistogramReader
     convertor_class = PillowSpatialConvertor
 
     @classmethod
