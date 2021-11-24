@@ -288,9 +288,5 @@ class AbstractFormat(ABC, SimpleDataCache):
         return self.parser.parse_annotations()
 
     @cached_property
-    def histogram(self):  # TODO
+    def histogram(self):
         return self.histogram_reader
-
-    @cached_property
-    def main_path(self):  # TODO: seem to be useless
-        return self.path

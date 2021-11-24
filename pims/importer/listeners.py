@@ -299,7 +299,7 @@ class CytomineListener(ImportListener):
             uf.contentType = format.get_identifier()  # TODO
             uf.size = unpacked_path.size
             uf.filename = str(unpacked_path.relative_to(FILE_ROOT_PATH))
-            uf.originalFilename = str(format.main_path.name)
+            uf.originalFilename = str(format.path.name)
             uf.ext = ""
             uf.storage = parent.storage
             uf.user = parent.user
