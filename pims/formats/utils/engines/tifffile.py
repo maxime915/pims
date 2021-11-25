@@ -19,13 +19,13 @@ import numpy as np
 from pint import Quantity
 from tifffile import TiffPage, TiffTag, tifffile
 
-from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.parser import AbstractParser
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.formats.utils.structures.pyramid import Pyramid
+from pims.utils import UNIT_REGISTRY
 from pims.utils.types import parse_datetime
 
 TIFF_FLAGS = (

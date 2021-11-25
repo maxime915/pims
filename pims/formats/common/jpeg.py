@@ -17,7 +17,6 @@ from typing import Optional
 
 from pint import Quantity
 
-from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
@@ -27,6 +26,7 @@ from pims.formats.utils.engines.vips import (
 )
 from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageMetadata
+from pims.utils import UNIT_REGISTRY
 from pims.utils.types import parse_datetime, parse_float
 
 log = logging.getLogger("pims.formats")

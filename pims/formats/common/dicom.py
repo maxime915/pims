@@ -24,7 +24,6 @@ from pydicom.multival import MultiValue
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
-from pims import UNIT_REGISTRY
 from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )
@@ -36,6 +35,7 @@ from pims.formats.utils.reader import AbstractReader
 from pims.formats.utils.structures.annotations import ParsedMetadataAnnotation
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.processing.adapters import numpy_to_vips
+from pims.utils import UNIT_REGISTRY
 from pims.utils.arrays import to_unsigned_int
 from pims.utils.dtypes import np_dtype
 from pims.utils.types import parse_float

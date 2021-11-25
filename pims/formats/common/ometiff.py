@@ -20,7 +20,6 @@ from pint import Quantity
 from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
-from pims import UNIT_REGISTRY
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.omexml import OMEXML
@@ -30,6 +29,7 @@ from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.formats.utils.structures.planes import PlanesInfo
 from pims.formats.utils.structures.pyramid import Pyramid
+from pims.utils import UNIT_REGISTRY
 from pims.utils.color import infer_channel_color
 from pims.utils.dict import flatten
 from pims.utils.dtypes import dtype_to_bits

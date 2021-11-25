@@ -11,11 +11,8 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-import pint
 
 from .__version__ import (
     __api_version__, __author__, __copyright__, __description__, __email__,
     __license__, __title__, __url__, __version__
 )
-
-UNIT_REGISTRY = pint.UnitRegistry()
