@@ -12,7 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 from pydantic.color import (
@@ -93,6 +93,9 @@ class Color(PydanticColor):
         return (r & 255) << 24 | (g & 255) << 16 | (b & 255) << 8 | (a & 255) << 0
 
     def is_grayscale(self) -> bool:
+        """
+        Whether the color is grayscale or not.
+        """
         r, g, b = self._rgba[:3]
         return r == g == b
 
@@ -122,7 +125,7 @@ def parse_int(value: int) -> RGBA:
     return ints_to_rgba(r, g, b, a)
 
 
-def np_int2rgb(color_int, alpha: bool = False):
+def np_int2rgb(color_int, alpha: bool = False) -> np.ndarray:
     """
     Convert a 32-bit int color to a 8-bit RGB triplet.
 
@@ -161,7 +164,8 @@ BLUE = Color((0, 0, 255))
 RGB = [RED, GREEN, BLUE]
 
 
-def is_rgb(colors):
+def is_rgb(colors: List[Color]) -> bool:
+    """Check if a list of colors is the list [RED, GREEN, BLUE]."""
     if len(colors) != 3:
         return False
 
@@ -171,16 +175,48 @@ def is_rgb(colors):
     return True
 
 
-def identify_channel_color(color_name, index, n_channels, channel_color_list=None):
+def infer_channel_color(
+    color_name: str, index: int, n_channels: Optional[int] = None,
+    channel_color_list: List[Color] = None
+) -> Union[Color, None]:
+    """
+    Try to infer a color for an image channel.
+
+    Parameters
+    ----------
+    color_name
+        A suggested color name for the channel
+    index
+        The channel index in the image
+    n_channels
+        The number of channels in the image
+    channel_color_list
+        A list of potential colors by channel indexes
+    Returns
+    -------
+    inferred_color
+    """
+
+    name_convertor = dict(R="red", G="lime", B="blue")
+    color_name = name_convertor.get(color_name, color_name)
+
     try:
         return Color(color_name)
     except ColorError:
         pass
 
     if channel_color_list is None:
-        channel_color_list = ("red", "lime", "blue", "cyan", "magenta", "yellow")
+        # True green is called 'lime' in CSS
+        channel_color_list = (
+            "red", "lime", "blue", "cyan", "magenta", "yellow"
+        )
 
-    if 1 < n_channels <= len(channel_color_list):
-        return Color(channel_color_list[index])
+    if n_channels is not None:
+        # To improve: knowing n_channels can help to infer channel color
+        if 1 < n_channels <= len(channel_color_list):
+            return Color(channel_color_list[index])
+    else:
+        if index < len(channel_color_list):
+            return Color(channel_color_list[index])
 
     return None

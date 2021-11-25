@@ -14,38 +14,46 @@
 import logging
 from datetime import datetime
 from functools import cached_property
+from typing import List, Optional, Union
 
 import numpy as np
-from pydicom import dcmread
+from pint import Quantity
+from pydicom import FileDataset, dcmread
+from pydicom.dicomdir import DicomDir
 from pydicom.multival import MultiValue
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
 from pims import UNIT_REGISTRY
 from pims.formats.utils.abstract import (
-    AbstractFormat, AbstractParser, AbstractReader,
-    NullHistogramReader
+    AbstractFormat, CachedDataPath
 )
-from pims.formats.utils.annotations import ParsedMetadataAnnotation
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.vips import VipsSpatialConvertor
-from pims.formats.utils.metadata import ImageChannel, ImageMetadata, parse_float
-from pims.formats.utils.vips import np_dtype
+from pims.formats.utils.histogram import DefaultHistogramReader
+from pims.formats.utils.parser import AbstractParser
+from pims.formats.utils.reader import AbstractReader
+from pims.formats.utils.structures.annotations import ParsedMetadataAnnotation
+from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.processing.adapters import numpy_to_vips
-from pims.processing.utils import to_unsigned_int
+from pims.utils.arrays import to_unsigned_int
+from pims.utils.dtypes import np_dtype
+from pims.utils.types import parse_float
 
 log = logging.getLogger("pims.formats")
 
 
-def cached_dcmread(format):
-    return format.get_cached('_dcmread', dcmread, format.path.resolve(), force=True)
+def cached_dcmread(format: AbstractFormat) -> Union[FileDataset, DicomDir]:
+    return format.get_cached(
+        '_dcmread', dcmread, format.path.resolve(), force=True
+    )
 
 
 class DicomChecker(SignatureChecker):
     OFFSET = 128
 
     @classmethod
-    def match(cls, pathlike):
+    def match(cls, pathlike: CachedDataPath) -> bool:
         buf = cls.get_signature(pathlike)
         return (len(buf) > cls.OFFSET + 4 and
                 buf[cls.OFFSET] == 0x44 and
@@ -55,7 +63,7 @@ class DicomChecker(SignatureChecker):
 
 
 class DicomParser(AbstractParser):
-    def parse_main_metadata(self):
+    def parse_main_metadata(self) -> ImageMetadata:
         ds = cached_dcmread(self.format)
 
         imd = ImageMetadata()
@@ -78,7 +86,7 @@ class DicomParser(AbstractParser):
         imd.pixel_type = np_dtype(imd.significant_bits)
         return imd
 
-    def parse_known_metadata(self):
+    def parse_known_metadata(self) -> ImageMetadata:
         ds = cached_dcmread(self.format)
         imd = super().parse_known_metadata()
 
@@ -94,20 +102,26 @@ class DicomParser(AbstractParser):
         if pixel_spacing:
             imd.physical_size_x = self.parse_physical_size(pixel_spacing[0])
             imd.physical_size_y = self.parse_physical_size(pixel_spacing[1])
-        imd.physical_size_z = self.parse_physical_size(ds.get('SpacingBetweenSlices'))
+        imd.physical_size_z = self.parse_physical_size(
+            ds.get('SpacingBetweenSlices')
+        )
 
         imd.is_complete = True
         return imd
 
     @staticmethod
-    def parse_acquisition_date(date, time=None):
+    def parse_acquisition_date(
+        date: str, time: Optional[str] = None
+    ) -> Optional[datetime]:
         """
         Date examples: 20211105
         Time examples: 151034, 151034.123
         """
         try:
             if date and time:
-                return datetime.strptime(f"{date} {time.split('.')[0]}", "%Y%m%d %H%M%S")
+                return datetime.strptime(
+                    f"{date} {time.split('.')[0]}", "%Y%m%d %H%M%S"
+                )
             elif date:
                 return datetime.strptime(date, "%Y%m%d")
             else:
@@ -115,18 +129,26 @@ class DicomParser(AbstractParser):
         except (ValueError, TypeError):
             return None
 
-    def parse_raw_metadata(self):
+    @staticmethod
+    def parse_physical_size(physical_size: str) -> Optional[Quantity]:
+        if physical_size is not None and parse_float(physical_size) is not None:
+            return parse_float(physical_size) * UNIT_REGISTRY("millimeter")
+        return None
+
+    def parse_raw_metadata(self) -> MetadataStore:
         store = super(DicomParser, self).parse_raw_metadata()
         ds = cached_dcmread(self.format)
 
         for data_element in ds:
             if type(data_element.value) in (bytes, bytearray) \
-                    or data_element.VR == "SQ":  # TODO: support sequence metadata
+                    or data_element.VR == "SQ":
+                # TODO: support sequence metadata
                 continue
 
             name = data_element.name
             if data_element.is_private:
-                name = f"{data_element.tag.group:04x}_{data_element.tag.element:04x}"
+                tag = data_element.tag
+                name = f"{tag.group:04x}_{tag.element:04x}"  # noqa
             name = name.replace(' ', '')
 
             value = data_element.value
@@ -135,13 +157,7 @@ class DicomParser(AbstractParser):
             store.set(name, value, namespace="DICOM")
         return store
 
-    @staticmethod
-    def parse_physical_size(physical_size):
-        if physical_size is not None and parse_float(physical_size) is not None:
-            return parse_float(physical_size) * UNIT_REGISTRY("millimeter")
-        return None
-
-    def parse_annotations(self):
+    def parse_annotations(self) -> List[ParsedMetadataAnnotation]:
         """
         DICOM/DICONDE extension for Annotations
         * 0x0077-0x1900 (US) - Annotation.Number
@@ -162,7 +178,9 @@ class DicomParser(AbstractParser):
                     wkt = annot.get((0x77, 0x1911))
                     if wkt.value is not None:
                         geometry = wkt_loads(wkt.value)
-                        parsed = ParsedMetadataAnnotation(geometry, channels, 0, 0)
+                        parsed = ParsedMetadataAnnotation(
+                            geometry, channels, 0, 0
+                        )
 
                         indication = annot.get((0x77, 0x1903))
                         if indication:
@@ -214,10 +232,16 @@ class DicomReader(AbstractReader):
         image = ds.pixel_array[slices]
         return to_unsigned_int(image)
 
-    def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
+    def read_thumb(
+        self, out_width, out_height, precomputed=None,
+        c=None, z=None, t=None
+    ):
         return self._pixel_array(None, None, c, z)
 
-    def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
+    def read_window(
+        self, region, out_width, out_height,
+        c=None, z=None, t=None
+    ):
         region = region.scale_to_tier(self.format.pyramid.base)
         return self._pixel_array(
             np.s_[region.left:region.right],
@@ -226,7 +250,9 @@ class DicomReader(AbstractReader):
         )
 
     def read_tile(self, tile, c=None, z=None, t=None):
-        return self.read_window(tile, tile.width, tile.height, c, z, t)
+        return self.read_window(
+            tile, int(tile.width), int(tile.height), c, z, t
+        )
 
 
 class DicomSpatialConvertor(VipsSpatialConvertor):
@@ -244,7 +270,7 @@ class DicomFormat(AbstractFormat):
     checker_class = DicomChecker
     parser_class = DicomParser
     reader_class = DicomReader
-    histogram_reader_class = NullHistogramReader  # TODO
+    histogram_reader_class = DefaultHistogramReader  # TODO
     convertor_class = DicomSpatialConvertor
 
     def __init__(self, *args, **kwargs):
@@ -258,8 +284,8 @@ class DicomFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        return not (imd.width < 1024 and imd.height < 1024) \
-               and imd.depth == 1  # TODO: the convertor only support 2D images
+        # TODO: the convertor only support 2D images
+        return imd.width > 1024 or imd.height > 1024 and imd.depth == 1
 
     @property
     def media_type(self):

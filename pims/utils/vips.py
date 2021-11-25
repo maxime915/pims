@@ -14,6 +14,8 @@
 
 import numpy as np
 
+from pims.utils.dtypes import bits_to_str_dtype
+
 vips_format_to_dtype = {
     'uchar': np.uint8,
     'char': np.int8,
@@ -57,24 +59,6 @@ format_to_vips_suffix = {
 }
 
 
-def dtype_to_bits(dtype):
-    if type(dtype) is str:
-        dtype = np.dtype(dtype)
-    return dtype.type(0).nbytes * 8
-
-
-def bits_to_dtype(bits):
-    if bits > 16:
-        return 'uint32'
-    elif bits > 8:
-        return 'uint16'
-    else:
-        return 'uint8'
-
-
-def np_dtype(bits):
-    return np.dtype(bits_to_dtype(bits))
-
-
-def vips_dtype(bits):
-    return dtype_to_vips_format[bits_to_dtype(bits)]
+def vips_dtype(bits: int) -> str:
+    """VIPS format for a given number of bits."""
+    return dtype_to_vips_format[bits_to_str_dtype(bits)]

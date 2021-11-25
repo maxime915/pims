@@ -29,8 +29,8 @@ def test_get_output_format_simple(app):
 
 
 def test_get_output_format_complex(app):
-    accept_header = 'application/signed-exchange;v=b3;q=0.9,text/html,application/xhtml+xml,image/webp,image/apng,' \
-                    'application/xml;q=0.9,*/*;q=0.8'
+    accept_header = 'application/signed-exchange;v=b3;q=0.9,text/html,application/xhtml+xml,' \
+                    'image/webp,image/apng,application/xml;q=0.9,*/*;q=0.8'
 
     format, mimetype = get_output_format(
         OutputExtension.NONE, accept_header, VISUALISATION_MIMETYPES
