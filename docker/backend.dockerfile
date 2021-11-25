@@ -1,4 +1,4 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
+FROM tiangolo/uvicorn-gunicorn-fastapi:python3.9
 
 RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install-suggests \
         `# Essentials` \
