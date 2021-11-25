@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #  * Copyright (c) 2020-2021. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +13,8 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+
+# KEEP ENCODING - so that __version__ can be read even if py2.7 is used.
 
 from .__version__ import (
     __api_version__, __author__, __copyright__, __description__, __email__,
