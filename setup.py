@@ -58,7 +58,7 @@ REQUIRED = [
     'pydicom>=2.2.2',
     'python-gdcm>=3.0.10',
 
-    'Shapely>=1.8a1',
+    'Shapely>=1.8.0',
     'rasterio>=1.2.1',
 
     # Must be at end to work with dependency links

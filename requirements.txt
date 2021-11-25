@@ -186,7 +186,7 @@ scikit-image==0.18.2
     # via pims (setup.py)
 scipy==1.7.0
     # via scikit-image
-shapely==1.8a1
+shapely==1.8.0
     # via
     #   cytomine-python-client
     #   pims (setup.py)
