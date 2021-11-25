@@ -13,7 +13,6 @@
 #  * limitations under the License.
 import pytest
 
-from pims.api.utils.annotation_parameter import is_wkt
 from pims.api.utils.range_parameter import is_range, parse_range
 
 
@@ -39,11 +38,3 @@ def test_parse_range():
 
     with pytest.raises(ValueError):
         parse_range("2:3:4", 0, 100)
-
-
-def test_is_wkt():
-    assert is_wkt('POINT(10 10)') is True
-    assert is_wkt('POINT()') is False
-
-    # Valid WKT, invalid geometry
-    assert is_wkt('POLYGON ((0 0, 0 2, 1 1, 2 2, 2 0, 1 1, 0 0))') is True
