@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-
+#! /usr/bin/env bash
+#
 #  * Copyright (c) 2020-2021. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,18 +13,11 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+#
 
-# KEEP ENCODING - so that __version__ can be read even if py2.7 is used.
+set -e
 
-VERSION = (0, 5, 0)
-API_VERSION = (0, 5, 0)
+CONCURRENCY="${WEB_CONCURRENCY:-4}"
+LOG_LEVEL="${LOG_LEVEL:-INFO}"
 
-__title__ = 'pims'
-__description__ = 'Cytomine Python Image Server'
-__url__ = 'https://doc.uliege.cytomine.org'
-__version__ = '.'.join(map(str, VERSION))
-__api_version__ = '.'.join(map(str, API_VERSION))
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2020-2021 ULiège Cytomine R&D team'
-__author__ = 'Ulysse Rubens'
-__email__ = 'uliege@cytomine.org'
+celery -A pims.tasks.worker worker -l ${LOG_LEVEL} -Q pims-import-queue -c ${CONCURRENCY}
