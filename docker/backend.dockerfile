@@ -90,8 +90,10 @@ RUN python3 plugins.py \
 RUN rm -rf /var/lib/apt/lists/*
 
 # Install python requirements
+ARG GUNICORN_VERSION=20.1.0
 COPY ./requirements.txt /app/requirements.txt
-RUN pip3 install -r requirements.txt && \
+RUN pip3 install gunicorn==${GUNICORN_VERSION} && \
+    pip3 install -r requirements.txt && \
     python3 plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
