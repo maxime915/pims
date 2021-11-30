@@ -59,7 +59,7 @@ def test_png_info(client, image_path_png):
 	
 def test_png_norm_tile(client, image_path_png):
 	response = client.get(f"/image/upload_test_png/{image_path_png[1]}/normalized-tile/zoom/1/ti/0", headers={"accept": "image/jpeg"})
-	assert response.status_code == 419
+	assert response.status_code == 200
 	
 	img_response = Image.open(io.BytesIO(response.content))
 	width_resp, height_resp = img_response.size
