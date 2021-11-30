@@ -3,8 +3,9 @@ FROM cytomine/pims-dependencies:v$VERSION_NUMBER
 
 COPY . /app
 
-ARG VERSION_NUMBER
+ARG  VERSION_NUMBER
 ENV VERSION_NUMBER_ENV=$VERSION_NUMBER
+
 WORKDIR /app
 
 # Prestart configuration
@@ -20,6 +21,8 @@ COPY ./docker/gunicorn_conf.py /app/gunicorn_conf.py
 # Add app
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
+COPY ./scripts/docker/setVersion.sh /tmp/
+RUN chmod u+x /tmp/setVersion.sh && /tmp/setVersion.sh $VERSION_NUMBER
 
 ENV PORT=5000
 EXPOSE ${PORT}

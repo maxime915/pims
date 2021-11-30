@@ -7,8 +7,8 @@ echo "************************************** Publish docker ********************
 
 file='./ci/version'
 VERSION_NUMBER=$(<"$file")
-
-docker build --rm -f ./scripts/docker/Dockerfile-final.build --build-arg VERSION_NUMBER=$VERSION_NUMBER -t  cytomine/pims:v$VERSION_NUMBER ./
+echo $VERSION_NUMBER
+docker build --rm -f ./scripts/docker/Dockerfile-final.build -t  cytomine/pims:v$VERSION_NUMBER --build-arg VERSION_NUMBER=$VERSION_NUMBER ./
 
 docker push cytomine/pims:v$VERSION_NUMBER
 
