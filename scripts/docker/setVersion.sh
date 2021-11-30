@@ -4,10 +4,9 @@
 
 echo "Parameter $1"
 
-if [[ "$1" =~ v[0-9]+.[0-9]+.[0-9]+$ ]]; then
+if [[ "$1" =~ [0-9]+.[0-9]+.[0-9]+$ ]]; then
     echo "Official release"
     PIMS_VERSION="${1//./,}" # replace "." (x.y.z) by "," (x,y,z)
-    PIMS_VERSION="${PIMS_VERSION//v/}" # remove the 'v' at the beginning (v1,2,3 => 1,2,3)
     echo "Setting $PIMS_VERSION"
     sed -i -- 's/VERSION = (0, 0, 0)/VERSION = ('$PIMS_VERSION')/g' /app/pims/__version__.py ;
 else
