@@ -1,12 +1,25 @@
-FROM imageWithDependencies
-
-RUN pip install -U pytest
+ARG  VERSION_NUMBER
+FROM cytomine/pims-dependencies:v$VERSION_NUMBER
 
 COPY . /app
 
 ARG VERSION_NUMBER
-
 ENV VERSION_NUMBER_ENV=$VERSION_NUMBER
 WORKDIR /app
 
-CMD pytest /app/tests --junit-xml=ci/test-reports/pytest_unit.xml
+# Prestart configuration
+RUN touch /tmp/addHosts.sh
+COPY ./docker/prestart.sh /app/prestart.sh
+RUN chmod +x /app/prestart.sh
+
+# Add default config
+COPY ./pims-config.env /app/pims-config.env
+COPY ./logging-prod.yml /app/logging-prod.yml
+COPY ./docker/gunicorn_conf.py /app/gunicorn_conf.py
+
+# Add app
+COPY ./pims /app/pims
+ENV MODULE_NAME="pims.application"
+
+ENV PORT=5000
+EXPOSE ${PORT}

@@ -23,14 +23,14 @@ node {
     stage 'Publish test'
     step([$class: 'JUnitResultArchiver', testResults: '**/ci/test-reports/*.xml'])
 
-//     stage 'Build docker image'
-//     withCredentials(
-//         [
-//             usernamePassword(credentialsId: 'DOCKERHUB_CREDENTIAL', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_TOKEN')
-//         ]
-//         ) {
-//             docker.withRegistry('https://index.docker.io/v1/', 'DOCKERHUB_CREDENTIAL') {
-//                 sh 'scripts/ciBuildDockerImage.sh'
-//             }
-//         }
+    stage 'Build docker image'
+    withCredentials(
+        [
+            usernamePassword(credentialsId: 'DOCKERHUB_CREDENTIAL', usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_TOKEN')
+        ]
+        ) {
+            docker.withRegistry('https://index.docker.io/v1/', 'DOCKERHUB_CREDENTIAL') {
+                sh 'scripts/ciBuildDockerImage.sh'
+            }
+        }
 }
