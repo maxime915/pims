@@ -31,7 +31,7 @@ from pims.api.utils.cytomine_auth import (
     get_this_image_server, parse_authorization_header,
     parse_request_token, sign_token
 )
-from pims.api.utils.parameter import imagepath_parameter, sanitize_filename
+from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, sanitize_filename
 from pims.api.utils.response import serialize_cytomine_model
 from pims.config import Settings, get_settings
 from pims.files.archive import make_zip_archive
@@ -179,7 +179,7 @@ def import_(filepath, body):
 
 
 @router.get('/file/{filepath:path}/export', tags=['Export'])
-def export_file(path: Path = Depends(imagepath_parameter)):
+def export_file(path: Path = Depends(filepath_parameter)):
     """
     Export a file. All files in the server base path can be exported.
     """
