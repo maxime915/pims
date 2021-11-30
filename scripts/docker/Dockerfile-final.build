@@ -1,0 +1,12 @@
+FROM imageWithDependencies
+
+RUN pip install -U pytest
+
+COPY . /app
+
+ARG VERSION_NUMBER
+
+ENV VERSION_NUMBER_ENV=$VERSION_NUMBER
+WORKDIR /app
+
+CMD pytest /app/tests --junit-xml=ci/test-reports/pytest_unit.xml
