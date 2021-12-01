@@ -1,4 +1,7 @@
-FROM tiangolo/uvicorn-gunicorn-fastapi:python3.8
+FROM ubuntu:20.04
+
+ENV LANG C.UTF-8
+ENV DEBIAN_FRONTEND noninteractive
 
 RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install-suggests \
         `# Essentials` \
@@ -9,6 +12,8 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install
         git \
         gcc \
         net-tools \
+        python3 \
+        python3-pip \
         wget \
         software-properties-common \
         `# Vips dependencies` \
@@ -16,9 +21,10 @@ RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install
         glib2.0-dev \
         libexpat1-dev \
         libtiff5-dev \
-        libjpeg62-turbo-dev \
+        libjpeg-turbo8 \
         libgsf-1-dev \
         libexif-dev \
+        libvips-dev \
         orc-0.4-dev \
         libwebp-dev \
         liblcms2-dev \
@@ -49,13 +55,13 @@ COPY ./docker/plugins.py /app/plugins.py
 ARG PLUGIN_CSV
 # ="enabled,name,git_url,git_branch\n"
 ENV PLUGIN_INSTALL_PATH /app/plugins
-RUN python plugins.py \
+RUN python3 plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method download
 
 # Run before_vips() from plugins prerequisites
-RUN python plugins.py \
+RUN python3 plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method dependencies_before_vips
@@ -74,22 +80,23 @@ RUN cd /usr/local/src && \
     ldconfig
 
 # Run before_python() from plugins prerequisites
-RUN python plugins.py \
+RUN python3 plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method dependencies_before_python
+
 
 # Cleaning. Cannot be done before as plugin prerequisites could use apt-get.
 RUN rm -rf /var/lib/apt/lists/*
 
 # Install python requirements
 COPY ./requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt && \
-    python plugins.py \
+RUN pip3 install -r requirements.txt && \
+    python3 plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method install
-
+   
 # Prestart configuration
 RUN touch /tmp/addHosts.sh
 COPY ./docker/prestart.sh /app/prestart.sh
@@ -100,9 +107,17 @@ COPY ./pims-config.env /app/pims-config.env
 COPY ./logging-prod.yml /app/logging-prod.yml
 COPY ./docker/gunicorn_conf.py /app/gunicorn_conf.py
 
+COPY ./docker/start.sh /start.sh
+RUN chmod +x /start.sh
+
+COPY ./docker/start-reload.sh /start-reload.sh
+RUN chmod +x /start-reload.sh
+
 # Add app
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
 
 ENV PORT=5000
 EXPOSE ${PORT}
+
+CMD ["/start.sh"]
