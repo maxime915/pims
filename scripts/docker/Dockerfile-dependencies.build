@@ -96,3 +96,5 @@ RUN pip3 install -r requirements.txt && \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method install
+
+RUN pip install -U pytest
