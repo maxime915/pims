@@ -97,7 +97,7 @@ class BMPFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        return imd.width > 1024 or imd.height > 1024
+        return imd.width > 1400 or imd.height > 1400
 
     @property
     def media_type(self):
