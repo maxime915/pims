@@ -31,10 +31,10 @@ from pims.utils.types import parse_datetime
 TIFF_FLAGS = (
     'geotiff',
     'philips',
-    'shaped',
+    # 'shaped',
     'lsm',
     'ome',
-    'imagej',
+    # 'imagej',
     'fluoview',
     'stk',
     'sis',
