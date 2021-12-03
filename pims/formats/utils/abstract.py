@@ -98,6 +98,13 @@ class AbstractFormat(ABC, SimpleDataCache):
         pass
 
     @classmethod
+    def _get_identifier(cls):
+        """
+        Get the format identifier. It must be unique across all formats.
+        """
+        return cls.__name__.replace('Format', '')
+
+    @classmethod
     def get_identifier(cls, uppercase: bool = True) -> str:
         """
         Get the format identifier. It must be unique across all formats.
@@ -113,7 +120,7 @@ class AbstractFormat(ABC, SimpleDataCache):
         identifier: str
             The format identifier
         """
-        identifier = cls.__name__.replace('Format', '')
+        identifier = cls._get_identifier()
         if uppercase:
             return identifier.upper()
         return identifier
