@@ -37,11 +37,28 @@ def cached_pillow_file(
     return format.get_cached('_pil', PILImage.open, format.path, formats=slugs)
 
 
+def cached_palette_converted_pillow_file(
+    format: AbstractFormat, pil_format_slug: Optional[str]
+) -> PILImage:
+    """Palette converted pillow image"""
+    def _open_palette_converted(_format, _pil_format_slug):
+        image = cached_pillow_file(format, pil_format_slug)
+        palette = getattr(image, "palette", None)
+        if palette:
+            image = image.convert(palette.mode)
+        return image
+
+    return format.get_cached(
+        '_pil_palette_converted', _open_palette_converted,
+        format.path, pil_format_slug
+    )
+
+
 class PillowParser(ExifToolParser, AbstractParser):
     FORMAT_SLUG = None
 
     def parse_main_metadata(self) -> ImageMetadata:
-        image = cached_pillow_file(self.format, self.FORMAT_SLUG)
+        image = cached_palette_converted_pillow_file(self.format, self.FORMAT_SLUG)
 
         imd = ImageMetadata()
         imd.width = image.width
@@ -49,7 +66,7 @@ class PillowParser(ExifToolParser, AbstractParser):
         imd.depth = 1
         imd.duration = getattr(image, "n_frames", 1)
 
-        mode = image.mode  # Possible values: 1, L, P, RGB
+        mode = image.mode  # Possible values: 1, L, RGB
         imd.pixel_type = np.dtype("uint8")
         imd.significant_bits = 8 if mode != "1" else 1
 
@@ -93,7 +110,7 @@ class SimplePillowReader(AbstractReader):
         )
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
-        image = cached_pillow_file(self.format, self.FORMAT_SLUG)
+        image = cached_palette_converted_pillow_file(self.format, self.FORMAT_SLUG)
         region = region.scale_to_tier(self.format.pyramid.base)
         return image.crop(
             (region.left, region.top, region.right, region.bottom)
@@ -194,4 +211,4 @@ class SimplePillowReader(AbstractReader):
 
 class PillowSpatialConvertor(VipsSpatialConvertor):
     def vips_source(self):
-        return pil_to_vips(cached_pillow_file(self.source, None))
+        return pil_to_vips(cached_palette_converted_pillow_file(self.source, None))
