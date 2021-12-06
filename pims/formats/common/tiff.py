@@ -27,23 +27,26 @@ from pims.formats.utils.histogram import DefaultHistogramReader
 class PyrTiffChecker(TifffileChecker):
     @classmethod
     def match(cls, pathlike: CachedDataPath) -> bool:
-        if not super().match(pathlike):
-            return False
-
-        tf = cls.get_tifffile(pathlike)
-        for name in TIFF_FLAGS:
-            if getattr(tf, 'is_' + name, False):
+        try:
+            if not super().match(pathlike):
                 return False
 
-        if len(tf.series) == 1:
-            baseline = tf.series[0]
-            if baseline and baseline.is_pyramidal:
-                for level in baseline.levels:
-                    if level.keyframe.is_tiled is False:
-                        return False
-                return True
+            tf = cls.get_tifffile(pathlike)
+            for name in TIFF_FLAGS:
+                if getattr(tf, 'is_' + name, False):
+                    return False
 
-        return False
+            if len(tf.series) == 1:
+                baseline = tf.series[0]
+                if baseline and baseline.is_pyramidal:
+                    for level in baseline.levels:
+                        if level.keyframe.is_tiled is False:
+                            return False
+                    return True
+
+            return False
+        except RuntimeError:
+            return False
 
 
 class PyrTiffVipsReader(VipsReader):
@@ -115,21 +118,24 @@ class PyrTiffFormat(AbstractFormat):
 class PlanarTiffChecker(TifffileChecker):
     @classmethod
     def match(cls, pathlike: CachedDataPath) -> bool:
-        if not super().match(pathlike):
-            return False
-
-        tf = cls.get_tifffile(pathlike)
-        for name in TIFF_FLAGS:
-            if getattr(tf, 'is_' + name, False):
+        try:
+            if not super().match(pathlike):
                 return False
 
-        if len(tf.series) >= 1:
-            baseline = tf.series[0]
-            if baseline and not baseline.is_pyramidal\
-                    and len(baseline.levels) == 1:
-                return True
+            tf = cls.get_tifffile(pathlike)
+            for name in TIFF_FLAGS:
+                if getattr(tf, 'is_' + name, False):
+                    return False
 
-        return False
+            if len(tf.series) >= 1:
+                baseline = tf.series[0]
+                if baseline and not baseline.is_pyramidal\
+                        and len(baseline.levels) == 1:
+                    return True
+
+            return False
+        except RuntimeError:
+            return False
 
 
 class PlanarTiffFormat(AbstractFormat):

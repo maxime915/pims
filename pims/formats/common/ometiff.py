@@ -89,10 +89,13 @@ def cached_tifffile_baseseries(format: AbstractFormat) -> TiffPageSeries:
 class OmeTiffChecker(TifffileChecker):
     @classmethod
     def match(cls, pathlike: CachedDataPath) -> bool:
-        if super().match(pathlike):
-            tf = cls.get_tifffile(pathlike)
-            return tf.is_ome
-        return False
+        try:
+            if super().match(pathlike):
+                tf = cls.get_tifffile(pathlike)
+                return tf.is_ome
+            return False
+        except RuntimeError:
+            return False
 
 
 class OmeTiffParser(TifffileParser):

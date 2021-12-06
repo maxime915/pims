@@ -25,11 +25,14 @@ from pims.utils import UNIT_REGISTRY
 class OlympusSisChecker(TifffileChecker):
     @classmethod
     def match(cls, pathlike: CachedDataPath) -> bool:
-        if not super().match(pathlike):
-            return False
+        try:
+            if not super().match(pathlike):
+                return False
 
-        tf = cls.get_tifffile(pathlike)
-        return tf.is_sis
+            tf = cls.get_tifffile(pathlike)
+            return tf.is_sis
+        except RuntimeError:
+            return False
 
 
 class OlympusSisParser(TifffileParser):
