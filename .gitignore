@@ -132,3 +132,6 @@ dmypy.json
 
 # PIMS
 dev-config/
+
+# Continous integration & build
+ci/

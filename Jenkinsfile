@@ -16,11 +16,11 @@ node {
     stage 'Download and cache dependencies'
     sh 'scripts/ciCreateDependencyImage.sh'
 
-    stage 'Build and test'
+    stage 'Run tests'
     catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
         sh 'scripts/ciTest.sh'
     }
-    stage 'Publish test'
+    stage 'Publish tests'
     step([$class: 'JUnitResultArchiver', testResults: '**/ci/test-reports/*.xml'])
 
     stage 'Build docker image'
