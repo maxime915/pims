@@ -132,7 +132,7 @@ class MatplotlibColormap(Colormap):
         if size not in self._mpl_cmap:
             self._init_cmap(size)
 
-        lut = self._mpl_cmap[size]._lut[:size, :n_components]  # noqa
+        lut = self._mpl_cmap[size]._lut[:size, :n_components].copy()  # noqa
         lut *= (2 ** bitdepth - 1)
         return lut.astype(np_dtype(bitdepth))
 
