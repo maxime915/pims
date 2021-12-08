@@ -115,7 +115,9 @@ class MatplotlibColormap(Colormap):
 
     def _init_cmap(self, size: int):
         # (Matplotlib already precomputes with N=256)
-        mpl_size = size if size != 256 else None
+        mpl_size = None
+        if size != 256 or self.ctype == ColormapType.QUALITATIVE:
+            mpl_size = size
         mpl_name = self.id + ("_r" if self.inverted else "")
         self._mpl_cmap[size] = get_cmap(mpl_name, mpl_size)
         self._mpl_cmap[size]._init()  # noqa
@@ -249,7 +251,7 @@ mpl_cmaps[ColormapType.DIVERGING] = [
     'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
 mpl_cmaps[ColormapType.CYCLIC] = [
     'twilight', 'twilight_shifted', 'hsv']
-mpl_cmaps[ColormapType.DIVERGING] = [
+mpl_cmaps[ColormapType.QUALITATIVE] = [
     'Pastel1', 'Pastel2', 'Paired', 'Accent',
     'Dark2', 'Set1', 'Set2', 'Set3',
     'tab10', 'tab20', 'tab20b', 'tab20c']
