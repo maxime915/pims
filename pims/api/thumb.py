@@ -114,7 +114,7 @@ def _show_thumb(
     path: Path,
     height, width, length,
     channels, z_slices, timepoints,
-    min_intensities, max_intensities, filters, gammas,
+    min_intensities, max_intensities, filters, gammas, threshold,
     log, use_precomputed,
     extension,
     headers,
@@ -166,7 +166,7 @@ def _show_thumb(
         out_format, out_width, out_height,
         c_reduction, z_reduction, t_reduction,
         gammas, filters, colormaps, min_intensities, max_intensities,
-        log, use_precomputed
+        log, use_precomputed, threshold
     ).http_response(
         mimetype,
         extra_headers=add_image_size_limit_header(dict(), *req_size, *out_size)

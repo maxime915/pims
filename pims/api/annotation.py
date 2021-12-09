@@ -162,7 +162,7 @@ async def _show_crop(
     background_transparency,
     height, width, length, zoom, level,
     channels, z_slices, timepoints,
-    min_intensities, max_intensities, filters, gammas,
+    min_intensities, max_intensities, filters, gammas, threshold,
     bits, colorspace,
     extension, headers, config,
     colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None,
@@ -190,7 +190,7 @@ async def _show_crop(
         height, width, length, zoom, level,
         channels, z_slices, timepoints,
         min_intensities, max_intensities,
-        filters, gammas, bits, colorspace,
+        filters, gammas, threshold, bits, colorspace,
         annots, annot_style,
         extension, headers, config,
         colormaps, c_reduction, z_reduction, t_reduction
@@ -232,7 +232,7 @@ async def _show_drawing(
     try_square, point_cross, point_envelope_length,
     height, width, length, zoom, level,
     channels, z_slices, timepoints,
-    min_intensities, max_intensities, filters, gammas, log,
+    min_intensities, max_intensities, filters, gammas, threshold, log,
     extension, headers, config,
     colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None,
 ):
@@ -261,7 +261,7 @@ async def _show_drawing(
         height, width, length, zoom, level,
         channels, z_slices, timepoints,
         min_intensities, max_intensities,
-        filters, gammas, 8, Colorspace.AUTO,
+        filters, gammas, threshold, 8, Colorspace.AUTO,
         annots, annot_style,
         extension, headers, config,
         colormaps, c_reduction, z_reduction, t_reduction

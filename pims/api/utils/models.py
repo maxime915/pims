@@ -105,6 +105,17 @@ class GammaList(BaseModel):
     __root__: Union[Gamma, List[Gamma]]
 
 
+class Threshold(BaseModel):
+    """
+    Threshold an image so that pixel intensities in the
+    original image below the threshold (scaled to pixel type)
+    are set to 0. If the target content type is an image
+    format supporting transparency, pixel intensities below
+    the threshold are transparent.
+    """
+    __root__: Optional[confloat(ge=0.0, le=1.0)]
+
+
 class FilterId(BaseModel):
     """
     A unique case-insensitive identifier for an image filter
@@ -191,6 +202,7 @@ class ImageIn(BaseModel):
     colormaps: Optional[ColormapIdList] = ColormapEnum.DEFAULT
     filters: Optional[FilterIdList] = None
     gammas: GammaList = 1.0
+    threshold: Threshold = None
 
     class Config:
         __mi_doc = "Intensity in the original image used as minimum intensity (black) to create the response." \
@@ -281,6 +293,7 @@ class ImageOpsDisplayQueryParams(BaseDependency):
     def __init__(
         self,
         gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+        threshold: Optional[confloat(ge=0.0, le=1.0)] = Query(None),
         min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(
             [
                 IntensitySelectionEnum.AUTO_IMAGE]
@@ -294,6 +307,7 @@ class ImageOpsDisplayQueryParams(BaseDependency):
         log: bool = Query(False),
     ):
         self.gammas = gammas
+        self.threshold = threshold
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.colormaps = colormaps
@@ -357,6 +371,7 @@ class ImageOpsProcessingQueryParams(BaseDependency):
     def __init__(
         self,
         gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+        threshold: Optional[confloat(ge=0.0, le=1.0)] = Query(None),
         min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
         max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
         colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
@@ -365,6 +380,7 @@ class ImageOpsProcessingQueryParams(BaseDependency):
         colorspace: Optional[Colorspace] = Query(Colorspace.AUTO)
     ):
         self.gammas = gammas
+        self.threshold = threshold
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.colormaps = colormaps

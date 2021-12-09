@@ -96,7 +96,7 @@ def _show_window(
     region: Union[Region, dict],
     height, width, length, zoom, level,
     channels, z_slices, timepoints,
-    min_intensities, max_intensities, filters, gammas,
+    min_intensities, max_intensities, filters, gammas, threshold,
     bits, colorspace,
     annotations: Union[ParsedAnnotations, dict, List[dict]],
     annotation_style: dict,
@@ -221,7 +221,7 @@ def _show_window(
             c_reduction, z_reduction, t_reduction,
             gammas, filters, colormaps,
             min_intensities, max_intensities, False,
-            out_bitdepth, colorspace,
+            out_bitdepth, threshold, colorspace,
             annotations, affine, annotation_style
         )
 

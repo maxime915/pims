@@ -65,7 +65,8 @@ class Colormap(ABC):
     @abstractmethod
     def lut(
         self, size: int = 256, bitdepth: int = 8,
-        n_components: Optional[int] = None
+        n_components: Optional[int] = None,
+        force_black_as_first: bool = False
     ) -> LookUpTable:
         """
         Build a look-up table (LUT) for the colormap.
@@ -81,6 +82,9 @@ class Colormap(ABC):
             LUT number of components. Expected to be 1 (grayscale) or 3 (rgb).
             If not set, the number of components defined for the colormap is
             used.
+        force_black_as_first
+            Force to return black color (0) in the first LUT item whatever
+            the colormap.
 
         Returns
         -------
@@ -124,7 +128,8 @@ class MatplotlibColormap(Colormap):
 
     def lut(
         self, size: int = 256, bitdepth: int = 8,
-        n_components: Optional[int] = None
+        n_components: Optional[int] = None,
+        force_black_as_first: bool = False
     ) -> LookUpTable:
         if n_components is None or n_components > 3:
             n_components = self.n_components()
@@ -133,6 +138,10 @@ class MatplotlibColormap(Colormap):
             self._init_cmap(size)
 
         lut = self._mpl_cmap[size]._lut[:size, :n_components].copy()  # noqa
+
+        if force_black_as_first:
+            lut[0, :] = 0
+
         lut *= (2 ** bitdepth - 1)
         return lut.astype(np_dtype(bitdepth))
 
@@ -152,7 +161,8 @@ class ColorColormap(Colormap):
 
     def lut(
         self, size: int = 256, bitdepth: int = 8,
-        n_components: Optional[int] = None
+        n_components: Optional[int] = None,
+        force_black_as_first: bool = False
     ) -> LookUpTable:
         components = self._color.as_float_tuple(alpha=False)
         if n_components is None or n_components > 3:
@@ -169,12 +179,16 @@ class ColorColormap(Colormap):
                 y = [0, color]
             lut[:, i] = np.interp(xvals, x, y)
 
+        if force_black_as_first:
+            lut[0, :] = 0
+
         lut = lut * (2 ** bitdepth - 1)
         return lut.astype(np_dtype(bitdepth))
 
 
 def default_lut(
-    size: int = 256, bitdepth: int = 8, n_components: int = 1
+    size: int = 256, bitdepth: int = 8, n_components: int = 1,
+    force_black_as_first: Optional[bool] = False  # Ignored but here for compat
 ) -> LookUpTable:
     """Default LUT"""
     return np.stack(

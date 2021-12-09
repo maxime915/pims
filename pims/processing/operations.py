@@ -310,7 +310,10 @@ class TransparencyMaskImgOp(ImageOp):
 
     def processed_mask(self, dtype: np.dtype) -> np.ndarray:
         mi = max_intensity(self.bitdepth)
-        mask = self.mask.astype(dtype)
+        mask = self.mask
+        if mask.ndim == 3:
+            mask = mask[:, :, 0]
+        mask = mask.astype(dtype)
         mask[mask > 0] = 1 * mi
         mask[mask == 0] = (1 - self.bg_transparency / 100) * mi
         return mask
