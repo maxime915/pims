@@ -123,7 +123,7 @@ def _show_resized(
     path: Path,
     height, width, length, zoom, level,
     channels, z_slices, timepoints,
-    min_intensities, max_intensities, filters, gammas,
+    min_intensities, max_intensities, filters, gammas, threshold,
     bits, colorspace,
     extension,
     headers,
@@ -179,7 +179,7 @@ def _show_resized(
         out_format, out_width, out_height,
         c_reduction, z_reduction, t_reduction,
         gammas, filters, colormaps, min_intensities, max_intensities,
-        False, out_bitdepth, colorspace
+        False, out_bitdepth, threshold, colorspace
     ).http_response(
         mimetype,
         extra_headers=add_image_size_limit_header(dict(), *req_size, *out_size)

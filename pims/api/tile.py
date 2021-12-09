@@ -118,7 +118,7 @@ def _show_tile(
     normalized: bool,
     tile: dict,
     channels, z_slices, timepoints,
-    min_intensities, max_intensities, filters, gammas, log,
+    min_intensities, max_intensities, filters, gammas, threshold, log,
     extension, headers, config,
     colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None
 ):
@@ -199,14 +199,15 @@ def _show_tile(
             tile_region, out_format, out_width, out_height,
             c_reduction, z_reduction, t_reduction,
             gammas, filters, colormaps, min_intensities, max_intensities, log,
-            8, Colorspace.AUTO
+            8, threshold, Colorspace.AUTO
         )
     else:
         tile = TileResponse(
             in_image, channels, z_slices, timepoints,
             tile_region, out_format, out_width, out_height,
             c_reduction, z_reduction, t_reduction,
-            gammas, filters, colormaps, min_intensities, max_intensities, log
+            gammas, filters, colormaps, min_intensities, max_intensities, log,
+            threshold
         )
 
     return tile.http_response(

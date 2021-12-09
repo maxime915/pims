@@ -25,7 +25,7 @@ from pims.api.utils.models import (
 )
 from pims.files.image import Image
 from pims.filters import AbstractFilter
-from pims.processing.adapters import ImagePixels
+from pims.processing.adapters import ImagePixels, convert_to
 from pims.processing.annotations import ParsedAnnotations
 from pims.processing.colormaps import (
     Colormap, StackedLookUpTables, combine_stacked_lut, default_lut,
@@ -151,7 +151,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         z_reduction: GenericReduction, t_reduction: GenericReduction,
         gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
-        max_intensities: List[int], log: bool,
+        max_intensities: List[int], log: bool, threshold: Optional[float],
         colorspace: Colorspace = Colorspace.AUTO, **kwargs
     ):
         super().__init__(
@@ -166,12 +166,18 @@ class ProcessedView(MultidimImageResponse, ABC):
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.log = log
+        self.threshold = threshold
         self.colorspace = colorspace
 
     @property
     def gamma_processing(self) -> bool:
         """Whether gamma processing is required"""
         return any(gamma != 1.0 for gamma in self.gammas)
+
+    @property
+    def threshold_processing(self) -> bool:
+        """Whether threshold processing is required"""
+        return self.threshold is not None and self.threshold > 0.0
 
     @property
     def log_processing(self) -> bool:
@@ -189,6 +195,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         """Whether math lookup table has to be computed."""
         return (self.intensity_processing or
                 self.gamma_processing or
+                self.threshold_processing or
                 self.log_processing)
 
     @lru_cache(maxsize=None)
@@ -229,7 +236,11 @@ class ProcessedView(MultidimImageResponse, ABC):
             # (http://icy.bioimageanalysis.org/plugin/logarithmic-2d-viewer/)
             lut = np.log1p(lut) * 1. / np.log1p(1)
 
+        if self.threshold_processing:
+            lut[lut < self.threshold] = 0.0
+
         lut *= self.max_intensity
+        lut = np.rint(lut)
         return lut.astype(np_dtype(self.best_effort_bitdepth))
 
     @property
@@ -259,11 +270,13 @@ class ProcessedView(MultidimImageResponse, ABC):
                 colormap.lut(
                     size=self.max_intensity + 1,
                     bitdepth=self.best_effort_bitdepth,
-                    n_components=n_components
+                    n_components=n_components,
+                    force_black_as_first=self.threshold_processing
                 ) if colormap else default_lut(
                     size=self.max_intensity + 1,
                     bitdepth=self.best_effort_bitdepth,
-                    n_components=n_components
+                    n_components=n_components,
+                    force_black_as_first=self.threshold_processing
                 ) for colormap in self.colormaps
             ]
         )
@@ -432,6 +445,12 @@ class ProcessedView(MultidimImageResponse, ABC):
 
         if self.colorspace_processing:
             img = ColorspaceImgOp(self.new_colorspace)(img)
+
+        if self.threshold_processing:
+            img = TransparencyMaskImgOp(
+                100, convert_to(img, np.ndarray), self.out_bitdepth
+            )(img)
+
         return img
 
     def process_histogram(self) -> np.ndarray:
@@ -460,13 +479,13 @@ class ThumbnailResponse(ProcessedView):
         t_reduction: GenericReduction, gammas: List[float],
         filters: List[Type[AbstractFilter]], colormaps: List[Colormap],
         min_intensities: List[int], max_intensities: List[int], log: bool,
-        use_precomputed: bool, **kwargs
+        use_precomputed: bool, threshold: Optional[float], **kwargs
     ):
         super().__init__(
             in_image, in_channels, in_z_slices, in_timepoints, out_format,
             out_width, out_height, 8, c_reduction, z_reduction, t_reduction,
             gammas, filters, colormaps, min_intensities, max_intensities, log,
-            **kwargs
+            threshold, **kwargs
         )
 
         self.use_precomputed = use_precomputed
@@ -487,13 +506,13 @@ class ResizedResponse(ProcessedView):
         gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
         max_intensities: List[int], log: bool, out_bitdepth: int,
-        colorspace: Colorspace, **kwargs
+        threshold: Optional[float], colorspace: Colorspace, **kwargs
     ):
         super().__init__(
             in_image, in_channels, in_z_slices, in_timepoints, out_format,
             out_width, out_height, out_bitdepth, c_reduction, z_reduction,
             t_reduction, gammas, filters, colormaps, min_intensities,
-            max_intensities, log, colorspace, **kwargs
+            max_intensities, log, threshold, colorspace, **kwargs
         )
 
     def raw_view(self, c: int, z: int, t: int) -> ImagePixels:
@@ -511,7 +530,8 @@ class WindowResponse(ProcessedView):
         gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
         max_intensities: List[int], log: bool, out_bitdepth: int,
-        colorspace: Colorspace, annotations: Optional[ParsedAnnotations] = None,
+        threshold: Optional[float], colorspace: Colorspace,
+        annotations: Optional[ParsedAnnotations] = None,
         affine_matrix: Optional[np.ndarray] = None,
         annot_params: Optional[dict] = None, **kwargs
     ):
@@ -519,7 +539,7 @@ class WindowResponse(ProcessedView):
             in_image, in_channels, in_z_slices, in_timepoints, out_format,
             out_width, out_height, out_bitdepth, c_reduction, z_reduction,
             t_reduction, gammas, filters, colormaps, min_intensities,
-            max_intensities, log, colorspace, **kwargs
+            max_intensities, log, threshold, colorspace, **kwargs
         )
 
         self.region = region
@@ -586,13 +606,14 @@ class TileResponse(ProcessedView):
         z_reduction: GenericReduction, t_reduction: GenericReduction,
         gammas: List[float], filters: List[Type[AbstractFilter]],
         colormaps: List[Colormap], min_intensities: List[int],
-        max_intensities: List[int], log: bool, **kwargs
+        max_intensities: List[int], log: bool, threshold: Optional[float],
+        **kwargs
     ):
         super().__init__(
             in_image, in_channels, in_z_slices, in_timepoints, out_format,
             out_width, out_height, 8, c_reduction, z_reduction, t_reduction,
             gammas, filters, colormaps, min_intensities, max_intensities,
-            log, **kwargs
+            log, threshold, **kwargs
         )
 
         # Tile (region)

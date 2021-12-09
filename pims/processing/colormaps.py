@@ -17,7 +17,8 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 import numpy as np
-from matplotlib.cm import get_cmap
+from matplotlib.cm import get_cmap, register_cmap
+from matplotlib.colors import LinearSegmentedColormap as MplLinearSegmentedColormap
 from pydantic.color import COLORS_BY_NAME
 
 from pims.utils.color import Color
@@ -65,7 +66,8 @@ class Colormap(ABC):
     @abstractmethod
     def lut(
         self, size: int = 256, bitdepth: int = 8,
-        n_components: Optional[int] = None
+        n_components: Optional[int] = None,
+        force_black_as_first: bool = False
     ) -> LookUpTable:
         """
         Build a look-up table (LUT) for the colormap.
@@ -81,6 +83,9 @@ class Colormap(ABC):
             LUT number of components. Expected to be 1 (grayscale) or 3 (rgb).
             If not set, the number of components defined for the colormap is
             used.
+        force_black_as_first
+            Force to return black color (0) in the first LUT item whatever
+            the colormap.
 
         Returns
         -------
@@ -115,14 +120,17 @@ class MatplotlibColormap(Colormap):
 
     def _init_cmap(self, size: int):
         # (Matplotlib already precomputes with N=256)
-        mpl_size = size if size != 256 else None
+        mpl_size = None
+        if size != 256 or self.ctype == ColormapType.QUALITATIVE:
+            mpl_size = size
         mpl_name = self.id + ("_r" if self.inverted else "")
         self._mpl_cmap[size] = get_cmap(mpl_name, mpl_size)
         self._mpl_cmap[size]._init()  # noqa
 
     def lut(
         self, size: int = 256, bitdepth: int = 8,
-        n_components: Optional[int] = None
+        n_components: Optional[int] = None,
+        force_black_as_first: bool = False
     ) -> LookUpTable:
         if n_components is None or n_components > 3:
             n_components = self.n_components()
@@ -130,8 +138,13 @@ class MatplotlibColormap(Colormap):
         if size not in self._mpl_cmap:
             self._init_cmap(size)
 
-        lut = self._mpl_cmap[size]._lut[:size, :n_components]  # noqa
+        lut = self._mpl_cmap[size]._lut[:size, :n_components].copy()  # noqa
+
+        if force_black_as_first:
+            lut[0, :] = 0
+
         lut *= (2 ** bitdepth - 1)
+        lut = np.rint(lut)
         return lut.astype(np_dtype(bitdepth))
 
 
@@ -150,7 +163,8 @@ class ColorColormap(Colormap):
 
     def lut(
         self, size: int = 256, bitdepth: int = 8,
-        n_components: Optional[int] = None
+        n_components: Optional[int] = None,
+        force_black_as_first: bool = False
     ) -> LookUpTable:
         components = self._color.as_float_tuple(alpha=False)
         if n_components is None or n_components > 3:
@@ -167,17 +181,22 @@ class ColorColormap(Colormap):
                 y = [0, color]
             lut[:, i] = np.interp(xvals, x, y)
 
+        if force_black_as_first:
+            lut[0, :] = 0
+
         lut = lut * (2 ** bitdepth - 1)
+        lut = np.rint(lut)
         return lut.astype(np_dtype(bitdepth))
 
 
 def default_lut(
-    size: int = 256, bitdepth: int = 8, n_components: int = 1
+    size: int = 256, bitdepth: int = 8, n_components: int = 1,
+    force_black_as_first: Optional[bool] = False  # Ignored but here for compat
 ) -> LookUpTable:
     """Default LUT"""
-    return np.stack(
+    return np.rint(np.stack(
         (np.arange(size),) * n_components, axis=-1
-    ).astype(np_dtype(bitdepth))
+    )).astype(np_dtype(bitdepth))
 
 
 def combine_lut(lut_a: LookUpTable, lut_b: LookUpTable) -> LookUpTable:
@@ -249,7 +268,7 @@ mpl_cmaps[ColormapType.DIVERGING] = [
     'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic']
 mpl_cmaps[ColormapType.CYCLIC] = [
     'twilight', 'twilight_shifted', 'hsv']
-mpl_cmaps[ColormapType.DIVERGING] = [
+mpl_cmaps[ColormapType.QUALITATIVE] = [
     'Pastel1', 'Pastel2', 'Paired', 'Accent',
     'Dark2', 'Set1', 'Set2', 'Set3',
     'tab10', 'tab20', 'tab20b', 'tab20c']
@@ -259,6 +278,23 @@ mpl_cmaps[ColormapType.MISCELLANEOUS] = [
     'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
     'gist_ncar']
 
+# Custom colormaps
+_heatmap_data = (
+    (0.0, 0.0, 1.0),
+    (0.0, 1.0, 1.0),
+    (0.0, 1.0, 0.0),
+    (1.0, 1.0, 0.0),
+    (1.0, 0.0, 0.0)
+)
+_custom_cmaps = [
+    (MplLinearSegmentedColormap.from_list("heatmap", _heatmap_data),
+     ColormapType.SEQUENTIAL)
+]
+for custom_cmap in _custom_cmaps:
+    mpl, ctype = custom_cmap
+    register_cmap(None, mpl)
+    register_cmap(None, mpl.reversed())
+    mpl_cmaps[ctype].append(mpl.name)
 ColormapsByName = Dict[str, Colormap]
 
 # Non-trivial colormaps
