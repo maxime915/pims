@@ -144,6 +144,7 @@ class MatplotlibColormap(Colormap):
             lut[0, :] = 0
 
         lut *= (2 ** bitdepth - 1)
+        lut = np.rint(lut)
         return lut.astype(np_dtype(bitdepth))
 
 
@@ -184,6 +185,7 @@ class ColorColormap(Colormap):
             lut[0, :] = 0
 
         lut = lut * (2 ** bitdepth - 1)
+        lut = np.rint(lut)
         return lut.astype(np_dtype(bitdepth))
 
 
@@ -192,9 +194,9 @@ def default_lut(
     force_black_as_first: Optional[bool] = False  # Ignored but here for compat
 ) -> LookUpTable:
     """Default LUT"""
-    return np.stack(
+    return np.rint(np.stack(
         (np.arange(size),) * n_components, axis=-1
-    ).astype(np_dtype(bitdepth))
+    )).astype(np_dtype(bitdepth))
 
 
 def combine_lut(lut_a: LookUpTable, lut_b: LookUpTable) -> LookUpTable:

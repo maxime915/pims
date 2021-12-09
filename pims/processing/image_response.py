@@ -240,6 +240,7 @@ class ProcessedView(MultidimImageResponse, ABC):
             lut[lut < self.threshold] = 0.0
 
         lut *= self.max_intensity
+        lut = np.rint(lut)
         return lut.astype(np_dtype(self.best_effort_bitdepth))
 
     @property
