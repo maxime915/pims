@@ -17,7 +17,8 @@ from enum import Enum
 from typing import Dict, List, Optional, Union
 
 import numpy as np
-from matplotlib.cm import get_cmap
+from matplotlib.cm import get_cmap, register_cmap
+from matplotlib.colors import LinearSegmentedColormap as MplLinearSegmentedColormap
 from pydantic.color import COLORS_BY_NAME
 
 from pims.utils.color import Color
@@ -275,6 +276,23 @@ mpl_cmaps[ColormapType.MISCELLANEOUS] = [
     'gist_rainbow', 'rainbow', 'jet', 'turbo', 'nipy_spectral',
     'gist_ncar']
 
+# Custom colormaps
+_heatmap_data = (
+    (0.0, 0.0, 1.0),
+    (0.0, 1.0, 1.0),
+    (0.0, 1.0, 0.0),
+    (1.0, 1.0, 0.0),
+    (1.0, 0.0, 0.0)
+)
+_custom_cmaps = [
+    (MplLinearSegmentedColormap.from_list("heatmap", _heatmap_data),
+     ColormapType.SEQUENTIAL)
+]
+for custom_cmap in _custom_cmaps:
+    mpl, ctype = custom_cmap
+    register_cmap(None, mpl)
+    register_cmap(None, mpl.reversed())
+    mpl_cmaps[ctype].append(mpl.name)
 ColormapsByName = Dict[str, Colormap]
 
 # Non-trivial colormaps
