@@ -38,6 +38,7 @@ from pims.importer.listeners import (
     StdoutListener
 )
 from pims.processing.histograms.utils import build_histogram_file
+from pims.tasks.queue import BG_TASK_MAPPING, CELERY_TASK_MAPPING, Task, func_from_str
 from pims.utils.strings import unique_name_generator
 
 log = logging.getLogger("pims.app")
@@ -419,9 +420,9 @@ class FileImporter:
                 cytomine = listener
                 break
         if cytomine:
-            task = "pims.tasks.worker.run_import_with_cytomine"
+            task = Task.IMPORT_WITH_CYTOMINE
         else:
-            task = "pims.tasks.worker.run_import"
+            task = Task.IMPORT
 
         imported = list()
         format_factory = FormatFactory()
@@ -444,24 +445,42 @@ class FileImporter:
                     ]
                 else:
                     args = [str(child), child.name, prefer_copy]
-                tasks.append(signature(task, args=args))
+                tasks.append((task, args))
             except Exception as _:  # noqa
                 # Do not propagate error to siblings
                 # Each importer is independent
                 pass
 
-        task_group = group(tasks)
-        # WARNING !
-        # These tasks are synchronous with respect to the parent task (the archive)
-        # It is required to update the parent (the archive) status when everything is
-        # finished. Code should be refactored to use Celery callbacks but it does not
-        # seem so easy.
-        # Current implementation may cause deadlock if the worker pool is exhausted,
-        # while the parent task is waiting for subtasks to finish.
-        # http://docs.celeryq.org/en/latest/userguide/tasks.html#task-synchronous-subtasks
-        with allow_join_result():
-            r = task_group.apply_async()
-            r.get()  # Wait for group to finish
+        def _sequential_imports():
+            for name, args_ in tasks:
+                func_from_str(BG_TASK_MAPPING.get(name))(*args_)
+
+        if not get_settings().task_queue_enabled:
+            _sequential_imports()
+        else:
+            try:
+                task_group = group([
+                    signature(CELERY_TASK_MAPPING.get(name), args_)
+                    for name, args_ in tasks
+                ])
+                # WARNING !
+                # These tasks are synchronous with respect to the parent task (the archive)
+                # It is required to update the parent (the archive) status when everything is
+                # finished. Code should be refactored to use Celery callbacks but it does not
+                # seem so easy.
+                # Current implementation may cause deadlock if the worker pool is exhausted,
+                # while the parent task is waiting for subtasks to finish.
+                # http://docs.celeryq.org/en/latest/userguide/tasks.html#task-synchronous-subtasks
+                with allow_join_result():
+                    r = task_group.apply_async()
+                    r.get()  # Wait for group to finish
+            except Exception as e:  # noqa
+                # WARNING !
+                # Catch too many exceptions such as those related to import logic ?
+                # TODO: identify Celery exception raised when trying to use it while rabbitmq is
+                #  down
+                # However, it should not happen in production.
+                _sequential_imports()
 
         return imported
 
