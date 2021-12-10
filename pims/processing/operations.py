@@ -278,19 +278,16 @@ class ChannelReductionOp(ReductionOp):
             return imgs[0]
         format = imgs[0].format
 
-        if self.reduction == ChannelReduction.AVG:
-            reduction_operator = None  # TODO
-            raise NotImplementedError
+        if self.reduction == ChannelReduction.MED:
+            reduced = imgs[0].bandrank(imgs[1:], index=-1)
         elif self.reduction == ChannelReduction.MAX:
-            reduction_operator = None  # TODO
-            raise NotImplementedError
+            reduced = imgs[0].bandrank(imgs[1:], index=len(imgs) - 1)
         elif self.reduction == ChannelReduction.MIN:
-            reduction_operator = None  # TODO
-            raise NotImplementedError
+            reduced = imgs[0].bandrank(imgs[1:], index=0)
         else:
-            reduction_operator = VIPSImage.sum
+            reduced = VIPSImage.sum(imgs)
 
-        return reduction_operator(imgs).cast(format)
+        return reduced.cast(format)
 
 
 class TransparencyMaskImgOp(ImageOp):

@@ -38,11 +38,11 @@ class ZoomOrLevel(BaseModel):
     __root__: conint(ge=0) = Field(..., example=0)
 
 
-class SingleChannelIndex(BaseModel):
+class SingleOrRangeChannelIndex(BaseModel):
     """
-    A single channel index. **By default**, all channels are considered.
+    A single channel index or a range of indexes. **By default**, all channels are considered.
     """
-    __root__: conint(ge=0)
+    __root__: Union[conint(ge=0), str]  # TODO: replace str by range pydantic model
 
 
 class SingleZSliceIndex(BaseModel):
@@ -59,16 +59,36 @@ class SingleTimepointIndex(BaseModel):
     __root__: conint(ge=0)
 
 
+class ChannelReduction(str, Enum):
+    """
+    Reduction function used to merge selected channels.
+    """
+
+    ADD = 'ADD'
+    MIN = 'MIN'
+    MED = 'MED'
+    MAX = 'MAX'
+
+
+class GenericReduction(str, Enum):
+    MIN = 'MIN'
+    MED = 'MED'
+    MAX = 'MAX'
+
+
 class PlaneSelectionQueryParams(BaseDependency):
     def __init__(
         self,
-        channels: Optional[conint(ge=0)] = Query(None),
+        channels: Optional[Union[conint(ge=0), str]] = Query(None),
+        # TODO: replace str by range pydantic model
         z_slices: Optional[conint(ge=0)] = Query(None),
-        timepoints: Optional[conint(ge=0)] = Query(None)
+        timepoints: Optional[conint(ge=0)] = Query(None),
+        c_reduction: ChannelReduction = Query(ChannelReduction.ADD)
     ):
         self.channels = channels
         self.z_slices = z_slices
         self.timepoints = timepoints
+        self.c_reduction = c_reduction
 
 
 class IntensitySelectionEnum(str, Enum):
@@ -194,9 +214,10 @@ class ExistingColormapId(BaseModel):
 
 
 class ImageIn(BaseModel):
-    channels: Optional[SingleChannelIndex] = None
+    channels: Optional[SingleOrRangeChannelIndex] = None
     z_slices: Optional[SingleZSliceIndex] = None
     timepoints: Optional[SingleTimepointIndex] = None
+    c_reduction: Optional[ChannelReduction] = ChannelReduction.ADD
     min_intensities: Optional[IntensitySelection] = None
     max_intensities: Optional[IntensitySelection] = None
     colormaps: Optional[ColormapIdList] = ColormapEnum.DEFAULT
@@ -671,23 +692,6 @@ class TargetLevelTileCoordinates(BaseModel):
 class TileRequest(ImageInDisplay):
     tile: Union[TargetZoomTileIndex, TargetZoomTileCoordinates,
                 TargetLevelTileIndex, TargetLevelTileCoordinates]
-
-
-class ChannelReduction(str, Enum):
-    """
-    Reduction function used to merge selected channels.
-    """
-
-    ADD = 'ADD'
-    MIN = 'MIN'
-    AVG = 'AVG'
-    MAX = 'MAX'
-
-
-class GenericReduction(str, Enum):
-    MIN = 'MIN'
-    AVG = 'AVG'
-    MAX = 'MAX'
 
 
 class AssociatedName(str, Enum):
