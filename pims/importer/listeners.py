@@ -421,7 +421,10 @@ class CytomineListener(ImportListener):
             ai.physicalSizeZ = round(
                 convert_quantity(image.physical_size_z, "micrometers"), 6
             )
-        ai.fps = image.frame_rate
+        if image.frame_rate:
+            ai.fps = round(
+                convert_quantity(image.frame_rate, "Hz"), 6
+            )
         ai.magnification = parse_int(image.objective.nominal_magnification)
         ai.bitPerSample = dtype_to_bits(image.pixel_type)
         ai.samplePerPixel = image.n_channels / image.n_intrinsic_channels

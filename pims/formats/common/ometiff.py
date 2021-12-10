@@ -209,7 +209,7 @@ class OmeTiffParser(TifffileParser):
             unit = 's'
         if time_increment in [None, 0]:
             return None
-        return 1 / time_increment * UNIT_REGISTRY(unit)
+        return 1 / (time_increment * UNIT_REGISTRY(unit))
 
     @staticmethod
     def parse_ome_physical_size(
