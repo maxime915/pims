@@ -20,6 +20,7 @@ from pims.formats.utils.factories import (
     FormatFactory, SpatialReadableFormatFactory,
     SpectralReadableFormatFactory
 )
+import os
 
 PROCESSED_DIR = "processed"
 EXTRACTED_DIR = "extracted"
@@ -116,22 +117,29 @@ class Path(type(_Path()), _Path):
     def get_original(self):
         if not self.processed_root().exists():
             return None
-
-        original = next(
-            (child for child in self.processed_root().iterdir() if child.has_original_role()), None
-        )
-
+        
+        
+        if self.extension.lower() == ".isyntax":
+            original = next((child for child in self.processed_root().iterdir() if (child.has_original_role() and (self.extension.lower()[1:] in os.path.splitext(child)[1].lower()))), None)
+            
+        else:
+            original = next(
+                (child for child in self.processed_root().iterdir() if child.has_original_role()), None
+            )        
         from pims.files.image import Image
         return Image(original, factory=FormatFactory(match_on_ext=True)) if original else None
 
     def get_spatial(self):
         if not self.processed_root().exists():
             return None
-
-        spatial = next(
-            (child for child in self.processed_root().iterdir() if child.has_spatial_role()), None
-        )
-
+            
+        if self.extension.lower() == ".isyntax":
+            spatial = next((child for child in self.processed_root().iterdir() if (child.has_spatial_role() and (self.extension.lower()[1:] in os.path.splitext(child)[1].lower()))), None)
+        else:
+            spatial = next(
+                (child for child in self.processed_root().iterdir() if child.has_spatial_role()), None
+            )
+            
         from pims.files.image import Image
         return Image(
             spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)
@@ -140,11 +148,11 @@ class Path(type(_Path()), _Path):
     def get_spectral(self):
         if not self.processed_root().exists():
             return None
-
+        
         spectral = next(
             (child for child in self.processed_root().iterdir() if child.has_spectral_role()), None
         )
-
+        
         from pims.files.image import Image
         return Image(
             spectral, factory=SpectralReadableFormatFactory(match_on_ext=True)
