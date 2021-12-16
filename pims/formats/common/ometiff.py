@@ -11,6 +11,7 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from collections import OrderedDict
 from datetime import datetime
 from functools import cached_property
 from typing import Optional
@@ -20,6 +21,7 @@ from pint import Quantity
 from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
+from pims.api.utils.models import ChannelReduction
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.omexml import OMEXML
@@ -33,6 +35,7 @@ from pims.utils import UNIT_REGISTRY
 from pims.utils.color import infer_channel_color
 from pims.utils.dict import flatten
 from pims.utils.dtypes import dtype_to_bits
+from pims.utils.vips import bandjoin, bandreduction
 
 
 def clean_ome_dict(d: dict) -> dict:
@@ -272,41 +275,60 @@ class OmeTiffParser(TifffileParser):
 
 
 class OmeTiffReader(VipsReader):
+    def _pages_to_read(self, spp, channels, z, t):
+        pages = OrderedDict()
+        for c in channels:
+            intrinsic_c = c // spp
+            s = c % spp
+            page_index = self.format.planes_info.get(
+                intrinsic_c, z, t, 'page_index'
+            )
+            if page_index in pages:
+                pages[page_index].append(s)
+            else:
+                pages[page_index] = [s]
+        return pages
+
+    def _read(self, c, z, t, vips_func, *args, **kwargs):
+        bands = list()
+        spp = self.format.main_imd.n_channels_per_read
+        for page, samples in self._pages_to_read(spp, c, z, t).items():
+            im = vips_func(*args, page=page, **kwargs)
+            if im.hasalpha():
+                im = im.flatten()
+            if im.bands != spp:
+                # Happen when there is an internal tiff colormap
+                # TODO: better handle internal colormaps
+                im = bandreduction(im.bandsplit(), ChannelReduction.MAX)
+            else:
+                im = self._extract_channels(im, samples)
+            bands.append(im)
+        return bandjoin(bands)
+
     def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
         # TODO: precomputed ?
         # Thumbnail already uses shrink-on-load feature in default VipsReader
         # (i.e it loads the right pyramid level according the requested dimensions)
-        page = self.format.planes_info.get(c, z, t, 'page_index')
-        im = self.vips_thumbnail(out_width, out_height, page=page)
-        return im.flatten() if im.hasalpha() else im
+        return self._read(c, z, t, self.vips_thumbnail, out_width, out_height)
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
         tier = self.format.pyramid.most_appropriate_tier(
             region, (out_width, out_height)
         )
         region = region.scale_to_tier(tier)
-
-        page = self.format.planes_info.get(c, z, t, 'page_index')
         subifd = tier.data.get('subifd')
-        opts = dict(page=page)
-        if subifd is not None:
-            opts['subifd'] = subifd
-        tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
-        return tiff_page.extract_area(
-            region.left, region.top, region.width, region.height
-        )
 
-    def read_tile(self, tile, c=None, z=None, t=None):
-        tier = tile.tier
-        page = self.format.planes_info.get(c, z, t, 'page_index')
-        subifd = tier.data.get('subifd')
-        opts = dict(page=page)
-        if subifd is not None:
-            opts['subifd'] = subifd
-        tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
-        return tiff_page.extract_area(
-            tile.left, tile.top, tile.width, tile.height
-        )
+        def read_func(path, region, page=None, subifd=None):  # noqa
+            opts = dict(page=page)
+            if subifd is not None:
+                opts['subifd'] = subifd
+            tiff_page = VIPSImage.tiffload(str(path), **opts)
+            im = tiff_page.extract_area(
+                region.left, region.top, region.width, region.height
+            )
+            return im
+
+        return self._read(c, z, t, read_func, self.format.path, region, subifd=subifd)
 
 
 class OmeTiffFormat(AbstractFormat):

@@ -13,7 +13,7 @@
 #  * limitations under the License.
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 from starlette.responses import Response
@@ -25,18 +25,19 @@ from pims.api.utils.models import (
 )
 from pims.files.image import Image
 from pims.filters import AbstractFilter
-from pims.processing.adapters import ImagePixels, convert_to
+from pims.processing.adapters import RawImagePixels
 from pims.processing.annotations import ParsedAnnotations
 from pims.processing.colormaps import (
-    Colormap, StackedLookUpTables, combine_stacked_lut, default_lut,
-    get_lut_from_stacked, is_rgb_colormapping
+    Colormap, StackedLookUpTables, combine_stacked_lut, default_lut, is_rgb_colormapping
+)
+from pims.processing.masks import (
+    draw_condition_mask, rasterize_draw, rasterize_mask, rescale_draw,
+    transparency_mask
 )
 from pims.processing.operations import (
-    ApplyLutImgOp, ChannelReductionOp, ColorspaceHistOp,
-    ColorspaceImgOp, DrawOnImgOp, DrawRasterOp, ExtractChannelOp,
-    MaskRasterOp, OutputProcessor,
-    RescaleHistOp, ResizeImgOp, TransparencyMaskImgOp
+    ColorspaceHistOp, RescaleHistOp
 )
+from pims.processing.pixels import ImagePixels
 from pims.processing.region import Region, Tile
 from pims.utils.dtypes import np_dtype
 from pims.utils.math import max_intensity
@@ -85,10 +86,10 @@ class ImageResponse(ABC):
         Get image response compressed using output extension compressor,
         in bytes.
         """
-        return OutputProcessor(
+        return self.process().compress(
             self.out_format, self.best_effort_bitdepth,
             **self.out_format_params
-        )(self.process())
+        )
 
     def http_response(
         self, mimetype: str, extra_headers: Optional[Dict[str, str]] = None
@@ -129,13 +130,11 @@ class MultidimImageResponse(ImageResponse, ABC):
         self.t_reduction = t_reduction
 
     def raw_view_planes(self) -> Tuple[List[int], int, int]:
-        # TODO: generalize
-        # PIMS API currently only allow requests for 1 Z or T plane and 1 or all C planes
+        # PIMS API currently only allow requests for 1 Z or T plane
         return self.channels, self.z_slices[0], self.timepoints[0]
 
     @abstractmethod
-    def raw_view(self, c: int, z: int, t: int) -> ImagePixels:
-        # TODO
+    def raw_view(self, c: Union[int, List[int]], z: int, t: int) -> RawImagePixels:
         pass
 
 
@@ -143,6 +142,7 @@ class ProcessedView(MultidimImageResponse, ABC):
     """
     Base class for image responses with processing.
     """
+
     def __init__(
         self, in_image: Image,
         in_channels: List[int], in_z_slices: List[int], in_timepoints: List[int],
@@ -246,7 +246,13 @@ class ProcessedView(MultidimImageResponse, ABC):
     @property
     def colormap_processing(self) -> bool:
         """Whether colormapping processing is required."""
-        return any(self.colormaps)
+        if any(self.colormaps):
+            n = len(self.colormaps)
+            return not (2 <= n <= 3
+                        and len(self.channels) == n
+                        and self.channels == [0, 1, 2]
+                        and is_rgb_colormapping(self.colormaps))
+        return False
 
     @lru_cache(maxsize=None)
     def colormap_lut(self) -> Optional[StackedLookUpTables]:
@@ -369,89 +375,44 @@ class ProcessedView(MultidimImageResponse, ABC):
         return self.filter_required_colorspace
 
     def process(self) -> ImagePixels:
-        # -- TODO: refactor/rewrite/optimize
-        def channels_by_read(read_idx, in_image):
-            """Get channel indexes returned by a given read."""
-            first = read_idx * in_image.n_channels_per_read
-            last = min(in_image.n_channels, first + in_image.n_channels_per_read)
-            return range(first, last)
+        pixels = ImagePixels(self.raw_view(*self.raw_view_planes()))
 
-        response_channels, z, t = self.raw_view_planes()
-        n_channels_per_read = self.in_image.n_channels_per_read
+        if self.c_reduction != ChannelReduction.ADD:
+            lut = self.math_lut()
+            if lut is not None:
+                pixels.apply_lut_stack(lut)
 
-        reads = dict()  # Response channels acquired by given read
-        for response_channel in response_channels:
-            read = response_channel // self.in_image.n_channels_per_read
-            if read in reads:
-                reads[read].append(response_channel)
-            else:
-                reads[read] = [response_channel]
+            pixels.channel_reduction(self.c_reduction)
 
-        # List[Tuple[ImagePixels, Union[int, Tuple[int, int, int]]]]
-        response_channel_images = list()
-        c_idx = 0
-        for read, needed in reads.items():
-            read_channels = channels_by_read(read, self.in_image)
+            lut = self.colormap_lut()
+            if lut is not None:
+                pixels.apply_lut_stack(lut)
+        else:
+            lut = self.lut()
+            if lut is not None:
+                pixels.apply_lut_stack(lut)
 
-            channel_image = self.raw_view(read_channels[0], z, t)  # TODO
-
-            if len(read_channels) == 3:
-                idxs = (c_idx, c_idx + 1, c_idx + 2)
-                if (needed == [0, 1, 2] and is_rgb_colormapping(
-                        [self.colormaps[idx] for idx in idxs]
-                        )):
-                    # RGB image, and no tinting required
-                    c_idx = idxs[-1]
-                    response_channel_images.append((channel_image, idxs))
-                else:
-                    # If len(needed) = 3 and RGB image, but channels need tinting
-                    # If len(needed) = 1 and RGB image, but we want a single channel
-                    for needed_channel in needed:
-                        channel_idx = needed_channel % n_channels_per_read
-                        image = ExtractChannelOp(channel_idx)(channel_image)
-                        response_channel_images.append((image, c_idx))
-                        c_idx += 1
-            else:
-                response_channel_images.append((channel_image, c_idx))
-                c_idx += 1
-
-        # List[ImagePixels]
-        processed_channel_images = list()
-        for img, channel in response_channel_images:
-            if type(channel) is tuple:
-                img = ApplyLutImgOp(
-                    get_lut_from_stacked(self.math_lut())
-                )(img)
-            else:
-                img = ApplyLutImgOp(
-                    get_lut_from_stacked(self.lut(), channel)
-                )(img)
-
-            processed_channel_images.append(img)
-        # ----------- end to optimize
-
-        img = ChannelReductionOp(self.c_reduction)(processed_channel_images)
-        img = ResizeImgOp(self.out_width, self.out_height)(img)
+        pixels.resize(self.out_width, self.out_height)
 
         if self.filter_processing:
             if self.filter_colorspace is not None:
-                img = ColorspaceImgOp(self.filter_colorspace)(img)
+                pixels.change_colorspace(self.filter_colorspace)
 
             filter_params = dict()
             if self.filter_processing_histogram:
                 filter_params['histogram'] = self.process_histogram()
             for filter_op in self.filters:
-                img = filter_op(**filter_params)(img)
+                pixels.apply_filter(filter_op(**filter_params))
 
         if self.colorspace_processing:
-            img = ColorspaceImgOp(self.new_colorspace)(img)
+            pixels.change_colorspace(self.new_colorspace)
 
         if self.threshold_processing:
-            img = TransparencyMaskImgOp(
-                100, convert_to(img, np.ndarray), self.out_bitdepth
-            )(img)
+            dtype = np_dtype(self.out_bitdepth)
+            mask = transparency_mask(pixels.np_array(), 100, dtype)  # noqa ?
+            pixels.add_transparency(mask)
 
-        return img
+        return pixels
 
     def process_histogram(self) -> np.ndarray:
         """
@@ -490,7 +451,7 @@ class ThumbnailResponse(ProcessedView):
 
         self.use_precomputed = use_precomputed
 
-    def raw_view(self, c: int, z: int, t: int) -> ImagePixels:
+    def raw_view(self, c: Union[int, List[int]], z: int, t: int) -> RawImagePixels:
         return self.in_image.thumbnail(
             self.out_width, self.out_height, c=c, z=z, t=t,
             precomputed=self.use_precomputed
@@ -515,7 +476,7 @@ class ResizedResponse(ProcessedView):
             max_intensities, log, threshold, colorspace, **kwargs
         )
 
-    def raw_view(self, c: int, z: int, t: int) -> ImagePixels:
+    def raw_view(self, c: Union[int, List[int]], z: int, t: int) -> RawImagePixels:
         return self.in_image.thumbnail(
             self.out_width, self.out_height, c=c, z=z, t=t, precomputed=False
         )
@@ -570,29 +531,38 @@ class WindowResponse(ProcessedView):
         return super(WindowResponse, self).new_colorspace
 
     def process(self) -> ImagePixels:
-        img = super(WindowResponse, self).process()
+        pixels = super(WindowResponse, self).process()
 
         if self.annotations and self.affine_matrix is not None:
             if self.annotation_mode == AnnotationStyleMode.CROP:
-                mask = MaskRasterOp(
-                    self.affine_matrix, self.out_width, self.out_height
-                )(self.annotations)
-                img = TransparencyMaskImgOp(
-                    self.background_transparency, mask, self.out_bitdepth
-                )(img)
+                mask = rasterize_mask(
+                    self.annotations, self.affine_matrix,
+                    self.out_width, self.out_height
+                )
+                mask = transparency_mask(
+                    mask, self.background_transparency,
+                    np_dtype(self.out_bitdepth)  # noqa
+                )
+                pixels.add_transparency(mask)
             elif self.annotation_mode == AnnotationStyleMode.DRAWING:
-                draw = DrawRasterOp(
-                    self.affine_matrix, self.out_width,
+                draw, draw_background = rasterize_draw(
+                    self.annotations, self.affine_matrix, self.out_width,
                     self.out_height, self.point_style
-                )(self.annotations)
-                draw_background = DrawRasterOp.background_color(self.annotations)
+                )
+                cond = draw_condition_mask(draw, draw_background)
+
                 if self.colorspace_processing:
-                    draw = ColorspaceImgOp(self.new_colorspace)(draw)
-                img = DrawOnImgOp(draw, self.out_bitdepth, draw_background)(img)
+                    draw = ImagePixels(draw)
+                    draw.change_colorspace(self.new_colorspace)
+                    draw = draw.np_array()  # TODO
 
-        return img
+                pixels.draw_on(
+                    rescale_draw(draw, np_dtype(self.out_bitdepth)),  # noqa
+                    cond
+                )
+        return pixels
 
-    def raw_view(self, c: int, z: int, t: int) -> ImagePixels:
+    def raw_view(self, c: Union[int, List[int]], z: int, t: int) -> RawImagePixels:
         return self.in_image.window(
             self.region, self.out_width, self.out_height, c=c, z=z, t=t
         )
@@ -619,7 +589,7 @@ class TileResponse(ProcessedView):
         # Tile (region)
         self.tile_region = tile_region
 
-    def raw_view(self, c: int, z: int, t: int) -> ImagePixels:
+    def raw_view(self, c: Union[int, List[int]], z: int, t: int) -> RawImagePixels:
         return self.in_image.tile(self.tile_region, c=c, z=z, t=t)
 
 
@@ -631,7 +601,7 @@ class AssociatedResponse(ImageResponse):
         super().__init__(in_image, out_format, out_width, out_height, **kwargs)
         self.associated_key = associated_key
 
-    def associated_image(self) -> ImagePixels:
+    def associated_image(self) -> RawImagePixels:
         if self.associated_key == AssociatedName.macro:
             associated = self.in_image.macro(self.out_width, self.out_height)
         elif self.associated_key == AssociatedName.label:
@@ -644,9 +614,9 @@ class AssociatedResponse(ImageResponse):
         return associated
 
     def process(self) -> ImagePixels:
-        img = self.associated_image()
-        img = ResizeImgOp(self.out_width, self.out_height)(img)
-        return img
+        pixels = ImagePixels(self.associated_image())
+        pixels.resize(self.out_width, self.out_height)
+        return pixels
 
 
 class MaskResponse(ImageResponse):
@@ -664,9 +634,12 @@ class MaskResponse(ImageResponse):
         self.affine_matrix = affine_matrix
 
     def process(self) -> ImagePixels:
-        return MaskRasterOp(
-            self.affine_matrix, self.out_width, self.out_height
-        )(self.annotations)
+        return ImagePixels(
+            rasterize_mask(
+                self.annotations, self.affine_matrix,
+                self.out_width, self.out_height
+            )
+        )
 
 
 class DrawingResponse(MaskResponse):
@@ -684,10 +657,11 @@ class DrawingResponse(MaskResponse):
         self.point_style = point_style
 
     def process(self) -> ImagePixels:
-        return DrawRasterOp(
-            self.affine_matrix, self.out_width,
+        draw, _ = rasterize_draw(
+            self.annotations, self.affine_matrix, self.out_width,
             self.out_height, self.point_style
-        )(self.annotations)
+        )
+        return ImagePixels(draw)
 
 
 class ColormapRepresentationResponse(ImageResponse):
@@ -699,4 +673,6 @@ class ColormapRepresentationResponse(ImageResponse):
         self.colormap = colormap
 
     def process(self) -> ImagePixels:
-        return self.colormap.as_image(self.out_width, self.out_height)
+        return ImagePixels(
+            self.colormap.as_image(self.out_width, self.out_height)
+        )
