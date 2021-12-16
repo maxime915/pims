@@ -82,6 +82,10 @@ class ImagePixelsImpl(ABC):
         pass
 
     @abstractmethod
+    def int_clip(self) -> ImagePixelsImpl:
+        pass
+
+    @abstractmethod
     def add_transparency(
         self, bg_transparency: int, transparency_mask: np.ndarray
     ) -> ImagePixelsImpl:
@@ -149,6 +153,14 @@ class NumpyImagePixels(ImagePixelsImpl):
         return self.context.transition_to(VIPSImage).change_colorspace(
             colorspace
         )
+
+    def int_clip(self) -> ImagePixelsImpl:
+        dtype = self.pixels.dtype
+        if dtype == np.uint8 or dtype == np.int8:
+            self.pixels = np.clip(self.pixels, 0, 255).astype(np.uint8)
+        else:
+            self.pixels = np.clip(self.pixels, 0, 65535).astype(np.uint16)
+        return self
 
     def add_transparency(
         self, bg_transparency: int, transparency_mask: np.ndarray
@@ -239,6 +251,14 @@ class VipsImagePixels(ImagePixelsImpl):
 
         if new_colorspace:
             self.pixels = self.pixels.colourspace(new_colorspace)
+        return self
+
+    def int_clip(self) -> ImagePixelsImpl:
+        format = self.pixels.format
+        if format in ('uchar', 'char'):
+            self.pixels = self.pixels.cast('uchar')
+        else:
+            self.pixels = self.pixels.cast('ushort')
         return self
 
     def add_transparency(self, bg_transparency, transparency_mask: np.ndarray) -> ImagePixelsImpl:
@@ -352,6 +372,10 @@ class ImagePixels:
     
     def change_colorspace(self, colorspace: Colorspace) -> ImagePixels:
         self._impl.change_colorspace(colorspace)
+        return self
+
+    def int_clip(self) -> ImagePixels:
+        self._impl.int_clip()
         return self
     
     def add_transparency(self, transparency_mask: np.ndarray) -> ImagePixels:

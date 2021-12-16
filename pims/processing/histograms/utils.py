@@ -25,12 +25,12 @@ from pims.api.utils.output_parameter import get_thumb_output_dimensions
 from pims.config import get_settings
 from pims.files.file import Path
 from pims.files.histogram import Histogram
-from pims.processing.adapters import convert_to
 from pims.processing.histograms import ZarrHistogramFormat
 from pims.processing.histograms.format import (
     ZHF_ATTR_FORMAT, ZHF_ATTR_TYPE, ZHF_BOUNDS, ZHF_HIST, ZHF_PER_CHANNEL, ZHF_PER_IMAGE,
     ZHF_PER_PLANE
 )
+from pims.processing.pixels import ImagePixels
 
 MAX_PIXELS_COMPLETE_HISTOGRAM = get_settings().max_pixels_complete_histogram
 MAX_LENGTH_COMPLETE_HISTOGRAM = get_settings().max_length_complete_histogram
@@ -76,27 +76,16 @@ def _extract_np_thumb(image):
     )
     ratio = image.n_pixels / (tw * th)
 
-    # TODO: refactor this (see image_response.py process())
-    def channels_for_read(read, in_image):
-        first = read * in_image.n_channels_per_read
-        last = min(in_image.n_channels, first + in_image.n_channels_per_read)
-        return range(first, last)
-
-    n_c_reads = int(np.ceil(image.n_channels / image.n_channels_per_read))
+    c_chunk_size = 256
     for t in range(image.duration):
         for z in range(image.depth):
-            for c_read in range(n_c_reads):
-                c_range = channels_for_read(c_read, image)
-                c = c_range[0]  # TODO
-                thumb = image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
-                npthumb = np.atleast_3d(convert_to(thumb, np.ndarray))
-                if npthumb.shape[2] != len(c_range):
-                    # TODO: improve palette support! !! if we get more channels than expected,
-                    #  we have a color palette image For now, try to discard the palette by only
-                    #  keeping the expected channel in the response
-                    mod_range = [c % npthumb.shape[2] for c in c_range]
-                    npthumb = npthumb[:, :, mod_range]
-                yield npthumb, c_range, z, t, ratio
+            for i in range(0, image.n_channels, c_chunk_size):
+                c = range(i, min(image.n_channels, i + c_chunk_size))
+
+                thumb = ImagePixels(
+                    image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
+                ).int_clip()
+                yield thumb.np_array(), c, z, t, ratio
 
 
 def build_histogram_file(
@@ -121,7 +110,7 @@ def build_histogram_file(
     histogram : Histogram
         The zarr histogram file in read-only mode
     """
-    n_values = 2 ** in_image.significant_bits
+    n_values = 2 ** min(in_image.significant_bits, 16)
 
     if in_image.n_pixels <= MAX_PIXELS_COMPLETE_HISTOGRAM:
         extract_fn = _extract_np_thumb
