@@ -66,7 +66,9 @@ class ImagePixelsImpl(ABC):
         pass
 
     @abstractmethod
-    def apply_lut_stack(self, lut_stack: StackedLookUpTables) -> ImagePixelsImpl:
+    def apply_lut_stack(
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+    ) -> ImagePixelsImpl:
         pass
 
     @abstractmethod
@@ -126,9 +128,13 @@ class NumpyImagePixels(ImagePixelsImpl):
         # TODO
         return self.context.transition_to(VIPSImage).apply_lut(lut)
 
-    def apply_lut_stack(self, lut_stack: StackedLookUpTables) -> ImagePixelsImpl:
+    def apply_lut_stack(
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+    ) -> ImagePixelsImpl:
         # TODO
-        return self.context.transition_to(VIPSImage).apply_lut_stack(lut_stack)
+        return self.context.transition_to(
+            VIPSImage
+        ).apply_lut_stack(lut_stack, reduction)
 
     def resize(self, width: int, height: int) -> ImagePixelsImpl:
         return self.context.transition_to(VIPSImage).resize(width, height)
@@ -206,18 +212,26 @@ class VipsImagePixels(ImagePixelsImpl):
         self.pixels = self.pixels.maplut(convert_to(lut, VIPSImage))
         return self
 
-    def apply_lut_stack(self, lut_stack: StackedLookUpTables) -> ImagePixelsImpl:
+    def apply_lut_stack(
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+    ) -> ImagePixelsImpl:
         stack_size, _, n_components = lut_stack.shape
         if stack_size == 1:
+            # As stack size is 1, reduction can be ignored.
             return self.apply_lut(get_lut_from_stacked(lut_stack))
         elif n_components == 1:
             lut_stack = np.swapaxes(lut_stack, 0, 2)
-            return self.apply_lut(get_lut_from_stacked(lut_stack))
+            return self.apply_lut(
+                get_lut_from_stacked(lut_stack)
+            ).channel_reduction(reduction)
         else:
             channels = list()
             for i, channel in enumerate(self.pixels.bandsplit()):
                 lut = get_lut_from_stacked(lut_stack, i, as_stack=True)
                 channels.append(channel.maplut(convert_to(lut, VIPSImage)))
+
+            if reduction != ChannelReduction.ADD:
+                raise ValueError(f"{reduction} should not happen here!")
 
             self.pixels = bandreduction(channels, ChannelReduction.ADD)
             return self
@@ -358,8 +372,10 @@ class ImagePixels:
         self._impl.apply_lut(lut)
         return self
 
-    def apply_lut_stack(self, lut_stack: StackedLookUpTables) -> ImagePixels:
-        self._impl.apply_lut_stack(lut_stack)
+    def apply_lut_stack(
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+    ) -> ImagePixels:
+        self._impl.apply_lut_stack(lut_stack, reduction)
         return self
     
     def resize(self, width: int, height: int) -> ImagePixels:

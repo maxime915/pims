@@ -380,17 +380,18 @@ class ProcessedView(MultidimImageResponse, ABC):
         if self.c_reduction != ChannelReduction.ADD:
             lut = self.math_lut()
             if lut is not None:
-                pixels.apply_lut_stack(lut)
+                pixels.apply_lut_stack(lut, self.c_reduction)
+            else:
+                pixels.channel_reduction(self.c_reduction)
 
-            pixels.channel_reduction(self.c_reduction)
-
-            lut = self.colormap_lut()
-            if lut is not None:
-                pixels.apply_lut_stack(lut)
+            # TODO: What about colormap ??
+            # lut = self.colormap_lut()
+            # if lut is not None:
+            #     pixels.apply_lut_stack(lut)
         else:
             lut = self.lut()
             if lut is not None:
-                pixels.apply_lut_stack(lut)
+                pixels.apply_lut_stack(lut, self.c_reduction)
 
         pixels.resize(self.out_width, self.out_height)
 
