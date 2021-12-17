@@ -51,7 +51,7 @@ from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import MaskResponse, WindowResponse
 from pims.processing.region import Region
 from pims.utils.color import RED, WHITE
-from pims.utils.iterables import check_array_size, ensure_list
+from pims.utils.iterables import check_array_size_parameters, ensure_list
 
 router = APIRouter()
 api_tags = ['Windows']
@@ -170,19 +170,20 @@ def _show_window(
     filters = ensure_list(filters)
     gammas = ensure_list(gammas)
 
-    array_parameters = (min_intensities, max_intensities, colormaps, gammas)
-    for array_parameter in array_parameters:
-        check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
+    array_parameters = ('min_intensities', 'max_intensities', 'colormaps', 'gammas')
+    check_array_size_parameters(
+        array_parameters, locals(), allowed=[0, 1, len(channels)], nullable=False
+    )
     intensities = parse_intensity_bounds(
         in_image, channels, z_slices, timepoints, min_intensities, max_intensities
     )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 
-    array_parameters = (filters,)
-    for array_parameter in array_parameters:
-        # Currently, we only allow 1 parameter to be applied to all channels
-        check_array_size(array_parameter, allowed=[0, 1], nullable=False)
+    array_parameters = ('filters',)
+    check_array_size_parameters(
+        array_parameters, locals(), allowed=[0, 1], nullable=False
+    )
     filters = parse_filter_ids(filters, FILTERS)
 
     out_bitdepth = parse_bitdepth(in_image, bits)
