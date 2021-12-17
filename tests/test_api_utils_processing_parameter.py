@@ -32,24 +32,24 @@ def test_parse_intensity_bounds():
 
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [], []) == ([0], [255])
     assert parse_intensity_bounds(
-        FakeImage(8, 1), [0], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE],
-        [IntensitySelectionEnum.AUTO_IMAGE]
+        FakeImage(8, 1), [0], [0], [0], [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL]
     ) == ([0], [255])
     assert parse_intensity_bounds(
-        FakeImage(8, 1), [0], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
-        [IntensitySelectionEnum.STRETCH_IMAGE]
+        FakeImage(8, 1), [0], [0], [0], [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL]
     ) == ([0], [10])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [10], [100]) == ([10], [100])
     assert parse_intensity_bounds(FakeImage(8, 1), [0], [0], [0], [10], [1000]) == ([10], [255])
 
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [], []) == ([0], [65535])
     assert parse_intensity_bounds(
-        FakeImage(16, 1), [0], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE],
-        [IntensitySelectionEnum.AUTO_IMAGE]
+        FakeImage(16, 1), [0], [0], [0], [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL]
     ) == ([0], [10])
     assert parse_intensity_bounds(
-        FakeImage(16, 1), [0], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
-        [IntensitySelectionEnum.STRETCH_IMAGE]
+        FakeImage(16, 1), [0], [0], [0], [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL]
     ) == ([0], [10])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [10], [100]) == ([10], [100])
     assert parse_intensity_bounds(FakeImage(16, 1), [0], [0], [0], [10], [1000]) == ([10], [1000])
@@ -58,12 +58,12 @@ def test_parse_intensity_bounds():
     ) == ([10], [65535])
 
     assert parse_intensity_bounds(
-        FakeImage(8, 2), [0, 1], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE],
-        [IntensitySelectionEnum.AUTO_IMAGE]
+        FakeImage(8, 2), [0, 1], [0], [0], [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL]
     ) == ([0, 0], [255, 255])
     assert parse_intensity_bounds(
-        FakeImage(8, 2), [0, 1], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
-        [IntensitySelectionEnum.STRETCH_IMAGE]
+        FakeImage(8, 2), [0, 1], [0], [0], [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL]
     ) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(
         FakeImage(8, 2), [0, 1], [0], [0], [10], [100]
@@ -73,12 +73,12 @@ def test_parse_intensity_bounds():
     ) == ([10, 10], [255, 20])
 
     assert parse_intensity_bounds(
-        FakeImage(16, 2), [0, 1], [0], [0], [IntensitySelectionEnum.AUTO_IMAGE],
-        [IntensitySelectionEnum.AUTO_IMAGE]
+        FakeImage(16, 2), [0, 1], [0], [0], [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL]
     ) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(
-        FakeImage(16, 2), [0, 1], [0], [0], [IntensitySelectionEnum.STRETCH_IMAGE],
-        [IntensitySelectionEnum.STRETCH_IMAGE]
+        FakeImage(16, 2), [0, 1], [0], [0], [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL],
+        [IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL]
     ) == ([0, 1], [10, 11])
     assert parse_intensity_bounds(
         FakeImage(16, 2), [0, 1], [0], [0], [10], [100]
@@ -90,7 +90,7 @@ def test_parse_intensity_bounds():
         FakeImage(16, 2), [0, 1], [0], [0], [10, 5], [100000, 20]
     ) == ([10, 5], [65535, 20])
     assert parse_intensity_bounds(
-        FakeImage(16, 2), [0, 1], [0], [0], [10, IntensitySelectionEnum.AUTO_IMAGE],
+        FakeImage(16, 2), [0, 1], [0], [0], [10, IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL],
         [100000, 20]
     ) == ([10, 1], [65535, 20])
 

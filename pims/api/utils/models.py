@@ -92,10 +92,25 @@ class PlaneSelectionQueryParams(BaseDependency):
 
 
 class IntensitySelectionEnum(str, Enum):
-    AUTO_IMAGE = 'AUTO_IMAGE'
-    AUTO_PLANE = 'AUTO_PLANE'
-    STRETCH_IMAGE = 'STRETCH_IMAGE'
-    STRETCH_PLANE = 'STRETCH_PLANE'
+    AUTO_PER_IMAGE = 'AUTO_PER_IMAGE'
+    AUTO_PER_IMAGE_CHANNEL = 'AUTO_PER_IMAGE_CHANNEL'
+    AUTO_PER_PLANE = 'AUTO_PER_PLANE'
+    AUTO_PER_PLANE_CHANNEL = 'AUTO_PER_PLANE_CHANNEL'
+    STRETCH_PER_IMAGE = 'STRETCH_PER_IMAGE'
+    STRETCH_PER_IMAGE_CHANNEL = 'STRETCH_PER_IMAGE_CHANNEL'
+    STRETCH_PER_PLANE = 'STRETCH_PER_PLANE'
+    STRETCH_PER_PLANE_CHANNEL = 'STRETCH_PER_PLANE_CHANNEL'
+    NONE = 'NONE'
+
+    def is_auto(self) -> bool:
+        return self.value.startswith('AUTO_')
+
+    def is_stretch(self) -> bool:
+        return self.value.startswith('STRETCH')
+
+    def stretch_equivalent(self):
+        name = self.value.replace('AUTO_', 'STRETCH_')
+        return self.__class__(name)
 
 
 class IntensitySelection(BaseModel):
@@ -226,44 +241,62 @@ class ImageIn(BaseModel):
     threshold: Threshold = None
 
     class Config:
-        __mi_doc = "Intensity in the original image used as minimum intensity (black) to create the response." \
-                   "As a consequence, original image intensities lower than this value will be black in the response." \
-                   "\n\n" \
-                   "Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.\n" \
-                   "Minimum intensity is closely related to the concepts of brightness and contrast." \
-                   "\n\n" \
-                   "Brightness is the visual perception of reflected light while contrast is the separation of the " \
-                   "lightest and darkest parts of an image. A minimum intensity increase leads to:\n" \
-                   "* a brightness decrease, which refers to an image's decreased luminance.\n" \
-                   "* a contrast increase, which darken shadows and lighten highlights.\n\n" \
-                   "Enumeration supported values:\n" \
-                   "* `AUTO_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. " \
-                   "Otherwise, the behavior is `STRETCH_IMAGE`.\n" \
-                   "* `AUTO_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. " \
-                   "Otherwise, the behavior is `STRETCH_PLANE`.\n" \
-                   "* `STRETCH_IMAGE` - Set `min_intensity` to lowest intensity in the original image, " \
-                   "for each channel.\n" \
-                   "* `STRETCH_PLANE` - Set `min_intensity` to lowest intensity in the set of planes, for each channel."
+        __mi_doc = """Intensity in the original image used as minimum intensity (black) to 
+        create the response. As a consequence, original image intensities lower than this value 
+        will be black in the response. 
 
-        __ma_doc = "Intensity in the original image used as maximum intensity (white) to create the response." \
-                   "As a consequence, original image intensities greater than this value will be white in the response." \
-                   "\n\n" \
-                   "Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`.\n" \
-                   "Maximum intensity is closely related to the concepts of brightness and contrast." \
-                   "\n\n" \
-                   "Brightness is the visual perception of reflected light while contrast is the separation of the " \
-                   "lightest and darkest parts of an image. A maximum intensity increase leads to:\n" \
-                   "* a brightness decrease, which refers to an image's decreased luminance.\n" \
-                   "* a contrast decrease, which darken highlights and lighten shadows.\n\n" \
-                   "Enumeration supported values:\n" \
-                   "* `AUTO_IMAGE` - If image pixel type uses 8 bits, `max_intensity=255`. " \
-                   "Otherwise, the behavior is `STRETCH_IMAGE`.\n" \
-                   "* `AUTO_PLANE` - If image pixel type uses 8 bits, `max_intensity=255`. " \
-                   "Otherwise, the behavior is `STRETCH_PLANE`.\n" \
-                   "* `STRETCH_IMAGE` - Set `min_intensity` to greatest intensity in the original image, " \
-                   "for each channel.\n" \
-                   "* `STRETCH_PLANE` - Set `min_intensity` to greatest intensity in the set of planes, " \
-                   "for each channel."
+Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`. 
+Minimum intensity is closely related to the concepts of brightness and contrast. 
+
+Brightness is the visual perception of reflected light while contrast is the separation of the  
+lightest and darkest parts of an image. A minimum intensity increase leads to: 
+* a brightness decrease, which refers to an image's decreased luminance. 
+* a contrast increase, which darken shadows and lighten highlights. 
+
+Enumeration supported values: 
+* `AUTO_PER_IMAGE` - If image pixel type uses 8 bits, `min_intensity=0`. 
+Otherwise, the behavior is `STRETCH_PER_IMAGE`. 
+* `AUTO_PER_IMAGE_CHANNEL` - If image pixel type uses 8 bits, `min_intensity=0`. 
+Otherwise, the behavior is `STRETCH_PER_IMAGE_CHANNEL`. 
+* `AUTO_PER_PLANE` - If image pixel type uses 8 bits, `min_intensity=0`. 
+Otherwise, the behavior is `STRETCH_PER_PLANE`. 
+* `AUTO_PER_PLANE_CHANNEL` - If image pixel type uses 8 bits, `min_intensity=0`. 
+Otherwise, the behavior is `STRETCH_PER_PLANE_CHANNEL`. 
+* `STRETCH_PER_IMAGE` - Set `min_intensity` to lowest intensity in the original image. 
+* `STRETCH_PER_IMAGE_CHANNEL` - Set `min_intensity` to lowest intensity in the original image, 
+for each channel. 
+* `STRETCH_PER_PLANE` - Set `min_intensity` to lowest intensity in the set of planes.
+* `STRETCH_PER_PLANE_CHANNEL` - Set `min_intensity` to lowest intensity in the set of planes, 
+for each channel."""
+
+        __ma_doc = """Intensity in the original image used as maximum intensity (white) to 
+        create the response. As a consequence, original image intensities greater than this 
+        value will be white in the response. 
+
+Maximum allowed value depends on image pixel type and is equal to `2 * pow(pixel type)`. 
+Maximum intensity is closely related to the concepts of brightness and contrast. 
+
+Brightness is the visual perception of reflected light while contrast is the separation of the  
+lightest and darkest parts of an image. A maximum intensity increase leads to: 
+* a brightness decrease, which refers to an image's decreased luminance. 
+* a contrast decrease, which darken highlights and lighten shadows. 
+Enumeration supported values: 
+* `AUTO_PER_IMAGE` - If image pixel type uses 8 bits, `max_intensity=255`.  
+Otherwise, the behavior is `STRETCH_PER_IMAGE`. 
+* `AUTO_PER_IMAGE_CHANNEL` - If image pixel type uses 8 bits, `max_intensity=255`.  
+Otherwise, the behavior is `STRETCH_PER_IMAGE_CHANNEL`. 
+* `AUTO_PER_PLANE` - If image pixel type uses 8 bits, `max_intensity=255`.  
+Otherwise, the behavior is `STRETCH_PER_PLANE`. 
+* `AUTO_PER_PLANE_CHANNEL` - If image pixel type uses 8 bits, `max_intensity=255`.  
+Otherwise, the behavior is `STRETCH_PER_PLANE_CHANNEL`. 
+* `STRETCH_PER_IMAGE` - Set `max_intensity` to greatest intensity in the original image. 
+* `STRETCH_PER_IMAGE_CHANNEL` - Set `max_intensity` to greatest intensity in the original image,  
+for each channel. 
+* `STRETCH_PER_PLANE` - Set `min_intensity` to greatest intensity in the set of planes.
+* `STRETCH_PER_PLANE_CHANNEL` - Set `max_intensity` to greatest intensity in the set of planes,  
+for each channel.
+        """
+
         fields = {
             "min_intensities": {
                 "description": __mi_doc
@@ -301,8 +334,8 @@ class ImageOut(BaseModel):
 
 
 class ImageInDisplay(ImageIn):
-    min_intensities: Optional[IntensitySelection] = IntensitySelectionEnum.AUTO_IMAGE
-    max_intensities: Optional[IntensitySelection] = IntensitySelectionEnum.AUTO_IMAGE
+    min_intensities: Optional[IntensitySelection] = IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL
+    max_intensities: Optional[IntensitySelection] = IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL
     log: bool = Field(
         False,
         description='Apply a logarithmic scale on image data to ease observation '
@@ -317,11 +350,11 @@ class ImageOpsDisplayQueryParams(BaseDependency):
         threshold: Optional[confloat(ge=0.0, le=1.0)] = Query(None),
         min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(
             [
-                IntensitySelectionEnum.AUTO_IMAGE]
+                IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL]
         ),
         max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(
             [
-                IntensitySelectionEnum.AUTO_IMAGE]
+                IntensitySelectionEnum.AUTO_PER_IMAGE_CHANNEL]
         ),
         colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
         filters: Optional[List[str]] = Query(None),

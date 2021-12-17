@@ -39,9 +39,9 @@ def parse_intensity_bounds(
     out_channels
         Channel indexes expected in the output, used for intensities.
     out_zslices
-        Z slices indexes expected in the output, used for AUTO_PLANE and STRETCH_PLANE.
+        Z slices indexes expected in the output, used for *_PER_PLANE modes.
     out_timepoints
-        Timepoint indexes expected in the output, used for AUTO_PLANE ans STRETCH_PLANE.
+        Timepoint indexes expected in the output, used for *_PER_PLANE modes.
     min_intensities
         List of minimum intensities. See API spec for admissible string constants.
     max_intensities
@@ -73,11 +73,12 @@ def parse_intensity_bounds(
     def parse_intensity(c, bound_value, bound_default, bound_kind):
         bound_kind_idx = 0 if bound_kind == "minimum" else 1
 
-        def stretch_plane():
+        def stretch_plane(channels):
             bounds = []
-            for z in out_zslices:
-                for t in out_timepoints:
-                    bounds.append(image.plane_bounds(c, z, t)[bound_kind_idx])
+            for c_ in channels:
+                for z in out_zslices:
+                    for t in out_timepoints:
+                        bounds.append(image.plane_bounds(c_, z, t)[bound_kind_idx])
             func = min if bound_kind == "minimum" else max
             return func(bounds)
 
@@ -89,22 +90,23 @@ def parse_intensity_bounds(
             else:
                 return intensity
         else:
-            if allow_none and bound_value == "NONE":
+            if allow_none and bound_value == IntensitySelectionEnum.NONE:
                 return bound_default
-            elif bound_value == IntensitySelectionEnum.AUTO_IMAGE:
+
+            if bound_value.is_auto():
                 if image.significant_bits <= 8:
                     return bound_default
                 else:
-                    return image.channel_bounds(c)[bound_kind_idx]
-            elif bound_value == IntensitySelectionEnum.STRETCH_IMAGE:
+                    bound_value = bound_value.stretch_equivalent()
+
+            if bound_value == IntensitySelectionEnum.STRETCH_PER_IMAGE:
+                return image.image_bounds()[bound_kind_idx]
+            elif bound_value == IntensitySelectionEnum.STRETCH_PER_IMAGE_CHANNEL:
                 return image.channel_bounds(c)[bound_kind_idx]
-            elif bound_value == IntensitySelectionEnum.AUTO_PLANE:
-                if image.significant_bits <= 8:
-                    return bound_default
-                else:
-                    return stretch_plane()
-            elif bound_value == IntensitySelectionEnum.STRETCH_PLANE:
-                return stretch_plane()
+            elif bound_value == IntensitySelectionEnum.STRETCH_PER_PLANE:
+                return stretch_plane(out_channels)
+            elif bound_value == IntensitySelectionEnum.STRETCH_PER_PLANE_CHANNEL:
+                return stretch_plane([c])
             else:
                 return bound_default
 
