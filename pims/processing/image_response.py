@@ -376,6 +376,7 @@ class ProcessedView(MultidimImageResponse, ABC):
 
     def process(self) -> ImagePixels:
         pixels = ImagePixels(self.raw_view(*self.raw_view_planes()))
+        pixels.int_clip()
 
         if self.c_reduction != ChannelReduction.ADD:
             lut = self.math_lut()
