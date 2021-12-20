@@ -83,7 +83,7 @@ def _extract_np_thumb(image):
                 c = range(i, min(image.n_channels, i + c_chunk_size))
 
                 thumb = ImagePixels(
-                    image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
+                    image.thumbnail(tw, th, precomputed=False, c=list(c), t=t, z=z)
                 ).int_clip()
                 yield thumb.np_array(), c, z, t, ratio
 
