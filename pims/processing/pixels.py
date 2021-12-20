@@ -14,7 +14,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List, TYPE_CHECKING, Union
 
 import numpy as np
 from PIL.Image import Image as PILImage
@@ -25,10 +25,12 @@ from pyvips import (
 
 from pims.api.utils.mimetype import OutputExtension
 from pims.api.utils.models import ChannelReduction, Colorspace
-from pims.filters import AbstractFilter
 from pims.processing.adapters import RawImagePixels, convert_to, numpy_to_vips, pil_to_numpy
 from pims.processing.colormaps import LookUpTable, StackedLookUpTables, get_lut_from_stacked
 from pims.utils.vips import bandjoin, bandreduction, vips_dtype, vips_format_to_dtype
+
+if TYPE_CHECKING:
+    from pims.filters import AbstractFilter
 
 DEFAULT_WEBP_QUALITY = 75
 DEFAULT_WEBP_LOSSLESS = False
