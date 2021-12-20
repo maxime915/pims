@@ -233,6 +233,7 @@ class FileImporter:
                     new_original_path = self.processed_dir / original_filename
                     self.move(self.original_path, new_original_path)
                     self.original_path = new_original_path
+                    format = format.__class__(self.original_path)
 
                     self.notify(
                         ImportEventType.END_UNPACKING, self.upload_path,
