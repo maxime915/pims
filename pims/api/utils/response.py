@@ -12,9 +12,11 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from typing import Optional
+from typing import Any, Optional
 
+import orjson
 from cytomine.models import Model
+from fastapi.responses import ORJSONResponse
 from pint import Quantity
 
 log = logging.getLogger("pims")
@@ -66,3 +68,16 @@ def serialize_cytomine_model(o):
         return d
     log.warning(f"The object {o} is not a Cytomine model and is thus not serialized.")
     return o
+
+
+class CustomOrJsonResponse(ORJSONResponse):
+    def render(self, content: Any) -> bytes:
+        assert orjson is not None, "orjson must be installed to use ORJSONResponse"
+
+        def default(obj):
+            """ custom parser for orjson (usually named default) """
+            raise TypeError
+
+        return orjson.dumps(
+            content, option=orjson.OPT_SERIALIZE_NUMPY, default=default
+        )

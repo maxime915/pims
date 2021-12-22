@@ -123,6 +123,8 @@ numpy==1.21.4
     #   zarr
 opencv-python-headless==4.5.4.60
     # via cytomine-python-client
+orjson==3.6.5
+    # via pims (setup.py)
 packaging==21.3
     # via
     #   matplotlib

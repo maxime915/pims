@@ -37,6 +37,7 @@ REQUIRED = [
     'uvicorn[standard]>=0.13.4',
     'fastapi>=0.65.1',
     'pydantic>=1.8.2',
+    'orjson>=3.6.5',
     'rich>=10.2.2',
     'python-dotenv>=0.17.1',
     'python-multipart>=0.0.5',

@@ -242,7 +242,8 @@ def show_channels_histogram(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-channels/bounds',
-    tags=api_tags, response_model=ChannelsHistogramInfoCollection
+    tags=api_tags, response_model=ChannelsHistogramInfoCollection,
+    response_class=CustomOrJsonResponse
 )
 def show_channels_histogram_bounds(
     path: Path = Depends(imagepath_parameter),
@@ -266,14 +267,14 @@ def show_channels_histogram_bounds(
     for channel, bounds in zip(channels, channels_bounds):
         mini, maxi = bounds
         hist_info.append(
-            ChannelHistogramInfo(
+            dict(
                 channel=channel, type=htype,
                 color=in_image.channels[channel].hex_color,
                 minimum=mini, maximum=maxi
             )
         )
 
-    return response_list(hist_info)
+    return CustomOrJsonResponse(response_list(hist_info))
 
 
 @router.get(
