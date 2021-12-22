@@ -297,3 +297,7 @@ class AbstractFormat(ABC, SimpleDataCache):
     @cached_property
     def histogram(self):
         return self.histogram_reader
+
+    @cached_property
+    def main_path(self):
+        return self.path
