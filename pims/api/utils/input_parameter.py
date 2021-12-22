@@ -87,13 +87,14 @@ def parse_region(
 
 def parse_planes(
     planes_to_parse: List[Union[int, str]], n_planes: int, default: Union[int, List[int]] = 0,
-    name: str = 'planes'
+    name: str = 'planes', size_limit: Optional[int] = None
 ) -> List[int]:
     """
     Get a set of planes from a list of plane indexes and ranges.
 
     Parameters
     ----------
+    size_limit
     planes_to_parse
         List of plane indexes and ranges to parse.
     n_planes
@@ -118,31 +119,40 @@ def parse_planes(
     plane_indexes = list()
 
     if len(planes_to_parse) == 0:
-        return sorted(set((ensure_list(default))))
+        plane_set = sorted(set((ensure_list(default))))
+    else:
+        for plane in planes_to_parse:
+            if type(plane) is int:
+                plane_indexes.append(plane)
+            elif is_range(plane):
+                plane_indexes += [*parse_range(plane, 0, n_planes)]
+            else:
+                raise BadRequestException(
+                    detail=f'{plane} is not a valid index or range for {name}.'
+                )
+        plane_set = sorted(set([idx for idx in plane_indexes if 0 <= idx < n_planes]))
+    if size_limit is not None and (n_planes > size_limit or len(plane_set) > size_limit):
+        plane_set = plane_set[:1]
 
-    for plane in planes_to_parse:
-        if type(plane) is int:
-            plane_indexes.append(plane)
-        elif is_range(plane):
-            plane_indexes += [*parse_range(plane, 0, n_planes)]
-        else:
-            raise BadRequestException(
-                detail=f'{plane} is not a valid index or range for {name}.'
-            )
-    plane_set = sorted(set([idx for idx in plane_indexes if 0 <= idx < n_planes]))
     if len(plane_set) == 0:
         raise BadRequestException(detail=f"No valid indexes for {name}")
     return plane_set
 
 
-def get_channel_indexes(image: Image, planes: List[Union[int, str]]) -> List[int]:
+def get_channel_indexes(
+    image: Image, planes: List[Union[int, str]], enable_size_limit: bool = True
+) -> List[int]:
     """
     Image channels used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.
     By default, all channels are considered.
     """
+    # TODO: temporary fix due to scaling perf issues
+    size_limit = 32 if enable_size_limit else None
+    # ---
+
     default = [*range(0, image.n_channels)]
-    return parse_planes(planes, image.n_channels, default, 'channels')
+    return parse_planes(planes, image.n_channels, default, 'channels', size_limit)
 
 
 def get_zslice_indexes(image: Image, planes: List[int]) -> List[int]:

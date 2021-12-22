@@ -214,7 +214,7 @@ def show_channels_histogram(
     check_representation_existence(in_image)
 
     channels = ensure_list(channels)
-    channels = get_channel_indexes(in_image, channels)
+    channels = get_channel_indexes(in_image, channels, False)
 
     histograms = []
     n_bins = parse_n_bins(hist_config.n_bins, len(in_image.value_range))
@@ -252,7 +252,7 @@ def show_channels_histogram_bounds(
     check_representation_existence(in_image)
 
     channels = ensure_list(channels)
-    channels = get_channel_indexes(in_image, channels)
+    channels = get_channel_indexes(in_image, channels, False)
 
     hist_info = []
     htype = in_image.histogram_type()
@@ -292,7 +292,7 @@ def show_plane_histogram(
     z_slices = ensure_list(z_slices)
     timepoints = ensure_list(timepoints)
 
-    channels = get_channel_indexes(in_image, channels)
+    channels = get_channel_indexes(in_image, channels, False)
     z_slices = get_zslice_indexes(in_image, z_slices)
     timepoints = get_timepoint_indexes(in_image, timepoints)
 
@@ -337,7 +337,7 @@ def show_plane_histogram(
     z_slices = ensure_list(z_slices)
     timepoints = ensure_list(timepoints)
 
-    channels = get_channel_indexes(in_image, channels)
+    channels = get_channel_indexes(in_image, channels, False)
     z_slices = get_zslice_indexes(in_image, z_slices)
     timepoints = get_timepoint_indexes(in_image, timepoints)
 
