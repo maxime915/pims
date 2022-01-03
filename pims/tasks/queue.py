@@ -15,6 +15,7 @@
 import logging
 from enum import Enum
 from importlib import import_module
+from typing import Callable
 
 from celery import Celery
 from starlette.background import BackgroundTasks
@@ -66,6 +67,12 @@ BG_TASK_MAPPING = {
 }
 
 
+def func_from_str(mod_fuc_name: str) -> Callable:
+    module, func = mod_fuc_name.rsplit('.', 1)
+    task_func = getattr(import_module(module), func)
+    return task_func
+
+
 def send_task(name, args=None, kwargs=None, starlette_background: BackgroundTasks = None):
     """
     Send a task to PIMS queue.
@@ -102,8 +109,7 @@ def send_task(name, args=None, kwargs=None, starlette_background: BackgroundTask
                 logger.error(f"Task {name} cannot be sent to Background tasks.")
                 return
 
-            module, func = bg_task_name.rsplit('.', 1)
-            task_func = getattr(import_module(module), func)
+            task_func = func_from_str(bg_task_name)
             if task_func is None:
                 logger.error(f"Task {name} cannot be sent to Background tasks.")
                 return
