@@ -18,7 +18,7 @@ from typing import List, Optional, Union
 from fastapi import Query
 from pydantic import BaseModel, Field, confloat, conint
 
-from pims.processing.color import Color
+from pims.utils.color import Color
 
 
 class BaseDependency:
@@ -105,6 +105,17 @@ class GammaList(BaseModel):
     __root__: Union[Gamma, List[Gamma]]
 
 
+class Threshold(BaseModel):
+    """
+    Threshold an image so that pixel intensities in the
+    original image below the threshold (scaled to pixel type)
+    are set to 0. If the target content type is an image
+    format supporting transparency, pixel intensities below
+    the threshold are transparent.
+    """
+    __root__: Optional[confloat(ge=0.0, le=1.0)]
+
+
 class FilterId(BaseModel):
     """
     A unique case-insensitive identifier for an image filter
@@ -182,25 +193,6 @@ class ExistingColormapId(BaseModel):
     )
 
 
-class ColormapType(str, Enum):
-    """
-    * `SEQUENTIAL` - change in lightness and often saturation of color
-    incrementally, often using a single hue should be used for representing
-    information that has ordering.
-    * `DIVERGING` - change in lightness and possibly saturation of two different
-    colors that meet in the middle at an unsaturated color; should be used when
-    the image has a critical middle value.
-    * `QUALITATIVE` - often are miscellaneous colors; should be used to
-    represent information which does not have ordering or relationships
-    """
-    PERCEPTUAL_UNIFORM = "PERCEPTUAL_UNIFORM"
-    SEQUENTIAL = "SEQUENTIAL"
-    DIVERGING = "DIVERGING"
-    QUALITATIVE = "QUALITATIVE"
-    CYCLIC = "CYCLIC"
-    MISCELLANEOUS = "MISCELLANEOUS"
-
-
 class ImageIn(BaseModel):
     channels: Optional[SingleChannelIndex] = None
     z_slices: Optional[SingleZSliceIndex] = None
@@ -210,6 +202,7 @@ class ImageIn(BaseModel):
     colormaps: Optional[ColormapIdList] = ColormapEnum.DEFAULT
     filters: Optional[FilterIdList] = None
     gammas: GammaList = 1.0
+    threshold: Threshold = None
 
     class Config:
         __mi_doc = "Intensity in the original image used as minimum intensity (black) to create the response." \
@@ -300,6 +293,7 @@ class ImageOpsDisplayQueryParams(BaseDependency):
     def __init__(
         self,
         gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+        threshold: Optional[confloat(ge=0.0, le=1.0)] = Query(None),
         min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(
             [
                 IntensitySelectionEnum.AUTO_IMAGE]
@@ -313,6 +307,7 @@ class ImageOpsDisplayQueryParams(BaseDependency):
         log: bool = Query(False),
     ):
         self.gammas = gammas
+        self.threshold = threshold
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.colormaps = colormaps
@@ -376,6 +371,7 @@ class ImageOpsProcessingQueryParams(BaseDependency):
     def __init__(
         self,
         gammas: Optional[List[confloat(ge=0.0, le=10.0)]] = Query([1.0]),
+        threshold: Optional[confloat(ge=0.0, le=1.0)] = Query(None),
         min_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
         max_intensities: Optional[List[Union[IntensitySelectionEnum, conint(ge=0)]]] = Query(None),
         colormaps: Optional[List[Union[str, ColormapEnum]]] = Query([ColormapEnum.DEFAULT]),
@@ -384,6 +380,7 @@ class ImageOpsProcessingQueryParams(BaseDependency):
         colorspace: Optional[Colorspace] = Query(Colorspace.AUTO)
     ):
         self.gammas = gammas
+        self.threshold = threshold
         self.min_intensities = min_intensities
         self.max_intensities = max_intensities
         self.colormaps = colormaps
@@ -676,7 +673,7 @@ class TileRequest(ImageInDisplay):
                 TargetLevelTileIndex, TargetLevelTileCoordinates]
 
 
-class ChannelReduction(Enum):
+class ChannelReduction(str, Enum):
     """
     Reduction function used to merge selected channels.
     """
@@ -687,7 +684,7 @@ class ChannelReduction(Enum):
     MAX = 'MAX'
 
 
-class GenericReduction(Enum):
+class GenericReduction(str, Enum):
     MIN = 'MIN'
     AVG = 'AVG'
     MAX = 'MAX'
