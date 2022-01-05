@@ -264,6 +264,9 @@ def show_channels_histogram_bounds(
     htype = in_image.histogram_type()
     hist_filter = operator.itemgetter(*channels)
     channels_bounds = hist_filter(in_image.channels_bounds())
+    if len(channels) == 1:
+        channels_bounds = [channels_bounds]
+
     for channel, bounds in zip(channels, channels_bounds):
         mini, maxi = bounds
         hist_info.append(
