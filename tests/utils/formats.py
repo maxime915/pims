@@ -8,7 +8,7 @@ from pims.importer.importer import FileImporter
 
 from pims.files.file import (
     EXTRACTED_DIR, HISTOGRAM_STEM, ORIGINAL_STEM, PROCESSED_DIR, Path,
-    SPATIAL_STEM, UPLOAD_DIR_PREFIX, unique_name_generator
+    SPATIAL_STEM, UPLOAD_DIR_PREFIX
 )
 
 
