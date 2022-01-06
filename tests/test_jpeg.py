@@ -9,8 +9,9 @@ from tests.utils.formats import info_test, thumb_test, resized_test, mask_test, 
 import pytest
 from pims.files.file import (
     EXTRACTED_DIR, HISTOGRAM_STEM, ORIGINAL_STEM, PROCESSED_DIR, Path,
-    SPATIAL_STEM, UPLOAD_DIR_PREFIX, unique_name_generator
+    SPATIAL_STEM, UPLOAD_DIR_PREFIX
 )
+from pims.utils.strings import unique_name_generator
 
 def get_image(path, image):
 	filepath = os.path.join(path, image)
@@ -82,5 +83,6 @@ def test_jpeg_crop(client, image_path_jpeg):
 def test_crop_null_annot(client, image_path_jpeg):
 	crop_null_annot_test(client, image_path_jpeg[1], "jpeg")
 	
+@pytest.mark.skip
 def test_histogram_perimage(client, image_path_jpeg):
 	histogram_perimage_test(client, image_path_jpeg[1], "jpeg")
