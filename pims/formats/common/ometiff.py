@@ -18,7 +18,7 @@ from typing import Optional
 
 import numpy as np
 from pint import Quantity
-from pyvips import Image as VIPSImage
+from pyvips import Image as VIPSImage, Interpretation as VIPSInterpretation
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
 from pims.api.utils.models import ChannelReduction
@@ -303,7 +303,13 @@ class OmeTiffReader(VipsReader):
             else:
                 im = self._extract_channels(im, samples)
             bands.append(im)
-        return bandjoin(bands)
+        im = bandjoin(bands)
+        if c == [0, 1, 2]:
+            if im.interpretation == VIPSInterpretation.GREY16:
+                im = im.copy(intepretation=VIPSInterpretation.RGB16)
+            elif im.interpretation == VIPSInterpretation.B_W:
+                im = im.copy(interpretation=VIPSInterpretation.SRGB)
+        return im
 
     def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
         # TODO: precomputed ?
