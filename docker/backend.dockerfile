@@ -127,6 +127,8 @@ RUN chmod +x /start.sh
 COPY ./docker/start-reload.sh /start-reload.sh
 RUN chmod +x /start-reload.sh
 
+ENV PYTHONPATH=/app
+
 # Add app
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
