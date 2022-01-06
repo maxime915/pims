@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
 
-ARG PY_VERSION=3.9
+ARG PY_VERSION=3.8
 
 RUN apt-get -y update && apt-get -y install --no-install-recommends --no-install-suggests \
         `# Essentials` \
