@@ -18,7 +18,7 @@ from typing import Optional
 
 import numpy as np
 from pint import Quantity
-from pyvips import Image as VIPSImage, Interpretation as VIPSInterpretation
+from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
 from pims.api.utils.models import ChannelReduction
@@ -35,7 +35,8 @@ from pims.utils import UNIT_REGISTRY
 from pims.utils.color import infer_channel_color
 from pims.utils.dict import flatten
 from pims.utils.dtypes import dtype_to_bits
-from pims.utils.vips import bandjoin, bandreduction
+from pims.utils.iterables import ensure_list
+from pims.utils.vips import bandjoin, bandreduction, fix_rgb_interpretation
 
 
 def clean_ome_dict(d: dict) -> dict:
@@ -277,7 +278,7 @@ class OmeTiffParser(TifffileParser):
 class OmeTiffReader(VipsReader):
     def _pages_to_read(self, spp, channels, z, t):
         pages = OrderedDict()
-        for c in channels:
+        for c in ensure_list(channels):
             intrinsic_c = c // spp
             s = c % spp
             page_index = self.format.planes_info.get(
@@ -305,10 +306,7 @@ class OmeTiffReader(VipsReader):
             bands.append(im)
         im = bandjoin(bands)
         if c == [0, 1, 2]:
-            if im.interpretation == VIPSInterpretation.GREY16:
-                im = im.copy(intepretation=VIPSInterpretation.RGB16)
-            elif im.interpretation == VIPSInterpretation.B_W:
-                im = im.copy(interpretation=VIPSInterpretation.SRGB)
+            im = fix_rgb_interpretation(im)
         return im
 
     def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
