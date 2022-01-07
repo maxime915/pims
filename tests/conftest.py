@@ -98,21 +98,21 @@ def client(app):
 
 @pytest.fixture
 def image_path_jpeg():
-	image = "cytomine-org-logo.jpeg"
+	filename = "cytomine-org-logo.jpeg"
 	path = "/data/pims/upload_test_jpeg/"
-	return [path, image]
+	return path, filename
 
 @pytest.fixture
 def image_path_png():
-	image = "cytomine-org-logo.png"
+	filename = "cytomine-org-logo.png"
 	path = "/data/pims/upload_test_png/"
-	return [path, image]
+	return path, filename
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def image_path_tiff():
-	image = "earthworm-transv-posterior-to-clitellum-02.tiff"
+	filename = "earthworm-transv-posterior-to-clitellum-02.tiff"
 	path = "/data/pims/upload_test_tiff/"
-	return [path, image]
+	return path, filename
 	
 	
 @contextmanager

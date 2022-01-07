@@ -82,21 +82,27 @@ def test_tiff_norm_tile(client, image_path_tiff):
 	assert height_resp == 256
 	
 def test_tiff_thumb(client, image_path_tiff):
-	thumb_test(client, image_path_tiff[1], "tiff")
+	_, filename = image_path_tiff
+	thumb_test(client, filename, "tiff")
 	
 def test_tiff_resized(client, image_path_tiff):
-	resized_test(client, image_path_tiff[1], "tiff")
+	_, filename = image_path_tiff
+	resized_test(client, filename, "tiff")
 	
 def test_tiff_mask(client, image_path_tiff):
-	mask_test(client, image_path_tiff[1], "tiff")
+	_, filename = image_path_tiff
+	mask_test(client, filename, "tiff")
 	
 def test_tiff_crop(client, image_path_tiff):
-	crop_test(client, image_path_tiff[1], "tiff")
+	_, filename = image_path_tiff
+	crop_test(client, filename, "tiff")
 
 @pytest.mark.skip
 def test_tiff_crop_null_annot(client, image_path_tiff):
-	crop_null_annot_test(client, image_path_tiff[1], "tiff")
+	_, filename = image_path_tiff
+	crop_null_annot_test(client, filename, "tiff")
 
-@pytest.mark.skip
+@pytest.mark.skip(reason="TMP. Histogram not found. Bug in pretest ?")
 def test_tiff_histogram_perimage(client, image_path_tiff):
-	histogram_perimage_test(client, image_path_tiff[1], "tiff")
+	_, filename = image_path_tiff
+	histogram_perimage_test(client, filename, "tiff")

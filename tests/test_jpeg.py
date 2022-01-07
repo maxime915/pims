@@ -52,14 +52,17 @@ def get_image(path, image):
 			print(e)
 			
 def test_jpeg_exists(image_path_jpeg):
-	get_image(image_path_jpeg[0], image_path_jpeg[1])
-	assert os.path.exists(os.path.join(image_path_jpeg[0],image_path_jpeg[1])) == True
+	path, filename = image_path_jpeg
+	get_image(path, filename)
+	assert os.path.exists(os.path.join(path, filename)) == True
 	
 def test_jpeg_info(client, image_path_jpeg):
-	info_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	info_test(client, filename, "jpeg")
 	
 def test_jpeg_norm_tile(client, image_path_jpeg):
-	response = client.get(f"/image/upload_test_jpeg/{image_path_jpeg[1]}/normalized-tile/zoom/1/ti/0", headers={"accept": "image/jpeg"})
+	_, filename = image_path_jpeg
+	response = client.get(f"/image/upload_test_jpeg/{filename}/normalized-tile/zoom/1/ti/0", headers={"accept": "image/jpeg"})
 	assert response.status_code == 200
 	
 	img_response = Image.open(io.BytesIO(response.content))
@@ -68,21 +71,27 @@ def test_jpeg_norm_tile(client, image_path_jpeg):
 	assert height_resp == 79
 	
 def test_jpeg_thumb(client, image_path_jpeg):
-	thumb_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	thumb_test(client, filename, "jpeg")
 		
 def test_jpeg_resized(client, image_path_jpeg):
-	resized_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	resized_test(client, filename, "jpeg")
 		
 def test_jpeg_mask(client, image_path_jpeg):
-	mask_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	mask_test(client, filename, "jpeg")
 	
 def test_jpeg_crop(client, image_path_jpeg):
-	crop_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	crop_test(client, filename, "jpeg")
 	
 @pytest.mark.skip
 def test_crop_null_annot(client, image_path_jpeg):
-	crop_null_annot_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	crop_null_annot_test(client, filename, "jpeg")
 	
 @pytest.mark.skip
 def test_histogram_perimage(client, image_path_jpeg):
-	histogram_perimage_test(client, image_path_jpeg[1], "jpeg")
+	_, filename = image_path_jpeg
+	histogram_perimage_test(client, filename, "jpeg")
