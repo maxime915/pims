@@ -278,6 +278,8 @@ class OmeTiffParser(TifffileParser):
 class OmeTiffReader(VipsReader):
     def _pages_to_read(self, spp, channels, z, t):
         pages = OrderedDict()
+        if channels is None:
+            channels = list(range(self.format.main_imd.n_channels))
         for c in ensure_list(channels):
             intrinsic_c = c // spp
             s = c % spp
