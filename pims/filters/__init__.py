@@ -18,9 +18,9 @@ from abc import ABC, abstractmethod
 from importlib import import_module
 from inspect import isabstract, isclass
 from pkgutil import iter_modules
-from typing import Dict, Type
+from typing import Callable, Dict, List, Tuple, Type, Union
 
-from pims.processing.operations import ImageOp
+from pims.processing.adapters import RawImagePixels, RawImagePixelsType, imglib_adapters
 
 FILTER_PLUGIN_PREFIX = 'pims_filter_'
 NON_PLUGINS_MODULES = ["pims.filters.utils"]
@@ -30,13 +30,45 @@ logger = logging.getLogger("pims.app")
 logger.info("[green bold]Filters initialization...")
 
 
-class AbstractFilter(ImageOp, ABC):
+class AbstractFilter(ABC):
+    """
+    Base class for a filter.
+    Filters are expected to be called like functions.
+    """
+    _impl: Dict[RawImagePixelsType, Callable]
+
     def __init__(self, histogram=None):
-        super(AbstractFilter, self).__init__()
+        self._impl = {}
 
         if self.require_histogram() and histogram is None:
             raise ValueError("Histogram parameter is not set, while the filter requires it.")
         self.histogram = histogram
+
+    @property
+    def implementations(self) -> List[RawImagePixelsType]:
+        return list(self._impl.keys())
+
+    @property
+    def implementation_adapters(
+        self
+    ) -> Dict[Tuple[RawImagePixelsType, RawImagePixelsType], Callable]:
+        return imglib_adapters
+
+    def __call__(
+        self, obj: RawImagePixels, *args, **kwargs
+    ) -> Union[RawImagePixels, bytes]:
+        """
+        Apply image operation on given obj. Return type is a convertible
+        image type (but not necessarily the type of `obj`).
+        """
+
+        if type(obj) not in self.implementations:
+            obj = self.implementation_adapters.get(
+                (type(obj), self.implementations[0])
+            )(obj)
+
+        processed = self._impl[type(obj)](obj, *args, **kwargs)
+        return processed
 
     @classmethod
     def init(cls):
