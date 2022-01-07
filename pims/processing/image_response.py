@@ -30,12 +30,10 @@ from pims.processing.annotations import ParsedAnnotations
 from pims.processing.colormaps import (
     Colormap, StackedLookUpTables, combine_stacked_lut, default_lut, is_rgb_colormapping
 )
+from pims.processing.histograms.utils import change_colorspace_histogram, rescale_histogram
 from pims.processing.masks import (
     draw_condition_mask, rasterize_draw, rasterize_mask, rescale_draw,
     transparency_mask
-)
-from pims.processing.operations import (
-    ColorspaceHistOp, RescaleHistOp
 )
 from pims.processing.pixels import ImagePixels
 from pims.processing.region import Region, Tile
@@ -421,15 +419,15 @@ class ProcessedView(MultidimImageResponse, ABC):
         used by histogram filters on processed images.
         """
         hist = self.in_image.histogram.plane_histogram(*self.raw_view_planes())
-        hist = hist.squeeze()
-        hist = hist.reshape((1, -1)) if hist.ndim == 1 else hist
+        hist = np.atleast_2d(hist)
 
         # TODO: filters are computed on best_effort bitdepth
         #  while it should do on image bitdepth
-        hist = RescaleHistOp(self.best_effort_bitdepth)(hist)
+        hist = rescale_histogram(hist, self.best_effort_bitdepth)
 
         if self.filter_colorspace_processing:
-            hist = ColorspaceHistOp(self.filter_colorspace)(hist)
+            hist = change_colorspace_histogram(hist, self.filter_colorspace)
+
         return hist.squeeze()
 
 
