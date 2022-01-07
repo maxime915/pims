@@ -69,7 +69,7 @@ class ImagePixelsImpl(ABC):
 
     @abstractmethod
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixelsImpl:
         pass
 
@@ -131,12 +131,12 @@ class NumpyImagePixels(ImagePixelsImpl):
         return self.context.transition_to(VIPSImage).apply_lut(lut)
 
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixelsImpl:
         # TODO
         return self.context.transition_to(
             VIPSImage
-        ).apply_lut_stack(lut_stack, reduction)
+        ).apply_lut_stack(lut_stack, reduction, is_rgb)
 
     def resize(self, width: int, height: int) -> ImagePixelsImpl:
         return self.context.transition_to(VIPSImage).resize(width, height)
@@ -215,7 +215,7 @@ class VipsImagePixels(ImagePixelsImpl):
         return self
 
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixelsImpl:
         stack_size, _, n_components = lut_stack.shape
         if stack_size == 1:
@@ -223,9 +223,10 @@ class VipsImagePixels(ImagePixelsImpl):
             return self.apply_lut(get_lut_from_stacked(lut_stack))
         elif n_components == 1:
             lut_stack = np.swapaxes(lut_stack, 0, 2)
-            return self.apply_lut(
-                get_lut_from_stacked(lut_stack)
-            ).channel_reduction(reduction)
+            pixels = self.apply_lut(get_lut_from_stacked(lut_stack))
+            if not is_rgb:
+                return pixels.channel_reduction(reduction)
+            return pixels
         else:
             channels = list()
             for i, channel in enumerate(self.pixels.bandsplit()):
@@ -375,9 +376,9 @@ class ImagePixels:
         return self
 
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixels:
-        self._impl.apply_lut_stack(lut_stack, reduction)
+        self._impl.apply_lut_stack(lut_stack, reduction, is_rgb)
         return self
     
     def resize(self, width: int, height: int) -> ImagePixels:

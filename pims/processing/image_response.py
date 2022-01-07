@@ -242,6 +242,12 @@ class ProcessedView(MultidimImageResponse, ABC):
         return lut.astype(np_dtype(self.best_effort_bitdepth))
 
     @property
+    def is_rgb(self):
+        if any(self.colormaps):
+            return is_rgb_colormapping(self.colormaps)
+        return False
+
+    @property
     def colormap_processing(self) -> bool:
         """Whether colormapping processing is required."""
         if any(self.colormaps):
@@ -378,7 +384,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         if self.c_reduction != ChannelReduction.ADD:
             lut = self.math_lut()
             if lut is not None:
-                pixels.apply_lut_stack(lut, self.c_reduction)
+                pixels.apply_lut_stack(lut, self.c_reduction, self.is_rgb)
             else:
                 pixels.channel_reduction(self.c_reduction)
 
@@ -389,7 +395,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         else:
             lut = self.lut()
             if lut is not None:
-                pixels.apply_lut_stack(lut, self.c_reduction)
+                pixels.apply_lut_stack(lut, self.c_reduction, self.is_rgb)
 
         pixels.resize(self.out_width, self.out_height)
 
