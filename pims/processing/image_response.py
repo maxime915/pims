@@ -331,10 +331,11 @@ class ProcessedView(MultidimImageResponse, ABC):
         """Whether colorspace needs to be changed."""
         if self.colorspace == Colorspace.AUTO:
             return False
-        return (self.colorspace == Colorspace.GRAY and
-                len(self.channels) > 1) or \
-               (self.colorspace == Colorspace.COLOR and
-                len(self.channels) == 1)
+        return (self.colormap_processing or
+                (self.colorspace == Colorspace.GRAY and
+                 len(self.channels) > 1) or
+                (self.colorspace == Colorspace.COLOR and
+                 len(self.channels) == 1))
 
     # Filtering
 
