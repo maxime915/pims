@@ -118,5 +118,5 @@ def test_crop_null_annot(client, image_path_jpeg):
     crop_null_annot_test(client, filename, "jpeg")
 	
 def test_histogram_perimage(client, image_path_jpeg):
-    _, filename = image_path_jpeg
-    histogram_perimage_test(client, filename, "jpeg")
+	_, filename = image_path_jpeg
+	histogram_perimage_test(client, filename, "jpeg")
