@@ -12,6 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 from functools import cached_property
+from typing import List, Optional, Union
 
 from pyvips import Image as VIPSImage
 
@@ -53,7 +54,10 @@ class PyrTiffVipsReader(VipsReader):
     # Thumbnail already uses shrink-on-load feature in default VipsReader
     # (i.e it loads the right pyramid level according the requested dimensions)
 
-    def read_window(self, region, out_width, out_height, **other):
+    def read_window(
+        self, region, out_width, out_height,
+        c: Optional[Union[int, List[int]]] = None, **other
+    ):
         tier = self.format.pyramid.most_appropriate_tier(
             region, (out_width, out_height)
         )
@@ -61,11 +65,14 @@ class PyrTiffVipsReader(VipsReader):
 
         page = tier.data.get('page_index')
         tiff_page = VIPSImage.tiffload(str(self.format.path), page=page)
-        return tiff_page.extract_area(
+        im = tiff_page.extract_area(
             region.left, region.top, region.width, region.height
         )
+        return self._extract_channels(im, c)
 
-    def read_tile(self, tile, **other):
+    def read_tile(
+        self, tile, c: Optional[Union[int, List[int]]] = None, **other
+    ):
         tier = tile.tier
         page = tier.data.get('page_index')
         tiff_page = VIPSImage.tiffload(str(self.format.path), page=page)
@@ -75,9 +82,10 @@ class PyrTiffVipsReader(VipsReader):
         # that has to be read is read.
         # https://github.com/jcupitt/tilesrv/blob/master/tilesrv.c#L461
         # TODO: is direct tile access significantly faster ?
-        return tiff_page.extract_area(
+        im = tiff_page.extract_area(
             tile.left, tile.top, tile.width, tile.height
         )
+        return self._extract_channels(im, c)
 
 
 class PyrTiffFormat(AbstractFormat):
