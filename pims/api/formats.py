@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from pims.api.exceptions import FormatNotFoundProblem
 from pims.api.utils.models import CollectionSize, FormatId
-from pims.api.utils.response import response_list
+from pims.api.utils.response import FastJsonResponse, response_list
 from pims.formats import FORMATS
 
 router = APIRouter()
@@ -67,7 +67,10 @@ def _serialize_format(format):
     )
 
 
-@router.get('/formats', response_model=FormatsList, tags=api_tags)
+@router.get(
+    '/formats', response_model=FormatsList, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def list_formats():
     """
     List all formats
@@ -76,7 +79,10 @@ def list_formats():
     return response_list(formats)
 
 
-@router.get('/formats/{format_id}', response_model=Format, tags=api_tags)
+@router.get(
+    '/formats/{format_id}', response_model=Format, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def show_format(format_id: str):
     """
     Get a format

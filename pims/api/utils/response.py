@@ -12,12 +12,15 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import orjson
-from cytomine.models import Model
+from cytomine.models import Model as CytomineModel
+from fastapi.encoders import DictIntStrAny, SetIntStr
 from fastapi.responses import ORJSONResponse
 from pint import Quantity
+from pydantic import BaseModel
+from starlette.background import BackgroundTask
 
 log = logging.getLogger("pims")
 
@@ -61,7 +64,7 @@ def convert_quantity(quantity: Optional[Quantity], unit: str, ndigits: int = 6) 
 
 
 def serialize_cytomine_model(o):
-    if isinstance(o, Model):
+    if isinstance(o, CytomineModel):
         d = dict((k, v) for k, v in o.__dict__.items() if v is not None and not k.startswith("_"))
         if "uri_" in d:
             d["uri"] = d.pop("uri_")
@@ -70,14 +73,70 @@ def serialize_cytomine_model(o):
     return o
 
 
-class CustomOrJsonResponse(ORJSONResponse):
+class FastJsonResponse(ORJSONResponse):
+    """
+    Fast JSON response using `orjson` encoder.
+
+    It bypasses some FastAPI features and has some limitations: some response parts could be
+    unvalidated, and rendering (i.e json encoding) may fail if `orjson` is not able to
+    serialize the data.
+
+    On large responses, it can be 10-30x faster than default FastAPI encoding.
+    """
+    def __init__(
+        self,
+        content: Any = None,
+        status_code: int = 200,
+        headers: dict = None,
+        media_type: str = None,
+        background: BackgroundTask = None,
+        include: Optional[Union[SetIntStr, DictIntStrAny]] = None,
+        exclude: Optional[Union[SetIntStr, DictIntStrAny]] = None,
+        by_alias: bool = True,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+    ):
+        if include is not None and not isinstance(include, (set, dict)):
+            include = set(include)
+        if exclude is not None and not isinstance(exclude, (set, dict)):
+            exclude = set(exclude)
+
+        self.include = include
+        self.exclude = exclude
+        self.by_alias = by_alias
+        self.exclude_unset = exclude_unset
+        self.exclude_defaults = exclude_defaults
+        self.exclude_none = exclude_none
+
+        super().__init__(content, status_code, headers, media_type, background)
+
+    def default(self, o: Any):
+        if isinstance(o, BaseModel):
+            obj_dict = o.dict(
+                include=self.include,  # type: ignore # in Pydantic
+                exclude=self.exclude,  # type: ignore # in Pydantic
+                by_alias=self.by_alias,
+                exclude_unset=self.exclude_unset,
+                exclude_none=self.exclude_none,
+                exclude_defaults=self.exclude_defaults,
+            )
+            if "__root__" in obj_dict:
+                obj_dict = obj_dict["__root__"]
+            return obj_dict
+        elif isinstance(o, CytomineModel):
+            d = dict(
+                (k, v) for k, v in o.__dict__.items()
+                if v is not None and not k.startswith("_")
+            )
+            if "uri_" in d:
+                d["uri"] = d.pop("uri_")
+            return d
+        raise TypeError
+
     def render(self, content: Any) -> bytes:
         assert orjson is not None, "orjson must be installed to use ORJSONResponse"
 
-        def default(obj):
-            """ custom parser for orjson (usually named default) """
-            raise TypeError
-
         return orjson.dumps(
-            content, option=orjson.OPT_SERIALIZE_NUMPY, default=default
+            content, option=orjson.OPT_SERIALIZE_NUMPY, default=self.default
         )

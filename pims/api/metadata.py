@@ -32,7 +32,7 @@ from pims.api.utils.output_parameter import (
     safeguard_output_dimensions
 )
 from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, path2filepath
-from pims.api.utils.response import convert_quantity, response_list
+from pims.api.utils.response import FastJsonResponse, convert_quantity, response_list
 from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import FileRole, FileType, Path
@@ -528,7 +528,8 @@ def show_file(
 @router.get(
     '/image/{filepath:path}/info',
     response_model=ImageFullInfo,
-    tags=api_tags
+    tags=api_tags,
+    response_class=FastJsonResponse
 )
 def show_info(
     path: Path = Depends(imagepath_parameter)
@@ -553,7 +554,8 @@ def show_info(
 @router.get(
     '/image/{filepath:path}/info/image',
     response_model=ImageInfo,
-    tags=api_tags
+    tags=api_tags,
+    response_class=FastJsonResponse
 )
 def show_image(
     path: Path = Depends(imagepath_parameter)
@@ -575,7 +577,8 @@ class ChannelsInfoCollection(CollectionSize):
 @router.get(
     '/image/{filepath:path}/info/channels',
     response_model=ChannelsInfoCollection,
-    tags=api_tags
+    tags=api_tags,
+    response_class=FastJsonResponse
 )
 def show_channels(path: Path = Depends(imagepath_parameter)):
     """
@@ -591,7 +594,8 @@ def show_channels(path: Path = Depends(imagepath_parameter)):
 @router.get(
     '/image/{filepath:path}/info/normalized-pyramid',
     response_model=PyramidInfo,
-    tags=api_tags
+    tags=api_tags,
+    response_class=FastJsonResponse
 )
 def show_normalized_pyramid(
     path: Path = Depends(imagepath_parameter)
@@ -609,7 +613,8 @@ def show_normalized_pyramid(
 @router.get(
     '/image/{filepath:path}/info/instrument',
     response_model=InstrumentInfo,
-    tags=api_tags
+    tags=api_tags,
+    response_class=FastJsonResponse
 )
 def show_instrument(
     path: Path = Depends(imagepath_parameter)
@@ -631,7 +636,8 @@ class AssociatedInfoCollection(CollectionSize):
 @router.get(
     '/image/{filepath:path}/info/associated',
     response_model=AssociatedInfoCollection,
-    tags=api_tags + ['Associated']
+    tags=api_tags + ['Associated'],
+    response_class=FastJsonResponse
 )
 def show_associated(
     path: Path = Depends(imagepath_parameter)
@@ -798,7 +804,8 @@ class RepresentationInfoCollection(CollectionSize):
 @router.get(
     '/image/{filepath:path}/info/representations',
     response_model=RepresentationInfoCollection,
-    tags=api_tags
+    tags=api_tags,
+    response_class=FastJsonResponse
 )
 def list_representations(
     path: Path = Depends(imagepath_parameter)

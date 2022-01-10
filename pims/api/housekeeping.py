@@ -18,6 +18,7 @@ from pydantic import BaseModel, Field, confloat, conint
 
 from pims.api.exceptions import NotADirectoryProblem, check_path_existence
 from pims.api.utils.parameter import filepath2path
+from pims.api.utils.response import FastJsonResponse
 from pims.config import Settings, get_settings
 
 router = APIRouter()
@@ -73,7 +74,10 @@ def _serialize_usage(path):
     )
 
 
-@router.get('/directory/{directorypath:path}/disk-usage', response_model=DiskUsage, tags=api_tags)
+@router.get(
+    '/directory/{directorypath:path}/disk-usage', response_model=DiskUsage,
+    tags=api_tags, response_class=FastJsonResponse
+)
 def show_path_usage(
     directorypath: str,
     config: Settings = Depends(get_settings)
@@ -89,7 +93,10 @@ def show_path_usage(
     return _serialize_usage(path)
 
 
-@router.get('/disk-usage', response_model=DiskUsage, tags=api_tags)
+@router.get(
+    '/disk-usage', response_model=DiskUsage, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def show_disk_usage(config: Settings = Depends(get_settings)) -> DiskUsage:
     """
     PIMS disk usage
@@ -106,7 +113,10 @@ class DiskUsageLegacy(BaseModel):
     ip: Optional[str] = None
 
 
-@router.get('/storage/size.json', response_model=DiskUsageLegacy, tags=api_tags)
+@router.get(
+    '/storage/size.json', response_model=DiskUsageLegacy, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def show_disk_usage_v1(config: Settings = Depends(get_settings)):
     """
     Get storage space (v1.x)

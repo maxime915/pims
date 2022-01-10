@@ -26,7 +26,7 @@ from pims.api.utils.input_parameter import (
 )
 from pims.api.utils.models import CollectionSize, HistogramType
 from pims.api.utils.parameter import imagepath_parameter
-from pims.api.utils.response import CustomOrJsonResponse, response_list
+from pims.api.utils.response import FastJsonResponse, response_list
 from pims.files.file import HISTOGRAM_STEM, Path
 from pims.processing.histograms.utils import argmax_nonzero, argmin_nonzero, build_histogram_file
 from pims.utils.iterables import ensure_list
@@ -156,7 +156,8 @@ class HistogramConfig:
 
 @router.get(
     '/image/{filepath:path}/histogram/per-image',
-    tags=api_tags, response_model=Histogram
+    tags=api_tags, response_model=Histogram,
+    response_class=FastJsonResponse
 )
 def show_image_histogram(
     path: Path = Depends(imagepath_parameter),
@@ -181,7 +182,8 @@ def show_image_histogram(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-image/bounds',
-    tags=api_tags, response_model=HistogramInfo
+    tags=api_tags, response_model=HistogramInfo,
+    response_class=FastJsonResponse
 )
 def show_image_histogram_bounds(
     path: Path = Depends(imagepath_parameter)
@@ -199,7 +201,8 @@ def show_image_histogram_bounds(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-channels',
-    tags=api_tags, response_model=ChannelsHistogramCollection
+    tags=api_tags, response_model=ChannelsHistogramCollection,
+    response_class=FastJsonResponse
 )
 def show_channels_histogram(
     path: Path = Depends(imagepath_parameter),
@@ -243,7 +246,7 @@ def show_channels_histogram(
 @router.get(
     '/image/{filepath:path}/histogram/per-channels/bounds',
     tags=api_tags, response_model=ChannelsHistogramInfoCollection,
-    response_class=CustomOrJsonResponse
+    response_class=FastJsonResponse
 )
 def show_channels_histogram_bounds(
     path: Path = Depends(imagepath_parameter),
@@ -270,19 +273,20 @@ def show_channels_histogram_bounds(
     for channel, bounds in zip(channels, channels_bounds):
         mini, maxi = bounds
         hist_info.append(
-            dict(
+            ChannelHistogramInfo(
                 channel=channel, type=htype,
                 color=in_image.channels[channel].hex_color,
                 minimum=mini, maximum=maxi
             )
         )
 
-    return CustomOrJsonResponse(response_list(hist_info))
+    return response_list(hist_info)
 
 
 @router.get(
     '/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}',
-    tags=api_tags, response_model=PlaneHistogramCollection
+    tags=api_tags, response_model=PlaneHistogramCollection,
+    response_class=FastJsonResponse
 )
 def show_plane_histogram(
     z_slices: conint(ge=0),
@@ -328,7 +332,8 @@ def show_plane_histogram(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}/bounds',
-    tags=api_tags, response_model=PlaneHistogramInfoCollection
+    tags=api_tags, response_model=PlaneHistogramInfoCollection,
+    response_class=FastJsonResponse
 )
 def show_plane_histogram(
     z_slices: conint(ge=0),
