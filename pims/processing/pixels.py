@@ -260,9 +260,8 @@ class VipsImagePixels(ImagePixelsImpl):
         elif (self.pixels.interpretation == VIPSInterpretation.GREY16
               and colorspace == Colorspace.COLOR):
             new_colorspace = VIPSInterpretation.RGB16
-        elif (colorspace == Colorspace.COLOR
-              and self.pixels.interpretation != VIPSInterpretation.SRGB):
-            new_colorspace = VIPSInterpretation.RGB
+        elif colorspace == Colorspace.COLOR:
+            new_colorspace = VIPSInterpretation.SRGB
         elif colorspace == Colorspace.GRAY:
             new_colorspace = VIPSInterpretation.B_W
 
