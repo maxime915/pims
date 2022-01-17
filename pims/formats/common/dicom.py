@@ -21,6 +21,7 @@ from pint import Quantity
 from pydicom import FileDataset, dcmread
 from pydicom.dicomdir import DicomDir
 from pydicom.multival import MultiValue
+from pydicom.uid import ImplicitVRLittleEndian
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
@@ -43,9 +44,16 @@ from pims.utils.types import parse_float
 log = logging.getLogger("pims.formats")
 
 
+def _pydicom_dcmread(path, *args, **kwargs):
+    dcm = dcmread(path, *args, **kwargs)
+    if not hasattr(dcm.file_meta, 'TransferSyntaxUID'):
+        dcm.file_meta.TransferSyntaxUID = ImplicitVRLittleEndian
+    return dcm
+
+
 def cached_dcmread(format: AbstractFormat) -> Union[FileDataset, DicomDir]:
     return format.get_cached(
-        '_dcmread', dcmread, format.path.resolve(), force=True
+        '_dcmread', _pydicom_dcmread, format.path.resolve(), force=True
     )
 
 
