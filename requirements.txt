@@ -30,7 +30,7 @@ billiard==3.6.4.0
     # via celery
 cachecontrol==0.12.10
     # via cytomine-python-client
-celery==5.2.1
+celery==5.2.2
     # via pims (setup.py)
 certifi==2021.10.8
     # via
