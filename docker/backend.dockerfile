@@ -2,6 +2,7 @@ FROM ubuntu:20.04
 
 ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
+ENV PYTHONPATH=/app
 
 ARG PY_VERSION=3.9
 
@@ -104,8 +105,8 @@ RUN rm -rf /var/lib/apt/lists/*
 # Install python requirements
 ARG GUNICORN_VERSION=20.1.0
 COPY ./requirements.txt /app/requirements.txt
-RUN pip install gunicorn==${GUNICORN_VERSION} && \
-    pip install -r requirements.txt && \
+RUN pip install --no-cache-dir gunicorn==${GUNICORN_VERSION} && \
+    pip install --no-cache-dir -r requirements.txt && \
     python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
