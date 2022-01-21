@@ -79,7 +79,7 @@ RUN python plugins.py \
    --method dependencies_before_vips
 
 # vips
-ARG VIPS_VERSION=8.11.2
+ARG VIPS_VERSION=8.12.1
 ARG VIPS_URL=https://github.com/libvips/libvips/releases/download
 RUN cd /usr/local/src && \
     wget ${VIPS_URL}/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz && \
