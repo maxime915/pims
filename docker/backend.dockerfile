@@ -2,7 +2,6 @@ FROM ubuntu:20.04
 
 ENV LANG C.UTF-8
 ENV DEBIAN_FRONTEND noninteractive
-ENV PYTHONPATH=/app
 
 ARG PY_VERSION=3.9
 
@@ -131,6 +130,7 @@ RUN chmod +x /start-reload.sh
 # Add app
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 ENV PORT=5000
 EXPOSE ${PORT}
