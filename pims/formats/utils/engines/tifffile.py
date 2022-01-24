@@ -17,7 +17,7 @@ from typing import Any, Optional, Tuple, Union
 
 import numpy as np
 from pint import Quantity
-from tifffile import TiffPage, TiffTag, tifffile
+from tifffile import TIFF, TiffPage, TiffTag, tifffile
 
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
@@ -112,6 +112,16 @@ class TifffileParser(AbstractParser):
         imd.significant_bits = baseline.bitspersample
 
         imd.n_channels = baseline.samplesperpixel
+        if TIFF.EXTRASAMPLE.UNASSALPHA in baseline.extrasamples:
+            imd.n_channels -= 1
+
+        # In the case we have unknown extra samples:
+        if imd.n_channels not in (1, 3) and len(baseline.extrasamples) == 0:
+            if imd.n_channels > 3:
+                imd.n_channels = 3
+            else:
+                imd.n_channels = 1
+
         if imd.n_channels == 3:
             imd.set_channel(ImageChannel(index=0, suggested_name='R'))
             imd.set_channel(ImageChannel(index=1, suggested_name='G'))
