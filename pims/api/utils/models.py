@@ -79,7 +79,7 @@ class GenericReduction(str, Enum):
 class PlaneSelectionQueryParams(BaseDependency):
     def __init__(
         self,
-        channels: Optional[Union[conint(ge=0), str]] = Query(None),
+        channels: Optional[List[Union[conint(ge=0), str]]] = Query(None),
         # TODO: replace str by range pydantic model
         z_slices: Optional[conint(ge=0)] = Query(None),
         timepoints: Optional[conint(ge=0)] = Query(None),
@@ -214,7 +214,7 @@ class ExistingColormapId(BaseModel):
 
 
 class ImageIn(BaseModel):
-    channels: Optional[SingleOrRangeChannelIndex] = None
+    channels: Optional[Union[SingleOrRangeChannelIndex, List[SingleOrRangeChannelIndex]]] = None
     z_slices: Optional[SingleZSliceIndex] = None
     timepoints: Optional[SingleTimepointIndex] = None
     c_reduction: Optional[ChannelReduction] = ChannelReduction.ADD
