@@ -35,7 +35,7 @@ REQUIRES_PYTHON = '>=3.8.0'
 # What packages are required for this module to be executed?
 REQUIRED = [
     'uvicorn[standard]>=0.13.4',
-    'fastapi>=0.65.1',
+    'fastapi>=0.65.1,<=0.68.2',
     'pydantic>=1.8.2',
     'orjson>=3.6.5',
     'rich>=10.2.2',

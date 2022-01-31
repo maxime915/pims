@@ -16,8 +16,6 @@ aioredis==2.0.0
     #   pims (setup.py)
 amqp==5.0.6
     # via kombu
-anyio==3.4.0
-    # via starlette
 asciitree==0.3.3
     # via zarr
 asgiref==3.4.1
@@ -67,7 +65,7 @@ cycler==0.11.0
     # via matplotlib
 cytomine-python-client==2.8.3
     # via pims (setup.py)
-fastapi==0.70.0
+fastapi==0.68.2
     # via
     #   fastapi-cache2
     #   pims (setup.py)
@@ -84,9 +82,7 @@ h11==0.12.0
 httptools==0.2.0
     # via uvicorn
 idna==3.3
-    # via
-    #   anyio
-    #   requests
+    # via requests
 imagecodecs==2021.11.20
     # via pims (setup.py)
 imageio==2.12.0
@@ -208,11 +204,9 @@ six==1.16.0
     #   fasteners
     #   python-dateutil
     #   python-multipart
-sniffio==1.2.0
-    # via anyio
 snuggs==1.4.7
     # via rasterio
-starlette==0.16.0
+starlette==0.14.2
     # via fastapi
 tifffile==2021.6.6
     # via
