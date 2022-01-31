@@ -128,7 +128,7 @@ packaging==21.3
     #   setuptools-scm
 pathvalidate==2.5.0
     # via pims (setup.py)
-pillow==8.4.0
+pillow==9.0.0
     # via
     #   cytomine-python-client
     #   imageio
