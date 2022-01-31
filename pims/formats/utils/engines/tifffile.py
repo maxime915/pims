@@ -13,11 +13,11 @@
 #  * limitations under the License.
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional, Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 from pint import Quantity
-from tifffile import TIFF, TiffPage, TiffTag, tifffile
+from tifffile import TIFF, TiffPage, tifffile
 
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
@@ -44,6 +44,7 @@ TIFF_FLAGS = (
     'ndpi',
     'scanimage',
     'mdgel',
+    'bif'
 )
 
 
@@ -68,13 +69,6 @@ def cached_tifffile(
 def cached_tifffile_baseline(format: AbstractFormat) -> TiffPage:
     tf = cached_tifffile(format)
     return format.get_cached('_tf_baseline', tf.pages.__getitem__, 0)
-
-
-def get_tifftag_value(tag: Union[TiffTag, Any]) -> Any:
-    if isinstance(tag, TiffTag):
-        return tag.value
-    else:
-        return tag
 
 
 class TifffileChecker(SignatureChecker):
@@ -138,32 +132,31 @@ class TifffileParser(AbstractParser):
         tags = baseline.tags
 
         imd.description = baseline.description
-        imd.acquisition_datetime = self.parse_acquisition_date(tags.get(306))
+        imd.acquisition_datetime = self.parse_acquisition_date(tags.valueof(306))
 
         imd.physical_size_x = self.parse_physical_size(
-            tags.get("XResolution"), tags.get("ResolutionUnit")
+            tags.valueof("XResolution"), tags.valueof("ResolutionUnit")
         )
         imd.physical_size_y = self.parse_physical_size(
-            tags.get("YResolution"), tags.get("ResolutionUnit")
+            tags.valueof("YResolution"), tags.valueof("ResolutionUnit")
         )
         return imd
 
     @staticmethod
     def parse_acquisition_date(
-        date: Union[datetime, str, TiffTag]
+        date: Union[datetime, str]
     ) -> Union[datetime, None]:
         """
         Parse a date(time) from a TiffTag to datetime.
 
         Parameters
         ----------
-        date: str, datetime, TiffTag
+        date: str, datetime
 
         Returns
         -------
         datetime: datetime, None
         """
-        date = get_tifftag_value(date)
 
         if isinstance(date, datetime):
             return date
@@ -174,14 +167,12 @@ class TifffileParser(AbstractParser):
 
     @staticmethod
     def parse_physical_size(
-        physical_size: Union[Tuple, float, TiffTag],
+        physical_size: Union[Tuple, float],
         unit: Optional[tifffile.TIFF.RESUNIT] = None
     ) -> Union[Quantity, None]:
         """
         Parse a physical size and its unit from a TiffTag to a Quantity.
         """
-        physical_size = get_tifftag_value(physical_size)
-        unit = get_tifftag_value(unit)
         if not unit or physical_size is None:
             return None
         if type(physical_size) == tuple and len(physical_size) == 1:

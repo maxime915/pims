@@ -52,7 +52,7 @@ REQUIRED = [
     'numpy>=1.20.1',
     'Pillow>=8.0.0',
     'pyvips>=2.1.14',
-    'tifffile>=2021.4.8,<=2021.6.6',  # Check that no breaking changes are introduced to upgrade
+    'tifffile>=2021.11.2',
     'imagecodecs>=2021.3.31',
     'scikit-image>=0.18',
     'zarr>=2.8.3',

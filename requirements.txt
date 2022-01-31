@@ -208,7 +208,7 @@ snuggs==1.4.7
     # via rasterio
 starlette==0.14.2
     # via fastapi
-tifffile==2021.6.6
+tifffile==2021.11.2
     # via
     #   pims (setup.py)
     #   scikit-image
