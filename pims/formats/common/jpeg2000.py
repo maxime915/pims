@@ -142,7 +142,8 @@ class JPEG2000Format(AbstractFormat):
             vips jp2ksave LUNG1_pyr.tif LUNG1-converted.jp2 --subsample-mode off
         => Identify internal differences between file to establish a conversion need rule.
         """
-        return False
+        imd = self.main_imd
+        return imd.width > 1024 or imd.height > 1024
 
     @property
     def media_type(self):
