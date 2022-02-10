@@ -58,8 +58,11 @@ class FormatFactory:
             a match. None otherwise.
         """
         if self.match_on_ext:
-            format = self.formats.get(path.extension)
-            if format:
+            extension = path.extension
+            if len(extension) > 0:
+                extension = extension[1:]
+            format = self.formats.get(extension)
+            if format is not None:
                 return format(path)
         proxy = CachedDataPath(path)
         for format in self.formats.values():
