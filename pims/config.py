@@ -42,6 +42,11 @@ class ReadableSettings(BaseSettings):
     max_pixels_complete_histogram: int = 1024 * 1024
     max_length_complete_histogram: int = 1024
 
+    vips_allow_leak: bool = False
+    vips_cache_max_items: int = 500
+    vips_cache_max_memory: int = 100  # in MB
+    vips_cache_max_files: int = 200
+
     class Config:
         extra = Extra.ignore
 

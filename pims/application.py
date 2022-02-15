@@ -66,9 +66,14 @@ async def startup():
     if not pydantic_compiled:
         logger.warning(f"[red]Pydantic is running in non compiled mode.")
 
-    from pyvips import API_mode as pyvips_binary
+    import pyvips
+    pyvips_binary = pyvips.API_mode
     if not pyvips_binary:
         logger.warning("[red]Pyvips is running in non binary mode.")
+    pyvips.leak_set(get_settings().vips_allow_leak)
+    pyvips.cache_set_max(get_settings().vips_cache_max_items)
+    pyvips.cache_set_max_mem(get_settings().vips_cache_max_memory * 1048576)
+    pyvips.cache_set_max_files(get_settings().vips_cache_max_files)
 
     from shapely.speedups import enabled as shapely_speedups
     if not shapely_speedups:
