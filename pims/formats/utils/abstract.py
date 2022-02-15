@@ -16,10 +16,9 @@ from __future__ import annotations
 import logging
 import re
 from abc import ABC
-from functools import cached_property
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type
 
-from pims.cache import SimpleDataCache
+from pims.cache import SimpleDataCache, cached_property
 from pims.formats.utils.checker import AbstractChecker
 from pims.formats.utils.convertor import AbstractConvertor
 from pims.formats.utils.histogram import AbstractHistogramReader

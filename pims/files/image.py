@@ -13,13 +13,13 @@
 #  * limitations under the License.
 from __future__ import annotations
 
-from functools import cached_property
 from typing import List, Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from pint import Quantity
 
 from pims.api.exceptions import NoMatchingFormatProblem
+from pims.cache import cached_property
 from pims.files.file import Path
 from pims.formats.utils.factories import FormatFactory
 from pims.formats.utils.structures.pyramid import normalized_pyramid

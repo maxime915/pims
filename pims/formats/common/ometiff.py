@@ -13,7 +13,6 @@
 #  * limitations under the License.
 from collections import OrderedDict
 from datetime import datetime
-from functools import cached_property
 from typing import Optional
 
 import numpy as np
@@ -22,6 +21,7 @@ from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
 from pims.api.utils.models import ChannelReduction
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.omexml import OMEXML

@@ -12,11 +12,11 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from functools import cached_property
 from typing import List, Optional, Union
 
 from pyvips import Image as VIPSImage
 
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.common.jpeg import JPEGParser
 from pims.formats.utils.abstract import CachedDataPath

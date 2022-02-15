@@ -13,7 +13,6 @@
 #  * limitations under the License.
 import logging
 from datetime import datetime
-from functools import cached_property
 from typing import List, Optional, Union
 
 import numpy as np
@@ -25,6 +24,7 @@ from pydicom.uid import ImplicitVRLittleEndian
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
+from pims.cache import cached_property
 from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )

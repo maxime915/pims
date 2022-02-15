@@ -14,7 +14,6 @@
 from __future__ import annotations
 
 from abc import ABC
-from functools import cached_property
 from typing import List, Tuple, Union
 
 import numpy as np
@@ -22,6 +21,7 @@ import zarr as zarr
 from zarr.errors import _BaseZarrError as ZarrError  # noqa
 
 from pims.api.utils.models import HistogramType
+from pims.cache import cached_property
 from pims.files.file import Path
 from pims.formats.utils.histogram import HistogramReaderInterface, PlaneIndex
 
