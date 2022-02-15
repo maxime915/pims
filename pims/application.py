@@ -98,6 +98,12 @@ async def log_requests(request: Request, call_next):
     duration = (now - start) * 1000
     args = dict(request.query_params)
 
+    cached = response.headers.get("X-Pims-Cache")
+    log_cached = None
+    if cached is not None:
+        color = "red" if cached == "MISS" else "green"
+        log_cached = ('cache', cached, color)
+
     log_params = [
         ('method', request.method, 'magenta'),
         ('path', request.url.path, 'blue'),
@@ -105,6 +111,9 @@ async def log_requests(request: Request, call_next):
         ('duration', f"{duration:.2f}ms", 'green'),
         ('params', args, 'blue'),
     ]
+
+    if log_cached:
+        log_params.insert(-1, log_cached)
 
     parts = []
     for name, value, color in log_params:

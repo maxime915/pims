@@ -33,6 +33,7 @@ from pims.config import get_settings
 HEADER_CACHE_CONTROL = "Cache-Control"
 HEADER_ETAG = "ETag"
 HEADER_IF_NONE_MATCH = "If-None-Match"
+HEADER_PIMS_CACHE = "X-Pims-Cache"
 
 CACHE_KEY_PIMS_VERSION = "PIMS_VERSION"
 
@@ -242,6 +243,7 @@ def cache(
                         cache_control_builder(ttl=ttl)
                     etag = f"W/{hash(encoded)}"
                     response.headers[HEADER_ETAG] = etag
+                    response.headers[HEADER_PIMS_CACHE] = "HIT"
                     if if_none_match == etag:
                         response.status_code = 304
                         return response
@@ -251,6 +253,8 @@ def cache(
                         response.headers.get(HEADER_CACHE_CONTROL)
                     decoded.headers[HEADER_ETAG] = \
                         response.headers.get(HEADER_ETAG)
+                    decoded.headers[HEADER_PIMS_CACHE] = \
+                        response.headers.get(HEADER_PIMS_CACHE)
                 return decoded
 
             data = await exec_func_async(func, *args, **kwargs)
@@ -264,11 +268,14 @@ def cache(
                     cache_control_builder(ttl=expire)
                 etag = f"W/{hash(encoded)}"
                 response.headers[HEADER_ETAG] = etag
+                response.headers[HEADER_PIMS_CACHE] = "MISS"
                 if isinstance(data, Response):
                     data.headers[HEADER_CACHE_CONTROL] = \
                         response.headers.get(HEADER_CACHE_CONTROL)
                     data.headers[HEADER_ETAG] = \
                         response.headers.get(HEADER_ETAG)
+                    data.headers[HEADER_PIMS_CACHE] = \
+                        response.headers.get(HEADER_PIMS_CACHE)
 
             return data
 
