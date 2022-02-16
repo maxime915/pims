@@ -11,9 +11,7 @@ affine==2.3.0
 aiofiles==0.7.0
     # via pims (setup.py)
 aioredis==2.0.0
-    # via
-    #   fastapi-cache2
-    #   pims (setup.py)
+    # via pims (setup.py)
 amqp==5.0.6
     # via kombu
 asciitree==0.3.3
@@ -66,10 +64,6 @@ cycler==0.11.0
 cytomine-python-client==2.8.3
     # via pims (setup.py)
 fastapi==0.68.2
-    # via
-    #   fastapi-cache2
-    #   pims (setup.py)
-fastapi-cache2[redis]==0.1.6
     # via pims (setup.py)
 fasteners==0.16.3
     # via zarr
@@ -157,9 +151,7 @@ pyparsing==3.0.6
     #   packaging
     #   snuggs
 python-dateutil==2.8.2
-    # via
-    #   fastapi-cache2
-    #   matplotlib
+    # via matplotlib
 python-dotenv==0.19.2
     # via
     #   pims (setup.py)
@@ -224,9 +216,7 @@ urllib3==1.26.7
     #   cytomine-python-client
     #   requests
 uvicorn[standard]==0.15.0
-    # via
-    #   fastapi-cache2
-    #   pims (setup.py)
+    # via pims (setup.py)
 uvloop==0.16.0
     # via uvicorn
 vine==5.0.0

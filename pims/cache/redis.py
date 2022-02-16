@@ -11,22 +11,23 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+
 import hashlib
 import inspect
+import pickle
 from enum import Enum
 from functools import partial, wraps
-from typing import Callable, List, Optional, Type
+from typing import Any, Callable, List, Optional, Tuple, Type
 
 import aioredis
-from fastapi_cache import Coder, FastAPICache, JsonCoder, default_key_builder
-from fastapi_cache.backends import Backend
-from fastapi_cache.backends.redis import RedisBackend as RedisBackend_
-from fastapi_cache.coder import PickleCoder
 from starlette.responses import Response
 
 from pims.api.utils.mimetype import VISUALISATION_MIMETYPES, get_output_format
 from pims.config import get_settings
 from pims.utils.concurrency import exec_func_async
+
+# Note: Parts of this implementation are inspired from
+# https://github.com/long2ice/fastapi-cache
 
 HEADER_CACHE_CONTROL = "Cache-Control"
 HEADER_ETAG = "ETag"
@@ -35,64 +36,12 @@ HEADER_PIMS_CACHE = "X-Pims-Cache"
 CACHE_KEY_PIMS_VERSION = "PIMS_VERSION"
 
 
-class RedisBackend(RedisBackend_):
-    async def exists(self, key) -> bool:
-        return await self.redis.exists(key)
-
-
-class PIMSCache(FastAPICache):
-    _enabled = False
-
-    @classmethod
-    async def init(
-        cls, backend, prefix: str = "", expire: int = None, coder: Coder = JsonCoder,
-        key_builder: Callable = default_key_builder
-    ):
-        super().init(backend, prefix, expire, coder, key_builder)
-        try:
-            await cls._backend.get(CACHE_KEY_PIMS_VERSION)
-            cls._enabled = True
-        except ConnectionError:
-            cls._enabled = False
-
-    @classmethod
-    def get_backend(cls):
-        if not cls._enabled:
-            raise ConnectionError("Cache is not enabled.")
-        return cls._backend
-
-    @classmethod
-    def is_enabled(cls):
-        return cls._enabled
-
-
-def get_cache() -> Backend:
-    return PIMSCache.get_backend()
-
-
-async def _startup_cache(pims_version):
-    settings = get_settings()
-    if not settings.cache_enabled:
-        return
-
-    redis = aioredis.from_url(settings.cache_url)
-    await PIMSCache.init(
-        RedisBackend(redis), prefix="pims-cache",
-        key_builder=all_kwargs_key_builder
-    )
-
-    # Flush the cache if persistent and PIMS version has changed.
-    cache = get_cache()
-    cached_version = await cache.get(CACHE_KEY_PIMS_VERSION)
-    if cached_version != pims_version:
-        await cache.clear(PIMSCache.get_prefix())
-        await cache.set(CACHE_KEY_PIMS_VERSION, pims_version)
-
-
-def all_kwargs_key_builder(func, kwargs, excluded_parameters, prefix):
+def all_kwargs_key_builder(
+    func, kwargs, excluded_parameters, prefix
+):
     copy_kwargs = kwargs.copy()
     if excluded_parameters is None:
-        excluded_parameters =  []
+        excluded_parameters = []
     for excluded in excluded_parameters:
         if excluded in copy_kwargs:
             copy_kwargs.pop(excluded)
@@ -133,6 +82,134 @@ def _image_response_key_builder(
     )
 
 
+class Codec:
+    @classmethod
+    def encode(cls, value: Any):
+        raise NotImplementedError
+
+    @classmethod
+    def decode(cls, value: Any):
+        raise NotImplementedError
+
+
+class PickleCodec(Codec):
+    @classmethod
+    def encode(cls, value: Any):
+        return pickle.dumps(value)
+
+    @classmethod
+    def decode(cls, value: Any):
+        return pickle.loads(value)
+
+
+class RedisBackend:
+    def __init__(self, redis_url: str):
+        self.redis = aioredis.from_url(redis_url)
+
+    async def get_with_ttl(self, key: str) -> Tuple[int, str]:
+        async with self.redis.pipeline(transaction=True) as pipe:
+            return await (pipe.ttl(key).get(key).execute())
+
+    async def get(self, key) -> str:
+        return await self.redis.get(key)
+
+    async def set(self, key: str, value: str, expire: int = None):
+        return await self.redis.set(key, value, ex=expire)
+
+    async def clear(self, namespace: str = None, key: str = None) -> int:
+        if namespace:
+            lua = f"for i, name in ipairs(redis.call('KEYS', '{namespace}:*')) " \
+                  f"do redis.call('DEL', name); " \
+                  f"end"
+            return await self.redis.eval(lua, numkeys=0)
+        elif key:
+            return await self.redis.delete(key)
+
+    async def exists(self, key) -> bool:
+        return await self.redis.exists(key)
+
+
+class PIMSCache:
+    _enabled = False
+    _backend = None
+    _prefix = None
+    _expire = None
+    _init = False
+    _codec = None
+    _key_builder = None
+
+    @classmethod
+    async def init(
+        cls, backend, prefix: str = "", expire: int = None
+    ):
+        if cls._init:
+            return
+        cls._init = True
+        cls._backend = backend
+        cls._prefix = prefix
+        cls._expire = expire
+        cls._codec = PickleCodec
+        cls._key_builder = all_kwargs_key_builder
+
+        try:
+            await cls._backend.get(CACHE_KEY_PIMS_VERSION)
+            cls._enabled = True
+        except ConnectionError:
+            cls._enabled = False
+
+    @classmethod
+    def get_backend(cls):
+        if not cls._enabled:
+            raise ConnectionError("Cache is not enabled.")
+        return cls._backend
+
+    @classmethod
+    def get_cache(cls):
+        return cls.get_backend()
+
+    @classmethod
+    def is_enabled(cls):
+        return cls._enabled
+
+    @classmethod
+    def get_prefix(cls):
+        return cls._prefix
+
+    @classmethod
+    def get_expire(cls):
+        return cls._expire
+
+    @classmethod
+    def get_codec(cls):
+        return cls._codec
+
+    @classmethod
+    def get_key_builder(cls):
+        return cls._key_builder
+
+    @classmethod
+    async def clear(cls, namespace: str = None, key: str = None):
+        namespace = cls._prefix + ":" + namespace if namespace else None
+        return await cls._backend.clear(namespace, key)
+
+
+async def _startup_cache(pims_version):
+    settings = get_settings()
+    if not settings.cache_enabled:
+        return
+
+    await PIMSCache.init(
+        RedisBackend(settings.cache_url), prefix="pims-cache",
+    )
+
+    # Flush the cache if persistent and PIMS version has changed.
+    cache = PIMSCache.get_cache()  # noqa
+    cached_version = await cache.get(CACHE_KEY_PIMS_VERSION)
+    if cached_version != pims_version:
+        await cache.clear(PIMSCache.get_prefix())
+        await cache.set(CACHE_KEY_PIMS_VERSION, pims_version)
+
+
 def default_cache_control_builder(ttl=0):
     """
     Cache-Control header is not intuitive.
@@ -150,7 +227,7 @@ def default_cache_control_builder(ttl=0):
 def cache(
     expire: int = None,
     vary: Optional[List] = None,
-    codec: Type[Coder] = None,
+    codec: Type[Codec] = None,
     key_builder: Callable = None,
     cache_control_builder: Callable = None
 ):
@@ -174,7 +251,7 @@ def cache(
                 return await exec_func_async(func, *args, **kwargs)
 
             expire = expire or PIMSCache.get_expire()
-            codec = codec or PIMSCache.get_coder()
+            codec = codec or PIMSCache.get_codec()
             key_builder = key_builder or PIMSCache.get_key_builder()
             backend = PIMSCache.get_backend()
             prefix = PIMSCache.get_prefix()
@@ -252,5 +329,5 @@ def cache_image_response(
     key_builder = partial(
         _image_response_key_builder, supported_mimetypes=supported_mimetypes
     )
-    codec = PickleCoder
+    codec = PickleCodec
     return cache(expire, vary, codec, key_builder)
