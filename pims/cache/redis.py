@@ -204,7 +204,9 @@ async def _startup_cache(pims_version):
 
     # Flush the cache if persistent and PIMS version has changed.
     cache = PIMSCache.get_cache()  # noqa
-    cached_version = (await cache.get(CACHE_KEY_PIMS_VERSION)).decode('utf-8')
+    cached_version = await cache.get(CACHE_KEY_PIMS_VERSION)
+    if cached_version is not None:
+        cached_version = cached_version.decode('utf-8')
     if cached_version != pims_version:
         await cache.clear(PIMSCache.get_prefix())
         await cache.set(CACHE_KEY_PIMS_VERSION, pims_version)
