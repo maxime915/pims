@@ -24,6 +24,7 @@ from starlette.responses import Response
 
 from pims.api.utils.mimetype import VISUALISATION_MIMETYPES, get_output_format
 from pims.config import get_settings
+from pims.utils.background_task import add_background_task
 from pims.utils.concurrency import exec_func_async
 
 # Note: Parts of this implementation are inspired from
@@ -193,7 +194,7 @@ class PIMSCache:
         return await cls._backend.clear(namespace, key)
 
 
-async def _startup_cache(pims_version):
+async def startup_cache(pims_version):
     settings = get_settings()
     if not settings.cache_enabled:
         return
@@ -296,7 +297,9 @@ def cache(
 
             data = await exec_func_async(func, *args, **kwargs)
             encoded = codec.encode(data)
-            await backend.set(cache_key, encoded, expire)
+
+            async def _save(cache_key_, data_, expire_):
+                await backend.set(cache_key_, data_, expire_)
 
             if response:
                 cache_control_builder = \
@@ -306,6 +309,7 @@ def cache(
                 etag = f"W/{hash(encoded)}"
                 response.headers[HEADER_ETAG] = etag
                 response.headers[HEADER_PIMS_CACHE] = "MISS"
+                add_background_task(response, _save, cache_key, encoded, expire)
                 if isinstance(data, Response):
                     data.headers[HEADER_CACHE_CONTROL] = \
                         response.headers.get(HEADER_CACHE_CONTROL)
@@ -313,6 +317,9 @@ def cache(
                         response.headers.get(HEADER_ETAG)
                     data.headers[HEADER_PIMS_CACHE] = \
                         response.headers.get(HEADER_PIMS_CACHE)
+                    data.background = response.background
+            else:
+                await _save(cache_key, encoded, expire)
 
             return data
 
