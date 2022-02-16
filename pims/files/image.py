@@ -19,7 +19,7 @@ import numpy as np
 from pint import Quantity
 
 from pims.api.exceptions import NoMatchingFormatProblem
-from pims.cache import cached_property
+from pims.cache.object import cached_property
 from pims.files.file import Path
 from pims.formats.utils.factories import FormatFactory
 from pims.formats.utils.structures.pyramid import normalized_pyramid

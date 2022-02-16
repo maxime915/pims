@@ -25,7 +25,7 @@ import time
 from fastapi import FastAPI, Request
 from pydantic import ValidationError
 
-from pims.cache import _startup_cache
+from pims.cache.redis import _startup_cache
 from pims.config import get_settings
 from pims.docs import get_redoc_html
 from pims.api.exceptions import add_problem_exception_handler

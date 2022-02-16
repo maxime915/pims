@@ -33,7 +33,7 @@ from pims.api.utils.output_parameter import (
 )
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.window import _show_window
-from pims.cache import cache_image_response
+from pims.cache.redis import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.processing.annotations import annotation_crop_affine_matrix, get_annotation_region

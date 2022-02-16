@@ -24,7 +24,7 @@ from pydicom.uid import ImplicitVRLittleEndian
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
-from pims.cache import cached_property
+from pims.cache.object import cached_property
 from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )
