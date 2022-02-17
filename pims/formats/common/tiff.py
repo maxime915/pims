@@ -11,11 +11,11 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from functools import cached_property
 from typing import List, Optional, Union
 
 from pyvips import Image as VIPSImage
 
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.tifffile import TIFF_FLAGS, TifffileChecker, TifffileParser

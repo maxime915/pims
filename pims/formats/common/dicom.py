@@ -13,7 +13,6 @@
 #  * limitations under the License.
 import logging
 from datetime import datetime
-from functools import cached_property
 from typing import List, Optional, Union
 
 import numpy as np
@@ -22,9 +21,11 @@ from pydicom import FileDataset, dcmread
 from pydicom.dicomdir import DicomDir
 from pydicom.multival import MultiValue
 from pydicom.uid import ImplicitVRLittleEndian
+from shapely.affinity import affine_transform
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
+from pims.cache import cached_property
 from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )
@@ -178,6 +179,7 @@ class DicomParser(AbstractParser):
         """
         ds = cached_dcmread(self.format)
         channels = list(range(self.format.main_imd.n_channels))
+        im_height = self.format.main_imd.height
         parsed_annots = []
         annots_sq = ds.get((0x77, 0x1901))
         if annots_sq and annots_sq.VR == "SQ":
@@ -186,6 +188,10 @@ class DicomParser(AbstractParser):
                     wkt = annot.get((0x77, 0x1911))
                     if wkt.value is not None:
                         geometry = wkt_loads(wkt.value)
+                        # Change LEFT_BOTTOM origin to LEFT_TOP
+                        geometry = affine_transform(
+                            geometry, [1, 0, 0, -1, 0, im_height - 0.5]
+                        )
                         parsed = ParsedMetadataAnnotation(
                             geometry, channels, 0, 0
                         )

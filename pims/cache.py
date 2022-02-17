@@ -16,7 +16,7 @@ import copy
 import hashlib
 import inspect
 from enum import Enum
-from functools import partial, wraps
+from functools import cached_property as _cached_property, partial, wraps
 from typing import Any, Callable, Dict, KeysView, List, Optional, Type, Union
 
 import aioredis
@@ -33,8 +33,40 @@ from pims.config import get_settings
 HEADER_CACHE_CONTROL = "Cache-Control"
 HEADER_ETAG = "ETag"
 HEADER_IF_NONE_MATCH = "If-None-Match"
+HEADER_PIMS_CACHE = "X-Pims-Cache"
 
 CACHE_KEY_PIMS_VERSION = "PIMS_VERSION"
+
+safe_cached_property = _cached_property
+
+class cached_property:  # noqa
+    """
+    Attribute whose value is computed on first access.
+
+    These cached properties are not thread-safe.
+    """
+
+    __slots__ = ('func', '__dict__')
+
+    def __init__(self, func):
+        """Initialize instance from decorated function."""
+        self.func = func
+        self.__doc__ = func.__doc__
+        self.__module__ = func.__module__
+        self.__name__ = func.__name__
+        self.__qualname__ = func.__qualname__
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        try:
+            value = self.func(instance)
+        except AttributeError as exc:
+            raise RuntimeError(exc)
+        if value is NotImplemented:
+            return getattr(super(owner, instance), self.func.__name__)
+        setattr(instance, self.func.__name__, value)
+        return value
 
 
 class RedisBackend(RedisBackend_):
@@ -211,6 +243,7 @@ def cache(
                         cache_control_builder(ttl=ttl)
                     etag = f"W/{hash(encoded)}"
                     response.headers[HEADER_ETAG] = etag
+                    response.headers[HEADER_PIMS_CACHE] = "HIT"
                     if if_none_match == etag:
                         response.status_code = 304
                         return response
@@ -220,6 +253,8 @@ def cache(
                         response.headers.get(HEADER_CACHE_CONTROL)
                     decoded.headers[HEADER_ETAG] = \
                         response.headers.get(HEADER_ETAG)
+                    decoded.headers[HEADER_PIMS_CACHE] = \
+                        response.headers.get(HEADER_PIMS_CACHE)
                 return decoded
 
             data = await exec_func_async(func, *args, **kwargs)
@@ -233,11 +268,14 @@ def cache(
                     cache_control_builder(ttl=expire)
                 etag = f"W/{hash(encoded)}"
                 response.headers[HEADER_ETAG] = etag
+                response.headers[HEADER_PIMS_CACHE] = "MISS"
                 if isinstance(data, Response):
                     data.headers[HEADER_CACHE_CONTROL] = \
                         response.headers.get(HEADER_CACHE_CONTROL)
                     data.headers[HEADER_ETAG] = \
                         response.headers.get(HEADER_ETAG)
+                    data.headers[HEADER_PIMS_CACHE] = \
+                        response.headers.get(HEADER_PIMS_CACHE)
 
             return data
 

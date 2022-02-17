@@ -254,6 +254,22 @@ class VipsImagePixels(ImagePixelsImpl):
     def change_colorspace(self, colorspace: Colorspace) -> ImagePixelsImpl:
         new_colorspace = None
 
+        if self.pixels.format == 'uchar':
+            # As libvips makes a distinction between format and interpretation,
+            # and due to our various libs usage, there is sometimes
+            # inconsistencies. As a quick fix, force interpretation casting
+            # when it differs from format.
+            # Should be treated more efficiently.
+            # Info: https://github.com/libvips/libvips/issues/580
+            if self.pixels.interpretation == VIPSInterpretation.RGB16:
+                self.pixels = self.pixels.copy(
+                    interpretation=VIPSInterpretation.SRGB
+                )
+            elif self.pixels.interpretation == VIPSInterpretation.GREY16:
+                self.pixels = self.pixels.copy(
+                    interpretation=VIPSInterpretation.B_W
+                )
+
         if (self.pixels.interpretation == VIPSInterpretation.RGB16
                 and colorspace == Colorspace.GRAY):
             new_colorspace = VIPSInterpretation.GREY16
