@@ -126,7 +126,8 @@ class FileImporter:
         for listener in self.listeners:
             try:
                 getattr(listener, method)(*args, **kwargs)
-            except AttributeError:
+            except AttributeError as e:
+                log.error(e)
                 log.warning(f"No method {method} for import listener {listener}")
 
     def run(self, prefer_copy: bool = False):
