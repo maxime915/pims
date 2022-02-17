@@ -37,6 +37,17 @@ HEADER_PIMS_CACHE = "X-Pims-Cache"
 CACHE_KEY_PIMS_VERSION = "PIMS_VERSION"
 
 
+def _hashable_dict(d: dict, separator: str = ":"):
+    hashable = str()
+    for k, v in d.items():
+        if isinstance(v, Enum):
+            v = v.value
+        elif type(v) == dict:
+            v = _hashable_dict(v, separator)
+        hashable += f"{separator}{k}={str(v)}"
+    return hashable
+
+
 def all_kwargs_key_builder(
     func, kwargs, excluded_parameters, prefix
 ):
@@ -47,12 +58,8 @@ def all_kwargs_key_builder(
         if excluded in copy_kwargs:
             copy_kwargs.pop(excluded)
 
-    hashable = f"{func.__module__}:{func.__name__}"
-    for k, v in copy_kwargs.items():
-        if isinstance(v, Enum):
-            v = v.value
-        hashable += f":{k}={str(v)}"
-
+    hashable = f"{func.__module__}:{func.__name__}" \
+               f"{_hashable_dict(copy_kwargs, ':')}"
     hashed = hashlib.md5(hashable.encode()).hexdigest()
     cache_key = f"{prefix}:{hashed}"
     return cache_key
@@ -67,7 +74,7 @@ def _image_response_key_builder(
         # Find true output extension
         accept = headers.get('accept')
         extension = copy_kwargs.get('extension')
-        format = get_output_format(extension, accept, supported_mimetypes)
+        format, _ = get_output_format(extension, accept, supported_mimetypes)
         copy_kwargs['extension'] = format
 
         # Extract other custom headers
