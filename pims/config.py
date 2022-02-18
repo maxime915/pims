@@ -36,6 +36,8 @@ class ReadableSettings(BaseSettings):
     cache_ttl_tile: int = 60 * 60 * 24
     cache_ttl_window: int = 60 * 60 * 24
 
+    memory_lru_cache_capacity: int = 500
+
     task_queue_enabled: bool = True
     task_queue_url: str = "rabbitmq:5672"
 

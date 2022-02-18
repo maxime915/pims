@@ -259,7 +259,7 @@ class Path(PlatformPath, _Path, SafelyCopiable):
         from pims.files.image import Image
         return Image(original, factory=FormatFactory(match_on_ext=True)) if original else None
 
-    def get_spatial(self) -> Union[Image, None]:
+    def get_spatial(self, cache=False) -> Union[Image, None]:
         processed_root = self.processed_root()
         if not processed_root.exists():
             return None
@@ -279,7 +279,8 @@ class Path(PlatformPath, _Path, SafelyCopiable):
             image = Image(
                 spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)
             )
-            IMAGE_CACHE.put(cache_key, image)
+            if cache:
+                IMAGE_CACHE.put(cache_key, image)
             return image
 
     def get_spectral(self) -> Union[Image, None]:
