@@ -16,7 +16,7 @@ from itertools import chain
 
 
 class SafelyCopiable:
-    UNSAFE_DEEPCOPY_ATTRS = () #('_cache',)
+    UNSAFE_DEEPCOPY_ATTRS = ('_cache',)
 
     def _copy__new(self):
         cls = self.__class__
