@@ -16,6 +16,8 @@ from collections import OrderedDict
 from copy import deepcopy
 from typing import Any
 
+from pims.config import get_settings
+
 
 class LRUCache:
     def __init__(self, capacity: int):
@@ -46,4 +48,4 @@ class ImageLRUCache(LRUCache):
         return cloned
 
 
-IMAGE_CACHE = ImageLRUCache(500)
+IMAGE_CACHE = ImageLRUCache(get_settings().memory_lru_cache_capacity)
