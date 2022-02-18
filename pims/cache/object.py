@@ -15,6 +15,8 @@ import copy
 from functools import cached_property as _cached_property
 from typing import Any, Callable, Dict, KeysView, Union
 
+from pims.utils.copy import SafelyCopiable
+
 safe_cached_property = _cached_property
 
 
@@ -51,7 +53,7 @@ class cached_property:  # noqa
 DictCache = Dict[str, Any]
 
 
-class SimpleDataCache:
+class SimpleDataCache(SafelyCopiable):
     """
     A simple wrapper to add caching mechanisms to a class.
     """

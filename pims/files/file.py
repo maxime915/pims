@@ -19,10 +19,12 @@ from enum import Enum
 from pathlib import Path as _Path
 from typing import Callable, List, TYPE_CHECKING, Union
 
+from pims.cache.memory import IMAGE_CACHE
 from pims.formats.utils.factories import (
     FormatFactory, SpatialReadableFormatFactory,
     SpectralReadableFormatFactory
 )
+from pims.utils.copy import SafelyCopiable
 
 if TYPE_CHECKING:
     from pims.files.image import Image
@@ -92,7 +94,10 @@ class FileType(str, Enum):
         return cls.SINGLE
 
 
-class Path(type(_Path()), _Path):
+PlatformPath = type(_Path())
+
+
+class Path(PlatformPath, _Path, SafelyCopiable):
     f"""
     Extends `Path` from `pathlib` for PIMS.
     
@@ -123,6 +128,11 @@ class Path(type(_Path()), _Path):
     def __init__(self, *pathsegments):
         self._pathsegments = pathsegments
         super().__init__()
+
+    def _copy__new(self):
+        cls = self.__class__
+        # https://github.com/python/cpython/blob/main/Lib/pathlib.py#L478
+        return cls.__new__(cls, *tuple(self._parts))  # noqa
 
     @property
     def creation_datetime(self) -> datetime:
@@ -250,17 +260,27 @@ class Path(type(_Path()), _Path):
         return Image(original, factory=FormatFactory(match_on_ext=True)) if original else None
 
     def get_spatial(self) -> Union[Image, None]:
-        if not self.processed_root().exists():
+        processed_root = self.processed_root()
+        if not processed_root.exists():
             return None
+
+        cache_key = str(processed_root / Path(SPATIAL_STEM))
+        cached = IMAGE_CACHE.get(cache_key)
+        if cached is not None:
+            return cached
 
         spatial = next(
             (child for child in self.processed_root().iterdir() if child.has_spatial_role()), None
         )
-
-        from pims.files.image import Image
-        return Image(
-            spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)
-        ) if spatial else None
+        if not spatial:
+            return None
+        else:
+            from pims.files.image import Image
+            image = Image(
+                spatial, factory=SpatialReadableFormatFactory(match_on_ext=True)
+            )
+            IMAGE_CACHE.put(cache_key, image)
+            return image
 
     def get_spectral(self) -> Union[Image, None]:
         if not self.processed_root().exists():
