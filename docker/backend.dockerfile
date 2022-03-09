@@ -67,13 +67,13 @@ COPY ./docker/plugins.py /app/plugins.py
 ARG PLUGIN_CSV
 # ="enabled,name,git_url,git_branch\n"
 ENV PLUGIN_INSTALL_PATH /app/plugins
-RUN python3 plugins.py \
+RUN python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method download
 
 # Run before_vips() from plugins prerequisites
-RUN python3 plugins.py \
+RUN python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method dependencies_before_vips
@@ -92,7 +92,7 @@ RUN cd /usr/local/src && \
     ldconfig
 
 # Run before_python() from plugins prerequisites
-RUN python3 plugins.py \
+RUN python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method dependencies_before_python
@@ -127,7 +127,7 @@ RUN chmod +x /start.sh
 COPY ./docker/start-reload.sh /start-reload.sh
 RUN chmod +x /start-reload.sh
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Add app
 COPY ./pims /app/pims
