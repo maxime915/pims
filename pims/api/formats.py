@@ -44,6 +44,11 @@ class Format(BaseModel):
     writable: bool = Field(
         False, description='Whether PIMS can write a file in this format or not.'
     )
+    importable: bool = Field(
+        ...,
+        description='Whether the format is importable by an upload in PIMS or not. '
+                    'Non importable formats should be created by other means.'
+    )
     plugin: Optional[str] = Field(
         None,
         description='PIMS plugin providing this format, returned as a Python module.',
@@ -63,6 +68,7 @@ def _serialize_format(format):
         readable=format.is_readable(),
         writable=format.is_writable(),
         convertible=format.is_convertible(),
+        importable=format.is_importable(),
         plugin=format.get_plugin_name()
     )
 
