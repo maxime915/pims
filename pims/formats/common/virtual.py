@@ -17,6 +17,7 @@ from typing import List, Optional, Union
 
 import numpy as np
 import orjson
+from pyvips import Image as VIPSImage
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.config import get_settings
@@ -32,7 +33,7 @@ from pims.formats.utils.reader import AbstractReader
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.formats.utils.structures.planes import PlanesInfo
 from pims.formats.utils.structures.pyramid import Pyramid
-from pims.processing.adapters import RawImagePixels
+from pims.processing.adapters import RawImagePixels, convert_to
 from pims.processing.region import Region, Tile
 from pims.utils.dtypes import dtype_to_bits
 from pims.utils.iterables import ensure_list
@@ -40,6 +41,9 @@ from pims.utils.types import parse_datetime
 from pims.utils.vips import bandjoin, fix_rgb_interpretation
 
 log = logging.getLogger("pims.formats")
+
+
+VIRTUAL_STACK_SLUG_SCHEMA = "virtual/stack"
 
 
 def _json_load(path):
@@ -58,7 +62,7 @@ class VirtualStackChecker(SignatureChecker):
     def match(cls, pathlike: CachedDataPath) -> bool:
         try:
             json_data = cached_json(pathlike)
-            return json_data.get("schema") == "virtual/stack"
+            return json_data.get("schema") == VIRTUAL_STACK_SLUG_SCHEMA
         except ValueError:
             return False
 
@@ -120,7 +124,7 @@ class VirtualStackParser(AbstractParser):
         return store
 
     def parse_pyramid(self) -> Pyramid:
-        return super().parse_pyramid()  # TODO
+        return super().parse_pyramid()  # TODO (?)
 
     def parse_planes(self) -> PlanesInfo:
         imd = self.format.main_imd
@@ -160,9 +164,14 @@ class VirtualStackReader(AbstractReader):
             channels = ensure_list(c)
 
         for c in channels:
-            bands.append(self._get_underlying_format(
-                self.format.planes_info.get(c, z, t, "location")
-            ).reader.read_thumb(out_width, out_height, precomputed))
+            bands.append(
+                convert_to(
+                    self._get_underlying_format(
+                        self.format.planes_info.get(c, z, t, "location")
+                    ).reader.read_thumb(out_width, out_height, precomputed),
+                    VIPSImage
+                )
+            )
 
         im = bandjoin(bands)
         if c == [0, 1, 2]:
@@ -179,9 +188,14 @@ class VirtualStackReader(AbstractReader):
             channels = ensure_list(c)
 
         for c in channels:
-            bands.append(self._get_underlying_format(
-                self.format.planes_info.get(c, z, t, "location")
-            ).reader.read_window(region, out_width, out_height))
+            bands.append(
+                convert_to(
+                    self._get_underlying_format(
+                        self.format.planes_info.get(c, z, t, "location")
+                    ).reader.read_window(region, out_width, out_height),
+                    VIPSImage
+                )
+            )
 
         im = bandjoin(bands)
         if c == [0, 1, 2]:
@@ -196,8 +210,61 @@ class VirtualStackReader(AbstractReader):
 
 
 class VirtualStackFormat(AbstractFormat):
-    """VirtualStack Format.
+    """
+    VirtualStack Format.
 
+    A stack of 2D images, organized to mimic up to a 5D (XYCZT) image.
+    The stack is described by a JSON file with the following structure:
+
+    ```
+    {
+        "schema": "virtual/stack",
+        "image": {
+            "width": (int),
+            "height": (int),
+            "depth": (int),
+            "duration": (int),
+            "physical_size_x": (float-nullable),
+            "physical_size_y": (float-nullable),
+            "physical_size_z": (float-nullable),
+            "frame_rate": (float-nullable),
+            "n_channels": (int),
+            "n_intrinsic_channels": (int),
+            "n_distinct_channels": (int),
+            "acquired_at": (str-datetime-nullable),
+            "description": (str-nullable),
+            "pixel_type": (str-pixel-type)("uint8", "uint16"),
+            "significant_bits": (int),
+            "n_samples_per_intrinsic_channel": (int)
+        },
+        "channels": [
+            {
+                "index": (int),
+                "suggested_name": (str-nullable),
+                "emission_wavelength": (float-nullable),
+                "excitation_wavelength": (float-nullable),
+                "color": (str-nullable)
+            }
+        ],
+        "instrument": {
+            "microscope": {
+              "model": (str-nullable)
+            },
+            "objective": {
+              "nominal_magnification": (float-nullable),
+              "calibrated_magnification": (float-nullable)
+            }
+        },
+        "planes": {
+            "C0_Z0_T0": {
+              "location": (str-pims-filepath-without-root)
+            },
+             "C0_Z0_T1": {
+              "location": (str-pims-filepath-without-root)
+            },
+            ...
+        }
+    ```
     """
     checker_class = VirtualStackChecker
     parser_class = VirtualStackParser
