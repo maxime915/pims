@@ -216,3 +216,13 @@ class VirtualStackFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         return False
+
+    @classmethod
+    def is_importable(cls) -> bool:
+        # We do not allow to import virtual stacks as we do for regular images !
+        # As virtual stacks make references to other uploads, virtual stacks could
+        # be used to get privileges on other uploads !!
+        # The virtual stack file (JSON) is expected to be created by other means
+        # than the regular import, and by a service who has enough rights and is
+        # security-aware of access rights on images.
+        return False
