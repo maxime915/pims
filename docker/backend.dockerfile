@@ -110,7 +110,7 @@ RUN pip install --no-cache-dir gunicorn==${GUNICORN_VERSION} && \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
    --method install
-
+   
 # Prestart configuration
 RUN touch /tmp/addHosts.sh
 COPY ./docker/prestart.sh /app/prestart.sh
@@ -126,6 +126,8 @@ RUN chmod +x /start.sh
 
 COPY ./docker/start-reload.sh /start-reload.sh
 RUN chmod +x /start-reload.sh
+
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 # Add app
 COPY ./pims /app/pims
