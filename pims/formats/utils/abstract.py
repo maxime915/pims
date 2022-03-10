@@ -154,6 +154,11 @@ class AbstractFormat(ABC, SimpleDataCache):
         return cls.convertor_class is not None
 
     @classmethod
+    def is_importable(cls) -> bool:
+        """Whether PIMS allows to import images in this format."""
+        return True
+
+    @classmethod
     def is_spatial(cls) -> bool:
         """Whether this format is adapted for spatial data requests."""
         return False

@@ -72,6 +72,16 @@ class FormatFactory:
         return None
 
 
+class ImportableFormatFactory(FormatFactory):
+    def __init__(self, match_on_ext: bool = False):
+        formats = {
+            e: f
+            for e, f in FORMATS.items()
+            if f.is_importable()
+        }
+        super(ImportableFormatFactory, self).__init__(match_on_ext, formats)
+
+
 class SpatialReadableFormatFactory(FormatFactory):
     def __init__(self, match_on_ext: bool = False):
         formats = {

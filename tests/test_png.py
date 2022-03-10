@@ -1,0 +1,122 @@
+from PIL import Image
+import os
+import urllib.request
+from fastapi import APIRouter
+from pims.formats import FORMATS
+import io
+from pims.importer.importer import FileImporter
+from tests.utils.formats import info_test, thumb_test, resized_test, mask_test, crop_test, crop_null_annot_test, histogram_perimage_test
+from pims.files.file import (
+    EXTRACTED_DIR, HISTOGRAM_STEM, ORIGINAL_STEM, PROCESSED_DIR, Path,
+    SPATIAL_STEM, UPLOAD_DIR_PREFIX
+)
+from pims.formats.utils.factories import FormatFactory
+from pims.api.utils.models import HistogramType
+from pims.processing.histograms.utils import build_histogram_file
+import pytest
+
+def get_image(path, filename):
+    filepath = os.path.join(path, filename)
+    # If image does not exist locally -> download image
+
+    if not os.path.exists(path):
+        os.mkdir(path)
+
+    if not os.path.exists(filepath):
+        try:
+            url = f"https://data.cytomine.coop/open/tests/{filename}" #OAC
+            urllib.request.urlretrieve(url, filepath)
+        except Exception as e:
+            print("Could not download image")
+            print(e)
+
+    if not os.path.exists(os.path.join(path, "processed")):
+        try:
+            fi = FileImporter(filepath)
+            fi.upload_dir = f"{path}"
+            fi.processed_dir = fi.upload_dir / Path("processed")
+            fi.mkdir(fi.processed_dir)
+        except Exception as e:
+            print(path + "processed could not be created")
+            print(e)
+
+    if not os.path.exists(os.path.join(path,"processed/visualisation.PNG")):
+        if os.path.exists(os.path.join(path, "processed")):
+            fi = FileImporter(f"/data/pims/upload_test_png/{filename}")
+            fi.upload_dir = "/data/pims/upload_test_png"
+            fi.processed_dir = fi.upload_dir / Path("processed")
+        try:
+            fi.upload_path = Path(filepath)
+            original_filename = Path(f"{ORIGINAL_STEM}.PNG")
+            fi.original_path = fi.processed_dir / original_filename
+            fi.mksymlink(fi.original_path, fi.upload_path)
+            spatial_filename = Path(f"{SPATIAL_STEM}.PNG")
+            fi.spatial_path = fi.processed_dir / spatial_filename
+            fi.mksymlink(fi.spatial_path, fi.original_path)
+        except Exception as e:
+            print("Importation of images could not be done")
+            print(e)
+
+    if not os.path.exists(os.path.join(path, "processed/histogram")):
+        if os.path.exists(os.path.join(path, "processed")):
+            fi = FileImporter(f"/data/pims/upload_test_png/{filename}")
+            fi.upload_dir = Path("/data/pims/upload_test_png")
+            fi.processed_dir = fi.upload_dir / Path("processed")
+            original_filename = Path(f"{ORIGINAL_STEM}.PNG")
+            fi.original_path = fi.processed_dir / original_filename
+        try:
+            from pims.files.image import Image
+            fi.histogram_path = fi.processed_dir/Path(HISTOGRAM_STEM) #/data/pims/upload1641567540187798/processed/histogram
+            format = FormatFactory().match(fi.original_path)
+            fi.original = Image(fi.original_path, format=format)
+            fi.histogram = build_histogram_file(fi.original, fi.histogram_path, HistogramType.FAST)
+        except Exception as e:
+            print("Creation of histogram representation could not be done")
+            print(e)
+			
+def test_png_exists(image_path_png):
+    path, filename = image_path_png
+    get_image(path, filename)
+    assert os.path.exists(os.path.join(path, filename)) == True
+    
+def test_png_info(client, image_path_png):
+    _, filename = image_path_png
+    info_test(client, filename, "png")
+	
+def test_png_norm_tile(client, image_path_png):
+    path, filename = image_path_png
+    response = client.get(f"/image/upload_test_png/{filename}/normalized-tile/zoom/1/ti/0", headers={"accept": "image/jpeg"})
+    assert response.status_code == 200
+
+    img_response = Image.open(io.BytesIO(response.content))
+    width_resp, height_resp = img_response.size
+
+    img_original = Image.open(os.path.join(path, filename))
+    width, height = img_original.size
+    assert width_resp == 256 or width_resp == width
+    assert height_resp == 256 or height_resp == height
+	
+def test_png_thumb(client, image_path_png):
+    _, filename = image_path_png
+    thumb_test(client, filename, "png")
+	
+def test_png_resized(client, image_path_png):
+    _, filename = image_path_png
+    resized_test(client, filename, "png")
+	
+def test_png_mask(client, image_path_png):
+    _, filename = image_path_png
+    mask_test(client, filename, "png")
+	
+def test_png_crop(client, image_path_png):
+    _, filename = image_path_png
+    crop_test(client, filename, "png")
+	
+@pytest.mark.skip(reason="Does not return the correct response code")
+def test_png_crop_null_annot(client, image_path_png):
+    _, filename = image_path_png
+    crop_null_annot_test(client, filename, "png")
+
+def test_png_histogram_perimage(client, image_path_png):
+    _, filename = image_path_png
+    histogram_perimage_test(client, filename, "png")
