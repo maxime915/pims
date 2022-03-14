@@ -84,6 +84,11 @@ class ParsedAnnotation:
                and self.stroke_color == other.stroke_color \
                and self.stroke_width == other.stroke_width
 
+    def __str__(self):
+        return f"Annotation {self.geometry.wkt} " \
+            f"| Fill: {self.fill_color} " \
+            f"| Stroke: {self.stroke_color}({self.stroke_width})"
+
 
 class ParsedAnnotations(MutableSequence):
     def __init__(self):
@@ -141,6 +146,9 @@ class ParsedAnnotations(MutableSequence):
     def region(self) -> Region:
         left, top, right, bottom = self.bounds
         return Region(top, left, right - left, bottom - top)
+
+    def __str__(self):
+        return '/'.join([str(i) for i in self._data])
 
 
 def annotation_crop_affine_matrix(

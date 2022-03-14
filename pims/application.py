@@ -25,7 +25,8 @@ import time
 from fastapi import FastAPI, Request
 from pydantic import ValidationError
 
-from pims.cache import _startup_cache
+from pims.utils.background_task import add_background_task
+from pims.cache import startup_cache
 from pims.config import get_settings
 from pims.docs import get_redoc_html
 from pims.api.exceptions import add_problem_exception_handler
@@ -66,9 +67,14 @@ async def startup():
     if not pydantic_compiled:
         logger.warning(f"[red]Pydantic is running in non compiled mode.")
 
-    from pyvips import API_mode as pyvips_binary
+    import pyvips
+    pyvips_binary = pyvips.API_mode
     if not pyvips_binary:
         logger.warning("[red]Pyvips is running in non binary mode.")
+    pyvips.leak_set(get_settings().vips_allow_leak)
+    pyvips.cache_set_max(get_settings().vips_cache_max_items)
+    pyvips.cache_set_max_mem(get_settings().vips_cache_max_memory * 1048576)
+    pyvips.cache_set_max_files(get_settings().vips_cache_max_files)
 
     from shapely.speedups import enabled as shapely_speedups
     if not shapely_speedups:
@@ -79,7 +85,7 @@ async def startup():
         logger.warning(f"[orange3]Cache is disabled by configuration.")
     else:
         try:
-            await _startup_cache(__version__)
+            await startup_cache(__version__)
             logger.info(f"[green]Cache is ready!")
         except ConnectionError:
             logger.error(
@@ -88,27 +94,20 @@ async def startup():
             )
 
 
-@app.middleware("http")
-async def log_requests(request: Request, call_next):
-    start = time.time()
+def _log(request_, response_, duration_):
+    args = dict(request_.query_params)
 
-    response = await call_next(request)
-
-    now = time.time()
-    duration = (now - start) * 1000
-    args = dict(request.query_params)
-
-    cached = response.headers.get("X-Pims-Cache")
+    cached = response_.headers.get("X-Pims-Cache")
     log_cached = None
     if cached is not None:
         color = "red" if cached == "MISS" else "green"
         log_cached = ('cache', cached, color)
 
     log_params = [
-        ('method', request.method, 'magenta'),
-        ('path', request.url.path, 'blue'),
-        ('status', response.status_code, 'yellow'),
-        ('duration', f"{duration:.2f}ms", 'green'),
+        ('method', request_.method, 'magenta'),
+        ('path', request_.url.path, 'blue'),
+        ('status', response_.status_code, 'yellow'),
+        ('duration', f"{duration_:.2f}ms", 'green'),
         ('params', args, 'blue'),
     ]
 
@@ -121,6 +120,16 @@ async def log_requests(request: Request, call_next):
     line = " ".join(parts)
     logger.info(line, extra={"highlight": False})
 
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start = time.time()
+    response = await call_next(request)
+    now = time.time()
+    duration = (now - start) * 1000
+
+    # https://github.com/tiangolo/fastapi/issues/2215
+    add_background_task(response, _log, request, response, duration)
     return response
 
 
