@@ -21,7 +21,7 @@ from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
 from pims.api.utils.models import ChannelReduction
-from pims.cache.object import cached_property
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.omexml import OMEXML

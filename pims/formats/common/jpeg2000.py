@@ -16,7 +16,7 @@ from typing import List, Optional, Union
 
 from pyvips import Image as VIPSImage
 
-from pims.cache.object import cached_property
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.common.jpeg import JPEGParser
 from pims.formats.utils.abstract import CachedDataPath

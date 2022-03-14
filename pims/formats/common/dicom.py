@@ -25,7 +25,7 @@ from shapely.affinity import affine_transform
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
-from pims.cache.object import cached_property
+from pims.cache import cached_property
 from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )

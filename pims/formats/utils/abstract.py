@@ -18,7 +18,7 @@ import re
 from abc import ABC
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type
 
-from pims.cache.object import SimpleDataCache, cached_property
+from pims.cache import SimpleDataCache, cached_property
 from pims.formats.utils.checker import AbstractChecker
 from pims.formats.utils.convertor import AbstractConvertor
 from pims.formats.utils.histogram import AbstractHistogramReader

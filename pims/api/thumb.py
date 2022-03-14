@@ -39,7 +39,7 @@ from pims.api.utils.processing_parameter import (
     parse_colormap_ids, parse_filter_ids,
     parse_intensity_bounds
 )
-from pims.cache.redis import cache_image_response
+from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import Path
 from pims.filters import FILTERS

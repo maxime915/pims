@@ -33,7 +33,7 @@ from pims.api.utils.output_parameter import (
 )
 from pims.api.utils.parameter import filepath_parameter, imagepath_parameter, path2filepath
 from pims.api.utils.response import FastJsonResponse, convert_quantity, response_list
-from pims.cache.redis import cache_image_response
+from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
 from pims.files.file import FileRole, FileType, Path
 from pims.formats.utils.structures.metadata import MetadataType

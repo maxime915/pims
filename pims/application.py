@@ -26,7 +26,7 @@ from fastapi import FastAPI, Request
 from pydantic import ValidationError
 
 from pims.utils.background_task import add_background_task
-from pims.cache.redis import startup_cache
+from pims.cache import startup_cache
 from pims.config import get_settings
 from pims.docs import get_redoc_html
 from pims.api.exceptions import add_problem_exception_handler

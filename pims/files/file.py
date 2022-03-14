@@ -19,7 +19,7 @@ from enum import Enum
 from pathlib import Path as _Path
 from typing import Callable, List, TYPE_CHECKING, Union
 
-from pims.cache.memory import IMAGE_CACHE
+from pims.cache import IMAGE_CACHE
 from pims.formats.utils.factories import (
     FormatFactory, SpatialReadableFormatFactory,
     SpectralReadableFormatFactory

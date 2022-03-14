@@ -234,7 +234,7 @@ def default_cache_control_builder(ttl=0):
     return ','.join(params)
 
 
-def cache(
+def cache_data(
     expire: int = None,
     vary: Optional[List] = None,
     codec: Type[Codec] = None,
@@ -346,4 +346,4 @@ def cache_image_response(
         _image_response_key_builder, supported_mimetypes=supported_mimetypes
     )
     codec = PickleCodec
-    return cache(expire, vary, codec, key_builder)
+    return cache_data(expire, vary, codec, key_builder)

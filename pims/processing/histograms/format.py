@@ -21,7 +21,7 @@ import zarr as zarr
 from zarr.errors import _BaseZarrError as ZarrError  # noqa
 
 from pims.api.utils.models import HistogramType
-from pims.cache.object import cached_property
+from pims.cache import cached_property
 from pims.files.file import Path
 from pims.formats.utils.histogram import HistogramReaderInterface, PlaneIndex
 
