@@ -33,7 +33,7 @@ def get_image(path, filename):
     if not os.path.exists(os.path.join(path, "processed")):
         try:
             fi = FileImporter(filepath)
-            fi.upload_dir = f"{path}"
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
             fi.mkdir(fi.processed_dir)
         except Exception as e:
@@ -42,8 +42,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path,"processed/visualisation.PNG")):
         if os.path.exists(os.path.join(path, "processed")):
-            fi = FileImporter(f"/data/pims/upload_test_png/{filename}")
-            fi.upload_dir = "/data/pims/upload_test_png"
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
         try:
             fi.upload_path = Path(filepath)
@@ -59,8 +59,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path, "processed/histogram")):
         if os.path.exists(os.path.join(path, "processed")):
-            fi = FileImporter(f"/data/pims/upload_test_png/{filename}")
-            fi.upload_dir = Path("/data/pims/upload_test_png")
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
             original_filename = Path(f"{ORIGINAL_STEM}.PNG")
             fi.original_path = fi.processed_dir / original_filename

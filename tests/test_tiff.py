@@ -19,7 +19,7 @@ def get_image(path, filename):
     filepath = os.path.join(path, filename)
     # If image does not exist locally -> download image
     if not os.path.exists(path):
-        os.mkdir("/data/pims/upload_test_tiff")
+        os.mkdir(path)
 	
     if not os.path.exists(filepath):
         try:
@@ -29,10 +29,10 @@ def get_image(path, filename):
             print("Could not download image")
             print(e)
 	
-    if not os.path.exists(path + "processed"):
+    if not os.path.exists(os.path.join(path, "processed")):
         try:
-            fi = FileImporter(f"/data/pims/upload_test_tiff/{filename}")
-            fi.upload_dir = "/data/pims/upload_test_tiff"
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
             fi.mkdir(fi.processed_dir)
         except Exception as e:
@@ -41,8 +41,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path,"processed/visualisation.PYRTIFF")):
         if os.path.exists(os.path.join(path, "processed")):
-            fi = FileImporter(f"/data/pims/upload_test_tiff/{filename}")
-            fi.upload_dir = "/data/pims/upload_test_tiff"
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
         try:
             fi.upload_path = Path(filepath)
@@ -58,8 +58,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path, "processed/histogram")):
         if os.path.exists(os.path.join(path, "processed")):
-            fi = FileImporter(f"/data/pims/upload_test_tiff/{filename}")
-            fi.upload_dir = Path("/data/pims/upload_test_tiff")
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
             original_filename = Path(f"{ORIGINAL_STEM}.PYRTIFF")
             fi.original_path = fi.processed_dir / original_filename
@@ -80,25 +80,27 @@ def test_tiff_exists(image_path_tiff):
 	assert os.path.exists(os.path.join(path, filename)) == True
 
 def test_tiff_info(client, image_path_tiff):
-	response = client.get(f'/image/upload_test_tiff/{image_path_tiff[1]}/info')
-	assert response.status_code == 200
-	assert "tiff" in response.json()['image']['original_format'].lower()
-	assert response.json()['image']['width'] == 42460
-	assert response.json()['image']['height'] == 29140
+    _, filename = image_path_tiff 
+    response = client.get(f'/image/upload_test_tiff/{filename}/info')
+    assert response.status_code == 200
+    assert "tiff" in response.json()['image']['original_format'].lower()
+    assert response.json()['image']['width'] == 42460
+    assert response.json()['image']['height'] == 29140
 	
 def test_tiff_metadata(client, image_path_tiff):
-	response = client.get(f'/image/upload_test_tiff/{image_path_tiff[1]}/metadata')
-	assert response.status_code == 200
-	lst = response.json()['items']
-	
-	index = next((index for (index, d) in enumerate(lst) if d["key"] == "XResolution"), None)
-	assert response.json()['items'][index]["value"] == '(4294967295, 69255)'
-	
-	index = next((index for (index, d) in enumerate(lst) if d["key"] == "YResolution"), None)
-	assert response.json()['items'][index]["value"] == '(4294967295, 69255)'
-	
-	index = next((index for (index, d) in enumerate(lst) if d["key"] == "ResolutionUnit"), None)
-	assert response.json()['items'][index]["value"] == "CENTIMETER"
+    _, filename = image_path_tiff
+    response = client.get(f'/image/upload_test_tiff/{filename}/metadata')
+    assert response.status_code == 200
+    lst = response.json()['items']
+
+    index = next((index for (index, d) in enumerate(lst) if d["key"] == "XResolution"), None)
+    assert response.json()['items'][index]["value"] == '(4294967295, 69255)'
+
+    index = next((index for (index, d) in enumerate(lst) if d["key"] == "YResolution"), None)
+    assert response.json()['items'][index]["value"] == '(4294967295, 69255)'
+
+    index = next((index for (index, d) in enumerate(lst) if d["key"] == "ResolutionUnit"), None)
+    assert response.json()['items'][index]["value"] == "CENTIMETER"
 	
 def test_tiff_norm_tile(client, image_path_tiff):
     _, filename = image_path_tiff
