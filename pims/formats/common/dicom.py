@@ -81,9 +81,8 @@ class DicomParser(AbstractParser):
         imd.depth = ds.get('NumberOfFrames', 1)
         imd.duration = 1
 
-        imd.n_channels = ds.SamplesPerPixel  # Only 1 or 3
-        imd.n_intrinsic_channels = ds.SamplesPerPixel
-        imd.n_channels_per_read = 1
+        imd.n_concrete_channels = 1
+        imd.n_samples = ds.SamplesPerPixel
         if imd.n_channels == 3:
             imd.set_channel(ImageChannel(index=0, suggested_name='R'))
             imd.set_channel(ImageChannel(index=1, suggested_name='G'))

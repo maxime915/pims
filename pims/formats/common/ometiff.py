@@ -120,9 +120,8 @@ class OmeTiffParser(TifffileParser):
         imd.pixel_type = base.dtype
         imd.significant_bits = dtype_to_bits(imd.pixel_type)
 
-        imd.n_channels = shape.get('C', 1) * shape.get('S', 1)
-        imd.n_intrinsic_channels = shape.get('C', 1)
-        imd.n_channels_per_read = shape.get('S', 1)
+        imd.n_concrete_channels = shape.get('C', 1)
+        imd.n_samples = shape.get('S', 1)
 
         omexml = cached_omexml(self.format)
         base = omexml.main_image
@@ -137,7 +136,7 @@ class OmeTiffParser(TifffileParser):
             default_names = None
 
         for c in range(imd.n_channels):
-            ome_c = (c - (c % imd.n_channels_per_read)) // imd.n_channels_per_read
+            ome_c = (c - (c % imd.n_samples)) // imd.n_samples
             channel = base.pixels.channel(ome_c)
             name = channel.name
             if not name and default_names is not None:
@@ -264,7 +263,7 @@ class OmeTiffParser(TifffileParser):
 
         imd = self.format.main_imd
         pi = PlanesInfo(
-            imd.n_intrinsic_channels, imd.depth, imd.duration,
+            imd.n_concrete_channels, imd.depth, imd.duration,
             ['page_index'], [np.int]
         )
 
@@ -294,7 +293,7 @@ class OmeTiffReader(VipsReader):
 
     def _read(self, c, z, t, vips_func, *args, **kwargs):
         bands = list()
-        spp = self.format.main_imd.n_channels_per_read
+        spp = self.format.main_imd.n_samples
         for page, samples in self._pages_to_read(spp, c, z, t).items():
             im = vips_func(*args, page=page, **kwargs)
             if im.hasalpha():
