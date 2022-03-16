@@ -410,8 +410,17 @@ class CytomineListener(ImportListener):
         ai.height = image.height
         ai.depth = image.depth
         ai.duration = image.duration
-        ai.channels = image.n_intrinsic_channels
+
+        # Cytomine "channels" = number of concrete channels
+        ai.channels = image.n_concrete_channels
+        # Cytomine "extrinsicChannels" = number of channels
+        #   (n_concrete_channels * n_samples)
         ai.extrinsicChannels = image.n_channels
+        # Cytomine "samplePerPixel" = number of samples
+        ai.samplePerPixel = image.n_samples
+        # Cytomine "bitPerSample" = number of bits to store a sample
+        ai.bitPerSample = dtype_to_bits(image.pixel_type)
+
         if image.physical_size_x:
             ai.physicalSizeX = round(
                 convert_quantity(image.physical_size_x, "micrometers"), 6
@@ -429,14 +438,13 @@ class CytomineListener(ImportListener):
                 convert_quantity(image.frame_rate, "Hz"), 6
             )
         ai.magnification = parse_int(image.objective.nominal_magnification)
-        ai.bitPerSample = dtype_to_bits(image.pixel_type)
-        ai.samplePerPixel = image.n_channels / image.n_intrinsic_channels
+
         ai.save()
         self.abstract_images.append(ai)
 
         asc = AbstractSliceCollection()
-        set_channel_names = image.n_intrinsic_channels == image.n_channels
-        for c in range(image.n_intrinsic_channels):
+        set_channel_names = image.n_concrete_channels == image.n_channels
+        for c in range(image.n_concrete_channels):
             name = None
             color = None
             if set_channel_names:

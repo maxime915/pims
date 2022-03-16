@@ -77,11 +77,16 @@ class VirtualStackParser(AbstractParser):
         imd = ImageMetadata()
         imd.width = metadata.get("width")
         imd.height = metadata.get("height")
-        imd.n_channels = metadata.get("n_channels")
         imd.depth = metadata.get("depth")
         imd.duration = metadata.get("duration")
-        imd.n_intrinsic_channels = metadata.get("n_channels")
-        imd.n_channels_per_read = 1
+        imd.n_concrete_channels = metadata.get(
+            "n_concrete_channels",
+            metadata.get("n_intrinsic_channels", metadata.get("n_channels"))
+        )
+        imd.n_samples = metadata.get(
+            "n_samples",
+            metadata.get("n_channels_per_read")
+        )
 
         imd.pixel_type = np.dtype(metadata.get("pixel_type"))
         imd.significant_bits = dtype_to_bits(imd.pixel_type)
@@ -129,13 +134,13 @@ class VirtualStackParser(AbstractParser):
     def parse_planes(self) -> PlanesInfo:
         imd = self.format.main_imd
         pi = PlanesInfo(
-            imd.n_intrinsic_channels, imd.depth, imd.duration,
+            imd.n_concrete_channels, imd.depth, imd.duration,
             ['location'], ['U255']
         )
 
         image = cached_json(self.format)
         planes = image.get("planes")
-        for c in range(imd.n_intrinsic_channels):
+        for c in range(imd.n_concrete_channels):
             for z in range(imd.depth):
                 for t in range(imd.duration):
                     key = f"C{c}_Z{z}_T{t}"
@@ -228,14 +233,13 @@ class VirtualStackFormat(AbstractFormat):
             "physical_size_y": (float-nullable),
             "physical_size_z": (float-nullable),
             "frame_rate": (float-nullable),
-            "n_channels": (int),
-            "n_intrinsic_channels": (int),
+            "n_concrete_channels": (int),
             "n_distinct_channels": (int),
             "acquired_at": (str-datetime-nullable),
             "description": (str-nullable),
             "pixel_type": (str-pixel-type)("uint8", "uint16"),
             "significant_bits": (int),
-            "n_samples_per_intrinsic_channel": (int)
+            "n_samples": (int)
         },
         "channels": [
             {

@@ -164,24 +164,35 @@ class ImageInfo(BaseModel):
     n_channels: conint(ge=1) = Field(
         ...,
         description='The number of channels in the image.'
-                    'Grayscale images have 1 channel. RGB images have 3 channels.',
+                    'Grayscale images have 1 channel. RGB images have 3 channels.'
+                    'It is the product of `n_samples` and `n_concrete_channels`.',
     )
-    n_intrinsic_channels: int = Field(
+    n_concrete_channels: int = Field(
         ...,
-        description='The number of intrinsic channel planes in the image.'
+        description='The number of concrete channel planes in the image.'
                     'A RGB image has 3 channels, but they are usually interleaved in a single '
-                    'plane. In such a case, there is only 1 intrinsic channel.',
+                    'plane. In such a case, there is only 1 concrete channel with 3 samples.',
+    )
+    n_samples: int = Field(
+        ...,
+        description='The number of samples per concrete channel. There is usually 1 sample per '
+                    'concrete channel, except when a RGB image have interleaved RGB values.'
+    )
+    n_planes: int = Field(
+        ...,
+        description='The number of intrinsic planes in the image.'
+                    'It is computed as `n_concrete_channels * depth * duration`.',
+    )
+    are_rgb_planes: bool = Field(
+        ...,
+        description='Whether concrete channels (and thus planes) are RGB, meaning that channels '
+                    'have a meaning merged `n_samples` by `n_samples`.'
     )
     n_distinct_channels: int = Field(
         ...,
         description='The number of suggested distinct channels for visualisation.'
                     'RGB or fluorescence images have 1 single distinct channels (all channels '
                     'are merged). Hyperspectral images can have several distinct channels.'
-    )
-    n_planes: int = Field(
-        ...,
-        description='The number of intrinsic planes in the image.'
-                    'It is computed as `n_intrinsic_channels * depth * duration`.',
     )
     acquired_at: Optional[datetime] = Field(
         None, description='The acquisition date of the image.'
@@ -194,11 +205,6 @@ class ImageInfo(BaseModel):
         ...,
         description='The number of bits within the type storing each pixel that are significant.',
     )
-    n_samples_per_intrinsic_channel: int = Field(
-        ...,
-        description='The number of samples per intrinsic channel. There is usually 1 sample per '
-                    'intrinsic channel, except when a RGB image have interleaved RGB values.'
-    )
 
     @classmethod
     def from_image(cls, image):
@@ -210,9 +216,11 @@ class ImageInfo(BaseModel):
                 "depth": image.depth,
                 "duration": image.duration,
                 "n_channels": image.n_channels,
-                "n_intrinsic_channels": image.n_intrinsic_channels,
-                "n_distinct_channels": image.n_distinct_channels,
+                "n_concrete_channels": image.n_concrete_channels,
+                "n_samples": image.n_samples,
                 "n_planes": image.n_planes,
+                "are_rgb_planes": bool(image.n_samples > 1),
+                "n_distinct_channels": image.n_distinct_channels,
                 "physical_size_x": convert_quantity(image.physical_size_x, "micrometers"),
                 "physical_size_y": convert_quantity(image.physical_size_y, "micrometers"),
                 "physical_size_z": convert_quantity(image.physical_size_z, "micrometers"),
@@ -221,7 +229,6 @@ class ImageInfo(BaseModel):
                 "description": image.description,
                 "pixel_type": PixelType[str(image.pixel_type)],
                 "significant_bits": image.significant_bits,
-                "n_samples_per_intrinsic_channel": image.n_channels_per_read
             }
         )
 

@@ -100,21 +100,21 @@ class TifffileParser(AbstractParser):
         imd.height = baseline.imagelength
         imd.depth = baseline.imagedepth
         imd.duration = 1
-        imd.n_intrinsic_channels = 1
+        imd.n_concrete_channels = 1
 
         imd.pixel_type = baseline.dtype
         imd.significant_bits = baseline.bitspersample
 
-        imd.n_channels = baseline.samplesperpixel
+        imd.n_samples = baseline.samplesperpixel
         if TIFF.EXTRASAMPLE.UNASSALPHA in baseline.extrasamples:
-            imd.n_channels -= 1
+            imd.n_samples -= 1
 
         # In the case we have unknown extra samples:
-        if imd.n_channels not in (1, 3) and len(baseline.extrasamples) == 0:
-            if imd.n_channels > 3:
-                imd.n_channels = 3
+        if imd.n_samples not in (1, 3) and len(baseline.extrasamples) == 0:
+            if imd.n_samples > 3:
+                imd.n_samples = 3
             else:
-                imd.n_channels = 1
+                imd.n_samples = 1
 
         if imd.n_channels == 3:
             imd.set_channel(ImageChannel(index=0, suggested_name='R'))
@@ -122,7 +122,7 @@ class TifffileParser(AbstractParser):
             imd.set_channel(ImageChannel(index=2, suggested_name='B'))
         else:
             imd.set_channel(ImageChannel(index=0, suggested_name='L'))
-        imd.n_channels_per_read = imd.n_channels
+        imd.n_samples = imd.n_channels
 
         return imd
 
