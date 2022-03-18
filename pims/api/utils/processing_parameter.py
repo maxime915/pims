@@ -19,7 +19,7 @@ from pims.api.utils.models import BitDepthEnum, ColormapEnum, ColormapId, Intens
 from pims.files.image import Image
 from pims.filters import AbstractFilter, FiltersById
 from pims.formats.utils.structures.metadata import ImageChannel
-from pims.processing.colormaps import ColorColormap, Colormap, ColormapsByName
+from pims.processing.colormaps import BLACK_COLORMAP, ColorColormap, Colormap, ColormapsByName
 from pims.utils.color import Color
 
 Intensities = List[Union[int, str]]
@@ -209,3 +209,75 @@ def parse_colormap_id(
         colormap = ColorColormap(parsed_color, inverted=inverted)
         existing_colormaps[colormap.identifier] = colormap
     return colormap
+
+
+def parse_gammas(
+    out_channels: List[int], gammas: List[float]
+):
+    """
+    Parse gammas parameter.
+
+    Parameters
+    ----------
+    out_channels
+        Channel indexes expected in the output
+    gammas
+        List of gammas. List length is 0, 1, or len(out_channels)
+    Returns
+    -------
+    gammas:
+        List of gammas. List length is the number of channels in the output.
+    """
+    if len(gammas) == 0:
+        return [1] * len(out_channels)
+    elif len(gammas) == 1:
+        return gammas * len(out_channels)
+    else:
+        return gammas
+
+
+def remove_useless_channels(
+    channel_idxs: List[int],
+    min_intensities: List[int],
+    max_intensities: List[int],
+    colormaps: List[Colormap],
+    gammas: List[float]
+) -> Tuple[List[int], List[int], List[int], List[Colormap], List[float]]:
+    """
+    Remove channels with a black colormap, as they will produce a black image
+    and are useless.
+
+    In the case all channels are black, we keep one to guarantee the pipeline is
+    working, but a black image will be returned in the end...
+    """
+
+    kept_idxs = []
+    kept_min_intensities = []
+    kept_max_intensities = []
+    kept_colormaps = []
+    kept_gammas = []
+    for idx, min_intensity, max_intensity, colormap, gamma in \
+            zip(channel_idxs, min_intensities, max_intensities,
+                colormaps, gammas):
+        intensity_diff = max_intensity - min_intensity
+        if colormap != BLACK_COLORMAP and intensity_diff != 0:
+            kept_idxs.append(idx)
+            kept_min_intensities.append(min_intensity)
+            kept_max_intensities.append(max_intensity)
+            kept_colormaps.append(colormap)
+            kept_gammas.append(gamma)
+
+    if len(kept_idxs) == 0:
+        kept_idxs = [channel_idxs[0]]
+        kept_min_intensities = [min_intensities[0]]
+        kept_max_intensities = [max_intensities[0]]
+        kept_colormaps = [colormaps[0]]
+        kept_gammas = [gammas[0]]
+
+    channel_idxs = kept_idxs
+    min_intensities = kept_min_intensities
+    max_intensities = kept_max_intensities
+    colormaps = kept_colormaps
+    gammas = kept_gammas
+
+    return channel_idxs, min_intensities, max_intensities, colormaps, gammas
