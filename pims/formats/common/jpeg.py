@@ -48,9 +48,10 @@ class JPEGParser(VipsParser):
         physical_size: Optional[int], unit: Optional[str]
     ) -> Optional[Quantity]:
         supported_units = ("meters", "inches", "cm")
-        if physical_size is not None and parse_float(physical_size) is not None \
-                and unit in supported_units:
-            return parse_float(physical_size) * UNIT_REGISTRY(unit)
+        if physical_size is not None and unit in supported_units:
+            physical_size = parse_float(physical_size)
+            if physical_size is not None and physical_size > 0:
+                return physical_size * UNIT_REGISTRY(unit)
         return None
 
     def parse_known_metadata(self) -> ImageMetadata:

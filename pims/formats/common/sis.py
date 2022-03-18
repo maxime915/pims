@@ -47,10 +47,10 @@ class OlympusSisParser(TifffileParser):
         imd.acquisition_datetime = sis_metadata.get('datetime')
         
         physical_size_x = sis_metadata.get('pixelsizex')
-        if physical_size_x:
+        if physical_size_x is not None and physical_size_x > 0:
             imd.physical_size_x = physical_size_x * UNIT_REGISTRY('meters')
         physical_size_y = sis_metadata.get('pixelsizey')
-        if physical_size_y:
+        if physical_size_y is not None and physical_size_y > 0:
             imd.physical_size_y = physical_size_y * UNIT_REGISTRY('meters')
 
         imd.objective.nominal_magnification = sis_metadata.get('magnification')

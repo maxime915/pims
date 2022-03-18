@@ -211,7 +211,7 @@ class OmeTiffParser(TifffileParser):
     ) -> Optional[Quantity]:
         if unit is None:
             unit = 's'
-        if time_increment in [None, 0]:
+        if time_increment is None or time_increment <= 0:
             return None
         return 1 / (time_increment * UNIT_REGISTRY(unit))
 
@@ -221,7 +221,8 @@ class OmeTiffParser(TifffileParser):
     ) -> Optional[Quantity]:
         if unit is None:
             unit = 'µm'
-        if physical_size in [None, 0] or unit in ['pixel', 'reference frame']:
+        if physical_size is None or physical_size <= 0 \
+                or unit in ['pixel', 'reference frame']:
             return None
         return physical_size * UNIT_REGISTRY(unit)
 

@@ -139,9 +139,11 @@ class DicomParser(AbstractParser):
             return None
 
     @staticmethod
-    def parse_physical_size(physical_size: str) -> Optional[Quantity]:
-        if physical_size is not None and parse_float(physical_size) is not None:
-            return parse_float(physical_size) * UNIT_REGISTRY("millimeter")
+    def parse_physical_size(physical_size: Optional[str]) -> Optional[Quantity]:
+        if physical_size is not None:
+            physical_size = parse_float(physical_size)
+            if physical_size is not None and physical_size > 0:
+                return physical_size * UNIT_REGISTRY("millimeter")
         return None
 
     def parse_raw_metadata(self) -> MetadataStore:
