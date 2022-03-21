@@ -57,6 +57,7 @@ REQUIRED = [
     'zarr>=2.8.3',
     'pydicom>=2.2.2',
     'python-gdcm>=3.0.10',
+    'python-dateutil>=2.7.0',
 
     'Shapely>=1.8.0',
     'rasterio>=1.2.1',

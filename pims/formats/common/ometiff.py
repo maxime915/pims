@@ -16,6 +16,7 @@ from datetime import datetime
 from typing import Optional
 
 import numpy as np
+from dateutil.parser import isoparse as dateutil_isoparse
 from pint import Quantity
 from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
@@ -24,7 +25,6 @@ from pims.api.utils.models import ChannelReduction
 from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
-from pims.formats.utils.engines.omexml import OMEXML
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
 from pims.formats.utils.engines.vips import VipsReader
 from pims.formats.utils.histogram import DefaultHistogramReader
@@ -35,7 +35,8 @@ from pims.utils import UNIT_REGISTRY
 from pims.utils.color import infer_channel_color
 from pims.utils.dict import flatten
 from pims.utils.dtypes import dtype_to_bits
-from pims.utils.iterables import ensure_list
+from pims.utils.iterables import ensure_list, product
+from pims.utils.types import parse_float, parse_int
 from pims.utils.vips import bandjoin, bandreduction, fix_rgb_interpretation
 
 
@@ -229,7 +230,10 @@ class OmeTiffParser(TifffileParser):
     def parse_ome_acquisition_date(date: Optional[str]) -> Optional[datetime]:
         if date is None:
             return None
-        return datetime.fromisoformat(date)
+        try:
+            return dateutil_isoparse(date)
+        except ValueError:
+            return None
 
     def parse_raw_metadata(self) -> MetadataStore:
         store = super().parse_raw_metadata()
