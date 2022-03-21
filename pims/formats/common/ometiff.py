@@ -12,6 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 from collections import OrderedDict
+from copy import deepcopy
 from datetime import datetime
 from typing import Optional
 from xml.etree import ElementTree as etree
@@ -42,35 +43,48 @@ from pims.utils.vips import bandjoin, bandreduction, fix_rgb_interpretation
 
 
 def clean_ome_dict(d: dict) -> dict:
+    ignored = ('Settings', 'Ref', 'TiffData', 'BinData')
+
+    def parse_ref(key, ref):
+        if key == 'Channel':
+            ids = [ref.split(':')[-1]]
+        else:
+            ids = ref.split(':')[1:]
+        return ''.join([f"[{i}]" for i in ids])
+
+    cleaned = dict()
     for k, v in d.items():
-        if k.endswith('Settings') or k.endswith('Ref'):
+        if any(k.endswith(i) for i in ignored):
             continue
 
+        v = deepcopy(v)
         if type(v) is dict:
             if 'ID' in v.keys():
-                id = ''.join([f"[{i}]" for i in v['ID'].split(':')[1:]])
-                del v['ID']
-                v = {id: v}
-                d[k] = v
-            d[k] = clean_ome_dict(v)
+                if k != 'Pixels':
+                    id = parse_ref(k, v['ID'])
+                    del v['ID']
+                    v = {id: v}
+                    d[k] = v
+                else:
+                    del v['ID']
+            cleaned[k] = clean_ome_dict(v)
         elif type(v) is list:
             new_v = dict()
-            for item in v:
-                if 'ID' in item.keys():
-                    id = ''.join([f"[{i}]" for i in item['ID'].split(':')[1:]])
+            for idx, item in enumerate(v):
+                keys = item.keys()
+                if 'ID' in keys and all(i not in keys for i in ignored):
+                    id = parse_ref(k, item['ID'])
                     del item['ID']
                     new_v[id] = item
+                else:
+                    new_v[f'[{idx}]'] = item
             if len(new_v) == 0:
                 new_v = v
-            d[k] = new_v
+            cleaned[k] = clean_ome_dict(new_v)
+        else:
+            cleaned[k] = v
 
-    # TODO: original metadata from StructuredAnnotations
-    return d
-
-
-def cached_omedict(format: AbstractFormat) -> dict:
-    tf = cached_tifffile(format)
-    return format.get_cached('_omedict', xml2dict, tf.pages[0].description)
+    return cleaned
 
 
 def cached_tifffile_baseseries(format: AbstractFormat) -> TiffPageSeries:
@@ -388,10 +402,10 @@ class OmeTiffParser(TifffileParser):
 
     def parse_raw_metadata(self) -> MetadataStore:
         store = super().parse_raw_metadata()
-        ome = flatten(clean_ome_dict(cached_omedict(self.format)))
+        xml = self.omexml_description
+        ome = flatten(clean_ome_dict(xml2dict(xml)))
         for full_key, value in ome.items():
-            key = full_key.split('.')[-1]
-            if key not in ('TiffData', 'BinData'):
+            if value is not None:
                 store.set(full_key, value)
 
         return store
