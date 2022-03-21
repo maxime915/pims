@@ -14,6 +14,7 @@
 from collections import OrderedDict
 from datetime import datetime
 from typing import Optional
+from xml.etree import ElementTree as etree
 
 import numpy as np
 from dateutil.parser import isoparse as dateutil_isoparse
@@ -67,15 +68,6 @@ def clean_ome_dict(d: dict) -> dict:
     return d
 
 
-def parse_ome(omexml: str) -> OMEXML:
-    return OMEXML(omexml)
-
-
-def cached_omexml(format: AbstractFormat) -> OMEXML:
-    tf = cached_tifffile(format)
-    return format.get_cached('_omexml', parse_ome, tf.pages[0].description)
-
-
 def cached_omedict(format: AbstractFormat) -> dict:
     tf = cached_tifffile(format)
     return format.get_cached('_omedict', xml2dict, tf.pages[0].description)
@@ -89,6 +81,30 @@ def cached_tifffile_baseseries(format: AbstractFormat) -> TiffPageSeries:
         return tf.series[idx]
 
     return format.get_cached('_tf_baseseries', get_baseseries, tf)
+
+
+omexml_type = {
+    'int8': 'int8',
+    'int16': 'int16',
+    'int32': 'int32',
+    'uint8': 'uint8',
+    'uint16': 'uint16',
+    'uint32': 'uint32',
+    'float': 'float32',
+    'double': 'float64',
+    'complex': 'complex64',
+    'double-complex': 'complex128',
+    'bit': 'bool'
+}
+
+omexml_dimension = {
+    'X': 'width',
+    'Y': 'height',
+    'C': 'n_concrete_channels',
+    'Z': 'depth',
+    'T': 'duration',
+    'S': 'n_samples'
+}
 
 
 class OmeTiffChecker(TifffileChecker):
@@ -105,102 +121,237 @@ class OmeTiffChecker(TifffileChecker):
 
 class OmeTiffParser(TifffileParser):
     @property
-    def base(self) -> TiffPageSeries:
-        return cached_tifffile_baseseries(self.format)
+    def omexml_description(self):
+        tf = cached_tifffile(self.format)
+        return tf.pages[0].description
+
+    @cached_property
+    def omexml(self):
+        omexml = self.omexml_description
+        try:
+            parsed = etree.fromstring(omexml)
+        except etree.ParseError:
+            try:
+                omexml = omexml.decode(errors='ignore').encode()
+                parsed = etree.fromstring(omexml)
+            except Exception:  # noqa
+                return None
+        return parsed
+
+    @cached_property
+    def main_series_(self):
+        omexml = self.omexml
+        max_size = 0
+        main = None
+        idx = 0
+        for element in omexml:
+            if element.tag.endswith('BinaryOnly'):
+                break
+            if not element.tag.endswith('Image'):
+                continue
+
+            for im_element in element:
+                if not im_element.tag.endswith('Pixels'):
+                    continue
+                attr = im_element.attrib
+                w = int(attr.get('SizeX'))
+                h = int(attr.get('SizeY'))
+                size = w * h
+                if size > max_size:
+                    max_size = size
+                    main = element
+            idx += 1
+        return main, idx
+
+    @property
+    def main_root(self):
+        root, _ = self.main_series_
+        return root
+
+    @property
+    def main_idx(self):
+        _, idx = self.main_series_
+        return idx
 
     def parse_main_metadata(self) -> ImageMetadata:
-        base = self.base
-        shape = dict(zip(base.axes, base.shape))
-
         imd = ImageMetadata()
-        imd.width = shape['X']
-        imd.height = shape['Y']
-        imd.depth = shape.get('Z', 1)
-        imd.duration = shape.get('T', 1)
 
-        imd.pixel_type = base.dtype
-        imd.significant_bits = dtype_to_bits(imd.pixel_type)
+        omexml = self.main_root
+        if omexml is None:
+            raise ValueError('Impossible to find main OME-TIF image.')
 
-        imd.n_concrete_channels = shape.get('C', 1)
-        imd.n_samples = shape.get('S', 1)
+        for element in omexml:
+            if not element.tag.endswith('Pixels'):
+                continue
+            attr = element.attrib
 
-        omexml = cached_omexml(self.format)
-        base = omexml.main_image
+            imd.pixel_type = np.dtype(omexml_type[attr.get('Type').lower()])
+            imd.significant_bits = dtype_to_bits(imd.pixel_type)
 
-        if imd.n_channels == 3:
-            default_names = ['R', 'G', 'B']
-        elif imd.n_channels == 2:
-            default_names = ['R', 'G']
-        elif imd.n_channels == 1:
-            default_names = ['L']
-        else:
-            default_names = None
+            axes = ''.join(reversed(attr['DimensionOrder']))
+            shape = [int(attr['Size' + ax]) for ax in axes]
+            spp = 1  # samples per pixel
+            c_idx = 0
 
-        for c in range(imd.n_channels):
-            ome_c = (c - (c % imd.n_samples)) // imd.n_samples
-            channel = base.pixels.channel(ome_c)
-            name = channel.name
-            if not name and default_names is not None:
-                name = default_names[c]
-            color = infer_channel_color(channel.color, c, imd.n_channels)
-            imd.set_channel(
-                ImageChannel(
-                    index=c, emission_wavelength=channel.emission_wavelength,
-                    excitation_wavelength=channel.excitation_wavelength,
-                    suggested_name=name,
-                    color=color
+            for data in element:
+                if not data.tag.endswith('Channel'):
+                    continue
+
+                attr = data.attrib
+                if c_idx == 0:
+                    spp = int(attr.get('SamplesPerPixel', spp))
+                    if spp > 1:
+                        # correct channel dimension for spp
+                        shape = [
+                            shape[i] // spp if ax == 'C' else shape[i]
+                            for i, ax in enumerate(axes)
+                        ]
+                    elif int(attr.get('SamplesPerPixel', 1)) != spp:
+                        raise ValueError(
+                            'OME-TIF: differing SamplesPerPixel not supported'
+                        )
+
+                color = infer_channel_color(
+                    parse_int(attr.get('Color')),
+                    c_idx,
+                    shape[axes.index('C')]
                 )
-            )
+
+                name = attr.get('Name')
+                if name is None:
+                    if spp == 1:
+                        if 2 <= shape[axes.index('C')] <= 3:
+                            name = 'RGB'[c_idx]
+                    elif spp == 3:
+                        name = 'RGB'
+
+                emission = parse_float(attr.get('EmissionWavelength'))
+                excitation = parse_float(attr.get('ExcitationWavelength'))
+                imd.set_channel(ImageChannel(
+                    index=c_idx,
+                    suggested_name=name, color=color,
+                    emission_wavelength=emission,
+                    excitation_wavelength=excitation
+                ))
+
+                c_idx += 1
+
+            imd.width = shape[axes.index('X')]
+            imd.height = shape[axes.index('Y')]
+            imd.depth = shape[axes.index('Z')] if 'Z' in axes else 1
+            imd.duration = shape[axes.index('T')] if 'T' in axes else 1
+            imd.n_concrete_channels = shape[axes.index('C')] if 'C' in axes else 1
+            imd.n_samples = spp
 
         return imd
 
     def parse_known_metadata(self) -> ImageMetadata:
-        omexml = cached_omexml(self.format)
-        base = omexml.main_image
-
         imd = super().parse_known_metadata()
-        imd.description = base.description
-        imd.acquisition_datetime = self.parse_ome_acquisition_date(
-            base.acquisition_date
-        )
 
-        imd.physical_size_x = self.parse_ome_physical_size(
-            base.pixels.physical_size_X, base.pixels.physical_size_X_unit
-        )
-        imd.physical_size_y = self.parse_ome_physical_size(
-            base.pixels.physical_size_Y, base.pixels.physical_size_Y_unit
-        )
-        imd.physical_size_z = self.parse_ome_physical_size(
-            base.pixels.physical_size_Z, base.pixels.physical_size_Z_unit
-        )
-        imd.frame_rate = self.parse_frame_rate(
-            base.pixels.time_increment, base.pixels.time_increment_unit
-        )
+        omexml = self.main_root
+        if omexml is None:
+            raise ValueError('Impossible to find main OME-TIF image.')
 
-        if base.instrument is not None and \
-                base.instrument.microscope is not None:
-            imd.microscope.model = base.instrument.microscope.model
+        attr = omexml.attrib
+        imd.description = attr.get('Name')
 
-        if base.objective is not None:
-            imd.objective.nominal_magnification = \
-                base.objective.nominal_magnification
-            imd.objective.calibrated_magnification = \
-                base.objective.calibrated_magnification
-
-        for i in range(omexml.image_count):
-            base = omexml.image(i)
-            name = base.name.lower() if base.name else None
-            if name == "thumbnail":
-                associated = imd.associated_thumb
-            elif name == "label":
-                associated = imd.associated_label
-            elif name == "macro":
-                associated = imd.associated_macro
-            else:
+        instrument_ref = None
+        for element in omexml:
+            if element.tag.endswith('AcquisitionDate'):
+                imd.acquisition_datetime = self.parse_ome_acquisition_date(
+                    element.text
+                )
                 continue
-            associated.width = base.pixels.size_X
-            associated.height = base.pixels.size_Y
-            associated.n_channels = base.pixels.size_C
+
+            if element.tag.endswith('Description'):
+                imd.description = element.text
+                continue
+
+            if element.tag.endswith('InstrumentRef'):
+                attr = element.attrib
+                instrument_ref = attr.get('ID')
+                continue
+            
+            if not element.tag.endswith('Pixels'):
+                continue
+            attr = element.attrib
+
+            imd.physical_size_x = self.parse_ome_physical_size(
+                parse_float(attr.get('PhysicalSizeX')), 
+                attr.get('PhysicalSizeXUnit')
+            )
+            imd.physical_size_y = self.parse_ome_physical_size(
+                parse_float(attr.get('PhysicalSizeY')),
+                attr.get('PhysicalSizeYUnit')
+            )
+            imd.physical_size_z = self.parse_ome_physical_size(
+                parse_float(attr.get('PhysicalSizeZ')),
+                attr.get('PhysicalSizeZUnit')
+            )
+            imd.frame_rate = self.parse_frame_rate(
+                parse_float(attr.get('TimeIncrement')),
+                attr.get('TimeIncrementUnit')
+            )
+
+        if instrument_ref is not None:
+            root = self.omexml
+            for element in root:
+                if element.tag.endswith('BinaryOnly'):
+                    break
+                if not element.tag.endswith('Instrument'):
+                    continue
+
+                attr = element.attrib
+                id = attr.get('ID')
+                if instrument_ref != id:
+                    continue
+
+                for data in element:
+                    if data.tag.endswith('Microscope'):
+                        attr = data.attrib
+                        imd.microscope.model = attr.get('Model')
+                        continue
+
+                    if data.tag.endswith('Objective'):
+                        attr = data.attrib
+                        imd.objective.nominal_magnification = \
+                            parse_float(attr.get('NominalMagnification'))
+                        imd.objective.calibrated_magnification = \
+                            parse_float(attr.get('CalibratedMagnification'))
+                        continue
+
+        # Associated
+        root = self.omexml
+        idx = 0
+        for element in root:
+            if element.tag.endswith('BinaryOnly'):
+                break
+            if not element.tag.endswith('Image'):
+                continue
+
+            attr = element.attrib
+            if idx != self.main_idx:
+                name = attr.get('Name')
+                if name is None:
+                    continue
+                if name.lower() in ['thumbnail', 'thumb']:
+                    associated = imd.associated_thumb
+                elif name.lower() == 'label':
+                    associated = imd.associated_label
+                elif name.lower() == 'macro':
+                    associated = imd.associated_macro
+                else:
+                    continue
+
+                for im_element in element:
+                    if not im_element.tag.endswith('Pixels'):
+                        continue
+                    attr = im_element.attrib
+                    associated.width = attr.get('SizeX')
+                    associated.height = attr.get('SizeY')
+                    associated.n_channels = attr.get('SizeC', 1)
+                    break
+            idx += 1
 
         imd.is_complete = True
         return imd
@@ -263,18 +414,54 @@ class OmeTiffParser(TifffileParser):
         return pyramid
 
     def parse_planes(self) -> PlanesInfo:
-        omexml = cached_omexml(self.format)
-        base = omexml.main_image
-
         imd = self.format.main_imd
         pi = PlanesInfo(
             imd.n_concrete_channels, imd.depth, imd.duration,
             ['page_index'], [np.int]
         )
 
-        for i in range(base.pixels.tiff_data_count):
-            td = base.pixels.tiff_data(i)
-            pi.set(td.first_c, td.first_z, td.first_t, page_index=td.ifd)
+        omexml = self.main_root
+        if omexml is None:
+            raise ValueError('Impossible to find main OME-TIF image.')
+
+        for element in omexml:
+            if not element.tag.endswith('Pixels'):
+                continue
+            attr = element.attrib
+            axes = ''.join(reversed(attr['DimensionOrder']))
+            positions = [axes.index(ax) for ax in 'CZT']
+            shape = [getattr(imd, omexml_dimension[ax]) for ax in axes]
+            n_pages = product(shape[:-2])
+            ifds = []
+
+            for data in element:
+                if not data.tag.endswith('TiffData'):
+                    continue
+
+                attr = data.attrib
+                ifd = int(attr.get('IFD', 0))
+                num = int(attr.get('NumPlanes', 1 if 'IFD' in attr else 0))
+                num = int(attr.get('PlaneCount', num))
+                idx = [int(attr.get('First' + ax, 0)) for ax in axes[:-2]]
+                try:
+                    idx = int(np.ravel_multi_index(idx, shape[:-2]))
+                except ValueError:
+                    # ImageJ produces invalid ome-xml when cropping
+                    # print('OME series contains invalid TiffData index')
+                    continue
+
+                try:
+                    size = num if num else n_pages
+                    ifds.extend([None] * (size + idx - len(ifds)))
+                    for i in range(size):
+                        ifds[idx + i] = ifd + i
+                except IndexError:
+                    # print('OME series contains index out of range')
+                    pass
+
+            for idx, plane_indexes in enumerate(np.ndindex(*shape[:-2])):
+                ordered_idxs = [plane_indexes[pos] for pos in positions]
+                pi.set(*ordered_idxs, page_index=ifds[idx])
 
         return pi
 
@@ -346,7 +533,10 @@ class OmeTiffFormat(AbstractFormat):
     OME-TIFF format.
 
     Known limitations:
-    *
+    * Multi-file OME-TIFF are not supported.
+    * Differing samples per pixel (in channels) are not supported.
+    * Tiled planar TIFF configuration is not readable.
+    * Modulo along axis is not supported.
 
     References:
 

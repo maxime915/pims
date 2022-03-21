@@ -176,7 +176,7 @@ def is_rgb(colors: List[Color]) -> bool:
 
 
 def infer_channel_color(
-    color_name: str, index: int, n_channels: Optional[int] = None,
+    color_name: Optional[ColorType], index: int, n_channels: Optional[int] = None,
     channel_color_list: List[Color] = None
 ) -> Union[Color, None]:
     """
