@@ -11,13 +11,16 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
+
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, Type, Union
 from xml.etree import ElementTree as etree
 
 import numpy as np
+import pyvips
 from dateutil.parser import isoparse as dateutil_isoparse
 from pint import Quantity
 from pyvips import Image as VIPSImage
@@ -27,6 +30,7 @@ from pims.api.utils.models import ChannelReduction
 from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
+from pims.formats.utils.convertor import AbstractConvertor
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
 from pims.formats.utils.engines.vips import VipsReader
 from pims.formats.utils.histogram import DefaultHistogramReader
@@ -40,6 +44,9 @@ from pims.utils.dtypes import dtype_to_bits
 from pims.utils.iterables import ensure_list, product
 from pims.utils.types import parse_float, parse_int
 from pims.utils.vips import bandjoin, bandreduction, fix_rgb_interpretation
+
+if TYPE_CHECKING:
+    from pims.files.file import Path
 
 
 def clean_ome_dict(d: dict) -> dict:
@@ -87,16 +94,6 @@ def clean_ome_dict(d: dict) -> dict:
     return cleaned
 
 
-def cached_tifffile_baseseries(format: AbstractFormat) -> TiffPageSeries:
-    tf = cached_tifffile(format)
-
-    def get_baseseries(tf: TiffFile) -> TiffPageSeries:
-        idx = np.argmax([np.prod(s.shape) for s in tf.series])
-        return tf.series[idx]
-
-    return format.get_cached('_tf_baseseries', get_baseseries, tf)
-
-
 omexml_type = {
     'int8': 'int8',
     'int16': 'int16',
@@ -121,13 +118,32 @@ omexml_dimension = {
 }
 
 
+def cached_main_tifffile_series(
+    format: Union[AbstractFormat, CachedDataPath]
+) -> TiffPageSeries:
+    tf = cached_tifffile(format)
+
+    def get_baseseries(tf: TiffFile) -> TiffPageSeries:
+        idx = np.argmax([np.prod(s.shape) for s in tf.series])
+        return tf.series[idx]
+
+    return format.get_cached('_tf_baseseries', get_baseseries, tf)
+
+
 class OmeTiffChecker(TifffileChecker):
     @classmethod
     def match(cls, pathlike: CachedDataPath) -> bool:
         try:
             if super().match(pathlike):
                 tf = cls.get_tifffile(pathlike)
-                return tf.is_ome
+                if not tf.is_ome:
+                    return False
+                
+                if len(tf.series) >= 1:
+                    baseline = cached_main_tifffile_series(pathlike)
+                    if baseline and not baseline.is_pyramidal\
+                            and len(baseline.levels) == 1:
+                        return True
             return False
         except RuntimeError:
             return False
@@ -411,20 +427,11 @@ class OmeTiffParser(TifffileParser):
         return store
 
     def parse_pyramid(self) -> Pyramid:
-        base_series = cached_tifffile_baseseries(self.format)
-
         pyramid = Pyramid()
-        for i, level in enumerate(base_series.levels):
-            page = level[0]
-            tilewidth = page.tilewidth if page.tilewidth != 0 else page.imagewidth
-            tilelength = page.tilelength if page.tilelength != 0 else page.imagelength
-            subifd = i - 1 if i > 0 else None
-            pyramid.insert_tier(
-                page.imagewidth, page.imagelength,
-                (tilewidth, tilelength),
-                subifd=subifd
-            )
+        width = self.format.main_imd.width
+        height = self.format.main_imd.height
 
+        pyramid.insert_tier(width, height, (width, height), subifd=None)
         return pyramid
 
     def parse_planes(self) -> PlanesInfo:
@@ -542,6 +549,29 @@ class OmeTiffReader(VipsReader):
         return self._read(c, z, t, read_func, self.format.path, region, subifd=subifd)
 
 
+class OmeTiffConvertor(AbstractConvertor):
+
+    def convert(self, dest_path: Path) -> bool:
+        # https://github.com/libvips/pyvips/issues/277#issuecomment-946913363
+
+        n_pages = self.source.main_imd.n_planes
+        vips_source = VIPSImage.new_from_file(str(self.source.path), n=n_pages)
+
+        result = vips_source.tiffsave(
+            str(dest_path), pyramid=True, tile=True,
+            tile_width=256, tile_height=256, bigtiff=True,
+            properties=False, subifd=True,
+            page_height=vips_source.get('page-height'),
+            depth=pyvips.enums.ForeignDzDepth.ONETILE,
+            compression=pyvips.enums.ForeignTiffCompression.LZW,
+            region_shrink=pyvips.enums.RegionShrink.MEAN
+        )
+        return not bool(result)
+
+    def conversion_format(self) -> Type[AbstractFormat]:
+        return PyrOmeTiffFormat
+
+
 class OmeTiffFormat(AbstractFormat):
     """
     OME-TIFF format.
@@ -559,6 +589,7 @@ class OmeTiffFormat(AbstractFormat):
     parser_class = OmeTiffParser
     reader_class = OmeTiffReader
     histogram_reader_class = DefaultHistogramReader
+    convertor_class = OmeTiffConvertor
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -574,8 +605,88 @@ class OmeTiffFormat(AbstractFormat):
 
     @cached_property
     def need_conversion(self):
-        return False
+        return self.main_imd.width * self.main_imd.height > 500 * 500  # TODO
 
     @property
     def media_type(self):
         return "ome/ome-tiff"
+
+
+# -----------------------------------------------------------------------------
+# PYRAMIDAL OME TIF
+
+class PyrOmeTiffChecker(TifffileChecker):
+    @classmethod
+    def match(cls, pathlike: CachedDataPath) -> bool:
+        try:
+            if not super().match(pathlike):
+                return False
+
+            tf = cls.get_tifffile(pathlike)
+            if not tf.is_ome:
+                return False
+
+            if len(tf.series) >= 1:
+                baseline = cached_main_tifffile_series(pathlike)
+                if baseline and baseline.is_pyramidal:
+                    return baseline.levels[0].keyframe.is_tiled
+                    # for level in baseline.levels:
+                    #     if level.keyframe.is_tiled is False:
+                    #         return False
+                    # return True
+
+            return False
+        except RuntimeError:
+            return False
+
+
+class PyrOmeTiffParser(OmeTiffParser):
+    def parse_pyramid(self) -> Pyramid:
+        base_series = cached_main_tifffile_series(self.format)
+
+        pyramid = Pyramid()
+        for i, level in enumerate(base_series.levels):
+            page = level[0]
+
+            if page.tilewidth != 0:
+                tilewidth = page.tilewidth
+            else:
+                tilewidth = page.imagewidth
+
+            if page.tilelength != 0:
+                tilelength = page.tilelength
+            else:
+                tilelength = page.imagelength
+
+            subifd = i - 1 if i > 0 else None
+            pyramid.insert_tier(
+                page.imagewidth, page.imagelength,
+                (tilewidth, tilelength),
+                subifd=subifd
+            )
+
+        return pyramid
+
+
+class PyrOmeTiffFormat(OmeTiffFormat):
+    checker_class = PyrOmeTiffChecker
+    parser_class = OmeTiffParser
+    reader_class = OmeTiffReader
+    histogram_reader_class = DefaultHistogramReader
+    convertor_class = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._enabled = True
+
+    @classmethod
+    def get_name(cls):
+        return "Pyramidal OME-TIFF"
+
+    @classmethod
+    def is_spatial(cls):
+        return True
+
+    @cached_property
+    def need_conversion(self):
+        return False
