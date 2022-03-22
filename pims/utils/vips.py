@@ -80,7 +80,7 @@ def bandjoin_rgb(bands: List[VIPSImage]) -> VIPSImage:
 
 def fix_rgb_interpretation(im: VIPSImage) -> VIPSImage:
     if im.interpretation == VIPSInterpretation.GREY16:
-        im = im.copy(intepretation=VIPSInterpretation.RGB16)
+        im = im.copy(interpretation=VIPSInterpretation.RGB16)
     elif im.interpretation == VIPSInterpretation.B_W:
         im = im.copy(interpretation=VIPSInterpretation.SRGB)
     return im
