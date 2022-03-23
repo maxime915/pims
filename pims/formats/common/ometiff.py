@@ -564,14 +564,18 @@ class OmeTiffConvertor(AbstractConvertor):
         n_pages = self.source.main_imd.n_planes
         vips_source = VIPSImage.new_from_file(str(self.source.path), n=n_pages)
 
+        opts = dict()
+        if n_pages > 1:
+            opts['page_height'] = vips_source.get('page-height')
+
         result = vips_source.tiffsave(
             str(dest_path), pyramid=True, tile=True,
             tile_width=256, tile_height=256, bigtiff=True,
             properties=False, subifd=True,
-            page_height=vips_source.get('page-height'),
             depth=pyvips.enums.ForeignDzDepth.ONETILE,
             compression=pyvips.enums.ForeignTiffCompression.LZW,
-            region_shrink=pyvips.enums.RegionShrink.MEAN
+            region_shrink=pyvips.enums.RegionShrink.MEAN,
+            **opts
         )
         return not bool(result)
 
