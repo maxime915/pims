@@ -241,6 +241,11 @@ class OmeTiffParser(TifffileParser):
                             'OME-TIF: differing SamplesPerPixel not supported'
                         )
 
+                if cc_idx >= shape[axes.index('C')]:
+                    # Happens when <Channel> is repeated for spp > 1, while
+                    #  information is already extracted.
+                    break
+
                 colors = [infer_channel_color(
                     parse_int(attr.get('Color')),
                     cc_idx,
