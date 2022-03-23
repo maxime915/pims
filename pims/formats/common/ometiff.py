@@ -492,6 +492,10 @@ class OmeTiffParser(TifffileParser):
                     # print('OME series contains index out of range')
                     pass
 
+            if len(ifds) == 0:
+                # No TiffData tag. Suppose a <TiffData />.
+                ifds = list(range(n_pages))
+
             for idx, plane_indexes in enumerate(np.ndindex(*shape[:-2])):
                 ordered_idxs = [plane_indexes[pos] for pos in positions]
                 pi.set(*ordered_idxs, page_index=ifds[idx])
