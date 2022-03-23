@@ -62,7 +62,7 @@ REQUIRED = [
     'rasterio>=1.2.1',
 
     # Must be at end to work with dependency links
-    'cytomine-python-client>=2.8.3',
+    'cytomine-python-client>=2.3.0',
 ]
 
 DEPENDENCY_LINKS = [
