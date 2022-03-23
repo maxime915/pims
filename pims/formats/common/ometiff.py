@@ -221,14 +221,14 @@ class OmeTiffParser(TifffileParser):
             axes = ''.join(reversed(attr['DimensionOrder']))
             shape = [int(attr['Size' + ax]) for ax in axes]
             spp = 1  # samples per pixel
-            c_idx = 0
+            cc_idx = 0  # concrete channel idx
 
             for data in element:
                 if not data.tag.endswith('Channel'):
                     continue
 
                 attr = data.attrib
-                if c_idx == 0:
+                if cc_idx == 0:
                     spp = int(attr.get('SamplesPerPixel', spp))
                     if spp > 1:
                         # correct channel dimension for spp
@@ -241,30 +241,37 @@ class OmeTiffParser(TifffileParser):
                             'OME-TIF: differing SamplesPerPixel not supported'
                         )
 
-                color = infer_channel_color(
+                colors = [infer_channel_color(
                     parse_int(attr.get('Color')),
-                    c_idx,
+                    cc_idx,
                     shape[axes.index('C')]
-                )
+                )] * spp
 
-                name = attr.get('Name')
-                if name is None:
+                if spp == 3 and colors[0] is None:
+                    colors = [
+                        infer_channel_color(None, i, 3) for i in range(spp)
+                    ]
+
+                names = [attr.get('Name')] * spp
+                if names[0] is None:
                     if spp == 1:
                         if 2 <= shape[axes.index('C')] <= 3:
-                            name = 'RGB'[c_idx]
+                            names = ['RGB'[cc_idx]]
                     elif spp == 3:
-                        name = 'RGB'
+                        names = ['R', 'G', 'B']
 
                 emission = parse_float(attr.get('EmissionWavelength'))
                 excitation = parse_float(attr.get('ExcitationWavelength'))
-                imd.set_channel(ImageChannel(
-                    index=c_idx,
-                    suggested_name=name, color=color,
-                    emission_wavelength=emission,
-                    excitation_wavelength=excitation
-                ))
 
-                c_idx += 1
+                for s in range(spp):
+                    imd.set_channel(ImageChannel(
+                        index=cc_idx * spp + s,
+                        suggested_name=names[s], color=colors[s],
+                        emission_wavelength=emission,
+                        excitation_wavelength=excitation
+                    ))
+
+                cc_idx += 1
 
             imd.width = shape[axes.index('X')]
             imd.height = shape[axes.index('Y')]
@@ -670,7 +677,7 @@ class PyrOmeTiffParser(OmeTiffParser):
 
 class PyrOmeTiffFormat(OmeTiffFormat):
     checker_class = PyrOmeTiffChecker
-    parser_class = OmeTiffParser
+    parser_class = PyrOmeTiffParser
     reader_class = OmeTiffReader
     histogram_reader_class = DefaultHistogramReader
     convertor_class = None
