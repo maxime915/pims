@@ -122,7 +122,6 @@ class TifffileParser(AbstractParser):
             imd.set_channel(ImageChannel(index=2, suggested_name='B'))
         else:
             imd.set_channel(ImageChannel(index=0, suggested_name='L'))
-        imd.n_samples = imd.n_channels
 
         return imd
 
@@ -211,9 +210,20 @@ class TifffileParser(AbstractParser):
         pyramid = Pyramid()
         for level in base_series.levels:
             page = level[0]
+
+            if page.tilewidth != 0:
+                tilewidth = page.tilewidth
+            else:
+                tilewidth = page.imagewidth
+
+            if page.tilelength != 0:
+                tilelength = page.tilelength
+            else:
+                tilelength = page.imagelength
+
             pyramid.insert_tier(
                 page.imagewidth, page.imagelength,
-                (page.tilewidth, page.tilelength),
+                (tilewidth, tilelength),
                 page_index=page.index
             )
 
