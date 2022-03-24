@@ -41,7 +41,7 @@ from pims.utils import UNIT_REGISTRY
 from pims.utils.color import infer_channel_color
 from pims.utils.dict import flatten
 from pims.utils.dtypes import dtype_to_bits
-from pims.utils.iterables import ensure_list, product
+from pims.utils.iterables import product
 from pims.utils.types import parse_float, parse_int
 from pims.utils.vips import bandjoin, bandreduction, fix_rgb_interpretation
 
@@ -504,26 +504,25 @@ class OmeTiffParser(TifffileParser):
 
 
 class OmeTiffReader(VipsReader):
-    def _pages_to_read(self, spp, channels, z, t):
+    def _pages_to_read(self, channels, z, t):
         pages = OrderedDict()
-        if channels is None:
-            channels = list(range(self.format.main_imd.n_channels))
-        for c in ensure_list(channels):
-            intrinsic_c = c // spp
-            s = c % spp
-            page_index = self.format.planes_info.get(
-                intrinsic_c, z, t, 'page_index'
-            )
-            if page_index in pages:
-                pages[page_index].append(s)
+
+        cc_idxs, s_idxs = self._concrete_channel_indexes(channels)
+        page_idxs = self.format.planes_info.get(
+            cc_idxs, z, t, 'page_index'
+        )
+
+        for page, s in zip(page_idxs, s_idxs):
+            if page in pages:
+                pages[page].append(s)
             else:
-                pages[page_index] = [s]
+                pages[page] = [s]
         return pages
 
     def _read(self, c, z, t, vips_func, *args, **kwargs):
         bands = list()
         spp = self.format.main_imd.n_samples
-        for page, samples in self._pages_to_read(spp, c, z, t).items():
+        for page, samples in self._pages_to_read(c, z, t).items():
             im = vips_func(*args, page=page, **kwargs)
             if im.hasalpha():
                 im = im.flatten()
