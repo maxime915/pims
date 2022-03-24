@@ -34,7 +34,7 @@ TIFF_FLAGS = (
     # 'shaped',
     'lsm',
     'ome',
-    # 'imagej',
+    'imagej',
     'fluoview',
     'stk',
     'sis',
@@ -167,7 +167,7 @@ class TifffileParser(AbstractParser):
     @staticmethod
     def parse_physical_size(
         physical_size: Union[Tuple, float],
-        unit: Optional[tifffile.TIFF.RESUNIT] = None
+        unit: Optional[Union[tifffile.TIFF.RESUNIT, str]] = None
     ) -> Union[Quantity, None]:
         """
         Parse a physical size and its unit from a TiffTag to a Quantity.
@@ -182,7 +182,9 @@ class TifffileParser(AbstractParser):
             rational = physical_size
         if rational[0] <= 0 or rational[1] <= 0:
             return None
-        return rational[1] / rational[0] * UNIT_REGISTRY(unit.name.lower())
+        if type(unit) is not str:
+            unit = unit.name.lower()
+        return rational[1] / rational[0] * UNIT_REGISTRY(unit)
 
     def parse_raw_metadata(self) -> MetadataStore:
         baseline = cached_tifffile_baseline(self.format)
@@ -191,7 +193,7 @@ class TifffileParser(AbstractParser):
         # Tags known to be not parsable, unnecessary or hazardous.
         skipped_tags = (273, 279, 278, 288, 289, 320, 324, 325,
                         347, 437, 519, 520, 521, 559, 20624,
-                        20625, 34675) + tuple(range(65420, 65459))
+                        20625, 34675, 50839) + tuple(range(65420, 65459))
 
         for tag in baseline.tags:
             if tag.code not in skipped_tags and \
