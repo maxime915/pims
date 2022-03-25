@@ -246,16 +246,17 @@ class OmeTiffParser(TifffileParser):
                     #  information is already extracted.
                     break
 
-                colors = [infer_channel_color(
-                    parse_int(attr.get('Color')),
-                    cc_idx,
-                    shape[axes.index('C')]
-                )] * spp
-
-                if spp == 3 and colors[0] is None:
+                if spp == 3:
+                    # If RGB channel, Color attribute is ignored (Icy behavior)
                     colors = [
                         infer_channel_color(None, i, 3) for i in range(spp)
                     ]
+                else:
+                    colors = [infer_channel_color(
+                        parse_int(attr.get('Color')),
+                        cc_idx,
+                        shape[axes.index('C')]
+                    )] * spp
 
                 names = [attr.get('Name')] * spp
                 if names[0] is None:
