@@ -85,7 +85,7 @@ class VirtualStackParser(AbstractParser):
         )
         imd.n_samples = metadata.get(
             "n_samples",
-            metadata.get("n_channels_per_read")
+            metadata.get("n_channels_per_read", 1)
         )
 
         imd.pixel_type = np.dtype(metadata.get("pixel_type"))
