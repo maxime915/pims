@@ -625,7 +625,7 @@ class OmeTiffFormat(AbstractFormat):
 
     @cached_property
     def need_conversion(self):
-        return self.main_imd.width * self.main_imd.height > 500 * 500  # TODO
+        return self.main_imd.width * self.main_imd.height > 1024 * 1024
 
     @property
     def media_type(self):
