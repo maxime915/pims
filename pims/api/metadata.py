@@ -38,6 +38,7 @@ from pims.config import Settings, get_settings
 from pims.files.file import FileRole, FileType, Path
 from pims.formats.utils.structures.metadata import MetadataType
 from pims.processing.image_response import AssociatedResponse
+from pims.utils.dtypes import dtype_to_bits
 
 router = APIRouter()
 api_tags = ['Metadata']
@@ -205,6 +206,10 @@ class ImageInfo(BaseModel):
         ...,
         description='The number of bits within the type storing each pixel that are significant.',
     )
+    bits: conint(ge=1) = Field(
+        ...,
+        description='The number of bits used by the type storing each pixel.'
+    )
 
     @classmethod
     def from_image(cls, image):
@@ -229,6 +234,7 @@ class ImageInfo(BaseModel):
                 "description": image.description,
                 "pixel_type": PixelType[str(image.pixel_type)],
                 "significant_bits": image.significant_bits,
+                "bits": dtype_to_bits(image.pixel_type)
             }
         )
 
