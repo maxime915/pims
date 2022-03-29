@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Type
 import numpy as np
 import pyvips
 from pyvips import Image as VIPSImage
-from tifffile import TiffFile, TiffPage, TiffPageSeries
+from tifffile import TiffPage, TiffPageSeries
 
 from pims.cache import cached_property
 from pims.formats.common.ometiff import OmeTiffReader, PyrOmeTiffFormat
@@ -26,7 +26,10 @@ from pims.formats.common.tiff import PlanarTiffFormat
 from pims.formats.utils.abstract import AbstractFormat, CachedDataPath
 from pims.formats.utils.convertor import AbstractConvertor
 from pims.formats.utils.engines.omexml import OmeXml
-from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
+from pims.formats.utils.engines.tifffile import (
+    TifffileChecker, TifffileParser, cached_tifffile,
+    remove_tiff_comments
+)
 from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
 from pims.formats.utils.structures.planes import PlanesInfo
@@ -203,11 +206,7 @@ class ImageJTiffConvertor(AbstractConvertor):
         #  unnecessary after first page.
         if ok:
             try:
-                with TiffFile(dest_path, mode='r+b') as tif:
-                    for index in range(1, imd.n_planes):
-                        tag = tif.pages[index].tags.get(270, None)
-                        if tag is not None:
-                            tag.overwrite("")
+                remove_tiff_comments(dest_path, imd.n_planes, except_pages=[0])
             except Exception: # noqa
                 pass
         return ok

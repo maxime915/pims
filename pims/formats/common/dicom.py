@@ -16,11 +16,13 @@ from datetime import datetime
 from typing import List, Optional, Union
 
 import numpy as np
+import pyvips
 from pint import Quantity
 from pydicom import FileDataset, dcmread
 from pydicom.dicomdir import DicomDir
 from pydicom.multival import MultiValue
 from pydicom.uid import ImplicitVRLittleEndian
+from pyvips import GValue
 from shapely.affinity import affine_transform
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
@@ -30,7 +32,9 @@ from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )
 from pims.formats.utils.checker import SignatureChecker
-from pims.formats.utils.engines.vips import VipsSpatialConvertor
+from pims.formats.utils.convertor import AbstractConvertor
+from pims.formats.utils.engines.omexml import OmeXml
+from pims.formats.utils.engines.tifffile import remove_tiff_comments
 from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.parser import AbstractParser
 from pims.formats.utils.reader import AbstractReader
@@ -111,7 +115,7 @@ class DicomParser(AbstractParser):
             imd.physical_size_x = self.parse_physical_size(pixel_spacing[0])
             imd.physical_size_y = self.parse_physical_size(pixel_spacing[1])
         imd.physical_size_z = self.parse_physical_size(
-            ds.get('SpacingBetweenSlices')
+            ds.get('SliceSpacing')
         )
 
         imd.is_complete = True
@@ -270,10 +274,79 @@ class DicomReader(AbstractReader):
         )
 
 
-class DicomSpatialConvertor(VipsSpatialConvertor):
-    def vips_source(self):
+class DicomSpatialConvertor(AbstractConvertor):
+    def conversion_format(self):
+        imd = self.source.main_imd
+        if imd.depth == 1:
+            from pims.formats.common.tiff import PyrTiffFormat
+            return PyrTiffFormat
+        else:
+            from pims.formats.common.ometiff import PyrOmeTiffFormat
+            return PyrOmeTiffFormat
+
+    def _convert_pyrtif(self, dest_path):
         image = cached_dcmread(self.source).pixel_array
-        return numpy_to_vips(to_unsigned_int(image))
+        source = numpy_to_vips(to_unsigned_int(image))
+
+        result = source.tiffsave(
+            str(dest_path), pyramid=True, tile=True,
+            tile_width=256, tile_height=256, bigtiff=True,
+            properties=False, strip=True,
+            depth=pyvips.enums.ForeignDzDepth.ONETILE,
+            compression=pyvips.enums.ForeignTiffCompression.LZW,
+            region_shrink=pyvips.enums.RegionShrink.MEAN
+        )
+        return not bool(result)
+
+    def _convert_pyrometif(self, dest_path):
+        image = cached_dcmread(self.source).pixel_array
+        toilet_roll = np.vstack([z for z in image])
+        vips_source = numpy_to_vips(to_unsigned_int(toilet_roll))
+
+        imd = self.source.main_imd
+        shape = (
+            imd.duration, imd.depth, imd.n_concrete_channels,
+            imd.height, imd.width, imd.n_samples
+        )
+        storedshape = (imd.n_planes, 1, 1, imd.height, imd.width, imd.n_samples)
+        axes = 'TZCYXS'
+
+        ome = OmeXml()
+        ome.addimage(imd, shape, storedshape, axes)
+        omexml = str(ome)
+
+        vips_source = vips_source.copy()
+        vips_source.set_type(GValue.gstr_type, 'image-description', omexml)
+        opts = dict()
+        if imd.n_planes > 1:
+            opts['page_height'] = imd.height
+
+        result = vips_source.tiffsave(
+            str(dest_path), pyramid=True, tile=True,
+            tile_width=256, tile_height=256, bigtiff=True,
+            properties=False, subifd=True,
+            depth=pyvips.enums.ForeignDzDepth.ONETILE,
+            compression=pyvips.enums.ForeignTiffCompression.LZW,
+            region_shrink=pyvips.enums.RegionShrink.MEAN,
+            **opts
+        )
+        ok = not bool(result)
+
+        # Some cleaning. libvips sets description to all pages, while it is
+        #  unnecessary after first page.
+        if ok:
+            try:
+                remove_tiff_comments(dest_path, imd.n_planes, except_pages=[0])
+            except Exception:  # noqa
+                pass
+        return ok
+
+    def convert(self, dest_path):
+        imd = self.source.main_imd
+        if imd.depth == 1:
+            return self._convert_pyrtif(dest_path)
+        else:
+            return self._convert_pyrometif(dest_path)
 
 
 class DicomFormat(AbstractFormat):
@@ -285,7 +358,7 @@ class DicomFormat(AbstractFormat):
     checker_class = DicomChecker
     parser_class = DicomParser
     reader_class = DicomReader
-    histogram_reader_class = DefaultHistogramReader  # TODO
+    histogram_reader_class = DefaultHistogramReader
     convertor_class = DicomSpatialConvertor
 
     def __init__(self, *args, **kwargs):
@@ -299,8 +372,7 @@ class DicomFormat(AbstractFormat):
     @cached_property
     def need_conversion(self):
         imd = self.main_imd
-        # TODO: the convertor only support 2D images
-        return imd.width > 1024 or imd.height > 1024 and imd.depth == 1
+        return imd.width > 1024 or imd.height > 1024
 
     @property
     def media_type(self):

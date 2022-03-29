@@ -11,13 +11,15 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import List, Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from pint import Quantity
-from tifffile import TIFF, TiffPage, tifffile
+from tifffile import TIFF, TiffFile, TiffPage, tifffile
 
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
@@ -27,6 +29,9 @@ from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, 
 from pims.formats.utils.structures.pyramid import Pyramid
 from pims.utils import UNIT_REGISTRY
 from pims.utils.types import parse_datetime
+
+if TYPE_CHECKING:
+    from pims.files.file import Path
 
 TIFF_FLAGS = (
     'geotiff',
@@ -230,3 +235,21 @@ class TifffileParser(AbstractParser):
             )
 
         return pyramid
+
+
+def remove_tiff_comments(
+    filepath: Path, n_pages: Optional[int],
+    except_pages: Optional[List[int]] = None
+):
+    if except_pages is None:
+        except_pages = []
+
+    with TiffFile(str(filepath), mode='r+b') as tif:
+        if n_pages is None:
+            n_pages = len(tif.pages)
+        for index in range(n_pages):
+            if index in except_pages:
+                continue
+            tag = tif.pages[index].tags.get(270, None)
+            if tag is not None:
+                tag.overwrite("")
