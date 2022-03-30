@@ -69,3 +69,18 @@ class OmeXml(_OmeXml):
 
         dtype = imd.pixel_type
         return super().addimage(dtype, shape, storedshape, axes, **metadata)
+
+
+omexml_type = {
+    'int8': 'int8',
+    'int16': 'int16',
+    'int32': 'int32',
+    'uint8': 'uint8',
+    'uint16': 'uint16',
+    'uint32': 'uint32',
+    'float': 'float32',
+    'double': 'float64',
+    'complex': 'complex64',
+    'double-complex': 'complex128',
+    'bit': 'bool'
+}

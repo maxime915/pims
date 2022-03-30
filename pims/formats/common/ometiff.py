@@ -31,7 +31,11 @@ from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.convertor import AbstractConvertor
-from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
+from pims.formats.utils.engines.omexml import omexml_type
+from pims.formats.utils.engines.tifffile import (
+    TifffileChecker, TifffileParser, cached_tifffile,
+    remove_tiff_comments
+)
 from pims.formats.utils.engines.vips import VipsReader
 from pims.formats.utils.histogram import DefaultHistogramReader
 from pims.formats.utils.structures.metadata import ImageChannel, ImageMetadata, MetadataStore
@@ -93,20 +97,6 @@ def clean_ome_dict(d: dict) -> dict:
 
     return cleaned
 
-
-omexml_type = {
-    'int8': 'int8',
-    'int16': 'int16',
-    'int32': 'int32',
-    'uint8': 'uint8',
-    'uint16': 'uint16',
-    'uint32': 'uint32',
-    'float': 'float32',
-    'double': 'float64',
-    'complex': 'complex64',
-    'double-complex': 'complex128',
-    'bit': 'bool'
-}
 
 omexml_dimension = {
     'X': 'width',
@@ -586,7 +576,16 @@ class OmeTiffConvertor(AbstractConvertor):
             region_shrink=pyvips.enums.RegionShrink.MEAN,
             **opts
         )
-        return not bool(result)
+        ok = not bool(result)
+
+        # Some cleaning. libvips sets description to all pages, while it is
+        #  unnecessary after first page.
+        if ok:
+            try:
+                remove_tiff_comments(dest_path, n_pages, except_pages=[0])
+            except Exception:  # noqa
+                pass
+        return ok
 
     def conversion_format(self) -> Type[AbstractFormat]:
         return PyrOmeTiffFormat
