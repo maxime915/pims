@@ -447,6 +447,7 @@ class CytomineListener(ImportListener):
                 names = [
                     image.channels[i].suggested_name
                     for i in range(first_c, first_c + image.n_samples)
+                    if image.channels[i].suggested_name is not None
                 ]
                 names = list(dict.fromkeys(names))  # ordered uniqueness
                 name = '|'.join(names)
