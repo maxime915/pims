@@ -236,10 +236,10 @@ class OmeTiffParser(TifffileParser):
                             shape[i] // spp if ax == 'C' else shape[i]
                             for i, ax in enumerate(axes)
                         ]
-                    elif int(attr.get('SamplesPerPixel', 1)) != spp:
-                        raise ValueError(
-                            'OME-TIF: differing SamplesPerPixel not supported'
-                        )
+                elif int(attr.get('SamplesPerPixel', 1)) != spp:
+                    raise ValueError(
+                        'OME-TIF: differing SamplesPerPixel not supported'
+                    )
 
                 if cc_idx >= shape[axes.index('C')]:
                     # Happens when <Channel> is repeated for spp > 1, while
