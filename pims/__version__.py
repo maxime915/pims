@@ -16,7 +16,7 @@
 
 # KEEP ENCODING - so that __version__ can be read even if py2.7 is used.
 
-VERSION = (0, 11, 0)
+VERSION = (0, 12, 0)
 API_VERSION = (0, 11, 0)
 
 __title__ = 'pims'
