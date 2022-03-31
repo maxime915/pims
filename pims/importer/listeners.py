@@ -413,8 +413,8 @@ class CytomineListener(ImportListener):
 
         # Cytomine "channels" = number of concrete channels
         ai.channels = image.n_concrete_channels
-        ai.samples = image.n_samples
-        ai.bits = dtype_to_bits(image.pixel_type)
+        ai.samplePerPixel = image.n_samples
+        ai.bitPerSample = dtype_to_bits(image.pixel_type)
 
         if image.physical_size_x:
             ai.physicalSizeX = round(
