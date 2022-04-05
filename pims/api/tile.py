@@ -47,7 +47,7 @@ from pims.files.file import Path
 from pims.filters import FILTERS
 from pims.processing.colormaps import ALL_COLORMAPS
 from pims.processing.image_response import TileResponse, WindowResponse
-from pims.utils.iterables import check_array_size, ensure_list
+from pims.utils.iterables import check_array_size_parameters, ensure_list
 
 router = APIRouter()
 tile_tags = ['Tiles']
@@ -122,7 +122,7 @@ def _show_tile(
     extension, headers, config,
     colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None
 ):
-    in_image = path.get_spatial()
+    in_image = path.get_spatial(cache=True)
     check_representation_existence(in_image)
 
     if not normalized or in_image.is_pyramid_normalized:
@@ -178,19 +178,20 @@ def _show_tile(
     filters = ensure_list(filters)
     gammas = ensure_list(gammas)
 
-    array_parameters = (min_intensities, max_intensities, colormaps, gammas)
-    for array_parameter in array_parameters:
-        check_array_size(array_parameter, allowed=[0, 1, len(channels)], nullable=False)
+    array_parameters = ('min_intensities', 'max_intensities', 'colormaps', 'gammas')
+    check_array_size_parameters(
+        array_parameters, locals(), allowed=[0, 1, len(channels)], nullable=False
+    )
     intensities = parse_intensity_bounds(
         in_image, channels, z_slices, timepoints, min_intensities, max_intensities
     )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
 
-    array_parameters = (filters,)
-    for array_parameter in array_parameters:
-        # Currently, we only allow 1 parameter to be applied to all channels
-        check_array_size(array_parameter, allowed=[0, 1], nullable=False)
+    array_parameters = ('filters',)
+    check_array_size_parameters(
+        array_parameters, locals(), allowed=[0, 1], nullable=False
+    )
     filters = parse_filter_ids(filters, FILTERS)
 
     if is_window:
@@ -380,7 +381,7 @@ async def show_tile_v1(
     tile = TargetZoomTileCoordinates(zoom=zoom, tx=tx, ty=ty)
     return await _show_tile(
         request, response,
-        imagepath_parameter(zoomify),
+        imagepath_parameter(zoomify, config),
         normalized=True,
         tile=tile.dict(),
         channels=None, z_slices=None, timepoints=None,
@@ -412,11 +413,11 @@ async def show_tile_v2(
     if all(i is not None for i in (zoomify, tile_group, x, y)):
         tx, ty = TileX(__root__=x), TileY(__root__=y)
         tile = TargetZoomTileCoordinates(zoom=zoom, tx=tx, ty=ty)
-        path = imagepath_parameter(zoomify)
+        path = imagepath_parameter(zoomify, config)
     elif all(i is not None for i in (fif, z, tile_index)):
         ti = TileIndex(__root__=tile_index)
-        tile = TargetZoomTileIndex(zoom=zoom, ti=ti),
-        path = imagepath_parameter(fif)
+        tile = TargetZoomTileIndex(zoom=zoom, ti=ti)
+        path = imagepath_parameter(fif, config)
     else:
         raise BadRequestException(detail="Incoherent set of parameters.")
 

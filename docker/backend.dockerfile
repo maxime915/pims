@@ -79,7 +79,7 @@ RUN python plugins.py \
    --method dependencies_before_vips
 
 # vips
-ARG VIPS_VERSION=8.11.2
+ARG VIPS_VERSION=8.12.1
 ARG VIPS_URL=https://github.com/libvips/libvips/releases/download
 RUN cd /usr/local/src && \
     wget ${VIPS_URL}/v${VIPS_VERSION}/vips-${VIPS_VERSION}.tar.gz && \
@@ -104,8 +104,8 @@ RUN rm -rf /var/lib/apt/lists/*
 # Install python requirements
 ARG GUNICORN_VERSION=20.1.0
 COPY ./requirements.txt /app/requirements.txt
-RUN pip install gunicorn==${GUNICORN_VERSION} && \
-    pip install -r requirements.txt && \
+RUN pip install --no-cache-dir gunicorn==${GUNICORN_VERSION} && \
+    pip install --no-cache-dir -r requirements.txt && \
     python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
@@ -132,6 +132,7 @@ ENV PYTHONPATH="/app:$PYTHONPATH"
 # Add app
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
+ENV PYTHONPATH="/app:$PYTHONPATH"
 
 ENV PORT=5000
 EXPOSE ${PORT}

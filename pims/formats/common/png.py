@@ -12,11 +12,11 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from functools import cached_property
 from typing import Optional
 
 from pint import Quantity
 
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
@@ -91,9 +91,10 @@ class PNGParser(VipsParser):
         supported_units = {1: "meter", 2: "inch"}
         if type(unit) == str:
             supported_units = {"meters": "meter", "inches": "inch"}
-        if physical_size is not None and parse_float(physical_size) is not None \
-                and unit in supported_units.keys():
+        if physical_size is not None and unit in supported_units.keys():
             physical_size = parse_float(physical_size)
+            if physical_size is None or physical_size <= 0:
+                return None
             if inverse:
                 physical_size = 1 / physical_size
             return physical_size * UNIT_REGISTRY(supported_units[unit])

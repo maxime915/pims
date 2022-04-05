@@ -11,8 +11,8 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from collections import OrderedDict
 from datetime import datetime
-from functools import cached_property
 from typing import Optional
 
 import numpy as np
@@ -20,6 +20,8 @@ from pint import Quantity
 from pyvips import Image as VIPSImage
 from tifffile import TiffFile, TiffPageSeries, xml2dict
 
+from pims.api.utils.models import ChannelReduction
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.engines.omexml import OMEXML
@@ -33,6 +35,8 @@ from pims.utils import UNIT_REGISTRY
 from pims.utils.color import infer_channel_color
 from pims.utils.dict import flatten
 from pims.utils.dtypes import dtype_to_bits
+from pims.utils.iterables import ensure_list
+from pims.utils.vips import bandjoin, bandreduction, fix_rgb_interpretation
 
 
 def clean_ome_dict(d: dict) -> dict:
@@ -207,9 +211,9 @@ class OmeTiffParser(TifffileParser):
     ) -> Optional[Quantity]:
         if unit is None:
             unit = 's'
-        if time_increment in [None, 0]:
+        if time_increment is None or time_increment <= 0:
             return None
-        return 1 / time_increment * UNIT_REGISTRY(unit)
+        return 1 / (time_increment * UNIT_REGISTRY(unit))
 
     @staticmethod
     def parse_ome_physical_size(
@@ -217,7 +221,8 @@ class OmeTiffParser(TifffileParser):
     ) -> Optional[Quantity]:
         if unit is None:
             unit = 'µm'
-        if physical_size in [None, 0] or unit in ['pixel', 'reference frame']:
+        if physical_size is None or physical_size <= 0 \
+                or unit in ['pixel', 'reference frame']:
             return None
         return physical_size * UNIT_REGISTRY(unit)
 
@@ -272,41 +277,65 @@ class OmeTiffParser(TifffileParser):
 
 
 class OmeTiffReader(VipsReader):
+    def _pages_to_read(self, spp, channels, z, t):
+        pages = OrderedDict()
+        if channels is None:
+            channels = list(range(self.format.main_imd.n_channels))
+        for c in ensure_list(channels):
+            intrinsic_c = c // spp
+            s = c % spp
+            page_index = self.format.planes_info.get(
+                intrinsic_c, z, t, 'page_index'
+            )
+            if page_index in pages:
+                pages[page_index].append(s)
+            else:
+                pages[page_index] = [s]
+        return pages
+
+    def _read(self, c, z, t, vips_func, *args, **kwargs):
+        bands = list()
+        spp = self.format.main_imd.n_channels_per_read
+        for page, samples in self._pages_to_read(spp, c, z, t).items():
+            im = vips_func(*args, page=page, **kwargs)
+            if im.hasalpha():
+                im = im.flatten()
+            if im.bands != spp:
+                # Happen when there is an internal tiff colormap
+                # TODO: better handle internal colormaps
+                im = bandreduction(im.bandsplit(), ChannelReduction.MAX)
+            else:
+                im = self._extract_channels(im, samples)
+            bands.append(im)
+        im = bandjoin(bands)
+        if c == [0, 1, 2]:
+            im = fix_rgb_interpretation(im)
+        return im
+
     def read_thumb(self, out_width, out_height, precomputed=None, c=None, z=None, t=None):
         # TODO: precomputed ?
         # Thumbnail already uses shrink-on-load feature in default VipsReader
         # (i.e it loads the right pyramid level according the requested dimensions)
-        page = self.format.planes_info.get(c, z, t, 'page_index')
-        im = self.vips_thumbnail(out_width, out_height, page=page)
-        return im.flatten() if im.hasalpha() else im
+        return self._read(c, z, t, self.vips_thumbnail, out_width, out_height)
 
     def read_window(self, region, out_width, out_height, c=None, z=None, t=None):
         tier = self.format.pyramid.most_appropriate_tier(
             region, (out_width, out_height)
         )
         region = region.scale_to_tier(tier)
-
-        page = self.format.planes_info.get(c, z, t, 'page_index')
         subifd = tier.data.get('subifd')
-        opts = dict(page=page)
-        if subifd is not None:
-            opts['subifd'] = subifd
-        tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
-        return tiff_page.extract_area(
-            region.left, region.top, region.width, region.height
-        )
 
-    def read_tile(self, tile, c=None, z=None, t=None):
-        tier = tile.tier
-        page = self.format.planes_info.get(c, z, t, 'page_index')
-        subifd = tier.data.get('subifd')
-        opts = dict(page=page)
-        if subifd is not None:
-            opts['subifd'] = subifd
-        tiff_page = VIPSImage.tiffload(str(self.format.path), **opts)
-        return tiff_page.extract_area(
-            tile.left, tile.top, tile.width, tile.height
-        )
+        def read_func(path, region, page=None, subifd=None):  # noqa
+            opts = dict(page=page)
+            if subifd is not None:
+                opts['subifd'] = subifd
+            tiff_page = VIPSImage.tiffload(str(path), **opts)
+            im = tiff_page.extract_area(
+                region.left, region.top, region.width, region.height
+            )
+            return im
+
+        return self._read(c, z, t, read_func, self.format.path, region, subifd=subifd)
 
 
 class OmeTiffFormat(AbstractFormat):

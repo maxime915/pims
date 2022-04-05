@@ -14,9 +14,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, Union
 
-from pims.processing.adapters import ImagePixels
+from pims.processing.adapters import RawImagePixels
 from pims.processing.region import Region, Tile
 
 if TYPE_CHECKING:
@@ -33,8 +33,8 @@ class AbstractReader(ABC):
     @abstractmethod
     def read_thumb(
         self, out_width: int, out_height: int, precomputed: bool = None,
-        c: Optional[int] = None, z: Optional[int] = None, t: Optional[int] = None
-    ) -> ImagePixels:
+        c: Optional[Union[int, List[int]]] = None, z: Optional[int] = None, t: Optional[int] = None
+    ) -> RawImagePixels:
         """
         Get an image thumbnail whose dimensions are the nearest possible to
         asked output dimensions.
@@ -65,7 +65,7 @@ class AbstractReader(ABC):
             the thumbnail from scratch (for multi-giga pixels images), but there
             is no guarantee the precomputed thumb has the same quality.
         c
-            The asked channel index (best-effort).
+            The asked channel index(es).
             If not set, all channels are considered.
         z
             The asked z-slice index. Image formats without Z-stack support
@@ -78,15 +78,15 @@ class AbstractReader(ABC):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         raise NotImplementedError()
 
     @abstractmethod
     def read_window(
         self, region: Region, out_width: int, out_height: int,
-        c: Optional[int] = None, z: Optional[int] = None, t: Optional[int] = None
-    ) -> ImagePixels:
+        c: Optional[Union[int, List[int]]] = None, z: Optional[int] = None, t: Optional[int] = None
+    ) -> RawImagePixels:
         """
         Get an image window whose output dimensions are the nearest possible to
         asked output dimensions.
@@ -118,7 +118,7 @@ class AbstractReader(ABC):
         out_height
             The asked output height (best-effort)
         c
-            The asked channel index (best-effort).
+            The asked channel index(es).
             If not set, all channels are considered.
         z
             The asked z-slice index. Image formats without Z-stack support
@@ -131,15 +131,15 @@ class AbstractReader(ABC):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         raise NotImplementedError()
 
     @abstractmethod
     def read_tile(
         self, tile: Tile,
-        c: Optional[int] = None, z: Optional[int] = None, t: Optional[int] = None
-    ) -> ImagePixels:
+        c: Optional[Union[int, List[int]]] = None, z: Optional[int] = None, t: Optional[int] = None
+    ) -> RawImagePixels:
         """
         Get an image tile. It is a particular case of `read_window` where the
         width and height of the region described by the tile at its downsample
@@ -160,7 +160,7 @@ class AbstractReader(ABC):
         tile
             A 2D region at a given downsample (linked to a pyramid tier)
         c
-            The asked channel index (best-effort).
+            The asked channel index(es).
             If not set, all channels are considered.
         z
             The asked z-slice index. Image formats without Z-stack support
@@ -173,11 +173,11 @@ class AbstractReader(ABC):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         raise NotImplementedError()
 
-    def read_label(self, out_width: int, out_height: int) -> Optional[ImagePixels]:
+    def read_label(self, out_width: int, out_height: int) -> Optional[RawImagePixels]:
         """
         Get a precomputed image label whose output dimensions are the nearest
         possible to asked output dimensions.
@@ -202,11 +202,11 @@ class AbstractReader(ABC):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         return None
 
-    def read_macro(self, out_width: int, out_height: int) -> Optional[ImagePixels]:
+    def read_macro(self, out_width: int, out_height: int) -> Optional[RawImagePixels]:
         """
         Get a precomputed image macro whose output dimensions are the nearest
         possible to asked output dimensions.
@@ -231,6 +231,6 @@ class AbstractReader(ABC):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         return None

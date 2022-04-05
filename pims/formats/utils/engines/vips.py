@@ -12,7 +12,8 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from typing import Any
+from operator import itemgetter
+from typing import Any, List, Optional, Union
 
 import numpy as np
 import pyvips.enums
@@ -97,6 +98,19 @@ class VipsReader(AbstractReader):
             return filename + opt_string
         return filename
 
+    @staticmethod
+    def _extract_channels(im: VIPSImage, c: Optional[Union[int, List[int]]]) -> VIPSImage:
+        if c is None or im.bands == len(c):
+            return im
+        elif type(c) is int or len(c) == 1:
+            if len(c) == 1:
+                c = c[0]
+            return im.extract_band(c)
+        else:
+            channels = list(itemgetter(*c)(im))
+            im = channels[0].bandjoin(channels[1:])
+            return im
+
     def vips_thumbnail(
         self, width: int, height: int, **loader_options
     ) -> VIPSImage:
@@ -119,20 +133,32 @@ class VipsReader(AbstractReader):
             filename, width, height=height, size=VIPSSize.FORCE
         )
 
-    def read_thumb(self, out_width: int, out_height: int, **other) -> VIPSImage:
+    def read_thumb(
+        self, out_width: int, out_height: int, precomputed: bool = False,
+        c: Optional[Union[int, List[int]]] = None, **other
+    ) -> VIPSImage:
         im = self.vips_thumbnail(out_width, out_height)
-        return im.flatten() if im.hasalpha() else im
+        if im.hasalpha():
+            im = im.flatten()
+        return self._extract_channels(im, c)
 
     def read_window(
-        self, region: Region, out_width: int, out_height: int, **other
+        self, region: Region, out_width: int, out_height: int,
+        c: Optional[Union[int, List[int]]] = None, **other
     ) -> VIPSImage:
         image = cached_vips_file(self.format)
         region = region.scale_to_tier(self.format.pyramid.base)
         im = image.crop(region.left, region.top, region.width, region.height)
-        return im.flatten() if im.hasalpha() else im
+        if im.hasalpha():
+            im = im.flatten()
+        return self._extract_channels(im, c)
 
-    def read_tile(self, tile: Tile, **other) -> VIPSImage:
-        return self.read_window(tile, int(tile.width), int(tile.height))
+    def read_tile(
+        self, tile: Tile, c: Optional[Union[int, List[int]]] = None, **other
+    ) -> VIPSImage:
+        return self.read_window(
+            tile, int(tile.width), int(tile.height), c, **other
+        )
 
 
 # [HISTOGRAM REFACTORING] Not used in practice ? to delete ?

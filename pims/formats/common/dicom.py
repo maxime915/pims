@@ -13,7 +13,6 @@
 #  * limitations under the License.
 import logging
 from datetime import datetime
-from functools import cached_property
 from typing import List, Optional, Union
 
 import numpy as np
@@ -21,9 +20,12 @@ from pint import Quantity
 from pydicom import FileDataset, dcmread
 from pydicom.dicomdir import DicomDir
 from pydicom.multival import MultiValue
+from pydicom.uid import ImplicitVRLittleEndian
+from shapely.affinity import affine_transform
 from shapely.errors import WKTReadingError
 from shapely.wkt import loads as wkt_loads
 
+from pims.cache import cached_property
 from pims.formats.utils.abstract import (
     AbstractFormat, CachedDataPath
 )
@@ -43,9 +45,16 @@ from pims.utils.types import parse_float
 log = logging.getLogger("pims.formats")
 
 
+def _pydicom_dcmread(path, *args, **kwargs):
+    dcm = dcmread(path, *args, **kwargs)
+    if not hasattr(dcm.file_meta, 'TransferSyntaxUID'):
+        dcm.file_meta.TransferSyntaxUID = ImplicitVRLittleEndian
+    return dcm
+
+
 def cached_dcmread(format: AbstractFormat) -> Union[FileDataset, DicomDir]:
     return format.get_cached(
-        '_dcmread', dcmread, format.path.resolve(), force=True
+        '_dcmread', _pydicom_dcmread, format.path.resolve(), force=True
     )
 
 
@@ -130,9 +139,11 @@ class DicomParser(AbstractParser):
             return None
 
     @staticmethod
-    def parse_physical_size(physical_size: str) -> Optional[Quantity]:
-        if physical_size is not None and parse_float(physical_size) is not None:
-            return parse_float(physical_size) * UNIT_REGISTRY("millimeter")
+    def parse_physical_size(physical_size: Optional[str]) -> Optional[Quantity]:
+        if physical_size is not None:
+            physical_size = parse_float(physical_size)
+            if physical_size is not None and physical_size > 0:
+                return physical_size * UNIT_REGISTRY("millimeter")
         return None
 
     def parse_raw_metadata(self) -> MetadataStore:
@@ -170,6 +181,7 @@ class DicomParser(AbstractParser):
         """
         ds = cached_dcmread(self.format)
         channels = list(range(self.format.main_imd.n_channels))
+        im_height = self.format.main_imd.height
         parsed_annots = []
         annots_sq = ds.get((0x77, 0x1901))
         if annots_sq and annots_sq.VR == "SQ":
@@ -178,6 +190,10 @@ class DicomParser(AbstractParser):
                     wkt = annot.get((0x77, 0x1911))
                     if wkt.value is not None:
                         geometry = wkt_loads(wkt.value)
+                        # Change LEFT_BOTTOM origin to LEFT_TOP
+                        geometry = affine_transform(
+                            geometry, [1, 0, 0, -1, 0, im_height - 0.5]
+                        )
                         parsed = ParsedMetadataAnnotation(
                             geometry, channels, 0, 0
                         )
