@@ -20,17 +20,18 @@ import numpy as np
 import zarr as zarr
 from skimage.exposure import histogram
 
-from pims.api.utils.models import HistogramType
+from pims.api.utils.models import Colorspace, HistogramType
 from pims.api.utils.output_parameter import get_thumb_output_dimensions
 from pims.config import get_settings
 from pims.files.file import Path
 from pims.files.histogram import Histogram
-from pims.processing.adapters import convert_to
 from pims.processing.histograms import ZarrHistogramFormat
 from pims.processing.histograms.format import (
     ZHF_ATTR_FORMAT, ZHF_ATTR_TYPE, ZHF_BOUNDS, ZHF_HIST, ZHF_PER_CHANNEL, ZHF_PER_IMAGE,
     ZHF_PER_PLANE
 )
+from pims.processing.pixels import ImagePixels
+from pims.utils.math import max_intensity
 
 MAX_PIXELS_COMPLETE_HISTOGRAM = get_settings().max_pixels_complete_histogram
 MAX_LENGTH_COMPLETE_HISTOGRAM = get_settings().max_length_complete_histogram
@@ -54,7 +55,7 @@ def argmax_nonzero(arr, axis=-1):
 
 def clamp_histogram(hist, bounds=None) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Clamp an histogram between bounds (inclusive). If bounds are not set,
+    Clamp a 1D histogram between bounds (inclusive). If bounds are not set,
     bounds are computed so that the histogram is clamped between first and last
     non-zero values.
 
@@ -70,33 +71,64 @@ def clamp_histogram(hist, bounds=None) -> Tuple[np.ndarray, np.ndarray]:
     return hist[inf:sup + 1], np.arange(inf, sup + 1)
 
 
+def rescale_histogram(hist: np.ndarray, bitdepth: int) -> np.ndarray:
+    """
+    Rescale a 1D histogram or a list of 1D histograms for a given bit depth.
+    It is used to rescale values so that out = in * (pow(2, bitdepth) - 1)
+    """
+    multi = hist.ndim > 1
+    if multi:
+        hist = np.atleast_2d(hist)
+
+    hist = hist.reshape(
+        (hist.shape[0], max_intensity(bitdepth, count=True), -1)
+    ).sum(axis=2)
+
+    if multi:
+        return np.squeeze(hist)
+    return hist
+
+
+def change_colorspace_histogram(
+    hist: np.ndarray, colorspace: Colorspace
+) -> np.ndarray:
+    """
+    Transform a 1D histogram or a list of 1D histograms colorspace if
+    needed.
+    """
+    multi = hist.ndim > 1
+    if multi:
+        hist = np.atleast_2d(hist)
+
+    n_channels = hist.shape[0]
+    if colorspace == Colorspace.GRAY and n_channels != 1:
+        n_used_channels = min(n_channels, 3)
+        luminance = np.array([[0.2125, 0.7154, 0.0721]])
+        hist = luminance[:, :n_used_channels] @ hist[:n_used_channels]
+    elif colorspace == Colorspace.COLOR and n_channels != 3:
+        return np.vstack((hist, hist, hist))
+
+    if multi:
+        return np.squeeze(hist)
+    return hist
+
+
 def _extract_np_thumb(image):
     tw, th = get_thumb_output_dimensions(
         image, length=MAX_LENGTH_COMPLETE_HISTOGRAM, allow_upscaling=False
     )
     ratio = image.n_pixels / (tw * th)
 
-    # TODO: refactor this (see image_response.py process())
-    def channels_for_read(read, in_image):
-        first = read * in_image.n_channels_per_read
-        last = min(in_image.n_channels, first + in_image.n_channels_per_read)
-        return range(first, last)
-
-    n_c_reads = int(np.ceil(image.n_channels / image.n_channels_per_read))
+    c_chunk_size = 256
     for t in range(image.duration):
         for z in range(image.depth):
-            for c_read in range(n_c_reads):
-                c_range = channels_for_read(c_read, image)
-                c = c_range[0]  # TODO
-                thumb = image.thumbnail(tw, th, precomputed=False, c=c, t=t, z=z)
-                npthumb = np.atleast_3d(convert_to(thumb, np.ndarray))
-                if npthumb.shape[2] != len(c_range):
-                    # TODO: improve palette support! !! if we get more channels than expected,
-                    #  we have a color palette image For now, try to discard the palette by only
-                    #  keeping the expected channel in the response
-                    mod_range = [c % npthumb.shape[2] for c in c_range]
-                    npthumb = npthumb[:, :, mod_range]
-                yield npthumb, c_range, z, t, ratio
+            for i in range(0, image.n_channels, c_chunk_size):
+                c = range(i, min(image.n_channels, i + c_chunk_size))
+
+                thumb = ImagePixels(
+                    image.thumbnail(tw, th, precomputed=False, c=list(c), t=t, z=z)
+                ).int_clip()
+                yield thumb.np_array(), c, z, t, ratio
 
 
 def build_histogram_file(
@@ -121,7 +153,7 @@ def build_histogram_file(
     histogram : Histogram
         The zarr histogram file in read-only mode
     """
-    n_values = 2 ** in_image.significant_bits
+    n_values = 2 ** min(in_image.significant_bits, 16)
 
     if in_image.n_pixels <= MAX_PIXELS_COMPLETE_HISTOGRAM:
         extract_fn = _extract_np_thumb

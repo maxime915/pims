@@ -20,7 +20,7 @@ def get_image(path, filename):
     filepath = os.path.join(path, filename)
     # If image does not exist locally -> download image
     if not os.path.exists(path):
-        os.mkdir("/data/pims/upload_test_jpeg")
+        os.mkdir(path)
 
     if not os.path.exists(filepath):
         try:
@@ -32,8 +32,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path, "processed")):
         try:
-            fi = FileImporter("/data/pims/upload_test_jpeg/{filename}")
-            fi.upload_dir = "/data/pims/upload_test_jpeg"
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
             fi.mkdir(fi.processed_dir)
         except Exception as e:
@@ -42,8 +42,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path,"processed/visualisation.JPEG")):
         if os.path.exists(os.path.join(path, "processed")):
-            fi = FileImporter(f"/data/pims/upload_test_jpeg/{filename}")
-            fi.upload_dir = "/data/pims/upload_test_jpeg"
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
         try:
             fi.upload_path = Path(filepath)
@@ -59,8 +59,8 @@ def get_image(path, filename):
 
     if not os.path.exists(os.path.join(path, "processed/histogram")):
         if os.path.exists(os.path.join(path, "processed")):
-            fi = FileImporter(f"/data/pims/upload_test_jpeg/{filename}")
-            fi.upload_dir = Path("/data/pims/upload_test_jpeg")
+            fi = FileImporter(filepath)
+            fi.upload_dir = path
             fi.processed_dir = fi.upload_dir / Path("processed")
             original_filename = Path(f"{ORIGINAL_STEM}.JPEG")
             fi.original_path = fi.processed_dir / original_filename

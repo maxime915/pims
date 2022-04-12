@@ -1,4 +1,4 @@
-#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2022. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -12,8 +12,14 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 
-from uuid import uuid4
+import asyncio
+
+from starlette.concurrency import run_in_threadpool
 
 
-def unique_name_generator():
-    return f"-{uuid4()}"
+async def exec_func_async(func, *args, **kwargs):
+    is_async = asyncio.iscoroutinefunction(func)
+    if is_async:
+        return await func(*args, **kwargs)
+    else:
+        return await run_in_threadpool(func, *args, **kwargs)

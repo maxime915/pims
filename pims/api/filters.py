@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from pims.api.exceptions import FilterNotFoundProblem
 from pims.api.utils.models import CollectionSize, FilterId, FilterType
-from pims.api.utils.response import response_list
+from pims.api.utils.response import FastJsonResponse, response_list
 from pims.filters import FILTERS
 
 router = APIRouter()
@@ -57,7 +57,10 @@ def _serialize_filter(imgfilter):
     )
 
 
-@router.get('/filters', response_model=FiltersList, tags=api_tags)
+@router.get(
+    '/filters', response_model=FiltersList, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def list_filters():
     """
     List all filters
@@ -66,7 +69,10 @@ def list_filters():
     return response_list(filters)
 
 
-@router.get('/filters/{filter_id}', response_model=Filter, tags=api_tags)
+@router.get(
+    '/filters/{filter_id}', response_model=Filter, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def show_filter(filter_id: str):
     """
     Get a filter

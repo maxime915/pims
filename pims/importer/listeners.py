@@ -18,9 +18,11 @@ from enum import Enum
 from typing import Dict, Iterator, Optional, Tuple, Union
 
 from cytomine.models import (
-    AbstractImage, AbstractSlice, AbstractSliceCollection, ImageInstance, ProjectCollection,
+    AbstractImage, AbstractSlice, AbstractSliceCollection, Annotation, AnnotationCollection,
+    ImageInstance,
+    ProjectCollection,
     Property,
-    PropertyCollection, UploadedFile
+    PropertyCollection, Term, TermCollection, UploadedFile
 )
 from cytomine.models.collection import CollectionPartialUploadException
 
@@ -30,6 +32,7 @@ from pims.files.file import Path
 from pims.files.image import Image
 from pims.formats import AbstractFormat
 from pims.utils.dtypes import dtype_to_bits
+from pims.utils.iterables import flatten
 from pims.utils.types import parse_int
 
 PENDING_PATH = Path(get_settings().pending_path)
@@ -299,7 +302,7 @@ class CytomineListener(ImportListener):
             uf.contentType = format.get_identifier()  # TODO
             uf.size = unpacked_path.size
             uf.filename = str(unpacked_path.relative_to(FILE_ROOT_PATH))
-            uf.originalFilename = str(format.path.name)
+            uf.originalFilename = str(format.main_path.name)
             uf.ext = ""
             uf.storage = parent.storage
             uf.user = parent.user
@@ -407,8 +410,12 @@ class CytomineListener(ImportListener):
         ai.height = image.height
         ai.depth = image.depth
         ai.duration = image.duration
-        ai.channels = image.n_intrinsic_channels
-        ai.extrinsicChannels = image.n_channels
+
+        # Cytomine "channels" = number of concrete channels
+        ai.channels = image.n_concrete_channels
+        ai.samplePerPixel = image.n_samples
+        ai.bitPerSample = dtype_to_bits(image.pixel_type)
+
         if image.physical_size_x:
             ai.physicalSizeX = round(
                 convert_quantity(image.physical_size_x, "micrometers"), 6
@@ -421,27 +428,37 @@ class CytomineListener(ImportListener):
             ai.physicalSizeZ = round(
                 convert_quantity(image.physical_size_z, "micrometers"), 6
             )
-        ai.fps = image.frame_rate
+        if image.frame_rate:
+            ai.fps = round(
+                convert_quantity(image.frame_rate, "Hz"), 6
+            )
         ai.magnification = parse_int(image.objective.nominal_magnification)
-        ai.bitPerSample = dtype_to_bits(image.pixel_type)
-        ai.samplePerPixel = image.n_channels / image.n_intrinsic_channels
+
         ai.save()
         self.abstract_images.append(ai)
 
         asc = AbstractSliceCollection()
-        set_channel_names = image.n_intrinsic_channels == image.n_channels
-        for c in range(image.n_intrinsic_channels):
-            name = None
-            color = None
-            if set_channel_names:
-                name = image.channels[c].suggested_name
-                color = image.channels[c].hex_color
+        for cc in range(image.n_concrete_channels):
+            first_c = cc * image.n_samples
+
+            name = image.channels[first_c].suggested_name
+            color = image.channels[first_c].hex_color
+            if image.n_samples != 1:
+                names = [
+                    image.channels[i].suggested_name
+                    for i in range(first_c, first_c + image.n_samples)
+                    if image.channels[i].suggested_name is not None
+                ]
+                names = list(dict.fromkeys(names))  # ordered uniqueness
+                name = '|'.join(names)
+                color = None
+
             for z in range(image.depth):
                 for t in range(image.duration):
                     mime = "image/pyrtiff"  # TODO: remove
                     asc.append(
                         AbstractSlice(
-                            ai.id, uf.id, mime, c, z, t,
+                            ai.id, uf.id, mime, cc, z, t,
                             channelName=name, channelColor=color
                         )
                     )
@@ -474,6 +491,54 @@ class CytomineListener(ImportListener):
         for p in self.projects:
             instances.append(ImageInstance(ai.id, p.id).save())
         self.images.append((ai, instances))
+
+        # TODO: temporary add annotations for backwards compatibility.
+        #  BUT it should be done by core when an image instance is created.
+        if image.n_planes == 1 and len(instances) > 0:
+            # TODO: currently only supports metadata annots on 2D images
+
+            metadata_annots = image.annotations
+            if len(metadata_annots) > 0:
+                metadata_terms = [ma.terms for ma in metadata_annots if len(ma.terms) > 0]
+                metadata_terms = set(flatten(metadata_terms))
+
+                for instance in instances:
+                    project_id = instance.project
+                    project = self.projects.find_by_attribute('id', project_id)
+                    ontology_id = project.ontology  # noqa
+                    ontology_terms = TermCollection().fetch_with_filter("project", project_id)
+                    terms_id_mapping = {t.name: t.id for t in ontology_terms}
+
+                    for metadata_term in metadata_terms:
+                        if metadata_term not in terms_id_mapping:
+                            # TODO: user must have ontology rights !
+                            term = Term(
+                                name=metadata_term, id_ontology=ontology_id,
+                                color="#AAAAAA"
+                            ).save()
+                            terms_id_mapping[term.name] = term.id
+
+                    annots = AnnotationCollection()
+                    for metadata_annot in metadata_annots:
+                        term_ids = [terms_id_mapping[t] for t in metadata_annot.terms]
+                        properties = [
+                            dict(key=k, value=v)
+                            for k, v in metadata_annot.properties.items()
+                        ]
+                        annots.append(Annotation(
+                            location=metadata_annot.wkt,
+                            id_image=instance.id,
+                            id_terms=term_ids if len(term_ids) > 0 else None,
+                            properties=properties if len(properties) > 0 else None,
+                            user=uf.user
+                        ))
+
+                    try:
+                        annots.save()
+                    except CollectionPartialUploadException:
+                        pass
+                        # TODO: improve handling of this exception,
+                        #  but prevent to fail the import
 
     def file_not_moved(self, path: Path, *args, **kwargs):
         uf = self.get_uf(path)

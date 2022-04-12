@@ -327,11 +327,16 @@ DEFAULT_CHANNEL_COLORMAPS = {
     5: ALL_COLORMAPS['YELLOW']
 }
 
+BLACK_COLORMAP = ALL_COLORMAPS['BLACK']
+
 RGB_COLORMAPS = [
     ALL_COLORMAPS['RED'], ALL_COLORMAPS['LIME'], ALL_COLORMAPS['BLUE']
 ]
 
+RG_COLORMAPS = RGB_COLORMAPS[:2]
+
 
 def is_rgb_colormapping(colormaps: List[Colormap]) -> bool:
-    """Check that given colormaps correspond to a RGB colormapping."""
-    return len(colormaps) == 3 and colormaps == RGB_COLORMAPS
+    """Check that given colormaps correspond to a RG(B) colormapping."""
+    return ((len(colormaps) == 3 and colormaps == RGB_COLORMAPS)
+            or (len(colormaps) == 2 and colormaps == RG_COLORMAPS))

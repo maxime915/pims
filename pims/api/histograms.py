@@ -12,6 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import itertools
+import operator
 from typing import List, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, Response
@@ -25,7 +26,7 @@ from pims.api.utils.input_parameter import (
 )
 from pims.api.utils.models import CollectionSize, HistogramType
 from pims.api.utils.parameter import imagepath_parameter
-from pims.api.utils.response import response_list
+from pims.api.utils.response import FastJsonResponse, response_list
 from pims.files.file import HISTOGRAM_STEM, Path
 from pims.processing.histograms.utils import argmax_nonzero, argmin_nonzero, build_histogram_file
 from pims.utils.iterables import ensure_list
@@ -155,7 +156,8 @@ class HistogramConfig:
 
 @router.get(
     '/image/{filepath:path}/histogram/per-image',
-    tags=api_tags, response_model=Histogram
+    tags=api_tags, response_model=Histogram,
+    response_class=FastJsonResponse
 )
 def show_image_histogram(
     path: Path = Depends(imagepath_parameter),
@@ -180,7 +182,8 @@ def show_image_histogram(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-image/bounds',
-    tags=api_tags, response_model=HistogramInfo
+    tags=api_tags, response_model=HistogramInfo,
+    response_class=FastJsonResponse
 )
 def show_image_histogram_bounds(
     path: Path = Depends(imagepath_parameter)
@@ -198,7 +201,8 @@ def show_image_histogram_bounds(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-channels',
-    tags=api_tags, response_model=ChannelsHistogramCollection
+    tags=api_tags, response_model=ChannelsHistogramCollection,
+    response_class=FastJsonResponse
 )
 def show_channels_histogram(
     path: Path = Depends(imagepath_parameter),
@@ -219,6 +223,10 @@ def show_channels_histogram(
     histograms = []
     n_bins = parse_n_bins(hist_config.n_bins, len(in_image.value_range))
     htype = in_image.histogram_type()
+
+    # hist_filter = operator.itemgetter(*channels)
+    # channels_bounds = hist_filter(in_image.channels_bounds())
+    # channels_histograms = hist_filter(in_image.channel_histogram()) TODO
     for channel in channels:
         histograms.append(
             ChannelHistogram(
@@ -237,7 +245,8 @@ def show_channels_histogram(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-channels/bounds',
-    tags=api_tags, response_model=ChannelsHistogramInfoCollection
+    tags=api_tags, response_model=ChannelsHistogramInfoCollection,
+    response_class=FastJsonResponse
 )
 def show_channels_histogram_bounds(
     path: Path = Depends(imagepath_parameter),
@@ -256,8 +265,13 @@ def show_channels_histogram_bounds(
 
     hist_info = []
     htype = in_image.histogram_type()
-    for channel in channels:
-        mini, maxi = in_image.channel_bounds(channel)
+    hist_filter = operator.itemgetter(*channels)
+    channels_bounds = hist_filter(in_image.channels_bounds())
+    if len(channels) == 1:
+        channels_bounds = [channels_bounds]
+
+    for channel, bounds in zip(channels, channels_bounds):
+        mini, maxi = bounds
         hist_info.append(
             ChannelHistogramInfo(
                 channel=channel, type=htype,
@@ -271,7 +285,8 @@ def show_channels_histogram_bounds(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}',
-    tags=api_tags, response_model=PlaneHistogramCollection
+    tags=api_tags, response_model=PlaneHistogramCollection,
+    response_class=FastJsonResponse
 )
 def show_plane_histogram(
     z_slices: conint(ge=0),
@@ -317,7 +332,8 @@ def show_plane_histogram(
 
 @router.get(
     '/image/{filepath:path}/histogram/per-plane/z/{z_slices}/t/{timepoints}/bounds',
-    tags=api_tags, response_model=PlaneHistogramInfoCollection
+    tags=api_tags, response_model=PlaneHistogramInfoCollection,
+    response_class=FastJsonResponse
 )
 def show_plane_histogram(
     z_slices: conint(ge=0),

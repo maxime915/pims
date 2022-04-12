@@ -32,7 +32,10 @@ from pims.files.file import (
 from pims.files.histogram import Histogram
 from pims.files.image import Image
 from pims.formats import AbstractFormat
-from pims.formats.utils.factories import FormatFactory, SpatialReadableFormatFactory
+from pims.formats.utils.factories import (
+    ImportableFormatFactory,
+    SpatialReadableFormatFactory
+)
 from pims.importer.listeners import (
     CytomineListener, ImportEventType, ImportListener,
     StdoutListener
@@ -126,7 +129,8 @@ class FileImporter:
         for listener in self.listeners:
             try:
                 getattr(listener, method)(*args, **kwargs)
-            except AttributeError:
+            except AttributeError as e:
+                log.error(e)
                 log.warning(f"No method {method} for import listener {listener}")
 
     def run(self, prefer_copy: bool = False):
@@ -185,7 +189,7 @@ class FileImporter:
             # Identify format
             self.notify(ImportEventType.START_FORMAT_DETECTION, self.upload_path)
 
-            format_factory = FormatFactory()
+            format_factory = ImportableFormatFactory()
             format = format_factory.match(self.upload_path)
             archive = None
             if format is None:
@@ -233,6 +237,7 @@ class FileImporter:
                     new_original_path = self.processed_dir / original_filename
                     self.move(self.original_path, new_original_path)
                     self.original_path = new_original_path
+                    format = format.__class__(self.original_path)
 
                     self.notify(
                         ImportEventType.END_UNPACKING, self.upload_path,
@@ -425,7 +430,7 @@ class FileImporter:
             task = Task.IMPORT
 
         imported = list()
-        format_factory = FormatFactory()
+        format_factory = ImportableFormatFactory()
         tasks = list()
         # Collection children are extracted recursively into collection
         # directories, until the directory is an image format (we can thus have

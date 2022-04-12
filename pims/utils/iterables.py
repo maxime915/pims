@@ -11,7 +11,7 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from typing import Any, List, Optional, Sized, TypeVar, Union
+from typing import Any, Dict, Iterable, List, Optional, Sized, TypeVar, Union
 
 from pims.api.exceptions import BadRequestException
 
@@ -106,8 +106,30 @@ def check_array_size(
 
     if not len(iterable) in allowed:
         name = 'A parameter' if not name else name
-        allowed_str = ', '.join([str(i) for i in allowed])
+        allowed_str = ', '.join([str(i) for i in set(allowed)])
         raise BadRequestException(
             f'{name} has a size of {len(iterable)} '
             f'while only these sizes are allowed: {allowed_str}'
         )
+
+
+def check_array_size_parameters(
+    parameter_names: Iterable[str], parameters: Dict, allowed: List[int],
+    nullable: bool = True
+):
+    for name in parameter_names:
+        value = parameters.get(name)
+        check_array_size(
+            value, allowed=allowed, nullable=nullable, name=name
+        )
+
+
+def flatten(t):
+    return [item for sublist in t for item in sublist]
+
+
+def product(iterable):
+    prod = 1
+    for i in iterable:
+        prod *= i
+    return prod

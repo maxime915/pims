@@ -11,9 +11,12 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from typing import List
 
 import numpy as np
+from pyvips import Image as VIPSImage, Interpretation as VIPSInterpretation, Operation  # noqa
 
+from pims.api.utils.models import ChannelReduction
 from pims.utils.dtypes import bits_to_str_dtype
 
 vips_format_to_dtype = {
@@ -62,3 +65,35 @@ format_to_vips_suffix = {
 def vips_dtype(bits: int) -> str:
     """VIPS format for a given number of bits."""
     return dtype_to_vips_format[bits_to_str_dtype(bits)]
+
+
+def bandjoin(bands: List[VIPSImage]) -> VIPSImage:
+    if len(bands) == 1:
+        return bands[0]
+
+    return Operation.call('bandjoin', bands)
+
+
+def bandjoin_rgb(bands: List[VIPSImage]) -> VIPSImage:
+    return fix_rgb_interpretation(bandjoin(bands))
+
+
+def fix_rgb_interpretation(im: VIPSImage) -> VIPSImage:
+    if im.interpretation == VIPSInterpretation.GREY16:
+        im = im.copy(interpretation=VIPSInterpretation.RGB16)
+    elif im.interpretation == VIPSInterpretation.B_W:
+        im = im.copy(interpretation=VIPSInterpretation.SRGB)
+    return im
+
+
+def bandreduction(bands: List[VIPSImage], reduction: ChannelReduction) -> VIPSImage:
+    if reduction == ChannelReduction.ADD:
+        return VIPSImage.sum(bands).cast(bands[0].format)
+    elif reduction == ChannelReduction.MAX:
+        return Operation.call('bandrank', bands, index=len(bands) - 1)
+    elif reduction == ChannelReduction.MIN:
+        return Operation.call('bandrank', bands, index=0)
+    elif reduction == ChannelReduction.MED:
+        return Operation.call('bandrank', bands, index=-1)
+    else:
+        raise ValueError(f"{reduction} not implemented")

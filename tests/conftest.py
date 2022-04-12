@@ -99,19 +99,19 @@ def client(app):
 @pytest.fixture
 def image_path_jpeg():
 	filename = "cytomine-org-logo.jpeg"
-	path = "/data/pims/upload_test_jpeg/"
+	path = f"{test_root()}/upload_test_jpeg/"
 	return path, filename
 
 @pytest.fixture
 def image_path_png():
 	filename = "cytomine-org-logo.png"
-	path = "/data/pims/upload_test_png/"
+	path = f"{test_root()}/upload_test_png/"
 	return path, filename
 
 @pytest.fixture
 def image_path_tiff():
 	filename = "earthworm-transv-posterior-to-clitellum-02.tiff"
-	path = "/data/pims/upload_test_tiff/"
+	path = f"{test_root()}/upload_test_tiff/"
 	return path, filename
 	
 	

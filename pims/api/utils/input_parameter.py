@@ -86,7 +86,7 @@ def parse_region(
 
 
 def parse_planes(
-    planes_to_parse: List[int], n_planes: int, default: Union[int, List[int]] = 0,
+    planes_to_parse: List[Union[int, str]], n_planes: int, default: Union[int, List[int]] = 0,
     name: str = 'planes'
 ) -> List[int]:
     """
@@ -135,7 +135,7 @@ def parse_planes(
     return plane_set
 
 
-def get_channel_indexes(image: Image, planes: List[int]) -> List[int]:
+def get_channel_indexes(image: Image, planes: List[Union[int, str]]) -> List[int]:
     """
     Image channels used to render the response.
     This parameter is interpreted as a set such that duplicates are ignored.

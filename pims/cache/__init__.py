@@ -1,4 +1,4 @@
-#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2022. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -12,8 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 
-from uuid import uuid4
-
-
-def unique_name_generator():
-    return f"-{uuid4()}"
+from .memory import IMAGE_CACHE
+# Package import sugars to hide cache module complexity to plugin developers.
+from .object import SimpleDataCache, cached_property, safe_cached_property
+from .redis import cache_data, cache_image_response, startup_cache

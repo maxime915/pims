@@ -352,10 +352,9 @@ class ImageMetadata(_MetadataStorable):
     width: int
     height: int
     depth: int
-    n_channels: int
     duration: int
-    _n_intrinsic_channels: Optional[int]
-    n_channels_per_read: int
+    n_samples: int
+    n_concrete_channels: int
     n_distinct_channels: int
     pixel_type: np.dtype
     significant_bits: int
@@ -373,8 +372,8 @@ class ImageMetadata(_MetadataStorable):
     associated_macro: ImageAssociated
 
     __slots__ = (
-        'width', 'height', 'n_channels', 'duration', '_n_intrinsic_channels',
-        'n_channels_per_read', 'n_distinct_channels', 'pixel_type',
+        'width', 'height', 'duration', 'n_concrete_channels',
+        'n_samples', 'n_distinct_channels', 'pixel_type',
         'significant_bits', 'physical_size_x', 'physical_size_y',
         'physical_size_z', 'frame_rate', 'acquisition_datetime',
         'description', 'channels', 'objective', 'microscope',
@@ -387,11 +386,9 @@ class ImageMetadata(_MetadataStorable):
         self.width = 1
         self.height = 1
         self.depth = 1
-        self.n_channels = 1
         self.duration = 1
 
-        self._n_intrinsic_channels = None
-        self.n_channels_per_read = 1
+        self.n_samples = 1
         self.n_distinct_channels = 1
 
         self.pixel_type = np.dtype('uint8')
@@ -428,16 +425,9 @@ class ImageMetadata(_MetadataStorable):
         self._is_complete = value
 
     @property
-    def n_intrinsic_channels(self) -> int:
-        if self._n_intrinsic_channels is not None:
-            return self._n_intrinsic_channels
-        else:
-            return self.n_channels
-
-    @n_intrinsic_channels.setter
-    def n_intrinsic_channels(self, value: int):
-        self._n_intrinsic_channels = value
+    def n_channels(self) -> int:
+        return self.n_samples * self.n_concrete_channels
 
     @property
     def n_planes(self) -> int:
-        return self.n_intrinsic_channels * self.depth * self.duration
+        return self.n_concrete_channels * self.depth * self.duration

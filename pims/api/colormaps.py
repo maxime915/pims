@@ -24,7 +24,7 @@ from pims.api.utils.mimetype import (
     extension_path_parameter, get_output_format
 )
 from pims.api.utils.models import CollectionSize, ColormapId
-from pims.api.utils.response import response_list
+from pims.api.utils.response import FastJsonResponse, response_list
 from pims.processing.colormaps import COLORMAPS, ColormapType
 from pims.processing.image_response import ColormapRepresentationResponse
 
@@ -55,7 +55,10 @@ def _serialize_colormap(cmap):
     )
 
 
-@router.get('/colormaps', response_model=ColormapsList, tags=api_tags)
+@router.get(
+    '/colormaps', response_model=ColormapsList, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def list_colormaps(
     with_inverted: bool = Query(
         False, description="Also list inverted colormaps"
@@ -72,7 +75,10 @@ def list_colormaps(
     return response_list(colormaps)
 
 
-@router.get('/colormaps/{colormap_id}', response_model=Colormap, tags=api_tags)
+@router.get(
+    '/colormaps/{colormap_id}', response_model=Colormap, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def show_colormap(colormap_id: str):
     """
     Get a colormap

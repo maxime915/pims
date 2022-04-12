@@ -13,17 +13,17 @@
 #  * limitations under the License.
 from __future__ import annotations
 
-from functools import cached_property
-from typing import List, Optional, TYPE_CHECKING, Tuple
+from typing import List, Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from pint import Quantity
 
 from pims.api.exceptions import NoMatchingFormatProblem
+from pims.cache import cached_property
 from pims.files.file import Path
 from pims.formats.utils.factories import FormatFactory
 from pims.formats.utils.structures.pyramid import normalized_pyramid
-from pims.processing.adapters import ImagePixels
+from pims.processing.adapters import RawImagePixels
 from pims.processing.region import Region, Tile
 
 if TYPE_CHECKING:
@@ -109,16 +109,16 @@ class Image(Path):
         return self._format.main_imd.n_channels
 
     @property
-    def n_intrinsic_channels(self) -> int:
-        return self._format.main_imd.n_intrinsic_channels
+    def n_concrete_channels(self) -> int:
+        return self._format.main_imd.n_concrete_channels
 
     @property
     def n_distinct_channels(self) -> int:
         return self._format.main_imd.n_distinct_channels
 
     @property
-    def n_channels_per_read(self) -> int:
-        return self._format.main_imd.n_channels_per_read
+    def n_samples(self) -> int:
+        return self._format.main_imd.n_samples
 
     @property
     def n_planes(self) -> int:
@@ -228,9 +228,9 @@ class Image(Path):
         return self.histogram.plane_histogram(c, z, t)
 
     def tile(
-        self, tile: Tile, c: Optional[int] = None, z: Optional[int] = None,
+        self, tile: Tile, c: Optional[Union[int, List[int]]] = None, z: Optional[int] = None,
         t: Optional[int] = None
-    ) -> ImagePixels:
+    ) -> RawImagePixels:
         """
         Get a tile.
 
@@ -243,7 +243,7 @@ class Image(Path):
         tile
             A 2D region at a given downsample (linked to a pyramid tier)
         c
-            The asked channel index (best-effort).
+            The asked channel index(es).
             If not set, all channels are considered.
         z
             The asked z-slice index. Image formats without Z-stack support
@@ -256,7 +256,7 @@ class Image(Path):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         try:
             return self._format.reader.read_tile(tile, c=c, z=z, t=t)
@@ -266,9 +266,9 @@ class Image(Path):
 
     def window(
         self, region: Region, out_width: int, out_height: int,
-        c: Optional[int] = None, z: Optional[int] = None,
+        c: Optional[Union[int, List[int]]] = None, z: Optional[int] = None,
         t: Optional[int] = None
-    ) -> ImagePixels:
+    ) -> RawImagePixels:
         """
         Get an image window whose output dimensions are the nearest possible to
         asked output dimensions.
@@ -293,7 +293,7 @@ class Image(Path):
         out_height
             The asked output height (best-effort)
         c
-            The asked channel index (best-effort).
+            The asked channel index(es).
             If not set, all channels are considered.
         z
             The asked z-slice index. Image formats without Z-stack support
@@ -306,7 +306,7 @@ class Image(Path):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         try:
             return self._format.reader.read_window(
@@ -318,8 +318,8 @@ class Image(Path):
 
     def thumbnail(
         self, out_width: int, out_height: int, precomputed: bool = False,
-        c: Optional[int] = None, z: Optional[int] = None, t: Optional[int] = None
-    ) -> ImagePixels:
+        c: Optional[Union[int, List[int]]] = None, z: Optional[int] = None, t: Optional[int] = None
+    ) -> RawImagePixels:
         """
         Get an image thumbnail whose dimensions are the nearest possible to
         asked output dimensions.
@@ -344,7 +344,7 @@ class Image(Path):
         precomputed
             Whether use precomputed thumbnail stored in the file if available.
         c
-            The asked channel index (best-effort).
+            The asked channel index(es).
             If not set, all channels are considered.
         z
             The asked z-slice index. Image formats without Z-stack support
@@ -357,7 +357,7 @@ class Image(Path):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         try:
             return self._format.reader.read_thumb(
@@ -367,7 +367,7 @@ class Image(Path):
             # Get thumbnail from window ?
             raise e
 
-    def label(self, out_width: int, out_height: int) -> Optional[ImagePixels]:
+    def label(self, out_width: int, out_height: int) -> Optional[RawImagePixels]:
         """
         Get a precomputed image label whose output dimensions are the nearest
         possible to asked output dimensions.
@@ -388,7 +388,7 @@ class Image(Path):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         if not self.associated_label.exists:
             return None
@@ -397,7 +397,7 @@ class Image(Path):
         except NotImplementedError:
             return None
 
-    def macro(self, out_width: int, out_height: int) -> Optional[ImagePixels]:
+    def macro(self, out_width: int, out_height: int) -> Optional[RawImagePixels]:
         """
         Get a precomputed image macro whose output dimensions are the nearest
         possible to asked output dimensions.
@@ -418,7 +418,7 @@ class Image(Path):
 
         Returns
         -------
-        ImagePixels
+        RawImagePixels
         """
         if not self.associated_macro.exists:
             return None
