@@ -126,3 +126,10 @@ def check_array_size_parameters(
 
 def flatten(t):
     return [item for sublist in t for item in sublist]
+
+
+def product(iterable):
+    prod = 1
+    for i in iterable:
+        prod *= i
+    return prod

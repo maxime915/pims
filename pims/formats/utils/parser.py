@@ -44,8 +44,8 @@ class AbstractParser(ABC):
         * height
         * depth
         * duration
-        * n_channels
-        * n_channels_per_read
+        * n_concrete_channels
+        * n_samples
         * n_distinct_channels
         * pixel_type
         * significant_bits

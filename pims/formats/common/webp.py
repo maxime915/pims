@@ -53,9 +53,8 @@ class WebPParser(VipsParser):
     def parse_main_metadata(self) -> ImageMetadata:
         imd = super().parse_main_metadata()
         # Do not count alpha channel if any
-        if imd.n_channels in (2, 4):
-            imd.n_channels = imd.n_channels - 1
-            imd.n_channels_per_read = imd.n_channels
+        if imd.n_samples in (2, 4):
+            imd.n_samples -= 1
         return imd
 
     def parse_known_metadata(self) -> ImageMetadata:

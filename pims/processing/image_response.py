@@ -225,7 +225,8 @@ class ProcessedView(MultidimImageResponse, ABC):
             ).T
 
         if self.gamma_processing:
-            lut = np.power(lut, self.gammas)
+            gammas = np.array(self.gammas)[:, np.newaxis, np.newaxis]
+            lut = np.power(lut, gammas)
 
         if self.log_processing:
             # Apply logarithmic scale on image.
