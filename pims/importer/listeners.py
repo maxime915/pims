@@ -410,8 +410,12 @@ class CytomineListener(ImportListener):
         ai.height = image.height
         ai.depth = image.depth
         ai.duration = image.duration
-        ai.channels = image.n_intrinsic_channels
-        ai.extrinsicChannels = image.n_channels
+
+        # Cytomine "channels" = number of concrete channels
+        ai.channels = image.n_concrete_channels
+        ai.samplePerPixel = image.n_samples
+        ai.bitPerSample = dtype_to_bits(image.pixel_type)
+
         if image.physical_size_x:
             ai.physicalSizeX = round(
                 convert_quantity(image.physical_size_x, "micrometers"), 6
@@ -429,25 +433,32 @@ class CytomineListener(ImportListener):
                 convert_quantity(image.frame_rate, "Hz"), 6
             )
         ai.magnification = parse_int(image.objective.nominal_magnification)
-        ai.bitPerSample = dtype_to_bits(image.pixel_type)
-        ai.samplePerPixel = image.n_channels / image.n_intrinsic_channels
+
         ai.save()
         self.abstract_images.append(ai)
 
         asc = AbstractSliceCollection()
-        set_channel_names = image.n_intrinsic_channels == image.n_channels
-        for c in range(image.n_intrinsic_channels):
-            name = None
-            color = None
-            if set_channel_names:
-                name = image.channels[c].suggested_name
-                color = image.channels[c].hex_color
+        for cc in range(image.n_concrete_channels):
+            first_c = cc * image.n_samples
+
+            name = image.channels[first_c].suggested_name
+            color = image.channels[first_c].hex_color
+            if image.n_samples != 1:
+                names = [
+                    image.channels[i].suggested_name
+                    for i in range(first_c, first_c + image.n_samples)
+                    if image.channels[i].suggested_name is not None
+                ]
+                names = list(dict.fromkeys(names))  # ordered uniqueness
+                name = '|'.join(names)
+                color = None
+
             for z in range(image.depth):
                 for t in range(image.duration):
                     mime = "image/pyrtiff"  # TODO: remove
                     asc.append(
                         AbstractSlice(
-                            ai.id, uf.id, mime, c, z, t,
+                            ai.id, uf.id, mime, cc, z, t,
                             channelName=name, channelColor=color
                         )
                     )

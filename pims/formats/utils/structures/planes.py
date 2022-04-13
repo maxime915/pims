@@ -63,7 +63,7 @@ class PlanesInfo:
     def n_planes(self) -> int:
         return self.n_channels * self.depth * self.duration
 
-    def set(self, c: int, z: int, t: int, **infos):
+    def set(self, c, z, t, **infos):
         """
         Set information for a given plane.
 
@@ -80,12 +80,12 @@ class PlanesInfo:
             Keys must have been defined in initializer, otherwise they are
             ignored. Values must coerce the defined corresponding datatype.
         """
-        plane_info = self._data[c][z][t]
+        plane_info = self._data[c, z, t]
         for k, v in infos.items():
             if k in self._keys:
                 plane_info[k] = v
 
-    def get(self, c: int, z: int, t: int, key: str, default: Any = None) -> Any:
+    def get(self, c, z, t, key: str, default: Any = None) -> Any:
         if key not in self._keys:
             return default
-        return self._data[c][z][t][key]
+        return self._data[c, z, t][key]

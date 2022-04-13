@@ -152,7 +152,9 @@ pyparsing==3.0.6
     #   packaging
     #   snuggs
 python-dateutil==2.8.2
-    # via matplotlib
+    # via 
+    #   matplotlib
+    #   pims (setup.py)    
 python-dotenv==0.19.2
     # via
     #   pims (setup.py)

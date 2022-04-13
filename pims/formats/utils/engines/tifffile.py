@@ -11,13 +11,15 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
+from __future__ import annotations
+
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Tuple, Union
+from typing import List, Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from pint import Quantity
-from tifffile import TIFF, TiffPage, tifffile
+from tifffile import TIFF, TiffFile, TiffPage, tifffile
 
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
@@ -28,13 +30,16 @@ from pims.formats.utils.structures.pyramid import Pyramid
 from pims.utils import UNIT_REGISTRY
 from pims.utils.types import parse_datetime
 
+if TYPE_CHECKING:
+    from pims.files.file import Path
+
 TIFF_FLAGS = (
     'geotiff',
     'philips',
     # 'shaped',
     'lsm',
     'ome',
-    # 'imagej',
+    'imagej',
     'fluoview',
     'stk',
     'sis',
@@ -100,21 +105,21 @@ class TifffileParser(AbstractParser):
         imd.height = baseline.imagelength
         imd.depth = baseline.imagedepth
         imd.duration = 1
-        imd.n_intrinsic_channels = 1
+        imd.n_concrete_channels = 1
 
         imd.pixel_type = baseline.dtype
         imd.significant_bits = baseline.bitspersample
 
-        imd.n_channels = baseline.samplesperpixel
+        imd.n_samples = baseline.samplesperpixel
         if TIFF.EXTRASAMPLE.UNASSALPHA in baseline.extrasamples:
-            imd.n_channels -= 1
+            imd.n_samples -= 1
 
         # In the case we have unknown extra samples:
-        if imd.n_channels not in (1, 3) and len(baseline.extrasamples) == 0:
-            if imd.n_channels > 3:
-                imd.n_channels = 3
+        if imd.n_samples not in (1, 3) and len(baseline.extrasamples) == 0:
+            if imd.n_samples > 3:
+                imd.n_samples = 3
             else:
-                imd.n_channels = 1
+                imd.n_samples = 1
 
         if imd.n_channels == 3:
             imd.set_channel(ImageChannel(index=0, suggested_name='R'))
@@ -122,7 +127,6 @@ class TifffileParser(AbstractParser):
             imd.set_channel(ImageChannel(index=2, suggested_name='B'))
         else:
             imd.set_channel(ImageChannel(index=0, suggested_name='L'))
-        imd.n_channels_per_read = imd.n_channels
 
         return imd
 
@@ -168,7 +172,7 @@ class TifffileParser(AbstractParser):
     @staticmethod
     def parse_physical_size(
         physical_size: Union[Tuple, float],
-        unit: Optional[tifffile.TIFF.RESUNIT] = None
+        unit: Optional[Union[tifffile.TIFF.RESUNIT, str]] = None
     ) -> Union[Quantity, None]:
         """
         Parse a physical size and its unit from a TiffTag to a Quantity.
@@ -181,9 +185,11 @@ class TifffileParser(AbstractParser):
             rational = (physical_size, 1)
         else:
             rational = physical_size
-        if rational[0] <= 0 and rational[1] <= 0:
+        if rational[0] <= 0 or rational[1] <= 0:
             return None
-        return rational[1] / rational[0] * UNIT_REGISTRY(unit.name.lower())
+        if type(unit) is not str:
+            unit = unit.name.lower()
+        return rational[1] / rational[0] * UNIT_REGISTRY(unit)
 
     def parse_raw_metadata(self) -> MetadataStore:
         baseline = cached_tifffile_baseline(self.format)
@@ -192,7 +198,7 @@ class TifffileParser(AbstractParser):
         # Tags known to be not parsable, unnecessary or hazardous.
         skipped_tags = (273, 279, 278, 288, 289, 320, 324, 325,
                         347, 437, 519, 520, 521, 559, 20624,
-                        20625, 34675) + tuple(range(65420, 65459))
+                        20625, 34675, 50839) + tuple(range(65420, 65459))
 
         for tag in baseline.tags:
             if tag.code not in skipped_tags and \
@@ -211,10 +217,39 @@ class TifffileParser(AbstractParser):
         pyramid = Pyramid()
         for level in base_series.levels:
             page = level[0]
+
+            if page.tilewidth != 0:
+                tilewidth = page.tilewidth
+            else:
+                tilewidth = page.imagewidth
+
+            if page.tilelength != 0:
+                tilelength = page.tilelength
+            else:
+                tilelength = page.imagelength
+
             pyramid.insert_tier(
                 page.imagewidth, page.imagelength,
-                (page.tilewidth, page.tilelength),
+                (tilewidth, tilelength),
                 page_index=page.index
             )
 
         return pyramid
+
+
+def remove_tiff_comments(
+    filepath: Path, n_pages: Optional[int],
+    except_pages: Optional[List[int]] = None
+):
+    if except_pages is None:
+        except_pages = []
+
+    with TiffFile(str(filepath), mode='r+b') as tif:
+        if n_pages is None:
+            n_pages = len(tif.pages)
+        for index in range(n_pages):
+            if index in except_pages:
+                continue
+            tag = tif.pages[index].tags.get(270, None)
+            if tag is not None:
+                tag.overwrite("")

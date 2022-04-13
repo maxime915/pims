@@ -109,16 +109,16 @@ class Image(Path):
         return self._format.main_imd.n_channels
 
     @property
-    def n_intrinsic_channels(self) -> int:
-        return self._format.main_imd.n_intrinsic_channels
+    def n_concrete_channels(self) -> int:
+        return self._format.main_imd.n_concrete_channels
 
     @property
     def n_distinct_channels(self) -> int:
         return self._format.main_imd.n_distinct_channels
 
     @property
-    def n_channels_per_read(self) -> int:
-        return self._format.main_imd.n_channels_per_read
+    def n_samples(self) -> int:
+        return self._format.main_imd.n_samples
 
     @property
     def n_planes(self) -> int:
