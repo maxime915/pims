@@ -21,6 +21,7 @@ from pyvips import Image as VIPSImage
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.config import get_settings
+from pims.files.file import Path
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
@@ -47,8 +48,11 @@ VIRTUAL_STACK_SLUG_SCHEMA = "virtual/stack"
 
 
 def _json_load(path):
-    with open(path, "rb") as f:
-        return orjson.loads(f.read())
+    if Path(path).is_dir():
+        return {}
+    else:
+        with open(path, "rb") as f:
+            return orjson.loads(f.read())
 
 
 def cached_json(format: Union[AbstractFormat, CachedDataPath]) -> dict:
@@ -153,7 +157,6 @@ class VirtualStackReader(AbstractReader):
     @staticmethod
     def _get_underlying_format(filepath):
         from pims.formats.utils.factories import SpatialReadableFormatFactory
-        from pims.files.file import Path
         FILE_ROOT_PATH = get_settings().root
         return SpatialReadableFormatFactory(match_on_ext=True).match(
             Path(FILE_ROOT_PATH, filepath).get_spatial()
