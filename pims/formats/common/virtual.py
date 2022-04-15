@@ -14,14 +14,13 @@
 import logging
 from functools import cached_property
 from typing import List, Optional, Union
-
+import pathlib
 import numpy as np
 import orjson
 from pyvips import Image as VIPSImage
 
 from pims.api.exceptions import MetadataParsingProblem
 from pims.config import get_settings
-from pims.files.file import Path
 from pims.formats import AbstractFormat
 from pims.formats.utils.abstract import CachedDataPath
 from pims.formats.utils.checker import SignatureChecker
@@ -48,7 +47,7 @@ VIRTUAL_STACK_SLUG_SCHEMA = "virtual/stack"
 
 
 def _json_load(path):
-    if Path(path).is_dir():
+    if pathlib.Path(path).is_dir():
         return {}
     else:
         with open(path, "rb") as f:
