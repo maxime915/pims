@@ -42,7 +42,8 @@ if __name__ == '__main__':
     path = Path(params.path)
 
     if not path.exists():
-        exit(-1)
+        from pims.api.exceptions import FilepathNotFoundProblem
+        raise FilepathNotFoundProblem(f"File {path} not found")
 
     if path.is_file():
         image_paths = [path]
