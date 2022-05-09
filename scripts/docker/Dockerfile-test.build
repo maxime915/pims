@@ -4,5 +4,6 @@ FROM cytomine/pims-dependencies:v$VERSION_NUMBER
 COPY . /app
 
 WORKDIR /app
+RUN pip3 install /app
 
 CMD pytest /app/tests --junit-xml=ci/test-reports/pytest_unit.xml
