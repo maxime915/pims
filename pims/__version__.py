@@ -16,8 +16,8 @@
 
 # KEEP ENCODING - so that __version__ can be read even if py2.7 is used.
 
-VERSION = (0, 10, 2)
-API_VERSION = (0, 9, 0)
+VERSION = (0, 12, 1)
+API_VERSION = (0, 12, 0)
 
 __title__ = 'pims'
 __description__ = 'Cytomine Python Image Server'
