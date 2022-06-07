@@ -250,4 +250,4 @@ class AbstractReader(ABC):
 
         cc_idxs = channels // spp
         s_idxs = channels % spp
-        return cc_idxs, s_idxs
+        return cc_idxs.tolist(), s_idxs.tolist()

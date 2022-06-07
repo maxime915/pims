@@ -50,6 +50,8 @@ class Histogram(HistogramInfo):
 
 class ChannelHistogramInfo(HistogramInfo):
     channel: int = Field(..., description="Image channel index")
+    concrete_channel: int = Field(..., description="Image concrete channel index")
+    sample: int = Field(..., description="Image channel sample index")
     color: Optional[str] = Field(None, description="Channel color")
 
 
@@ -230,7 +232,10 @@ def show_channels_histogram(
     for channel in channels:
         histograms.append(
             ChannelHistogram(
-                channel=channel, type=htype,
+                channel=channel,
+                concrete_channel=(channel // in_image.n_samples),
+                sample=(channel % in_image.n_samples),
+                type=htype,
                 color=in_image.channels[channel].hex_color,
                 **histogram_formatter(
                     in_image.channel_histogram(channel),
@@ -274,7 +279,10 @@ def show_channels_histogram_bounds(
         mini, maxi = bounds
         hist_info.append(
             ChannelHistogramInfo(
-                channel=channel, type=htype,
+                channel=channel,
+                concrete_channel=(channel // in_image.n_samples),
+                sample=(channel % in_image.n_samples),
+                type=htype,
                 color=in_image.channels[channel].hex_color,
                 minimum=mini, maximum=maxi
             )
@@ -317,7 +325,10 @@ def show_plane_histogram(
     for c, z, t in itertools.product(channels, z_slices, timepoints):
         histograms.append(
             PlaneHistogram(
-                channel=c, z_slice=z, timepoint=t, type=htype,
+                channel=c,
+                concrete_channel=(c // in_image.n_samples),
+                sample=(c % in_image.n_samples),
+                z_slice=z, timepoint=t, type=htype,
                 color=in_image.channels[c].hex_color,
                 **histogram_formatter(
                     in_image.plane_histogram(c, z, t),
@@ -363,7 +374,10 @@ def show_plane_histogram(
         mini, maxi = in_image.plane_bounds(c, z, t)
         hist_info.append(
             PlaneHistogramInfo(
-                channel=c, z_slice=z, timepoint=t, type=htype,
+                channel=c,
+                concrete_channel=(c // in_image.n_samples),
+                sample=(c % in_image.n_samples),
+                z_slice=z, timepoint=t, type=htype,
                 color=in_image.channels[c].hex_color,
                 minimum=mini, maximum=maxi
             )
