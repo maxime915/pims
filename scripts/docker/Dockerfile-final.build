@@ -29,7 +29,8 @@ COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
 
 COPY ./scripts/docker/setVersion.sh /app/
-RUN ./app/setVersion.sh $VERSION_NUMBER
+RUN chmod +x /app/setVersion.sh
+RUN /app/setVersion.sh $VERSION_NUMBER
 
 ENV PORT=5000
 EXPOSE ${PORT}
