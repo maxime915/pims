@@ -28,6 +28,9 @@ RUN chmod +x /start-reload.sh
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
 
+COPY ./scripts/docker/setVersion.sh /app/
+RUN ./app/setVersion.sh $VERSION_NUMBER
+
 ENV PORT=5000
 EXPOSE ${PORT}
 
