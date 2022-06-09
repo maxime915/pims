@@ -14,6 +14,7 @@ fi
 
 sed -i -- 's/__version__ = "0.0.0"/__version__ = "'$1'"/g' /app/pims/__version__.py ;
 
+
 cat /app/pims/__version__.py
 
 
