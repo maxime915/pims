@@ -1,5 +1,5 @@
 ARG  VERSION_NUMBER
-FROM cytomine/pims-dependencies:v$VERSION_NUMBER
+FROM cytomine/pims-dependencies:$VERSION_NUMBER
 
 COPY . /app
 
@@ -27,6 +27,10 @@ RUN chmod +x /start-reload.sh
 # Add app
 COPY ./pims /app/pims
 ENV MODULE_NAME="pims.application"
+
+COPY ./scripts/docker/setVersion.sh /app/
+RUN chmod +x /app/setVersion.sh
+RUN /app/setVersion.sh $VERSION_NUMBER
 
 ENV PORT=5000
 EXPOSE ${PORT}
