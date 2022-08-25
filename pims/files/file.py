@@ -143,7 +143,8 @@ class Path(PlatformPath, _Path, SafelyCopiable):
         """Get file size, in bytes"""
         if self.is_dir():
             return sum([it.size for it in self.iterdir()])
-
+        if not self.is_file() and not self.is_dir():
+            return 0
         return self.stat().st_size
 
     @property
