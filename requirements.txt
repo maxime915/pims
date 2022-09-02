@@ -74,7 +74,7 @@ h11==0.12.0
     # via uvicorn
 hiredis==2.0.0
     # via aioredis
-httptools==0.2.0
+httptools==0.4.0
     # via uvicorn
 idna==3.3
     # via requests
@@ -218,7 +218,7 @@ urllib3==1.26.7
     # via
     #   cytomine-python-client
     #   requests
-uvicorn[standard]==0.15.0
+uvicorn[standard]==0.18.3
     # via pims (setup.py)
 uvloop==0.16.0
     # via uvicorn
