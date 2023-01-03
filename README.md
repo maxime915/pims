@@ -112,3 +112,12 @@ When you start PIMS, the logs should list your plugin.
 The `pims/scripts` folder has a script to build Docker images of PIMS with or without some 
 plugins. Adapt the `plugin-list.csv` to build an image with the plugins (and their versions) 
 you want.
+
+### Available plugins
+One can find below the listing of the PIMS plugins that have already been implemented.
+
+| Plugin name | Format(s) | URL  | Remarks  |
+|---|---|---|---|
+| Openslide  | BIF, MRXS, NDPi, Philips TIFF, SCN, SVS, VMS  | https://github.com/cytomine/pims-plugin-format-openslide/tree/main/pims_plugin_format_openslide  | Depends on VIPS and Openslide. |
+| Example  | / |  https://github.com/cytomine/pims-plugin-format-example | This is just a example plugin to explain how to implement a PIMS plugin.  |
+| WSI Dicom  | WSIDICOM  | https://github.com/cytomine/pims-plugin-format-dicom  | PIMS plugin based on the WSI Dicom format implemented [here](https://github.com/imi-bigpicture/wsidicom). Annotations management not implemented yet. |

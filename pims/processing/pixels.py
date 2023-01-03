@@ -69,7 +69,7 @@ class ImagePixelsImpl(ABC):
 
     @abstractmethod
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixelsImpl:
         pass
 
@@ -131,12 +131,12 @@ class NumpyImagePixels(ImagePixelsImpl):
         return self.context.transition_to(VIPSImage).apply_lut(lut)
 
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixelsImpl:
         # TODO
         return self.context.transition_to(
             VIPSImage
-        ).apply_lut_stack(lut_stack, reduction)
+        ).apply_lut_stack(lut_stack, reduction, is_rgb)
 
     def resize(self, width: int, height: int) -> ImagePixelsImpl:
         return self.context.transition_to(VIPSImage).resize(width, height)
@@ -215,7 +215,7 @@ class VipsImagePixels(ImagePixelsImpl):
         return self
 
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixelsImpl:
         stack_size, _, n_components = lut_stack.shape
         if stack_size == 1:
@@ -223,9 +223,10 @@ class VipsImagePixels(ImagePixelsImpl):
             return self.apply_lut(get_lut_from_stacked(lut_stack))
         elif n_components == 1:
             lut_stack = np.swapaxes(lut_stack, 0, 2)
-            return self.apply_lut(
-                get_lut_from_stacked(lut_stack)
-            ).channel_reduction(reduction)
+            pixels = self.apply_lut(get_lut_from_stacked(lut_stack))
+            if not is_rgb:
+                return pixels.channel_reduction(reduction)
+            return pixels
         else:
             channels = list()
             for i, channel in enumerate(self.pixels.bandsplit()):
@@ -253,15 +254,30 @@ class VipsImagePixels(ImagePixelsImpl):
     def change_colorspace(self, colorspace: Colorspace) -> ImagePixelsImpl:
         new_colorspace = None
 
+        if self.pixels.format == 'uchar':
+            # As libvips makes a distinction between format and interpretation,
+            # and due to our various libs usage, there is sometimes
+            # inconsistencies. As a quick fix, force interpretation casting
+            # when it differs from format.
+            # Should be treated more efficiently.
+            # Info: https://github.com/libvips/libvips/issues/580
+            if self.pixels.interpretation == VIPSInterpretation.RGB16:
+                self.pixels = self.pixels.copy(
+                    interpretation=VIPSInterpretation.SRGB
+                )
+            elif self.pixels.interpretation == VIPSInterpretation.GREY16:
+                self.pixels = self.pixels.copy(
+                    interpretation=VIPSInterpretation.B_W
+                )
+
         if (self.pixels.interpretation == VIPSInterpretation.RGB16
                 and colorspace == Colorspace.GRAY):
             new_colorspace = VIPSInterpretation.GREY16
         elif (self.pixels.interpretation == VIPSInterpretation.GREY16
               and colorspace == Colorspace.COLOR):
             new_colorspace = VIPSInterpretation.RGB16
-        elif (colorspace == Colorspace.COLOR
-              and self.pixels.interpretation != VIPSInterpretation.SRGB):
-            new_colorspace = VIPSInterpretation.RGB
+        elif colorspace == Colorspace.COLOR:
+            new_colorspace = VIPSInterpretation.SRGB
         elif colorspace == Colorspace.GRAY:
             new_colorspace = VIPSInterpretation.B_W
 
@@ -375,9 +391,9 @@ class ImagePixels:
         return self
 
     def apply_lut_stack(
-        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction
+        self, lut_stack: StackedLookUpTables, reduction: ChannelReduction, is_rgb: bool
     ) -> ImagePixels:
-        self._impl.apply_lut_stack(lut_stack, reduction)
+        self._impl.apply_lut_stack(lut_stack, reduction, is_rgb)
         return self
     
     def resize(self, width: int, height: int) -> ImagePixels:

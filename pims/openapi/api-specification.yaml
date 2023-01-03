@@ -3762,7 +3762,7 @@ components:
             The number of channels in the image.
             Grayscale images have 1 channel. RGB images have 3 channels.
           minimum: 1
-        n_intrinsic_channels:
+        n_concrete_channels:
           type: integer
           format: int64
           description: |
@@ -3774,7 +3774,7 @@ components:
           format: int64
           description: |
             The number of intrinsic planes in the image.
-            It is computed as `n_intrinsic_channels * depth * duration`.
+            It is computed as `n_concrete_channels * depth * duration`.
         acquired_at:
           type: string
           format: date-time

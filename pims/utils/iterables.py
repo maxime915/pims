@@ -122,3 +122,14 @@ def check_array_size_parameters(
         check_array_size(
             value, allowed=allowed, nullable=nullable, name=name
         )
+
+
+def flatten(t):
+    return [item for sublist in t for item in sublist]
+
+
+def product(iterable):
+    prod = 1
+    for i in iterable:
+        prod *= i
+    return prod

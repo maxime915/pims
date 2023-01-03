@@ -70,17 +70,16 @@ class PillowParser(ExifToolParser, AbstractParser):
         imd.pixel_type = np.dtype("uint8")
         imd.significant_bits = 8 if mode != "1" else 1
 
-        imd.n_intrinsic_channels = 1
+        imd.n_concrete_channels = 1
         channel_mode = "L" if mode == "1" else mode
         if channel_mode in ("L", "RGB"):
-            imd.n_channels = len(channel_mode)
+            imd.n_samples = len(channel_mode)
             for i, name in enumerate(channel_mode):
                 imd.set_channel(ImageChannel(index=i, suggested_name=name))
         else:
             # https://pillow.readthedocs.io/en/stable/handbook/image-file-formats.html#bmp
             log.error(f"{self.format.path}: Mode {mode} is not supported.")
             raise MetadataParsingProblem(self.format.path)
-        imd.n_channels_per_read = imd.n_channels
 
         return imd
 

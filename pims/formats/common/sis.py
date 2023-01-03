@@ -11,7 +11,7 @@
 #  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
-from functools import cached_property
+from pims.cache import cached_property
 
 from pims.formats.utils.abstract import AbstractFormat, CachedDataPath
 from pims.formats.utils.engines.tifffile import TifffileChecker, TifffileParser, cached_tifffile
@@ -47,10 +47,10 @@ class OlympusSisParser(TifffileParser):
         imd.acquisition_datetime = sis_metadata.get('datetime')
         
         physical_size_x = sis_metadata.get('pixelsizex')
-        if physical_size_x:
+        if physical_size_x is not None and physical_size_x > 0:
             imd.physical_size_x = physical_size_x * UNIT_REGISTRY('meters')
         physical_size_y = sis_metadata.get('pixelsizey')
-        if physical_size_y:
+        if physical_size_y is not None and physical_size_y > 0:
             imd.physical_size_y = physical_size_y * UNIT_REGISTRY('meters')
 
         imd.objective.nominal_magnification = sis_metadata.get('magnification')

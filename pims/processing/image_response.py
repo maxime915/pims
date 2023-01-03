@@ -30,12 +30,10 @@ from pims.processing.annotations import ParsedAnnotations
 from pims.processing.colormaps import (
     Colormap, StackedLookUpTables, combine_stacked_lut, default_lut, is_rgb_colormapping
 )
+from pims.processing.histograms.utils import change_colorspace_histogram, rescale_histogram
 from pims.processing.masks import (
     draw_condition_mask, rasterize_draw, rasterize_mask, rescale_draw,
     transparency_mask
-)
-from pims.processing.operations import (
-    ColorspaceHistOp, RescaleHistOp
 )
 from pims.processing.pixels import ImagePixels
 from pims.processing.region import Region, Tile
@@ -227,7 +225,8 @@ class ProcessedView(MultidimImageResponse, ABC):
             ).T
 
         if self.gamma_processing:
-            lut = np.power(lut, self.gammas)
+            gammas = np.array(self.gammas)[:, np.newaxis, np.newaxis]
+            lut = np.power(lut, gammas)
 
         if self.log_processing:
             # Apply logarithmic scale on image.
@@ -242,6 +241,12 @@ class ProcessedView(MultidimImageResponse, ABC):
         lut *= self.max_intensity
         lut = np.rint(lut)
         return lut.astype(np_dtype(self.best_effort_bitdepth))
+
+    @property
+    def is_rgb(self):
+        if any(self.colormaps):
+            return is_rgb_colormapping(self.colormaps)
+        return False
 
     @property
     def colormap_processing(self) -> bool:
@@ -327,10 +332,11 @@ class ProcessedView(MultidimImageResponse, ABC):
         """Whether colorspace needs to be changed."""
         if self.colorspace == Colorspace.AUTO:
             return False
-        return (self.colorspace == Colorspace.GRAY and
-                len(self.channels) > 1) or \
-               (self.colorspace == Colorspace.COLOR and
-                len(self.channels) == 1)
+        return (self.colormap_processing or
+                (self.colorspace == Colorspace.GRAY and
+                 len(self.channels) > 1) or
+                (self.colorspace == Colorspace.COLOR and
+                 len(self.channels) == 1))
 
     # Filtering
 
@@ -381,7 +387,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         if self.c_reduction != ChannelReduction.ADD:
             lut = self.math_lut()
             if lut is not None:
-                pixels.apply_lut_stack(lut, self.c_reduction)
+                pixels.apply_lut_stack(lut, self.c_reduction, self.is_rgb)
             else:
                 pixels.channel_reduction(self.c_reduction)
 
@@ -392,7 +398,7 @@ class ProcessedView(MultidimImageResponse, ABC):
         else:
             lut = self.lut()
             if lut is not None:
-                pixels.apply_lut_stack(lut, self.c_reduction)
+                pixels.apply_lut_stack(lut, self.c_reduction, self.is_rgb)
 
         pixels.resize(self.out_width, self.out_height)
 
@@ -422,15 +428,15 @@ class ProcessedView(MultidimImageResponse, ABC):
         used by histogram filters on processed images.
         """
         hist = self.in_image.histogram.plane_histogram(*self.raw_view_planes())
-        hist = hist.squeeze()
-        hist = hist.reshape((1, -1)) if hist.ndim == 1 else hist
+        hist = np.atleast_2d(hist)
 
         # TODO: filters are computed on best_effort bitdepth
         #  while it should do on image bitdepth
-        hist = RescaleHistOp(self.best_effort_bitdepth)(hist)
+        hist = rescale_histogram(hist, self.best_effort_bitdepth)
 
         if self.filter_colorspace_processing:
-            hist = ColorspaceHistOp(self.filter_colorspace)(hist)
+            hist = change_colorspace_histogram(hist, self.filter_colorspace)
+
         return hist.squeeze()
 
 

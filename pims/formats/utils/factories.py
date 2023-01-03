@@ -58,8 +58,11 @@ class FormatFactory:
             a match. None otherwise.
         """
         if self.match_on_ext:
-            format = self.formats.get(path.extension)
-            if format:
+            extension = path.extension
+            if len(extension) > 0:
+                extension = extension[1:]
+            format = self.formats.get(extension)
+            if format is not None:
                 return format(path)
         proxy = CachedDataPath(path)
         for format in self.formats.values():
@@ -67,6 +70,16 @@ class FormatFactory:
                 return format.from_proxy(proxy)
 
         return None
+
+
+class ImportableFormatFactory(FormatFactory):
+    def __init__(self, match_on_ext: bool = False):
+        formats = {
+            e: f
+            for e, f in FORMATS.items()
+            if f.is_importable()
+        }
+        super(ImportableFormatFactory, self).__init__(match_on_ext, formats)
 
 
 class SpatialReadableFormatFactory(FormatFactory):

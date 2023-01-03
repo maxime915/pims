@@ -1,6 +1,4 @@
-# -*- coding: utf-8 -*-
-
-#  * Copyright (c) 2020-2021. Authors: see NOTICE file.
+#  * Copyright (c) 2020-2022. Authors: see NOTICE file.
 #  *
 #  * Licensed under the Apache License, Version 2.0 (the "License");
 #  * you may not use this file except in compliance with the License.
@@ -14,17 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 
-# KEEP ENCODING - so that __version__ can be read even if py2.7 is used.
-
-VERSION = (0, 12, 1)
-API_VERSION = (0, 12, 0)
-
-__title__ = 'pims'
-__description__ = 'Cytomine Python Image Server'
-__url__ = 'https://doc.uliege.cytomine.org'
-__version__ = '.'.join(map(str, VERSION))
-__api_version__ = '.'.join(map(str, API_VERSION))
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2020-2021 ULiège Cytomine R&D team'
-__author__ = 'Ulysse Rubens'
-__email__ = 'uliege@cytomine.org'
+from .memory import IMAGE_CACHE
+# Package import sugars to hide cache module complexity to plugin developers.
+from .object import SimpleDataCache, cached_property, safe_cached_property
+from .redis import cache_data, cache_image_response, startup_cache

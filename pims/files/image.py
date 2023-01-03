@@ -13,13 +13,13 @@
 #  * limitations under the License.
 from __future__ import annotations
 
-from functools import cached_property
 from typing import List, Optional, TYPE_CHECKING, Tuple, Union
 
 import numpy as np
 from pint import Quantity
 
 from pims.api.exceptions import NoMatchingFormatProblem
+from pims.cache import cached_property
 from pims.files.file import Path
 from pims.formats.utils.factories import FormatFactory
 from pims.formats.utils.structures.pyramid import normalized_pyramid
@@ -109,16 +109,16 @@ class Image(Path):
         return self._format.main_imd.n_channels
 
     @property
-    def n_intrinsic_channels(self) -> int:
-        return self._format.main_imd.n_intrinsic_channels
+    def n_concrete_channels(self) -> int:
+        return self._format.main_imd.n_concrete_channels
 
     @property
     def n_distinct_channels(self) -> int:
         return self._format.main_imd.n_distinct_channels
 
     @property
-    def n_channels_per_read(self) -> int:
-        return self._format.main_imd.n_channels_per_read
+    def n_samples(self) -> int:
+        return self._format.main_imd.n_samples
 
     @property
     def n_planes(self) -> int:

@@ -14,10 +14,13 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Optional, TYPE_CHECKING, Union
+from typing import List, Optional, TYPE_CHECKING, Tuple, Union
+
+import numpy as np
 
 from pims.processing.adapters import RawImagePixels
 from pims.processing.region import Region, Tile
+from pims.utils.iterables import ensure_list
 
 if TYPE_CHECKING:
     from pims.formats import AbstractFormat
@@ -234,3 +237,17 @@ class AbstractReader(ABC):
         RawImagePixels
         """
         return None
+
+    def _concrete_channel_indexes(
+        self, channels: Optional[Union[int, List[int]]]
+    ) -> Tuple[list, list]:
+        if channels is None:
+            channels = np.arange(self.format.main_imd.n_channels)
+        else:
+            channels = np.asarray(ensure_list(channels))
+
+        spp = self.format.main_imd.n_samples
+
+        cc_idxs = channels // spp
+        s_idxs = channels % spp
+        return cc_idxs.tolist(), s_idxs.tolist()

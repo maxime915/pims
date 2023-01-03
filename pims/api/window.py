@@ -40,7 +40,7 @@ from pims.api.utils.output_parameter import (
 from pims.api.utils.parameter import imagepath_parameter
 from pims.api.utils.processing_parameter import (
     parse_bitdepth, parse_colormap_ids, parse_filter_ids,
-    parse_intensity_bounds
+    parse_gammas, parse_intensity_bounds, remove_useless_channels
 )
 from pims.cache import cache_image_response
 from pims.config import Settings, get_settings
@@ -105,7 +105,7 @@ def _show_window(
     config: Settings,
     colormaps=None, c_reduction=ChannelReduction.ADD, z_reduction=None, t_reduction=None
 ):
-    in_image = path.get_spatial()
+    in_image = path.get_spatial(cache=True)
     check_representation_existence(in_image)
 
     if not isinstance(region, Region):
@@ -179,6 +179,11 @@ def _show_window(
     )
     min_intensities, max_intensities = intensities
     colormaps = parse_colormap_ids(colormaps, ALL_COLORMAPS, channels, in_image.channels)
+    gammas = parse_gammas(channels, gammas)
+
+    channels, min_intensities, max_intensities, colormaps, gammas = remove_useless_channels(
+        channels, min_intensities, max_intensities, colormaps, gammas
+    )
 
     array_parameters = ('filters',)
     check_array_size_parameters(

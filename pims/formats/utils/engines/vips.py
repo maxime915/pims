@@ -60,11 +60,10 @@ class VipsParser(ExifToolParser, AbstractParser):
         imd = ImageMetadata()
         imd.width = image.width
         imd.height = image.height
-        imd.n_channels = image.bands
         imd.depth = 1
         imd.duration = 1
-        imd.n_intrinsic_channels = 1
-        imd.n_channels_per_read = image.bands
+        imd.n_concrete_channels = 1
+        imd.n_samples = image.bands
 
         imd.pixel_type = np.dtype(vips_format_to_dtype[image.format])
         imd.significant_bits = dtype_to_bits(imd.pixel_type)

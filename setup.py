@@ -35,28 +35,29 @@ REQUIRES_PYTHON = '>=3.8.0'
 # What packages are required for this module to be executed?
 REQUIRED = [
     'uvicorn[standard]>=0.13.4',
-    'fastapi>=0.65.1',
+    'fastapi>=0.65.1,<=0.68.2',
     'pydantic>=1.8.2',
+    'orjson>=3.6.5',
     'rich>=10.2.2',
     'python-dotenv>=0.17.1',
     'python-multipart>=0.0.5',
     'pathvalidate>=2.4.1',
     'importlib_metadata>=4.7.1',
     'aiofiles>=0.7.0',
-    'fastapi-cache2[redis]==0.1.6',
-    'aioredis>=2.0.0',
+    'aioredis[hiredis]>=2.0.0',
     'celery>=5.0.0',
 
     'Pint>=0.17',
     'numpy>=1.20.1',
     'Pillow>=8.0.0',
     'pyvips>=2.1.14',
-    'tifffile>=2021.4.8,<=2021.6.6',  # Check that no breaking changes are introduced to upgrade
+    'tifffile>=2021.11.2',
     'imagecodecs>=2021.3.31',
     'scikit-image>=0.18',
     'zarr>=2.8.3',
     'pydicom>=2.2.2',
     'python-gdcm>=3.0.10',
+    'python-dateutil>=2.7.0',
 
     'Shapely>=1.8.0',
     'rasterio>=1.2.1',

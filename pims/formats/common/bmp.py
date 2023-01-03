@@ -12,11 +12,11 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from functools import cached_property
 from typing import Optional
 
 from pint import Quantity
 
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.utils.checker import SignatureChecker
 from pims.formats.utils.engines.pil import (
@@ -57,8 +57,10 @@ class BMPParser(PillowParser):
 
     @staticmethod
     def parse_physical_size(physical_size: Optional[str]) -> Optional[Quantity]:
-        if physical_size is not None and parse_float(physical_size) not in (None, 0.0):
-            return 1 / parse_float(physical_size) * UNIT_REGISTRY("meters")
+        if physical_size is not None:
+            physical_size = parse_float(physical_size)
+            if physical_size is not None and physical_size > 0:
+                return 1 / physical_size * UNIT_REGISTRY("meters")
         return None
 
 

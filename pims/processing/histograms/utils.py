@@ -20,7 +20,7 @@ import numpy as np
 import zarr as zarr
 from skimage.exposure import histogram
 
-from pims.api.utils.models import HistogramType
+from pims.api.utils.models import Colorspace, HistogramType
 from pims.api.utils.output_parameter import get_thumb_output_dimensions
 from pims.config import get_settings
 from pims.files.file import Path
@@ -31,6 +31,7 @@ from pims.processing.histograms.format import (
     ZHF_PER_PLANE
 )
 from pims.processing.pixels import ImagePixels
+from pims.utils.math import max_intensity
 
 MAX_PIXELS_COMPLETE_HISTOGRAM = get_settings().max_pixels_complete_histogram
 MAX_LENGTH_COMPLETE_HISTOGRAM = get_settings().max_length_complete_histogram
@@ -54,7 +55,7 @@ def argmax_nonzero(arr, axis=-1):
 
 def clamp_histogram(hist, bounds=None) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Clamp an histogram between bounds (inclusive). If bounds are not set,
+    Clamp a 1D histogram between bounds (inclusive). If bounds are not set,
     bounds are computed so that the histogram is clamped between first and last
     non-zero values.
 
@@ -68,6 +69,48 @@ def clamp_histogram(hist, bounds=None) -> Tuple[np.ndarray, np.ndarray]:
     else:
         inf, sup = bounds
     return hist[inf:sup + 1], np.arange(inf, sup + 1)
+
+
+def rescale_histogram(hist: np.ndarray, bitdepth: int) -> np.ndarray:
+    """
+    Rescale a 1D histogram or a list of 1D histograms for a given bit depth.
+    It is used to rescale values so that out = in * (pow(2, bitdepth) - 1)
+    """
+    multi = hist.ndim > 1
+    if multi:
+        hist = np.atleast_2d(hist)
+
+    hist = hist.reshape(
+        (hist.shape[0], max_intensity(bitdepth, count=True), -1)
+    ).sum(axis=2)
+
+    if multi:
+        return np.squeeze(hist)
+    return hist
+
+
+def change_colorspace_histogram(
+    hist: np.ndarray, colorspace: Colorspace
+) -> np.ndarray:
+    """
+    Transform a 1D histogram or a list of 1D histograms colorspace if
+    needed.
+    """
+    multi = hist.ndim > 1
+    if multi:
+        hist = np.atleast_2d(hist)
+
+    n_channels = hist.shape[0]
+    if colorspace == Colorspace.GRAY and n_channels != 1:
+        n_used_channels = min(n_channels, 3)
+        luminance = np.array([[0.2125, 0.7154, 0.0721]])
+        hist = luminance[:, :n_used_channels] @ hist[:n_used_channels]
+    elif colorspace == Colorspace.COLOR and n_channels != 3:
+        return np.vstack((hist, hist, hist))
+
+    if multi:
+        return np.squeeze(hist)
+    return hist
 
 
 def _extract_np_thumb(image):

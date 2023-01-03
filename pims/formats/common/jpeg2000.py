@@ -12,11 +12,11 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 import logging
-from functools import cached_property
 from typing import List, Optional, Union
 
 from pyvips import Image as VIPSImage
 
+from pims.cache import cached_property
 from pims.formats import AbstractFormat
 from pims.formats.common.jpeg import JPEGParser
 from pims.formats.utils.abstract import CachedDataPath
@@ -142,7 +142,8 @@ class JPEG2000Format(AbstractFormat):
             vips jp2ksave LUNG1_pyr.tif LUNG1-converted.jp2 --subsample-mode off
         => Identify internal differences between file to establish a conversion need rule.
         """
-        return False
+        imd = self.main_imd
+        return imd.width > 1024 or imd.height > 1024
 
     @property
     def media_type(self):

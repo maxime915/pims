@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 
 from pims.api.exceptions import FormatNotFoundProblem
 from pims.api.utils.models import CollectionSize, FormatId
-from pims.api.utils.response import response_list
+from pims.api.utils.response import FastJsonResponse, response_list
 from pims.formats import FORMATS
 
 router = APIRouter()
@@ -44,6 +44,11 @@ class Format(BaseModel):
     writable: bool = Field(
         False, description='Whether PIMS can write a file in this format or not.'
     )
+    importable: bool = Field(
+        ...,
+        description='Whether the format is importable by an upload in PIMS or not. '
+                    'Non importable formats should be created by other means.'
+    )
     plugin: Optional[str] = Field(
         None,
         description='PIMS plugin providing this format, returned as a Python module.',
@@ -63,11 +68,15 @@ def _serialize_format(format):
         readable=format.is_readable(),
         writable=format.is_writable(),
         convertible=format.is_convertible(),
+        importable=format.is_importable(),
         plugin=format.get_plugin_name()
     )
 
 
-@router.get('/formats', response_model=FormatsList, tags=api_tags)
+@router.get(
+    '/formats', response_model=FormatsList, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def list_formats():
     """
     List all formats
@@ -76,7 +85,10 @@ def list_formats():
     return response_list(formats)
 
 
-@router.get('/formats/{format_id}', response_model=Format, tags=api_tags)
+@router.get(
+    '/formats/{format_id}', response_model=Format, tags=api_tags,
+    response_class=FastJsonResponse
+)
 def show_format(format_id: str):
     """
     Get a format

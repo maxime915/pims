@@ -14,7 +14,7 @@
 from typing import List
 
 import numpy as np
-from pyvips import Image as VIPSImage, Operation
+from pyvips import Image as VIPSImage, Interpretation as VIPSInterpretation, Operation  # noqa
 
 from pims.api.utils.models import ChannelReduction
 from pims.utils.dtypes import bits_to_str_dtype
@@ -72,6 +72,18 @@ def bandjoin(bands: List[VIPSImage]) -> VIPSImage:
         return bands[0]
 
     return Operation.call('bandjoin', bands)
+
+
+def bandjoin_rgb(bands: List[VIPSImage]) -> VIPSImage:
+    return fix_rgb_interpretation(bandjoin(bands))
+
+
+def fix_rgb_interpretation(im: VIPSImage) -> VIPSImage:
+    if im.interpretation == VIPSInterpretation.GREY16:
+        im = im.copy(interpretation=VIPSInterpretation.RGB16)
+    elif im.interpretation == VIPSInterpretation.B_W:
+        im = im.copy(interpretation=VIPSInterpretation.SRGB)
+    return im
 
 
 def bandreduction(bands: List[VIPSImage], reduction: ChannelReduction) -> VIPSImage:

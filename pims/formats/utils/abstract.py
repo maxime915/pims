@@ -16,10 +16,9 @@ from __future__ import annotations
 import logging
 import re
 from abc import ABC
-from functools import cached_property
 from typing import Any, Dict, List, Optional, TYPE_CHECKING, Type
 
-from pims.cache import SimpleDataCache
+from pims.cache import SimpleDataCache, cached_property
 from pims.formats.utils.checker import AbstractChecker
 from pims.formats.utils.convertor import AbstractConvertor
 from pims.formats.utils.histogram import AbstractHistogramReader
@@ -153,6 +152,11 @@ class AbstractFormat(ABC, SimpleDataCache):
     def is_convertible(cls) -> bool:
         """Whether PIMS can convert images in this format into another one."""
         return cls.convertor_class is not None
+
+    @classmethod
+    def is_importable(cls) -> bool:
+        """Whether PIMS allows to import images in this format."""
+        return True
 
     @classmethod
     def is_spatial(cls) -> bool:
