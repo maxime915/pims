@@ -156,6 +156,7 @@ class VirtualStackReader(AbstractReader):
     @staticmethod
     def _get_underlying_format(filepath):
         from pims.formats.utils.factories import SpatialReadableFormatFactory
+        from pims.files.file import Path
         FILE_ROOT_PATH = get_settings().root
         return SpatialReadableFormatFactory(match_on_ext=True).match(
             Path(FILE_ROOT_PATH, filepath).get_spatial()
