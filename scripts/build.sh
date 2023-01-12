@@ -34,9 +34,9 @@ build_without_plugins() {
   ..
 }
 
-build_with_all_plugins() {
+build_with_community_plugins() {
   PLUGIN_CSV=$(cat ./plugin-list.csv)
-  TAG="v${VERSION}-all-plugins"
+  TAG="v${VERSION}-community-plugins"
   # PIMS core
   docker build -f ../docker/backend.dockerfile \
   --build-arg PLUGIN_CSV="${PLUGIN_CSV}" \
@@ -51,4 +51,4 @@ build_with_all_plugins() {
 }
 
 build_without_plugins
-build_with_all_plugins
+build_with_community_plugins

@@ -1,5 +1,5 @@
-ARG  VERSION_NUMBER
-FROM cytomine/pims-dependencies:$VERSION_NUMBER
+ARG TAG
+FROM cytomine/pims-dependencies:$TAG
 
 COPY . /app
 
