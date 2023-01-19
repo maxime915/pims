@@ -109,7 +109,8 @@ RUN pip install --no-cache-dir gunicorn==${GUNICORN_VERSION} && \
     python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
-   --method install
+   --method install && \
+    pip install -r requirements.txt
 
 # Prestart configuration
 RUN touch /tmp/addHosts.sh
