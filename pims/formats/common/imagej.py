@@ -155,7 +155,7 @@ class ImageJTiffParser(TifffileParser):
         imd = self.format.main_imd
         pi = PlanesInfo(
             imd.n_concrete_channels, imd.depth, imd.duration,
-            ['page_index'], [np.int]
+            ['page_index'], [np.int64]
         )
 
         # ImageJ's dimension order is TZCYXS

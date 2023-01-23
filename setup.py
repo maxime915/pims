@@ -48,7 +48,7 @@ REQUIRED = [
     'celery>=5.0.0',
 
     'Pint>=0.17',
-    'numpy>=1.20.1',
+    'numpy>=1.24.1',
     'Pillow>=8.0.0',
     'pyvips>=2.1.14',
     'tifffile>=2021.11.2',

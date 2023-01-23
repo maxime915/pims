@@ -441,7 +441,7 @@ class OmeTiffParser(TifffileParser):
         imd = self.format.main_imd
         pi = PlanesInfo(
             imd.n_concrete_channels, imd.depth, imd.duration,
-            ['page_index'], [np.int]
+            ['page_index'], [np.int64]
         )
 
         omexml = self.main_root
