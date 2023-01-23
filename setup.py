@@ -49,7 +49,7 @@ REQUIRED = [
 
     'Pint>=0.17',
     'numpy>=1.24.1',
-    'Pillow>=8.0.0',
+    'Pillow>=9.1.1',
     'pyvips>=2.1.14',
     'tifffile>=2021.11.2',
     'imagecodecs>=2021.3.31',
