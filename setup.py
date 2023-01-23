@@ -29,7 +29,7 @@ from shutil import rmtree
 from setuptools import Command, find_packages, setup
 
 # Package meta-data.
-NAME = 'pims'
+NAME = 'cytomine-pims'
 REQUIRES_PYTHON = '>=3.8.0'
 
 # What packages are required for this module to be executed?
@@ -84,7 +84,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 
 # Load the package's __version__.py module as a dictionary.
 about = {}
-project_slug = NAME.lower().replace("-", "_").replace(" ", "_")
+project_slug = 'pims'
 with open(os.path.join(here, project_slug, '__version__.py')) as f:
     exec(f.read(), about)
 
