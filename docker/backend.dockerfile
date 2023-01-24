@@ -103,9 +103,11 @@ RUN rm -rf /var/lib/apt/lists/*
 
 # Install python requirements
 ARG GUNICORN_VERSION=20.1.0
+ARG SETUPTOOLS_VERSION=59.6.0
 COPY ./requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir gunicorn==${GUNICORN_VERSION} && \
     pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir setuptools==${SETUPTOOLS_VERSION} && \
     python plugins.py \
    --plugin_csv ${PLUGIN_CSV} \
    --install_path ${PLUGIN_INSTALL_PATH} \
