@@ -18,6 +18,8 @@ anyio==3.6.2
     # via watchfiles
 asciitree==0.3.3
     # via zarr
+asgiref==3.6.0
+    # via pims (setup.py)
 async-timeout==4.0.1
     # via aioredis
 attrs==21.2.0
