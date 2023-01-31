@@ -64,11 +64,11 @@ REQUIRED = [
     'rasterio>=1.2.1',
 
     # Must be at end to work with dependency links
-    'Cytomine-python-client>=2.3.0',
+    'Cytomine-python-client>=2.8.3',
 ]
 
 DEPENDENCY_LINKS = [
-    'https://github.com/cytomine/Cytomine-python-client/tarball/master#egg=Cytomine-python-client-2.3.0'
+    'https://packagecloud.io/cytomine-uliege/Cytomine-python-client/pypi/simple/cytomine-python-client/'
 ]
 
 # What packages are optional?
