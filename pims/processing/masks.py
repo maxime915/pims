@@ -59,7 +59,7 @@ def draw_condition_mask(draw: np.ndarray, rgb_int_background: int) -> np.ndarray
 def rescale_draw(draw: np.ndarray, dtype: np.dtype) -> np.ndarray:
     bitdepth = dtype_to_bits(dtype)
     if bitdepth > 8:
-        draw = draw.astype(np.float)
+        draw = draw.astype(float)
         draw /= 255
         draw *= max_intensity(bitdepth)
 

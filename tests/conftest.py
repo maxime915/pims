@@ -23,7 +23,7 @@ from fastapi.testclient import TestClient
 from pims import config
 
 os.environ['CONFIG_FILE'] = "./pims-config.env"
-CLEAR_AT_SHUTDOWN=True
+CLEAR_AT_SHUTDOWN=False
 
 with open(os.path.join(os.path.dirname(__file__), 'fake_files.csv'), 'r') as f:
     lines = f.read().splitlines()
@@ -97,6 +97,10 @@ def client(app):
     return TestClient(app)
 
 @pytest.fixture
+def root():
+     return test_root()
+     
+@pytest.fixture
 def image_path_jpeg():
 	filename = "cytomine-org-logo.jpeg"
 	path = f"{test_root()}/upload_test_jpeg/"
@@ -114,6 +118,11 @@ def image_path_tiff():
 	path = f"{test_root()}/upload_test_tiff/"
 	return path, filename
 	
+@pytest.fixture
+def image_path_excentric_filename():
+	filename = "Test special char %(_!.tiff"
+	path = f"{test_root()}/upload_test_excentric"
+	return path, filename
 	
 @contextmanager
 def not_raises(expected_exc):

@@ -100,6 +100,7 @@ def test_to_metadata_store():
     imd.objective.nominal_magnification = 2
     imd.microscope.model = "foo"
     imd.set_channel(ImageChannel(index=1))
+    imd.n_concrete_channels = 1
 
     store = imd.to_metadata_store(MetadataStore())
     assert store.get_value("image.width") == 10

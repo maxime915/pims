@@ -16,14 +16,13 @@
 
 # KEEP ENCODING - so that __version__ can be read even if py2.7 is used.
 
-VERSION = (0, 12, 1)
-API_VERSION = (0, 12, 0)
+
 
 __title__ = 'pims'
 __description__ = 'Cytomine Python Image Server'
 __url__ = 'https://doc.uliege.cytomine.org'
-__version__ = '.'.join(map(str, VERSION))
-__api_version__ = '.'.join(map(str, API_VERSION))
+__version__ = "0.0.0"
+__api_version__ = "0.0.0"
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2020-2021 ULiège Cytomine R&D team'
 __author__ = 'Ulysse Rubens'

@@ -14,7 +14,7 @@
 import logging
 from functools import cached_property
 from typing import List, Optional, Union
-
+import pathlib
 import numpy as np
 import orjson
 from pyvips import Image as VIPSImage
@@ -47,8 +47,11 @@ VIRTUAL_STACK_SLUG_SCHEMA = "virtual/stack"
 
 
 def _json_load(path):
-    with open(path, "rb") as f:
-        return orjson.loads(f.read())
+    if pathlib.Path(path).is_dir():
+        return {}
+    else:
+        with open(path, "rb") as f:
+            return orjson.loads(f.read())
 
 
 def cached_json(format: Union[AbstractFormat, CachedDataPath]) -> dict:

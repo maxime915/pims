@@ -12,7 +12,7 @@
 #  * See the License for the specific language governing permissions and
 #  * limitations under the License.
 
-import collections
+import collections.abc
 from typing import Any, List, Union
 
 
@@ -36,7 +36,7 @@ def invert(d: dict) -> dict:
 
 
 def flatten(
-    d: Union[dict, collections.MutableMapping], parent_key='', sep='.'
+    d: Union[dict, collections.abc.MutableMapping], parent_key='', sep='.'
 ) -> dict:
     """
     Deeply flatten a dictionary.
@@ -51,7 +51,7 @@ def flatten(
                 new_key = parent_key + sep + k
         else:
             new_key = k
-        if isinstance(v, collections.MutableMapping):
+        if isinstance(v, collections.abc.MutableMapping):
             items.extend(flatten(v, new_key, sep=sep).items())
         else:
             items.append((new_key, v))

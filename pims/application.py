@@ -13,9 +13,10 @@
 #  * limitations under the License.
 
 import logging
-
+from . import __api_version__, __version__
 logger = logging.getLogger("pims.app")
 logger.info("[green bold]PIMS initialization...")
+logger.info("[green bold]PIMS version: {} ; api version: {}".format(__version__, __api_version__))
 
 from pims.fastapi_tweaks import apply_fastapi_tweaks
 
@@ -36,7 +37,6 @@ from pims.api import (
     operations,
     histograms, filters, colormaps
 )
-from . import __api_version__, __version__
 
 app = FastAPI(
     title="Cytomine Python Image Management Server PIMS",

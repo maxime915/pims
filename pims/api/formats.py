@@ -81,8 +81,10 @@ def list_formats():
     """
     List all formats
     """
-    formats = [_serialize_format(format) for format in FORMATS.values()]
-    return response_list(formats)
+    
+    formats = [_serialize_format(format) for format in FORMATS.values()] #list of formats
+    correct_list = [format for format in formats if format.name != "Virtual Stack"] 
+    return response_list(sorted(correct_list, key=lambda x: x.id.__root__, reverse=False))
 
 
 @router.get(

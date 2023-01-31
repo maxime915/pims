@@ -114,13 +114,23 @@ class NoMatchingFormatProblem(BadRequestException):
 
 
 class MetadataParsingProblem(BadRequestException):
-    def __init__(self, filepath):
+    def __init__(self, filepath, detail=None, **ext):
         if type(filepath) is not str:
             filepath = path2filepath(filepath)
 
         title = "Metadata cannot be correctly understood."
-        detail = f"The filepath {filepath} has unsupported metadata."
-        super().__init__(title, detail)
+        if detail is None:
+            detail = f"The filepath {filepath} has unsupported metadata."
+        super().__init__(title, detail, **ext)
+
+
+class PyramidParsingProblem(BadRequestException):
+    def __init__(self, filepath, detail=None, **ext):
+        if type(filepath) is not str:
+            filepath = path2filepath(filepath)
+
+        title = "Pyramid cannot be correctly understood"
+        super().__init__(title, detail, **ext)
 
 
 class FormatNotFoundProblem(NotFoundException):
