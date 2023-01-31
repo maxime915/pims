@@ -84,7 +84,7 @@ class AbstractFormat(ABC, SimpleDataCache):
         self._enabled = False
 
         self.parser = self.parser_class(self)
-        self.reader = self.reader_class(self)
+        self.reader = self.reader_class(self) if self.reader_class else None
         self.convertor = self.convertor_class(self) if self.convertor_class else None
 
         self.histogram_reader = self.histogram_reader_class(self)

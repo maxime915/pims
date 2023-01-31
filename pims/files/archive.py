@@ -14,7 +14,16 @@
 
 import shutil
 import sys
-from collections import Callable
+
+# Importing collections.abc objects from collections is deprecated
+# since python 3.3. 
+from sys import version_info
+if version_info.major < 3 or \
+        (version_info.major == 3 and version_info.minor < 3):
+    from collections import Callable
+else:
+    from collections.abc import Callable
+
 from functools import lru_cache
 from typing import List, Optional
 from zipfile import ZipFile
