@@ -18,7 +18,7 @@ from enum import Enum
 from typing import Dict, Iterator, Optional, Tuple, Union
 
 from cytomine.models import (
-    AbstractImage, AbstractSlice, AbstractSliceCollection, Annotation, AnnotationCollection,
+    AbstractImage, Annotation, AnnotationCollection,
     ImageInstance,
     ProjectCollection,
     Property,
@@ -436,33 +436,6 @@ class CytomineListener(ImportListener):
 
         ai.save()
         self.abstract_images.append(ai)
-
-        asc = AbstractSliceCollection()
-        for cc in range(image.n_concrete_channels):
-            first_c = cc * image.n_samples
-
-            name = image.channels[first_c].suggested_name
-            color = image.channels[first_c].hex_color
-            if image.n_samples != 1:
-                names = [
-                    image.channels[i].suggested_name
-                    for i in range(first_c, first_c + image.n_samples)
-                    if image.channels[i].suggested_name is not None
-                ]
-                names = list(dict.fromkeys(names))  # ordered uniqueness
-                name = '|'.join(names)
-                color = None
-
-            for z in range(image.depth):
-                for t in range(image.duration):
-                    mime = "image/pyrtiff"  # TODO: remove
-                    asc.append(
-                        AbstractSlice(
-                            ai.id, uf.id, mime, cc, z, t,
-                            channelName=name, channelColor=color
-                        )
-                    )
-        asc.save()
 
         properties = PropertyCollection(ai)
         for metadata in image.raw_metadata.values():
